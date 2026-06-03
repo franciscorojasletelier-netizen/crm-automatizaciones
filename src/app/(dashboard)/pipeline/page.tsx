@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 
+
 const stages = [
   { key: 'nuevo_lead', label: 'Nuevo Lead', color: 'bg-blue-500' },
   { key: 'contactado', label: 'Contactado', color: 'bg-yellow-500' },
@@ -67,8 +68,8 @@ export default async function PipelinePage() {
                 </div>
               )}
               {byStage[stage.key].map((deal: any) => (
-                <div key={deal.id}
-                  className="bg-white border border-gray-200 rounded-xl p-3.5 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer">
+                <Link key={deal.id} href={`/leads/${deal.id}`}
+                  className="bg-white border border-gray-200 rounded-xl p-3.5 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer block">
                   <p className="text-sm font-medium text-gray-900 leading-tight">
                     {deal.companies?.name ?? 'Sin empresa'}
                   </p>
@@ -95,7 +96,7 @@ export default async function PipelinePage() {
                       </span>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

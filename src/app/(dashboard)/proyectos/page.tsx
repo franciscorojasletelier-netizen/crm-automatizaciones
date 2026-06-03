@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { FolderOpen } from 'lucide-react'
+import Link from 'next/link'
+import { FolderOpen, ChevronRight } from 'lucide-react'
 
 const phaseLabels: Record<string, string> = {
   discovery: 'Discovery',
@@ -53,6 +54,7 @@ export default async function ProyectosPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-600">Responsable</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha límite</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Presupuesto</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -92,6 +94,11 @@ export default async function ProyectosPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {project.budget ? `$${Number(project.budget).toLocaleString()}` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-300">
+                    <Link href={`/proyectos/${project.id}`}>
+                      <ChevronRight className="w-4 h-4 hover:text-gray-600" />
+                    </Link>
                   </td>
                 </tr>
               )

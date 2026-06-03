@@ -60,13 +60,35 @@ export default function DealStageSelector({
     }
     if (reason) updates.lost_reason = reason
 
-    const { error: updateError } = await supabase.from('deals').update(updates).eq('id', dealId)
+    const { data: updatedDeal, error: updateError } = await supabase
+      .from('deals')
+      .update(updates)
+      .eq('id', dealId)
+      .select('company_id, estimated_value, owner_id')
+      .single()
+
     if (updateError) {
       setError(`Error: ${updateError.message}`)
       setStage(currentStage)
       setLoading(false)
       return
     }
+
+    // Crear proyecto automáticamente al ganar
+    if (newStage === 'cerrado_ganado' && updatedDeal) {
+      const { error: projectError } = await supabase.from('projects').insert({
+        company_id: updatedDeal.company_id,
+        deal_id: dealId,
+        owner_id: updatedDeal.owner_id,
+        name: `Proyecto - ${new Date().toLocaleDateString('es-CL')}`,
+        phase: 'discovery',
+        status: 'activo',
+        budget: updatedDeal.estimated_value,
+        start_date: new Date().toISOString().split('T')[0],
+      })
+      if (projectError) console.error('Error creando proyecto:', projectError.message)
+    }
+
     setLoading(false)
     setShowLostReason(false)
     router.refresh()

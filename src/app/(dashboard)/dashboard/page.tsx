@@ -3,23 +3,27 @@ import { Users, TrendingUp, CheckSquare, AlertCircle } from 'lucide-react'
 
 async function getStats() {
   const supabase = await createClient()
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [dealsOpen, dealsWon, tasksOverdue, leadsNew] = await Promise.all([
+  const [dealsOpen, dealsWonMonth, tasksOverdue, leadsNew, wonValue, projects] = await Promise.all([
     supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'open'),
-    supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'won'),
-    supabase
-      .from('tasks')
-      .select('id', { count: 'exact' })
-      .eq('is_completed', false)
-      .lt('due_date', new Date().toISOString()),
+    supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'won').gte('updated_at', startOfMonth),
+    supabase.from('tasks').select('id', { count: 'exact' }).eq('is_completed', false).lt('due_date', now.toISOString()),
     supabase.from('deals').select('id', { count: 'exact' }).eq('stage', 'nuevo_lead'),
+    supabase.from('deals').select('estimated_value').eq('status', 'won').gte('updated_at', startOfMonth),
+    supabase.from('projects').select('id', { count: 'exact' }).eq('status', 'activo'),
   ])
+
+  const valorGanado = wonValue.data?.reduce((sum, d) => sum + (Number(d.estimated_value) || 0), 0) ?? 0
 
   return {
     dealsOpen: dealsOpen.count ?? 0,
-    dealsWon: dealsWon.count ?? 0,
+    dealsWonMonth: dealsWonMonth.count ?? 0,
     tasksOverdue: tasksOverdue.count ?? 0,
     leadsNew: leadsNew.count ?? 0,
+    valorGanado,
+    proyectosActivos: projects.count ?? 0,
   }
 }
 
@@ -71,8 +75,8 @@ export default async function DashboardPage() {
 
   const cards = [
     { label: 'Deals abiertos', value: stats.dealsOpen, icon: TrendingUp, color: 'text-blue-600' },
-    { label: 'Deals ganados', value: stats.dealsWon, icon: Users, color: 'text-green-600' },
-    { label: 'Nuevos leads', value: stats.leadsNew, icon: Users, color: 'text-purple-600' },
+    { label: 'Ganados este mes', value: stats.dealsWonMonth, icon: Users, color: 'text-green-600' },
+    { label: 'Proyectos activos', value: stats.proyectosActivos, icon: CheckSquare, color: 'text-purple-600' },
     { label: 'Tareas vencidas', value: stats.tasksOverdue, icon: AlertCircle, color: 'text-red-600' },
   ]
 
@@ -94,6 +98,13 @@ export default async function DashboardPage() {
             <p className="text-2xl font-semibold text-gray-900">{value}</p>
           </div>
         ))}
+        <div className="col-span-2 lg:col-span-4 bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Valor ganado este mes</p>
+            <p className="text-3xl font-semibold text-gray-900 mt-1">${stats.valorGanado.toLocaleString()}</p>
+          </div>
+          <p className="text-sm text-gray-400">USD</p>
+        </div>
       </div>
 
       {/* Deals recientes */}
