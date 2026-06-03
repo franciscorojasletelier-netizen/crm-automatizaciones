@@ -86,7 +86,7 @@ export default function NuevoLeadPage() {
 
       router.push('/leads')
     } catch (err: any) {
-      setError('Error al crear el lead. Intenta de nuevo.')
+      setError(`Error: ${err?.message ?? err?.code ?? JSON.stringify(err)}`)
       setLoading(false)
     }
   }

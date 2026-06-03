@@ -85,12 +85,14 @@ export default async function LeadsPage() {
               </tr>
             )}
             {deals?.map((deal: any) => (
-              <tr key={deal.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/leads/${deal.id}`}>
+              <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{deal.companies?.name ?? '—'}</p>
-                  {deal.companies?.industry && (
-                    <p className="text-xs text-gray-400">{deal.companies.industry}</p>
-                  )}
+                  <Link href={`/leads/${deal.id}`} className="block hover:underline">
+                    <p className="font-medium text-gray-900">{deal.companies?.name ?? '—'}</p>
+                    {deal.companies?.industry && (
+                      <p className="text-xs text-gray-400">{deal.companies.industry}</p>
+                    )}
+                  </Link>
                 </td>
                 <td className="px-4 py-3">
                   <p className="text-gray-700">{deal.contacts?.full_name ?? '—'}</p>
@@ -118,7 +120,9 @@ export default async function LeadsPage() {
                   {deal.next_action ?? '—'}
                 </td>
                 <td className="px-4 py-3 text-gray-300">
-                  <ChevronRight className="w-4 h-4" />
+                  <Link href={`/leads/${deal.id}`}>
+                    <ChevronRight className="w-4 h-4 hover:text-gray-600" />
+                  </Link>
                 </td>
               </tr>
             ))}
