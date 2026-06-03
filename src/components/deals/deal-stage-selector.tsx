@@ -32,6 +32,7 @@ export default function DealStageSelector({
   const [loading, setLoading] = useState(false)
   const [lostReason, setLostReason] = useState('')
   const [showLostReason, setShowLostReason] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -49,13 +50,20 @@ export default function DealStageSelector({
 
   async function applyStageChange(newStage: string, reason: string | null) {
     setLoading(true)
+    setError('')
     const updates: Record<string, any> = { stage: newStage }
     if (closedStages.includes(newStage)) {
       updates.status = newStage === 'cerrado_ganado' ? 'won' : 'lost'
     }
     if (reason) updates.lost_reason = reason
 
-    await supabase.from('deals').update(updates).eq('id', dealId)
+    const { error: updateError } = await supabase.from('deals').update(updates).eq('id', dealId)
+    if (updateError) {
+      setError(`Error: ${updateError.message}`)
+      setStage(currentStage)
+      setLoading(false)
+      return
+    }
     setLoading(false)
     setShowLostReason(false)
     router.refresh()
@@ -81,6 +89,8 @@ export default function DealStageSelector({
           </button>
         ))}
       </div>
+
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
       {/* Modal razón de pérdida */}
       {showLostReason && (
