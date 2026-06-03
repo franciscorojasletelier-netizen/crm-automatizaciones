@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronRight } from 'lucide-react'
 
 const stageLabels: Record<string, string> = {
   nuevo_lead: 'Nuevo Lead',
@@ -72,6 +72,7 @@ export default async function LeadsPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-600">Valor est.</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Responsable</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Próxima acción</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -84,7 +85,7 @@ export default async function LeadsPage() {
               </tr>
             )}
             {deals?.map((deal: any) => (
-              <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={deal.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/leads/${deal.id}`}>
                 <td className="px-4 py-3">
                   <p className="font-medium text-gray-900">{deal.companies?.name ?? '—'}</p>
                   {deal.companies?.industry && (
@@ -115,6 +116,9 @@ export default async function LeadsPage() {
                 </td>
                 <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
                   {deal.next_action ?? '—'}
+                </td>
+                <td className="px-4 py-3 text-gray-300">
+                  <ChevronRight className="w-4 h-4" />
                 </td>
               </tr>
             ))}
