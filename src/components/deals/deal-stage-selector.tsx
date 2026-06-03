@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronRight } from 'lucide-react'
@@ -29,6 +29,9 @@ export default function DealStageSelector({
   currentStage: string
 }) {
   const [stage, setStage] = useState(currentStage)
+
+  // Sincronizar con el valor del servidor cuando cambia
+  useEffect(() => { setStage(currentStage) }, [currentStage])
   const [loading, setLoading] = useState(false)
   const [lostReason, setLostReason] = useState('')
   const [showLostReason, setShowLostReason] = useState(false)
