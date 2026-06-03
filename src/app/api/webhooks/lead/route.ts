@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Cliente con service role para bypass de RLS en webhooks externos
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!
-)
-
 export async function POST(request: NextRequest) {
+  // Cliente creado dentro del handler para que las env vars estén disponibles
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY!
+  )
+
   try {
     // Verificar token de autenticación del webhook
     const authHeader = request.headers.get('authorization')
