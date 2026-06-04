@@ -15,8 +15,8 @@ export async function OPTIONS() {
 export async function POST(request: NextRequest) {
   // Cliente creado dentro del handler para que las env vars estén disponibles
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
+    process.env.SUPABASE_SECRET_KEY!.trim()
   )
 
   try {
