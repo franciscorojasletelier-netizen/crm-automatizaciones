@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Search, X } from 'lucide-react'
 
@@ -57,6 +57,13 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
   }, [deals, search, stageFilter, sourceFilter])
 
   const hasFilters = search || stageFilter || sourceFilter
+  const PAGE_SIZE = 25
+  const [page, setPage] = useState(1)
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Reset page when filters change
+  useEffect(() => setPage(1), [search, stageFilter, sourceFilter])
 
   return (
     <div className="space-y-4">
@@ -134,7 +141,7 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
                 </td>
               </tr>
             )}
-            {filtered.map((deal: any) => (
+            {paginated.map((deal: any) => (
               <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
                   <Link href={`/leads/${deal.id}`} className="block hover:underline">
@@ -181,7 +188,7 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
         {filtered.length === 0 && (
           <p className="text-center text-sm text-gray-400 py-8">No hay leads que coincidan</p>
         )}
-        {filtered.map((deal: any) => (
+        {paginated.map((deal: any) => (
           <Link key={deal.id} href={`/leads/${deal.id}`} className="block bg-white rounded-xl border border-gray-200 p-4 hover:border-gray-300 transition-colors">
             <div className="flex items-start justify-between gap-2 mb-2">
               <p className="font-medium text-gray-900">{deal.companies?.name ?? '—'}</p>
@@ -200,5 +207,25 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
         ))}
       </div>
     </div>
+
+    {/* Paginación */}
+    {totalPages > 1 && (
+      <div className="flex items-center justify-between text-sm text-gray-500">
+        <span>Mostrando {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} de {filtered.length}</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >← Anterior</button>
+          <span className="px-3 py-1.5 text-gray-700 font-medium">{page} / {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >Siguiente →</button>
+        </div>
+      </div>
+    )}
   )
 }
