@@ -6,6 +6,7 @@ import DealStageSelector from '@/components/deals/deal-stage-selector'
 import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
 import DeleteDealButton from '@/components/deals/delete-deal-button'
+import DealEditFields from '@/components/deals/deal-edit-fields'
 
 const stageColors: Record<string, string> = {
   nuevo_lead: 'bg-blue-100 text-blue-700',
@@ -103,22 +104,25 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           {/* Datos del deal */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detalles</h2>
-            <div className="space-y-2">
-              {[
-                { label: 'Fuente', value: deal.source },
-                { label: 'Valor est.', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : null },
-                { label: 'Probabilidad', value: deal.probability != null ? `${deal.probability}%` : null },
-                { label: 'Cierre esperado', value: deal.expected_close_date ? new Date(deal.expected_close_date).toLocaleDateString('es-CL') : null },
-                { label: 'Responsable', value: deal.profiles?.full_name },
-                { label: 'Score', value: deal.score?.toString() },
-                { label: 'Próxima acción', value: deal.next_action },
-              ].map(({ label, value }) => value ? (
-                <div key={label}>
-                  <p className="text-xs text-gray-400">{label}</p>
-                  <p className="text-sm text-gray-800">{value}</p>
-                </div>
-              ) : null)}
-            </div>
+            <DealEditFields deal={deal} />
+            {deal.expected_close_date && (
+              <div>
+                <p className="text-xs text-gray-400">Cierre esperado</p>
+                <p className="text-sm text-gray-800">{new Date(deal.expected_close_date).toLocaleDateString('es-CL')}</p>
+              </div>
+            )}
+            {deal.profiles?.full_name && (
+              <div>
+                <p className="text-xs text-gray-400">Responsable</p>
+                <p className="text-sm text-gray-800">{deal.profiles.full_name}</p>
+              </div>
+            )}
+            {deal.score != null && (
+              <div>
+                <p className="text-xs text-gray-400">Score</p>
+                <p className="text-sm text-gray-800">{deal.score}</p>
+              </div>
+            )}
           </div>
 
           {/* Empresa */}
