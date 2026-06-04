@@ -7,6 +7,7 @@ import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
 import DeleteDealButton from '@/components/deals/delete-deal-button'
 import DealEditFields from '@/components/deals/deal-edit-fields'
+import ContactEdit from '@/components/deals/contact-edit'
 
 const stageColors: Record<string, string> = {
   nuevo_lead: 'bg-blue-100 text-blue-700',
@@ -125,21 +126,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
 
-          {/* Empresa */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Empresa</h2>
-            {[
-              { label: 'Nombre', value: deal.companies?.name },
-              { label: 'Industria', value: deal.companies?.industry },
-              { label: 'Web', value: deal.companies?.website },
-              { label: 'País', value: deal.companies?.country },
-            ].map(({ label, value }) => value ? (
-              <div key={label}>
-                <p className="text-xs text-gray-400">{label}</p>
-                <p className="text-sm text-gray-800">{value}</p>
-              </div>
-            ) : null)}
-          </div>
+          <ContactEdit contact={deal.contacts} company={deal.companies} />
 
           {/* Historial de etapas */}
           {history && history.length > 0 && (
