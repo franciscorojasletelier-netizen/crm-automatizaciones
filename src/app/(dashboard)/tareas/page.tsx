@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { CheckCircle } from 'lucide-react'
 import TaskCheck from '@/components/tareas/task-check'
@@ -33,7 +34,7 @@ export default async function TareasPage() {
   const completed = tasks?.filter(t => t.is_completed) ?? []
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Tareas</h1>
         <p className="text-sm text-gray-500">{pending.length} pendientes · {completed.length} completadas</p>

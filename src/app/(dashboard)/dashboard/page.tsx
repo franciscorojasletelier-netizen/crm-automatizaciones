@@ -1,3 +1,4 @@
+﻿export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { Users, TrendingUp, CheckSquare, AlertCircle, DollarSign, Target } from 'lucide-react'
 import Link from 'next/link'
@@ -90,7 +91,7 @@ export default async function DashboardPage() {
     { label: 'Tareas vencidas', value: stats.tasksOverdue, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50', href: '/tareas' },
   ]
 
-  // Embudo — etapas en orden
+  // Embudo â€” etapas en orden
   const funnelStages = ['nuevo_lead', 'contactado', 'calificado', 'reunion_agendada', 'propuesta_enviada', 'negociacion']
   const maxCount = Math.max(...funnelStages.map(s => stats.stageCounts[s] || 0), 1)
 
@@ -125,7 +126,7 @@ export default async function DashboardPage() {
           </p>
           <p className="text-3xl font-semibold text-gray-900 mt-1">${stats.valorGanado.toLocaleString()}</p>
         </div>
-        <Link href="/pipeline" className="text-sm text-gray-400 hover:text-gray-700">Ver pipeline →</Link>
+        <Link href="/pipeline" className="text-sm text-gray-400 hover:text-gray-700">Ver pipeline â†’</Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -162,11 +163,11 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200">
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-sm font-medium text-gray-900">Tareas vencidas</h2>
-            <Link href="/tareas" className="text-xs text-gray-400 hover:text-gray-700">Ver todas →</Link>
+            <Link href="/tareas" className="text-xs text-gray-400 hover:text-gray-700">Ver todas â†’</Link>
           </div>
           <div className="divide-y divide-gray-100">
             {stats.overdueTasks.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-gray-400 text-center">✅ Sin tareas vencidas</p>
+              <p className="px-5 py-6 text-sm text-gray-400 text-center">âœ… Sin tareas vencidas</p>
             ) : stats.overdueTasks.map((task: any) => (
               <div key={task.id} className="px-5 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -188,7 +189,7 @@ export default async function DashboardPage() {
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-sm font-medium text-gray-900">Deals activos recientes</h2>
-          <Link href="/leads" className="text-xs text-gray-400 hover:text-gray-700">Ver todos →</Link>
+          <Link href="/leads" className="text-xs text-gray-400 hover:text-gray-700">Ver todos â†’</Link>
         </div>
         <div className="divide-y divide-gray-100">
           {stats.recentDeals.length === 0 && (
@@ -199,7 +200,7 @@ export default async function DashboardPage() {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{deal.companies?.name ?? 'Sin empresa'}</p>
                 {deal.next_action && (
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">→ {deal.next_action}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate">â†’ {deal.next_action}</p>
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
@@ -217,3 +218,4 @@ export default async function DashboardPage() {
     </div>
   )
 }
+

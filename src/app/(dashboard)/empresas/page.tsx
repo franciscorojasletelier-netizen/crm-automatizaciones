@@ -1,3 +1,4 @@
+﻿export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
@@ -54,7 +55,7 @@ export default async function EmpresasPage() {
             {(!companies || companies.length === 0) && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
-                  No hay empresas aún.{' '}
+                  No hay empresas aÃºn.{' '}
                   <Link href="/leads/nuevo" className="text-gray-900 underline">Crear un lead</Link>
                 </td>
               </tr>
@@ -72,3 +73,4 @@ export default async function EmpresasPage() {
     </div>
   )
 }
+

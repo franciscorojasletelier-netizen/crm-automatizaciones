@@ -1,10 +1,11 @@
+﻿export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { FolderOpen, ChevronRight } from 'lucide-react'
 
 const phaseLabels: Record<string, string> = {
   discovery: 'Discovery',
-  diseno: 'Diseño de Flujos',
+  diseno: 'DiseÃ±o de Flujos',
   desarrollo: 'Desarrollo',
   pruebas: 'Pruebas',
   entrega: 'Entrega',
@@ -52,7 +53,7 @@ export default async function ProyectosPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-600">Cliente</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Fase</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Responsable</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha límite</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha lÃ­mite</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Presupuesto</th>
               <th className="px-4 py-3" />
             </tr>
@@ -62,7 +63,7 @@ export default async function ProyectosPage() {
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
                   <FolderOpen className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-                  Los proyectos se crean automáticamente al ganar un deal
+                  Los proyectos se crean automÃ¡ticamente al ganar un deal
                 </td>
               </tr>
             )}
@@ -74,7 +75,7 @@ export default async function ProyectosPage() {
                     <p className="font-medium text-gray-900">{project.name}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {project.companies?.name ?? '—'}
+                    {project.companies?.name ?? 'â€”'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${phaseColors[project.phase] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -82,18 +83,18 @@ export default async function ProyectosPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {project.profiles?.full_name ?? '—'}
+                    {project.profiles?.full_name ?? 'â€”'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-sm ${overdue ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
                       {project.due_date
                         ? new Date(project.due_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
-                        : '—'}
-                      {overdue && ' ⚠'}
+                        : 'â€”'}
+                      {overdue && ' âš '}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {project.budget ? `$${Number(project.budget).toLocaleString()}` : '—'}
+                    {project.budget ? `$${Number(project.budget).toLocaleString()}` : 'â€”'}
                   </td>
                   <td className="px-4 py-3 text-gray-300">
                     <Link href={`/proyectos/${project.id}`}>
@@ -109,3 +110,4 @@ export default async function ProyectosPage() {
     </div>
   )
 }
+

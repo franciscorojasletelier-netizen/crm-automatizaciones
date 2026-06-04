@@ -1,3 +1,4 @@
+﻿export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
@@ -39,3 +40,4 @@ export default async function LeadsPage() {
     </div>
   )
 }
+
