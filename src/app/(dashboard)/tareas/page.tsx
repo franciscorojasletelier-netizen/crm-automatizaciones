@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { CheckCircle, Circle, AlertCircle } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
+import TaskCheck from '@/components/tareas/task-check'
 
 function isOverdue(due: string | null) {
   if (!due) return false
@@ -51,12 +52,7 @@ export default async function TareasPage() {
             const overdue = isOverdue(task.due_date)
             return (
               <div key={task.id} className="px-5 py-3.5 flex items-start gap-3">
-                <div className="mt-0.5">
-                  {overdue
-                    ? <AlertCircle className="w-4 h-4 text-red-500" />
-                    : <Circle className="w-4 h-4 text-gray-300" />
-                  }
-                </div>
+                <TaskCheck taskId={task.id} isCompleted={false} isOverdue={overdue} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">{task.title}</p>
                   {task.description && (
