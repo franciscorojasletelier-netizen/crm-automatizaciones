@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Plus, Building2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import CompanyRow from '@/components/empresas/company-row'
 
 export default async function EmpresasPage() {
   const supabase = await createClient()
@@ -14,8 +15,17 @@ export default async function EmpresasPage() {
     `)
     .order('name')
 
+  // Obtener el deal id asociado a cada empresa
+  const { data: deals } = await supabase
+    .from('deals')
+    .select('id, company_id')
+    .eq('status', 'open')
+
+  const dealByCompany: Record<string, string> = {}
+  deals?.forEach(d => { dealByCompany[d.company_id] = d.id })
+
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 md:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Empresas</h1>
@@ -24,7 +34,8 @@ export default async function EmpresasPage() {
         <Link href="/leads/nuevo"
           className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
           <Plus className="w-4 h-4" />
-          Nueva empresa
+          <span className="hidden sm:inline">Nueva empresa</span>
+          <span className="sm:hidden">Nueva</span>
         </Link>
       </div>
 
@@ -48,36 +59,13 @@ export default async function EmpresasPage() {
                 </td>
               </tr>
             )}
-            {companies?.map((company: any) => {
-              const activeDeals = company.deals?.filter((d: any) => d.status === 'open').length ?? 0
-              return (
-                <tr key={company.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-gray-300 shrink-0" />
-                      <div>
-                        <p className="font-medium text-gray-900">{company.name}</p>
-                        {company.website && (
-                          <p className="text-xs text-gray-400">{company.website}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{company.industry ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{company.contacts?.length ?? 0}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-sm font-medium ${activeDeals > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {activeDeals}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${company.is_existing_client ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {company.is_existing_client ? 'Cliente' : 'Prospecto'}
-                    </span>
-                  </td>
-                </tr>
-              )
-            })}
+            {companies?.map((company: any) => (
+              <CompanyRow
+                key={company.id}
+                company={company}
+                dealId={dealByCompany[company.id]}
+              />
+            ))}
           </tbody>
         </table>
       </div>
