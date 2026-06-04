@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+// Preflight CORS
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+}
+
 export async function POST(request: NextRequest) {
   // Cliente creado dentro del handler para que las env vars estén disponibles
   const supabase = createClient(
@@ -13,7 +24,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     const webhookToken = process.env.WEBHOOK_SECRET_TOKEN
     if (webhookToken && authHeader !== `Bearer ${webhookToken}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS })
     }
 
     const body = await request.json()
@@ -97,11 +108,11 @@ export async function POST(request: NextRequest) {
       lead_id: deal.id,
       company_id: company.id,
       contact_id: contact.id,
-    }, { status: 201 })
+    }, { status: 201, headers: CORS_HEADERS })
 
   } catch (error: any) {
     console.error('Webhook error:', error)
-    return NextResponse.json({ error: error.message ?? 'Error interno' }, { status: 500 })
+    return NextResponse.json({ error: error.message ?? 'Error interno' }, { status: 500, headers: CORS_HEADERS })
   }
 }
 
