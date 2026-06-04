@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       .insert({ name: company_name ?? contact_name, industry, website })
       .select('id').single()
 
-    if (companyError) { console.error('Error companies:', JSON.stringify(companyError)); throw companyError }
+    if (companyError) { return NextResponse.json({ debug: 'companies error', error: companyError, code: companyError.code, msg: companyError.message, details: companyError.details }, { status: 500, headers: CORS_HEADERS }) }
 
     // Crear contacto
     const { data: contact, error: contactError } = await supabase
