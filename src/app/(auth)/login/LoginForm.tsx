@@ -20,7 +20,7 @@ export default function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('Email o contraseña incorrectos')
+      setError(`Error: ${error.message} (email: ${email ? 'ok' : 'vacío'})`)
       setLoading(false)
       return
     }
