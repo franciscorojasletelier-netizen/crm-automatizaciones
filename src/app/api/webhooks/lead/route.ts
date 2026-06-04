@@ -19,22 +19,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Campos esperados (todos opcionales excepto company_name o contact_name)
-    const {
-      company_name,
-      industry,
-      website,
-      contact_name,
-      contact_email,
-      contact_phone,
-      contact_job_title,
-      source = 'Formulario web',
-      estimated_value,
-      next_action,
-      message,
-    } = body
+    // Acepta tanto el formato CRM (contact_name, company_name) como el del formulario web (name, company, email, phone)
+    const company_name    = body.company_name  ?? body.company ?? null
+    const contact_name    = body.contact_name  ?? body.name    ?? null
+    const contact_email   = body.contact_email ?? body.email   ?? null
+    const contact_phone   = body.contact_phone ?? body.phone   ?? null
+    const contact_job_title = body.contact_job_title ?? null
+    const industry        = body.industry  ?? null
+    const website         = body.website   ?? null
+    const source          = body.source    ?? 'Formulario web'
+    const estimated_value = body.estimated_value ?? null
+    const next_action     = body.next_action ?? null
+    const message         = body.message   ?? body.details ?? null
 
     if (!company_name && !contact_name) {
-      return NextResponse.json({ error: 'Se requiere company_name o contact_name' }, { status: 400 })
+      return NextResponse.json({ error: 'Se requiere company_name, contact_name, name o company' }, { status: 400 })
     }
 
     // Crear empresa
