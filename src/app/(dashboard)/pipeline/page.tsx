@@ -84,7 +84,7 @@ export default async function PipelinePage() {
                   )}
                   {deal.next_action && (
                     <p className="text-xs text-gray-400 mt-1.5 leading-tight line-clamp-2">
-                      â†’ {deal.next_action}
+                      → {deal.next_action}
                     </p>
                   )}
                   <div className="flex items-center justify-between mt-3">
