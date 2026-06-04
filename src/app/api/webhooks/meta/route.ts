@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'meta_verify_autopilot_2026'
-
 // GET — verificación del webhook por Meta
 export async function GET(request: NextRequest) {
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'meta_verify_autopilot_2026'
   const { searchParams } = new URL(request.url)
   const mode      = searchParams.get('hub.mode')
   const token     = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
+
+  console.log('Meta verify - token recibido:', token, 'esperado:', VERIFY_TOKEN)
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
     console.log('Meta webhook verificado correctamente')
