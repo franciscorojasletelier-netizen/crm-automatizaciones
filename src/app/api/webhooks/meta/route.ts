@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
         if (!leadgenId) continue
 
         // Obtener datos del lead desde Meta Graph API
-        const appSecret = process.env.META_APP_SECRET
-        const accessToken = process.env.META_PAGE_ACCESS_TOKEN
+        const appSecret = process.env.META_APP_SECRET?.trim()
+        const accessToken = process.env.META_PAGE_ACCESS_TOKEN?.trim()
 
         if (!accessToken) {
           console.error('META_PAGE_ACCESS_TOKEN no configurado')
