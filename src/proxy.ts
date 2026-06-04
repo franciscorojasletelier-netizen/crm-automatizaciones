@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
-  const isPublicRoute = request.nextUrl.pathname.startsWith('/api/webhooks')
+  const isPublicRoute = request.nextUrl.pathname.startsWith('/api/webhooks') || request.nextUrl.pathname.startsWith('/api/cron')
 
   // Sin sesión y no está en login → redirigir a login
   if (!user && !isAuthRoute && !isPublicRoute) {
