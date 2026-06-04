@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verificar token de autenticación del webhook
     const authHeader = request.headers.get('authorization')
-    const webhookToken = process.env.WEBHOOK_SECRET_TOKEN
+    const webhookToken = process.env.WEBHOOK_SECRET_TOKEN?.trim()
     if (webhookToken && authHeader !== `Bearer ${webhookToken}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS })
     }
