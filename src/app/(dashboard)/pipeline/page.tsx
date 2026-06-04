@@ -8,10 +8,10 @@ const stages = [
   { key: 'nuevo_lead', label: 'Nuevo Lead', color: 'bg-blue-500' },
   { key: 'contactado', label: 'Contactado', color: 'bg-yellow-500' },
   { key: 'calificado', label: 'Calificado', color: 'bg-purple-500' },
-  { key: 'reunion_agendada', label: 'ReuniÃ³n Agendada', color: 'bg-indigo-500' },
-  { key: 'reunion_realizada', label: 'ReuniÃ³n Realizada', color: 'bg-cyan-500' },
+  { key: 'reunion_agendada', label: 'Reunión Agendada', color: 'bg-indigo-500' },
+  { key: 'reunion_realizada', label: 'Reunión Realizada', color: 'bg-cyan-500' },
   { key: 'propuesta_enviada', label: 'Propuesta Enviada', color: 'bg-orange-500' },
-  { key: 'negociacion', label: 'NegociaciÃ³n', color: 'bg-pink-500' },
+  { key: 'negociacion', label: 'Negociación', color: 'bg-pink-500' },
 ]
 
 export default async function PipelinePage() {
