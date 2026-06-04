@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -101,6 +102,61 @@ export async function POST(request: NextRequest) {
         direction: 'inbound',
         content: `Mensaje del formulario web:\n${message}`,
       })
+    }
+
+    // Enviar emails automáticos (sin bloquear la respuesta)
+    const resendKey = process.env.RESEND_API_KEY?.trim()
+    if (resendKey && contact_email) {
+      const resend = new Resend(resendKey)
+      // Email al cliente
+      resend.emails.send({
+        from: 'Autopilot SpA <onboarding@resend.dev>',
+        to: contact_email,
+        subject: '¡Recibimos tu mensaje! — Autopilot SpA',
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
+            <h2 style="color:#111">¡Hola${contact_name ? ` ${contact_name.split(' ')[0]}` : ''}! 👋</h2>
+            <p style="color:#444;line-height:1.6">
+              Gracias por contactarnos. Recibimos tu mensaje y uno de nuestros especialistas
+              te responderá en <strong>menos de 2 horas hábiles</strong>.
+            </p>
+            ${message ? `<div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:24px 0;color:#555;font-style:italic;">"${message}"</div>` : ''}
+            <p style="color:#444;line-height:1.6">
+              Mientras tanto, puedes revisar nuestros servicios en
+              <a href="https://autopilotspa.cl" style="color:#000;font-weight:bold;">autopilotspa.cl</a>
+            </p>
+            <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+            <p style="color:#999;font-size:12px;">Autopilot SpA — Automatización e Inteligencia Artificial</p>
+          </div>
+        `,
+      }).catch(e => console.warn('Error email cliente:', e))
+    }
+
+    if (resendKey) {
+      const resend = new Resend(resendKey)
+      // Notificación interna a Autopilot SpA
+      resend.emails.send({
+        from: 'CRM Autopilot <onboarding@resend.dev>',
+        to: 'autopilotspa@gmail.com',
+        subject: `🔔 Nuevo lead: ${contact_name ?? company_name} (${source})`,
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
+            <h2 style="color:#111">Nuevo lead recibido</h2>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${contact_name ?? '—'}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${contact_email ?? '—'}</td></tr>
+              <tr><td style="padding:8px;color:#666;">Teléfono</td><td style="padding:8px;">${contact_phone ?? '—'}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${company_name ?? '—'}</td></tr>
+              <tr><td style="padding:8px;color:#666;">Fuente</td><td style="padding:8px;">${source}</td></tr>
+              ${message ? `<tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Mensaje</td><td style="padding:8px;">${message}</td></tr>` : ''}
+            </table>
+            <a href="https://crm-automatizaciones.vercel.app/leads"
+               style="display:inline-block;background:#111;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+              Ver en el CRM →
+            </a>
+          </div>
+        `,
+      }).catch(e => console.warn('Error email interno:', e))
     }
 
     return NextResponse.json({
