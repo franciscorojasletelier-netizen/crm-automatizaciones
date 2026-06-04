@@ -55,7 +55,7 @@ export default async function EmpresasPage() {
             {(!companies || companies.length === 0) && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
-                  No hay empresas aÃºn.{' '}
+                  No hay empresas aún.{' '}
                   <Link href="/leads/nuevo" className="text-gray-900 underline">Crear un lead</Link>
                 </td>
               </tr>

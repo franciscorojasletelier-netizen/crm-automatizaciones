@@ -1,6 +1,6 @@
-﻿export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
-import { User, Bell, Shield, Database } from 'lucide-react'
+import { User, Shield, Database } from 'lucide-react'
 
 export default async function ConfiguracionPage() {
   const supabase = await createClient()
@@ -12,9 +12,9 @@ export default async function ConfiguracionPage() {
     .single()
 
   return (
-    <div className="p-6 max-w-2xl space-y-6">
+    <div className="p-4 md:p-6 max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">ConfiguraciÃ³n</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Configuración</h1>
         <p className="text-sm text-gray-500">Ajustes de tu cuenta y del sistema</p>
       </div>
 
@@ -28,16 +28,16 @@ export default async function ConfiguracionPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Nombre</p>
-              <p className="text-sm font-medium text-gray-900">{profile?.full_name ?? 'â€”'}</p>
+              <p className="text-sm font-medium text-gray-900">{profile?.full_name ?? '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Email</p>
-              <p className="text-sm text-gray-700">{profile?.email ?? user?.email ?? 'â€”'}</p>
+              <p className="text-sm text-gray-700">{profile?.email ?? user?.email ?? '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Rol</p>
               <span className="text-xs bg-gray-900 text-white px-2 py-0.5 rounded-full capitalize">
-                {profile?.role ?? 'â€”'}
+                {profile?.role ?? '—'}
               </span>
             </div>
             <div>
@@ -57,7 +57,7 @@ export default async function ConfiguracionPage() {
           <h2 className="text-sm font-medium text-gray-900">Seguridad</h2>
         </div>
         <div className="px-5 py-4">
-          <p className="text-sm text-gray-600">Para cambiar tu contraseÃ±a, usa el panel de Supabase Authentication o solicÃ­talo al administrador.</p>
+          <p className="text-sm text-gray-600">Para cambiar tu contraseña, usa el panel de Supabase Authentication o solicítalo al administrador.</p>
         </div>
       </div>
 
@@ -73,11 +73,11 @@ export default async function ConfiguracionPage() {
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Conectada</span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-gray-100">
-            <p className="text-sm text-gray-600">AutenticaciÃ³n</p>
+            <p className="text-sm text-gray-600">Autenticación</p>
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Activa</span>
           </div>
           <div className="flex items-center justify-between py-2">
-            <p className="text-sm text-gray-600">VersiÃ³n</p>
+            <p className="text-sm text-gray-600">Versión</p>
             <span className="text-xs text-gray-400">MVP v1.0</span>
           </div>
         </div>
@@ -85,4 +85,3 @@ export default async function ConfiguracionPage() {
     </div>
   )
 }
-
