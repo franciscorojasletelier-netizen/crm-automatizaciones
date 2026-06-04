@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import DealStageSelector from '@/components/deals/deal-stage-selector'
 import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
+import DeleteDealButton from '@/components/deals/delete-deal-button'
 
 const stageColors: Record<string, string> = {
   nuevo_lead: 'bg-blue-100 text-blue-700',
@@ -82,9 +83,16 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <h1 className="text-xl font-semibold text-gray-900">{deal.companies?.name ?? 'Sin empresa'}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{deal.contacts?.full_name ?? ''} · {deal.contacts?.email ?? ''}</p>
           </div>
-          <span className={`text-xs px-3 py-1 rounded-full font-medium shrink-0 ${stageColors[deal.stage]}`}>
-            {stageLabels[deal.stage]}
-          </span>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className={`text-xs px-3 py-1 rounded-full font-medium ${stageColors[deal.stage]}`}>
+              {stageLabels[deal.stage]}
+            </span>
+            <DeleteDealButton
+              dealId={deal.id}
+              companyId={deal.company_id}
+              contactId={deal.primary_contact_id}
+            />
+          </div>
         </div>
       </div>
 
