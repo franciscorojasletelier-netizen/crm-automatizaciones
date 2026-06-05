@@ -3,20 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle, Circle, Plus, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Circle, Plus, AlertTriangle, X, Calendar } from 'lucide-react'
 
 function isOverdue(due: string | null) {
   if (!due) return false
   return new Date(due) < new Date()
 }
 
-export default function DealTasks({
-  dealId,
-  tasks,
-}: {
-  dealId: string
-  tasks: any[]
-}) {
+export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: any[] }) {
   const [list, setList] = useState(tasks)
   const [showing, setShowing] = useState(false)
   const [title, setTitle] = useState('')
@@ -28,33 +22,18 @@ export default function DealTasks({
   async function handleAdd() {
     if (!title.trim()) return
     setLoading(true)
-
     const { data } = await supabase
       .from('tasks')
-      .insert({
-        deal_id: dealId,
-        title,
-        due_date: dueDate || null,
-      })
+      .insert({ deal_id: dealId, title, due_date: dueDate || null })
       .select('*, profiles:assigned_to(full_name)')
       .single()
-
-    if (data) {
-      setList([...list, data])
-      setTitle('')
-      setDueDate('')
-      setShowing(false)
-    }
+    if (data) { setList([...list, data]); setTitle(''); setDueDate(''); setShowing(false) }
     setLoading(false)
     router.refresh()
   }
 
   async function handleToggle(taskId: string, current: boolean) {
-    await supabase
-      .from('tasks')
-      .update({ is_completed: !current, completed_at: !current ? new Date().toISOString() : null })
-      .eq('id', taskId)
-
+    await supabase.from('tasks').update({ is_completed: !current, completed_at: !current ? new Date().toISOString() : null }).eq('id', taskId)
     setList(list.map(t => t.id === taskId ? { ...t, is_completed: !current } : t))
     router.refresh()
   }
@@ -63,80 +42,72 @@ export default function DealTasks({
   const done = list.filter(t => t.is_completed)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
-      <div className="px-4 py-3.5 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-gray-900">
-          Tareas
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-slate-900">Tareas</h2>
           {pending.length > 0 && (
-            <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
               {pending.length} pendiente{pending.length > 1 ? 's' : ''}
             </span>
           )}
-        </h2>
-        <button
-          onClick={() => setShowing(!showing)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" /> Nueva tarea
+        </div>
+        <button onClick={() => setShowing(!showing)}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
+            showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+          }`}>
+          {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          {showing ? 'Cancelar' : 'Nueva tarea'}
         </button>
       </div>
 
       {showing && (
-        <div className="px-4 py-3 border-b border-gray-100 space-y-3 bg-gray-50">
-          <input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="Descripción de la tarea"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+        <div className="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
+          <input value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="Descripción de la tarea..."
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400"
+            onKeyDown={e => { if (e.key === 'Enter' && title.trim()) handleAdd() }}
           />
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 mb-1">Fecha límite (opcional)</label>
-              <input
-                type="datetime-local"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              />
-            </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" /> Fecha límite (opcional)
+            </label>
+            <input type="datetime-local" value={dueDate} onChange={e => setDueDate(e.target.value)}
+              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleAdd}
-              disabled={loading || !title.trim()}
-              className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : 'Crear tarea'}
-            </button>
-            <button
-              onClick={() => setShowing(false)}
-              className="px-4 py-1.5 rounded-lg text-sm text-gray-500 hover:text-gray-900"
-            >
-              Cancelar
-            </button>
-          </div>
+          <button onClick={handleAdd} disabled={loading || !title.trim()}
+            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 transition-all hover:shadow-md"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <Plus className="w-3.5 h-3.5" />
+            {loading ? 'Guardando...' : 'Crear tarea'}
+          </button>
         </div>
       )}
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-slate-50">
         {list.length === 0 && !showing && (
-          <p className="px-4 py-6 text-sm text-gray-400 text-center">Sin tareas aún</p>
+          <div className="px-5 py-10 text-center">
+            <CheckCircle2 className="w-7 h-7 text-slate-200 mx-auto mb-2" />
+            <p className="text-sm text-slate-400 font-medium">Sin tareas aún</p>
+          </div>
         )}
+
         {pending.map((task: any) => {
           const overdue = isOverdue(task.due_date)
           return (
-            <div key={task.id} className="px-4 py-3 flex items-start gap-3">
-              <button onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0">
+            <div key={task.id} className={`px-5 py-3.5 flex items-start gap-3.5 transition-colors ${overdue ? 'hover:bg-red-50/30' : 'hover:bg-slate-50/50'}`}>
+              <button onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0 transition-transform hover:scale-110">
                 {overdue
-                  ? <AlertCircle className="w-4 h-4 text-red-500" />
-                  : <Circle className="w-4 h-4 text-gray-300 hover:text-gray-500" />
+                  ? <AlertTriangle className="w-4.5 h-4.5 text-red-500" />
+                  : <Circle className="w-4.5 h-4.5 text-slate-300 hover:text-indigo-500 transition-colors" />
                 }
               </button>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-800">{task.title}</p>
+                <p className="text-sm font-medium text-slate-800">{task.title}</p>
                 {task.due_date && (
-                  <p className={`text-xs mt-0.5 ${overdue ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
-                    {overdue ? '⚠ Vencida · ' : ''}
+                  <p className={`text-xs mt-0.5 font-medium flex items-center gap-1 ${overdue ? 'text-red-500' : 'text-slate-400'}`}>
+                    <Calendar className="w-3 h-3" />
+                    {overdue ? 'Vencida · ' : ''}
                     {new Date(task.due_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -144,14 +115,19 @@ export default function DealTasks({
             </div>
           )
         })}
-        {done.map((task: any) => (
-          <div key={task.id} className="px-4 py-3 flex items-start gap-3 opacity-40">
-            <button onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-            </button>
-            <p className="text-sm text-gray-500 line-through">{task.title}</p>
+
+        {done.length > 0 && (
+          <div className="divide-y divide-slate-50 opacity-50">
+            {done.map((task: any) => (
+              <div key={task.id} className="px-5 py-3 flex items-center gap-3.5">
+                <button onClick={() => handleToggle(task.id, task.is_completed)} className="shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                </button>
+                <p className="text-sm text-slate-500 line-through">{task.title}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </div>
   )
