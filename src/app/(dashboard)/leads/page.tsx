@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Plus, Eye, AlertTriangle } from 'lucide-react'
 import LeadsTable from '@/components/leads/leads-table'
 import { getVisibleDealIds } from '@/lib/visibility'
-import Link from 'next/link'
 
 export default async function LeadsPage() {
   const { role, perms, profile, supabase, user } = await requirePermission('leads')
@@ -49,11 +48,24 @@ export default async function LeadsPage() {
   const { data: deals } = await query
 
   // Deals ganados con proyectos pendientes de especificaciones (requieren atención de comercial)
-  const { data: pendingSpecDeals } = await supabase
+  const { data: pendingSpecRaw } = await supabase
     .from('projects')
-    .select('id, name, deal_id, deals(id, companies(name))')
-    .eq('status', 'pendiente_especificaciones')
+    .select('id, name, deal_id')
+    .eq('status', 'pendiente_especificaciones' as any)
     .not('deal_id', 'is', null)
+
+  // Obtener nombre de empresa para cada proyecto pendiente
+  const pendingSpecDeals = await Promise.all(
+    (pendingSpecRaw ?? []).map(async (proj: any) => {
+      if (!proj.deal_id) return null
+      const { data: deal } = await supabase
+        .from('deals')
+        .select('id, companies(name)')
+        .eq('id', proj.deal_id)
+        .single()
+      return { ...proj, deal }
+    })
+  ).then(arr => arr.filter(Boolean))
 
   const total = deals?.length ?? 0
   const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
@@ -108,7 +120,7 @@ export default async function LeadsPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-amber-900 group-hover:text-amber-800">
-                      {proj.deals?.companies?.name ?? 'Empresa sin nombre'}
+                      {(proj as any).deal?.companies?.name ?? 'Empresa sin nombre'}
                     </p>
                     <p className="text-xs text-amber-700">
                       Proyecto: {proj.name} — Producción necesita más información
