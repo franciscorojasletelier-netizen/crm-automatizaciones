@@ -25,10 +25,14 @@ export default function DealSpecBanner({
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [resolved, setResolved] = useState(false)
+  const [response, setResponse] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [responseError, setResponseError] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
   async function handleResolve() {
+    if (response.trim().length < 10) { setResponseError(true); return }
     setLoading(true)
 
     await supabase.from('projects').update({
@@ -38,6 +42,13 @@ export default function DealSpecBanner({
       spec_requested_at: null,
       spec_requested_by: null,
     }).eq('id', projectId)
+
+    // Agregar una nota interna al proyecto con la respuesta
+    await supabase.from('project_notes').insert({
+      project_id: projectId,
+      user_id:    currentUserId,
+      content:    `✅ Especificaciones completadas por comercial:\n${response.trim()}`,
+    })
 
     // Notificar a producción y gerentes
     const { data: targets } = await supabase
@@ -51,7 +62,7 @@ export default function DealSpecBanner({
           user_id:     t.id,
           type:        'stage_changed',
           title:       '✅ Especificaciones listas — Proyecto reactivado',
-          body:        `El área comercial completó las especificaciones pendientes de "${projectName}". El proyecto está listo para continuar.`,
+          body:        `El área comercial completó las especificaciones de "${projectName}". Respuesta: ${response.trim().slice(0, 100)}`,
           entity_type: 'project',
           entity_id:   projectId,
         }))
@@ -118,18 +129,45 @@ export default function DealSpecBanner({
 
       {/* Acción */}
       {canResolve && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <button onClick={handleResolve} disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md disabled:opacity-50 transition-all">
-            {loading
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
-              : <><CheckCircle2 className="w-4 h-4" /> Especificaciones listas — Devolver a Producción</>
-            }
-          </button>
-          <Link href={`/proyectos/${projectId}`}
-            className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors">
-            Ver detalles del proyecto <ArrowRight className="w-4 h-4" />
-          </Link>
+        <div className="space-y-3">
+          {!showForm ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              <button onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md transition-all">
+                <CheckCircle2 className="w-4 h-4" /> Especificaciones listas — Devolver a Producción
+              </button>
+              <Link href={`/proyectos/${projectId}`}
+                className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors">
+                Ver detalles del proyecto <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          ) : (
+            <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                ¿Qué resolviste o agregaste? <span className="font-normal text-slate-400 normal-case">(mín. 10 caracteres)</span>
+              </p>
+              <textarea
+                value={response}
+                onChange={e => { setResponse(e.target.value); setResponseError(false) }}
+                placeholder="Describe qué información completaste o aclaraste para producción..."
+                rows={3}
+                className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 resize-none text-slate-800 placeholder:text-slate-400 ${
+                  responseError ? 'border-red-300 bg-red-50/30 focus:ring-red-200' : 'border-slate-200 bg-slate-50 focus:ring-emerald-200 focus:border-emerald-300'
+                }`}
+              />
+              {responseError && <p className="text-xs text-red-500">Mínimo 10 caracteres requeridos</p>}
+              <div className="flex gap-2">
+                <button onClick={handleResolve} disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md disabled:opacity-50 transition-all">
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar y devolver</>}
+                </button>
+                <button onClick={() => { setShowForm(false); setResponse(''); setResponseError(false) }}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

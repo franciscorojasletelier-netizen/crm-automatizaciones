@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { createClient, requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Plus, Eye } from 'lucide-react'
+import { Plus, Eye, AlertTriangle } from 'lucide-react'
 import LeadsTable from '@/components/leads/leads-table'
 import { getVisibleDealIds } from '@/lib/visibility'
+import Link from 'next/link'
 
 export default async function LeadsPage() {
   const { role, perms, profile, supabase, user } = await requirePermission('leads')
@@ -47,6 +48,13 @@ export default async function LeadsPage() {
 
   const { data: deals } = await query
 
+  // Deals ganados con proyectos pendientes de especificaciones (requieren atención de comercial)
+  const { data: pendingSpecDeals } = await supabase
+    .from('projects')
+    .select('id, name, deal_id, deals(id, companies(name))')
+    .eq('status', 'pendiente_especificaciones')
+    .not('deal_id', 'is', null)
+
   const total = deals?.length ?? 0
   const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
   const isFiltered = visibleIds !== null // true = ve solo los suyos
@@ -77,6 +85,44 @@ export default async function LeadsPage() {
           </Link>
         )}
       </div>
+
+      {/* Deals ganados con especificaciones pendientes — requieren atención */}
+      {pendingSpecDeals && pendingSpecDeals.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <h2 className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+              Requieren especificaciones de tu parte
+            </h2>
+            <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">
+              {pendingSpecDeals.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {pendingSpecDeals.map((proj: any) => (
+              <Link key={proj.id} href={`/leads/${proj.deal_id}`}
+                className="flex items-center justify-between gap-4 bg-amber-50 border-2 border-amber-300 rounded-2xl px-5 py-3.5 hover:border-amber-400 hover:shadow-sm transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-200 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-4 h-4 text-amber-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-amber-900 group-hover:text-amber-800">
+                      {proj.deals?.companies?.name ?? 'Empresa sin nombre'}
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Proyecto: {proj.name} — Producción necesita más información
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 text-xs font-bold text-amber-700 bg-amber-200 px-3 py-1 rounded-xl border border-amber-300 group-hover:bg-amber-300 transition-colors">
+                  Ver deal →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <LeadsTable deals={deals ?? []} />
     </div>
