@@ -1,17 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-// Este endpoint es llamado por Vercel Cron todos los días a las 8:00 AM (Chile = UTC-3 → 11:00 UTC)
-// Configura en vercel.json: { "crons": [{ "path": "/api/cron/daily-tasks", "schedule": "0 11 * * *" }] }
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-// Cliente con service_role para saltarse RLS y leer todo
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Cron: 8:00 AM Chile (UTC-3) = 11:00 UTC
+// vercel.json: "schedule": "0 11 * * *"
 
 const priorityLabel: Record<string, string> = {
   alta:  '🔴 Alta',
@@ -114,6 +106,11 @@ function emailTemplate(userName: string, tasks: any[], overdue: any[]): string {
 }
 
 export async function GET(request: Request) {
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  )
   // Verificar secret para evitar llamadas no autorizadas
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
