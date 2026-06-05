@@ -9,6 +9,7 @@ import DeleteDealButton from '@/components/deals/delete-deal-button'
 import DealEditFields from '@/components/deals/deal-edit-fields'
 import ContactEdit from '@/components/deals/contact-edit'
 import DealMembers from '@/components/deals/deal-members'
+import DealChat from '@/components/chat/deal-chat'
 import { canSeeDeal } from '@/lib/visibility'
 
 const stageColors: Record<string, string> = {
@@ -56,15 +57,19 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role)
   const canDelete = ['super_admin'].includes(role)
 
-  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }] = await Promise.all([
+  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
     supabase.from('deal_members').select('id, user_id, profiles:user_id(full_name, email, role)').eq('deal_id', id),
-    // Solo para gerente: cargar el equipo completo para asignar
     canManage
       ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true).in('role', ['comercial', 'produccion', 'soporte'])
       : Promise.resolve({ data: [] }),
+    supabase.from('team_messages')
+      .select('id, content, user_id, created_at, profiles:user_id(full_name, email)')
+      .eq('deal_id', id)
+      .order('created_at', { ascending: true })
+      .limit(100),
   ])
 
   const score = deal.score ?? 0
@@ -261,6 +266,12 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           )}
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />
             <DealTasks dealId={deal.id} tasks={tasks ?? []} />
+            <DealChat
+              dealId={deal.id}
+              currentUserId={userId}
+              currentUserName={''}
+              initialMessages={(chatMessages ?? []) as any}
+            />
           </div>
         </div>
       </div>
