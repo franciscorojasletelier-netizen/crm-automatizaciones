@@ -173,8 +173,21 @@ export const PERMISSIONS: Record<Role, RolePermissions> = {
 
 // ── Helpers ────────────────────────────────────
 
+// Mapeo de roles viejos → nuevos (compatibilidad hacia atrás)
+const LEGACY_ROLE_MAP: Record<string, Role> = {
+  admin:       'super_admin',
+  operaciones: 'produccion',
+  finanzas:    'soporte',
+}
+
+function normalizeRole(role: string): Role {
+  if (role in PERMISSIONS) return role as Role
+  if (role in LEGACY_ROLE_MAP) return LEGACY_ROLE_MAP[role]
+  return 'soporte'
+}
+
 export function getPermissions(role: string): RolePermissions {
-  return PERMISSIONS[role as Role] ?? PERMISSIONS.soporte
+  return PERMISSIONS[normalizeRole(role)]
 }
 
 export function hasPermission<K extends keyof RolePermissions>(
@@ -192,7 +205,7 @@ export function canEdit(role: string, section: 'empresas' | 'tareas' | 'proyecto
 }
 
 export function getRoleMeta(role: string) {
-  return ROLE_META[role as Role] ?? ROLE_META.soporte
+  return ROLE_META[normalizeRole(role)]
 }
 
 // Rutas protegidas y los roles que pueden acceder
