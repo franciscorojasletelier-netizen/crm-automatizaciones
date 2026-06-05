@@ -1,7 +1,7 @@
 import { createClient, getCurrentProfile } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, Calendar, TrendingUp, User } from 'lucide-react'
+import { ArrowLeft, Building2, Calendar, TrendingUp, User, FileText, Eye } from 'lucide-react'
 import DealStageSelector from '@/components/deals/deal-stage-selector'
 import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
@@ -136,6 +136,31 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               </div>
             ))}
           </div>
+
+          {/* Propuesta adjunta — visible si existe */}
+          {deal.proposal_filename && (
+            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-orange-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Propuesta adjunta</p>
+                <p className="text-sm font-semibold text-slate-800 truncate">{deal.proposal_filename}</p>
+                {deal.proposal_uploaded_at && (
+                  <p className="text-[10px] text-slate-400">
+                    {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
+              {deal.proposal_url && (
+                <a href={deal.proposal_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl border border-orange-200 transition-all shrink-0">
+                  <Eye className="w-3.5 h-3.5" /> Ver propuesta
+                </a>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* Main grid */}
@@ -214,7 +239,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
           {/* Columna derecha */}
           <div className="lg:col-span-2 space-y-4">
-            {canEdit && <DealStageSelector dealId={deal.id} currentStage={deal.stage} />}
+            {canEdit && (
+            <DealStageSelector
+              dealId={deal.id}
+              currentStage={deal.stage}
+              proposalFilename={deal.proposal_filename ?? null}
+              proposalUrl={deal.proposal_url ?? null}
+            />
+          )}
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />
             <DealTasks dealId={deal.id} tasks={tasks ?? []} />
           </div>
