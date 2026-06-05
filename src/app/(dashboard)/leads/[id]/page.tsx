@@ -59,13 +59,22 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role)
   const canDelete = ['super_admin'].includes(role)
 
-  // Buscar proyecto vinculado al deal (para mostrar banner de especificaciones)
-  const { data: linkedProject } = await supabase
+  // Buscar proyecto vinculado al deal con specs pendientes
+  const { data: linkedProjects } = await supabase
     .from('projects')
-    .select('id, name, status, spec_notes, spec_requested_at, spec_requester:spec_requested_by(full_name)')
+    .select('id, name, status, spec_notes, spec_requested_at, spec_requested_by')
     .eq('deal_id', id)
     .eq('status', 'pendiente_especificaciones')
-    .maybeSingle()
+    .limit(1)
+  const linkedProject = linkedProjects?.[0] ?? null
+
+  // Si hay proyecto pendiente, obtener nombre del solicitante
+  let specRequesterName: string | null = null
+  if (linkedProject?.spec_requested_by) {
+    const { data: reqProfile } = await supabase
+      .from('profiles').select('full_name').eq('id', linkedProject.spec_requested_by).single()
+    specRequesterName = (reqProfile as any)?.full_name ?? null
+  }
 
   const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
@@ -195,9 +204,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <DealSpecBanner
             projectId={linkedProject.id}
             projectName={linkedProject.name}
-            specNotes={linkedProject.spec_notes ?? null}
-            specRequestedAt={linkedProject.spec_requested_at ?? null}
-            specRequestedByName={(linkedProject as any).spec_requester?.full_name ?? null}
+            specNotes={(linkedProject as any).spec_notes ?? null}
+            specRequestedAt={(linkedProject as any).spec_requested_at ?? null}
+            specRequestedByName={specRequesterName}
             currentUserId={userId}
             canResolve={canEdit}
           />
