@@ -134,7 +134,7 @@ export default function DealSpecBanner({
             <div className="flex items-center gap-3 flex-wrap">
               <button onClick={() => setShowForm(true)}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md transition-all">
-                <CheckCircle2 className="w-4 h-4" /> Especificaciones listas — Devolver a Producción
+                <CheckCircle2 className="w-4 h-4" /> Responder a Producción
               </button>
               <Link href={`/proyectos/${projectId}`}
                 className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors">
