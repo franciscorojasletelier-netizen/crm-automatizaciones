@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowLeftRight, AlertTriangle, CheckCircle2, Loader2,
+  ArrowLeftRight, AlertTriangle, Loader2,
   X, ClipboardList, Clock, User,
 } from 'lucide-react'
 
@@ -17,8 +17,8 @@ interface Props {
   specRequestedAt: string | null
   specRequestedByName: string | null
   currentUserId: string
-  canRequest: boolean   // produccion o superior
-  canResolve: boolean   // comercial o gerente
+  canRequest: boolean   // produccion o superior — puede enviar notas
+  canResolve: boolean   // no usado aquí, la resolución es desde el deal
 }
 
 export default function ProjectSpecRequest({
@@ -77,41 +77,6 @@ export default function ProjectSpecRequest({
     router.refresh()
   }
 
-  // ── Comercial: marcar como listo y devolver a producción ────
-  async function handleResolve() {
-    setLoading(true)
-
-    await supabase.from('projects').update({
-      status:           'activo',
-      spec_resolved_at: new Date().toISOString(),
-      spec_notes:       null,
-      spec_requested_at: null,
-      spec_requested_by: null,
-    }).eq('id', projectId)
-
-    // Notificar a producción/gerentes
-    const { data: produccion } = await supabase
-      .from('profiles').select('id')
-      .in('role', ['produccion', 'gerente', 'super_admin', 'admin'])
-      .eq('is_active', true)
-
-    if (produccion && produccion.length > 0) {
-      await supabase.from('notifications').insert(
-        produccion.map((p: any) => ({
-          user_id:     p.id,
-          type:        'stage_changed',
-          title:       '✅ Especificaciones listas — Proyecto reactivado',
-          body:        'El área comercial completó las especificaciones pendientes. El proyecto está listo para continuar.',
-          entity_type: 'project',
-          entity_id:   projectId,
-        }))
-      )
-    }
-
-    setLoading(false)
-    router.refresh()
-  }
-
   // ── Banner: proyecto pendiente de especificaciones ──────────
   if (isPending) {
     return (
@@ -156,18 +121,18 @@ export default function ProjectSpecRequest({
           </div>
         )}
 
-        {/* Acciones */}
+        {/* Acciones — solo producción puede actualizar notas desde aquí */}
+        {/* "Devolver a Producción" es exclusivo del área comercial desde el deal */}
         <div className="flex items-center gap-2 flex-wrap">
-          {canResolve && (
-            <button onClick={handleResolve} disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md disabled:opacity-50 transition-all">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Listo — Devolver a Producción
-            </button>
-          )}
+          <div className="flex-1 bg-white border border-amber-200 rounded-xl px-3 py-2 flex items-center gap-2">
+            <ArrowLeftRight className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <p className="text-xs text-amber-700">
+              El área comercial debe responder desde el <strong>deal vinculado</strong> para devolver el proyecto a producción.
+            </p>
+          </div>
           {canRequest && (
             <button onClick={() => setOpen(true)} disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-200 transition-all">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-200 transition-all shrink-0">
               <ClipboardList className="w-4 h-4" />
               Actualizar notas
             </button>
