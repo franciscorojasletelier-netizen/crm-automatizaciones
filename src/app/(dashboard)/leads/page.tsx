@@ -6,11 +6,7 @@ import LeadsTable from '@/components/leads/leads-table'
 import { getVisibleDealIds } from '@/lib/visibility'
 
 export default async function LeadsPage() {
-  const { perms, profile } = await requirePermission('leads')
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  const role = profile?.role ?? 'soporte'
+  const { role, perms, profile, supabase, user } = await requirePermission('leads')
   const userId = user?.id ?? ''
 
   // Filtrar por visibilidad según rol

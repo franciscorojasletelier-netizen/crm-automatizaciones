@@ -15,11 +15,9 @@ const stages = [
 ]
 
 export default async function PipelinePage() {
-  const { profile } = await requirePermission('pipeline')
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { role, supabase, user } = await requirePermission('pipeline')
 
-  const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', profile?.role ?? 'soporte')
+  const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 
   let baseQuery = supabase
     .from('deals')

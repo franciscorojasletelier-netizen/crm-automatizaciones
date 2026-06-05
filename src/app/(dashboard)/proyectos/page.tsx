@@ -38,11 +38,9 @@ function isDueSoon(due: string | null) {
 }
 
 export default async function ProyectosPage() {
-  const { profile } = await requirePermission('proyectos')
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { role, supabase, user } = await requirePermission('proyectos')
 
-  const visibleIds = await getVisibleProjectIds(supabase, user?.id ?? '', profile?.role ?? 'soporte')
+  const visibleIds = await getVisibleProjectIds(supabase, user?.id ?? '', role)
 
   let baseQuery = supabase
     .from('projects')
