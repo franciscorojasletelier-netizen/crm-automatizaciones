@@ -15,10 +15,11 @@ const phases = [
 ]
 
 const statuses = [
-  { key: 'activo',     label: 'Activo',     active: 'bg-emerald-500 text-white ring-emerald-600', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
-  { key: 'pausado',    label: 'Pausado',    active: 'bg-amber-500 text-white ring-amber-600',     inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
-  { key: 'entregado',  label: 'Entregado',  active: 'bg-blue-500 text-white ring-blue-600',       inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
-  { key: 'cancelado',  label: 'Cancelado',  active: 'bg-red-500 text-white ring-red-600',         inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
+  { key: 'activo',                     label: 'Activo',                     clickable: true,  active: 'bg-emerald-500 text-white ring-emerald-600', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
+  { key: 'pausado',                    label: 'Pausado',                    clickable: true,  active: 'bg-amber-500 text-white ring-amber-600',     inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
+  { key: 'entregado',                  label: 'Entregado',                  clickable: true,  active: 'bg-blue-500 text-white ring-blue-600',       inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
+  { key: 'cancelado',                  label: 'Cancelado',                  clickable: true,  active: 'bg-red-500 text-white ring-red-600',         inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
+  { key: 'pendiente_especificaciones', label: '⚠️ Pend. Especificaciones', clickable: false, active: 'bg-amber-400 text-white ring-amber-500',     inactive: 'bg-amber-50 text-amber-700 cursor-default opacity-70' },
 ]
 
 export default function ProjectPhaseSelector({ projectId, currentPhase, currentStatus }: {
@@ -79,7 +80,10 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Estado</p>
         <div className="flex flex-wrap gap-1.5">
           {statuses.map(s => (
-            <button key={s.key} onClick={() => handleStatusChange(s.key)} disabled={loading}
+            <button key={s.key}
+              onClick={() => s.clickable ? handleStatusChange(s.key) : undefined}
+              disabled={loading || !s.clickable}
+              title={!s.clickable ? 'Gestionar desde el botón "Devolver a Comercial"' : undefined}
               className={`text-xs px-3 py-1.5 rounded-xl font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed ${
                 status === s.key ? `${s.active} ring-1` : s.inactive
               }`}>

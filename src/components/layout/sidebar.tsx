@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, Building2, TrendingUp,
   CheckSquare, FolderOpen, Activity, Settings,
-  LogOut, Zap, UserCog,
+  LogOut, Zap, UserCog, BarChart3, Bell, GitBranch, CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -34,25 +34,34 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Principal',
     items: [
-      { label: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard },
-      { label: 'Pipeline',   href: '/pipeline',   icon: TrendingUp,  countKey: 'pipeline',  permission: 'pipeline' },
-      { label: 'Leads',      href: '/leads',      icon: Users,       countKey: 'leads',     permission: 'leads' },
-      { label: 'Empresas',   href: '/empresas',   icon: Building2,   countKey: 'empresas',  permission: 'empresas' },
+      { label: 'Dashboard',       href: '/dashboard',       icon: LayoutDashboard },
+      { label: 'Pipeline',        href: '/pipeline',        icon: TrendingUp,   countKey: 'pipeline',       permission: 'pipeline' },
+      { label: 'Leads',           href: '/leads',           icon: Users,        countKey: 'leads',          permission: 'leads' },
+      { label: 'Empresas',        href: '/empresas',        icon: Building2,    countKey: 'empresas',       permission: 'empresas' },
     ],
   },
   {
     label: 'Gestión',
     items: [
-      { label: 'Tareas',     href: '/tareas',     icon: CheckSquare, countKey: 'tareas',    alertKey: 'tareasVencidas', permission: 'tareas' },
-      { label: 'Proyectos',  href: '/proyectos',  icon: FolderOpen,  countKey: 'proyectos', permission: 'proyectos' },
+      { label: 'Tareas',          href: '/tareas',          icon: CheckSquare,  countKey: 'tareas',         alertKey: 'tareasVencidas', permission: 'tareas' },
+      { label: 'Proyectos',       href: '/proyectos',       icon: FolderOpen,   countKey: 'proyectos',      permission: 'proyectos' },
+      { label: 'Calendario',      href: '/calendario',      icon: CalendarDays,                              permission: 'calendario' },
+      { label: 'Notificaciones',  href: '/notificaciones',  icon: Bell,         countKey: 'notificaciones', alertKey: 'notificaciones', permission: 'notificaciones' },
+    ],
+  },
+  {
+    label: 'Inteligencia',
+    items: [
+      { label: 'Reportes',        href: '/reportes',        icon: BarChart3,                                permission: 'reportes' },
+      { label: 'Automatizaciones',href: '/automatizaciones',icon: GitBranch,                                permission: 'automatizaciones' },
     ],
   },
   {
     label: 'Administración',
     items: [
-      { label: 'Equipo',     href: '/admin/usuarios', icon: UserCog,  permission: 'usuarios' },
-      { label: 'Actividad',  href: '/admin/actividad', icon: Activity, permission: 'actividad' },
-      { label: 'Configuración', href: '/configuracion', icon: Settings, permission: 'configuracion' },
+      { label: 'Equipo',          href: '/admin/usuarios',  icon: UserCog,                                  permission: 'usuarios' },
+      { label: 'Actividad',       href: '/admin/actividad', icon: Activity,                                 permission: 'actividad' },
+      { label: 'Configuración',   href: '/configuracion',   icon: Settings,                                 permission: 'configuracion' },
     ],
   },
 ]

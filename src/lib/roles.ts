@@ -52,15 +52,19 @@ export const ROLE_META: Record<Role, {
 // ── Matriz de permisos ─────────────────────────
 export interface RolePermissions {
   // Navegación / Acceso a secciones
-  dashboard:     boolean
-  pipeline:      boolean
-  leads:         boolean
-  empresas:      'full' | 'read' | 'none'
-  tareas:        'full' | 'read' | 'none'
-  proyectos:     'full' | 'read' | 'none'
-  actividad:     boolean
-  usuarios:      boolean
-  configuracion: boolean
+  dashboard:        boolean
+  pipeline:         boolean
+  leads:            boolean
+  empresas:         'full' | 'read' | 'none'
+  tareas:           'full' | 'read' | 'none'
+  proyectos:        'full' | 'read' | 'none'
+  actividad:        boolean
+  usuarios:         boolean
+  configuracion:    boolean
+  reportes:         boolean
+  notificaciones:   boolean
+  automatizaciones: boolean
+  calendario:       boolean
 
   // Acciones específicas
   canDeleteDeals:    boolean
@@ -75,99 +79,49 @@ export interface RolePermissions {
 
 export const PERMISSIONS: Record<Role, RolePermissions> = {
   super_admin: {
-    dashboard: true,
-    pipeline: true,
-    leads: true,
-    empresas: 'full',
-    tareas: 'full',
-    proyectos: 'full',
-    actividad: true,
-    usuarios: true,
-    configuracion: true,
-    canDeleteDeals: true,
-    canDeleteProjects: true,
-    canExportData: true,
-    canManageUsers: true,
-    canViewFinancials: true,
-    canCreateLeads: true,
-    canEditDeals: true,
-    canEditProjects: true,
+    dashboard: true, pipeline: true, leads: true,
+    empresas: 'full', tareas: 'full', proyectos: 'full',
+    actividad: true, usuarios: true, configuracion: true,
+    reportes: true, notificaciones: true, automatizaciones: true, calendario: true,
+    canDeleteDeals: true, canDeleteProjects: true, canExportData: true,
+    canManageUsers: true, canViewFinancials: true, canCreateLeads: true,
+    canEditDeals: true, canEditProjects: true,
   },
   gerente: {
-    dashboard: true,
-    pipeline: true,
-    leads: true,
-    empresas: 'full',
-    tareas: 'full',
-    proyectos: 'full',
-    actividad: true,
-    usuarios: true,
-    configuracion: false,
-    canDeleteDeals: false,
-    canDeleteProjects: false,
-    canExportData: true,
-    canManageUsers: true,
-    canViewFinancials: true,
-    canCreateLeads: true,
-    canEditDeals: true,
-    canEditProjects: true,
+    dashboard: true, pipeline: true, leads: true,
+    empresas: 'full', tareas: 'full', proyectos: 'full',
+    actividad: true, usuarios: true, configuracion: false,
+    reportes: true, notificaciones: true, automatizaciones: true, calendario: true,
+    canDeleteDeals: false, canDeleteProjects: false, canExportData: true,
+    canManageUsers: true, canViewFinancials: true, canCreateLeads: true,
+    canEditDeals: true, canEditProjects: true,
   },
   comercial: {
-    dashboard: true,
-    pipeline: true,
-    leads: true,
-    empresas: 'full',
-    tareas: 'full',
-    proyectos: 'none',
-    actividad: false,
-    usuarios: false,
-    configuracion: false,
-    canDeleteDeals: false,
-    canDeleteProjects: false,
-    canExportData: false,
-    canManageUsers: false,
-    canViewFinancials: true,
-    canCreateLeads: true,
-    canEditDeals: true,
-    canEditProjects: false,
+    dashboard: true, pipeline: true, leads: true,
+    empresas: 'full', tareas: 'full', proyectos: 'none',
+    actividad: false, usuarios: false, configuracion: false,
+    reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
+    canDeleteDeals: false, canDeleteProjects: false, canExportData: false,
+    canManageUsers: false, canViewFinancials: true, canCreateLeads: true,
+    canEditDeals: true, canEditProjects: false,
   },
   produccion: {
-    dashboard: true,
-    pipeline: false,
-    leads: false,
-    empresas: 'read',
-    tareas: 'full',
-    proyectos: 'full',
-    actividad: false,
-    usuarios: false,
-    configuracion: false,
-    canDeleteDeals: false,
-    canDeleteProjects: false,
-    canExportData: false,
-    canManageUsers: false,
-    canViewFinancials: false,
-    canCreateLeads: false,
-    canEditDeals: false,
-    canEditProjects: true,
+    dashboard: true, pipeline: false, leads: false,
+    empresas: 'read', tareas: 'full', proyectos: 'full',
+    actividad: false, usuarios: false, configuracion: false,
+    reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
+    canDeleteDeals: false, canDeleteProjects: false, canExportData: false,
+    canManageUsers: false, canViewFinancials: false, canCreateLeads: false,
+    canEditDeals: false, canEditProjects: true,
   },
   soporte: {
-    dashboard: true,
-    pipeline: false,
-    leads: false,
-    empresas: 'none',
-    tareas: 'read',
-    proyectos: 'read',
-    actividad: false,
-    usuarios: false,
-    configuracion: false,
-    canDeleteDeals: false,
-    canDeleteProjects: false,
-    canExportData: false,
-    canManageUsers: false,
-    canViewFinancials: false,
-    canCreateLeads: false,
-    canEditDeals: false,
-    canEditProjects: false,
+    dashboard: true, pipeline: false, leads: false,
+    empresas: 'none', tareas: 'read', proyectos: 'read',
+    actividad: false, usuarios: false, configuracion: false,
+    reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
+    canDeleteDeals: false, canDeleteProjects: false, canExportData: false,
+    canManageUsers: false, canViewFinancials: false, canCreateLeads: false,
+    canEditDeals: false, canEditProjects: false,
   },
 }
 
@@ -213,11 +167,13 @@ export const PROTECTED_ROUTES: Array<{
   pattern: RegExp
   permission: keyof RolePermissions
 }> = [
-  { pattern: /^\/pipeline/, permission: 'pipeline' },
-  { pattern: /^\/leads/,    permission: 'leads' },
-  { pattern: /^\/admin\/usuarios/, permission: 'usuarios' },
-  { pattern: /^\/admin/,    permission: 'actividad' },
-  { pattern: /^\/configuracion/, permission: 'configuracion' },
+  { pattern: /^\/pipeline/,          permission: 'pipeline' },
+  { pattern: /^\/leads/,             permission: 'leads' },
+  { pattern: /^\/admin\/usuarios/,   permission: 'usuarios' },
+  { pattern: /^\/admin/,             permission: 'actividad' },
+  { pattern: /^\/configuracion/,     permission: 'configuracion' },
+  { pattern: /^\/reportes/,          permission: 'reportes' },
+  { pattern: /^\/automatizaciones/,  permission: 'automatizaciones' },
 ]
 
 export function canAccessRoute(role: string, pathname: string): boolean {

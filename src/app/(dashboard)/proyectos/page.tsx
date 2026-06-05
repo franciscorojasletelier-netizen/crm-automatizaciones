@@ -59,8 +59,9 @@ export default async function ProyectosPage() {
 
   const { data: projects } = await baseQuery
 
-  const active = projects?.filter(p => p.status === 'activo') ?? []
-  const others = projects?.filter(p => p.status !== 'activo') ?? []
+  const pending = projects?.filter(p => p.status === 'pendiente_especificaciones') ?? []
+  const active  = projects?.filter(p => p.status === 'activo') ?? []
+  const others  = projects?.filter(p => !['activo', 'pendiente_especificaciones'].includes(p.status)) ?? []
 
   return (
     <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
@@ -82,6 +83,49 @@ export default async function ProyectosPage() {
           </div>
           <p className="text-slate-700 font-semibold">Sin proyectos aún</p>
           <p className="text-sm text-slate-400 text-center max-w-xs">Los proyectos se crean automáticamente al ganar un deal en el pipeline</p>
+        </div>
+      )}
+
+      {/* Proyectos pendientes de especificaciones — alerta */}
+      {pending.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <h2 className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pendientes de especificaciones</h2>
+            <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">{pending.length}</span>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {pending.map((project: any) => {
+              const progress = phaseProgress[project.phase] ?? 0
+              return (
+                <Link key={project.id} href={`/proyectos/${project.id}`}
+                  className="group bg-amber-50 rounded-2xl border-2 border-amber-300 shadow-sm p-5 hover:border-amber-400 hover:shadow-md transition-all overflow-hidden relative">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-amber-400" />
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <p className="font-bold text-amber-900 group-hover:text-amber-800 transition-colors truncate">{project.name}</p>
+                      </div>
+                      {project.companies?.name && (
+                        <p className="text-xs text-amber-700 mt-0.5 font-medium">{project.companies.name}</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-200 text-amber-800 ring-1 ring-amber-300 whitespace-nowrap">
+                      ⚠️ Pend. Especificaciones
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-700 font-medium">
+                    Producción devolvió este proyecto a comercial. Requiere acción.
+                  </p>
+                  <div className="mt-3 pt-3 border-t border-amber-200 flex items-center justify-between">
+                    <span className="text-[10px] text-amber-600 font-medium">{progress}% completado · Fase: {phaseLabels[project.phase]}</span>
+                    <ChevronRight className="w-4 h-4 text-amber-400 group-hover:text-amber-600 transition-colors" />
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 

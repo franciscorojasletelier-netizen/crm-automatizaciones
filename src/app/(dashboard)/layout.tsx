@@ -1,7 +1,7 @@
 import Sidebar from '@/components/layout/sidebar'
 import GlobalChat from '@/components/chat/global-chat'
 import { createClient } from '@/lib/supabase/server'
-import { normalizeRole, type Role } from '@/lib/roles'
+import { type Role } from '@/lib/roles'
 
 export interface NavCounts {
   leads: number
@@ -10,6 +10,7 @@ export interface NavCounts {
   empresas: number
   proyectos: number
   pipeline: number
+  notificaciones: number
 }
 
 export interface UserProfile {
@@ -28,7 +29,7 @@ async function getLayoutData() {
 
     const now = new Date().toISOString()
 
-    const [profileRes, leads, tareas, tareasVencidas, empresas, proyectos, chatMessages] = await Promise.all([
+    const [profileRes, leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones] = await Promise.all([
       supabase.from('profiles').select('id, full_name, email, role, is_active').eq('id', user.id).single(),
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false),
@@ -40,6 +41,10 @@ async function getLayoutData() {
         .is('deal_id', null)
         .order('created_at', { ascending: true })
         .limit(50),
+      supabase.from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false),
     ])
 
     const profile = profileRes.data as UserProfile | null
@@ -53,6 +58,7 @@ async function getLayoutData() {
         empresas: empresas.count ?? 0,
         proyectos: proyectos.count ?? 0,
         pipeline: leads.count ?? 0,
+        notificaciones: notificaciones.count ?? 0,
       },
       chatMessages: chatMessages.data ?? [],
       userId: user.id,
@@ -64,7 +70,7 @@ async function getLayoutData() {
 }
 
 function emptyNavCounts(): NavCounts {
-  return { leads: 0, tareas: 0, tareasVencidas: 0, empresas: 0, proyectos: 0, pipeline: 0 }
+  return { leads: 0, tareas: 0, tareasVencidas: 0, empresas: 0, proyectos: 0, pipeline: 0, notificaciones: 0 }
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -11,6 +11,7 @@ import ContactEdit from '@/components/deals/contact-edit'
 import DealMembers from '@/components/deals/deal-members'
 import DealChat from '@/components/chat/deal-chat'
 import { canSeeDeal } from '@/lib/visibility'
+import DealSpecBanner from '@/components/deals/deal-spec-banner'
 
 const stageColors: Record<string, string> = {
   nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
@@ -57,6 +58,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const canManage = ['super_admin', 'gerente'].includes(role)
   const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role)
   const canDelete = ['super_admin'].includes(role)
+
+  // Buscar proyecto vinculado al deal (para mostrar banner de especificaciones)
+  const { data: linkedProject } = await supabase
+    .from('projects')
+    .select('id, name, status, spec_notes, spec_requested_at, spec_requester:spec_requested_by(full_name)')
+    .eq('deal_id', id)
+    .eq('status', 'pendiente_especificaciones')
+    .maybeSingle()
 
   const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
@@ -180,6 +189,19 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           )}
 
         </div>
+
+        {/* Banner: proyecto pendiente de especificaciones */}
+        {linkedProject && (
+          <DealSpecBanner
+            projectId={linkedProject.id}
+            projectName={linkedProject.name}
+            specNotes={linkedProject.spec_notes ?? null}
+            specRequestedAt={linkedProject.spec_requested_at ?? null}
+            specRequestedByName={(linkedProject as any).spec_requester?.full_name ?? null}
+            currentUserId={userId}
+            canResolve={canEdit}
+          />
+        )}
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
