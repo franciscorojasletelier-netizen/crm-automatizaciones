@@ -1,7 +1,7 @@
 import { createClient, getCurrentProfile } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, Calendar, TrendingUp, User, FileText, Eye } from 'lucide-react'
+import { ArrowLeft, Building2, Calendar, TrendingUp, User, FileText, Eye, MessageCircle } from 'lucide-react'
 import DealStageSelector from '@/components/deals/deal-stage-selector'
 import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
@@ -102,6 +102,20 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                   {deal.contacts?.full_name && deal.contacts?.email && <span className="mx-1.5 text-slate-300">·</span>}
                   {deal.contacts?.email && <span>{deal.contacts.email}</span>}
                 </p>
+                {deal.contacts?.phone && (() => {
+                  const phone = deal.contacts.phone.replace(/\D/g, '')
+                  const intlPhone = phone.startsWith('56') ? phone : `56${phone}`
+                  const nombre = deal.contacts.full_name?.split(' ')[0] ?? 'te'
+                  const empresa = deal.companies?.name ?? 'tu empresa'
+                  const msg = encodeURIComponent(`Hola ${nombre}, te contacto de Autopilot SpA. Vi que ${empresa} puede beneficiarse de automatizar sus procesos. ¿Tienes unos minutos para conversar?`)
+                  return (
+                    <a href={`https://wa.me/${intlPhone}?text=${msg}`} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl border border-green-200 transition-all">
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      WhatsApp · {deal.contacts.phone}
+                    </a>
+                  )
+                })()}
               </div>
             </div>
             <div className="shrink-0 text-center">
