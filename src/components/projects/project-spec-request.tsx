@@ -61,7 +61,7 @@ export default function ProjectSpecRequest({
     gerentes?.forEach((g: any) => { if (!notifTargets.includes(g.id)) notifTargets.push(g.id) })
 
     if (notifTargets.length > 0) {
-      await supabase.from('notifications').insert(
+      const { error: notifErr } = await supabase.from('notifications').insert(
         notifTargets.map(uid => ({
           user_id:     uid,
           type:        'stage_changed',
@@ -71,6 +71,9 @@ export default function ProjectSpecRequest({
           entity_id:   projectId,
         }))
       )
+      if (notifErr) console.error('Error creando notificaciones:', notifErr.message)
+    } else {
+      console.warn('No se encontraron destinatarios para la notificación. dealOwnerId:', dealOwnerId)
     }
 
     setOpen(false); setNotes(''); setLoading(false)

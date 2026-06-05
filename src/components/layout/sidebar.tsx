@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -85,6 +85,41 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
   const router = useRouter()
   const supabase = createClient()
 
+  // Contador de notificaciones en tiempo real
+  const [notifCount, setNotifCount] = useState(counts.notificaciones)
+
+  useEffect(() => {
+    setNotifCount(counts.notificaciones)
+  }, [counts.notificaciones])
+
+  useEffect(() => {
+    if (!profile?.id) return
+    const channel = supabase
+      .channel(`notif-count-${profile.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'notifications',
+        filter: `user_id=eq.${profile.id}`,
+      }, () => {
+        setNotifCount(n => n + 1)
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'notifications',
+        filter: `user_id=eq.${profile.id}`,
+      }, () => {
+        // Recalcular al marcar como leídas
+        supabase.from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.id)
+          .eq('is_read', false)
+          .then(({ count }) => setNotifCount(count ?? 0))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [profile?.id, supabase])
+
+  // Merge el conteo realtime con los counts del servidor
+  const liveCounts = { ...counts, notificaciones: notifCount }
+
   const role = (profile?.role ?? 'soporte') as Role
   const perms = getPermissions(role)
   const roleMeta = getRoleMeta(role)
@@ -152,8 +187,8 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
                 <div className="space-y-0.5">
                   {visibleItems.map(({ label, href, icon: Icon, countKey, alertKey }) => {
                     const active = isActive(href)
-                    const count = countKey ? counts[countKey] : null
-                    const alertCount = alertKey ? counts[alertKey] : 0
+                    const count = countKey ? liveCounts[countKey] : null
+                    const alertCount = alertKey ? liveCounts[alertKey] : 0
                     const hasAlert = alertCount > 0
 
                     return (
