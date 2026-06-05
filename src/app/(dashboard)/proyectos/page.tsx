@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, requirePermission } from '@/lib/supabase/server'
+import { getVisibleProjectIds } from '@/lib/visibility'
 import Link from 'next/link'
 import { FolderOpen, ChevronRight, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
 
@@ -37,9 +38,13 @@ function isDueSoon(due: string | null) {
 }
 
 export default async function ProyectosPage() {
+  const { profile } = await requirePermission('proyectos')
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: projects } = await supabase
+  const visibleIds = await getVisibleProjectIds(supabase, user?.id ?? '', profile?.role ?? 'soporte')
+
+  let baseQuery = supabase
     .from('projects')
     .select(`
       id, name, phase, status, budget, due_date, start_date,
@@ -47,6 +52,14 @@ export default async function ProyectosPage() {
       profiles:owner_id(full_name)
     `)
     .order('due_date', { ascending: true })
+
+  if (visibleIds !== null) {
+    baseQuery = visibleIds.length > 0
+      ? baseQuery.in('id', visibleIds)
+      : baseQuery.eq('id', 'no-match')
+  }
+
+  const { data: projects } = await baseQuery
 
   const active = projects?.filter(p => p.status === 'activo') ?? []
   const others = projects?.filter(p => p.status !== 'activo') ?? []

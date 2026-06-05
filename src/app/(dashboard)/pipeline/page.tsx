@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient, requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, TrendingUp } from 'lucide-react'
+import { getVisibleDealIds } from '@/lib/visibility'
 
 const stages = [
   { key: 'nuevo_lead',       label: 'Nuevo Lead',        color: 'bg-blue-500',   light: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200'   },
@@ -14,10 +15,13 @@ const stages = [
 ]
 
 export default async function PipelinePage() {
-  await requirePermission('pipeline')
+  const { profile } = await requirePermission('pipeline')
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: deals } = await supabase
+  const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', profile?.role ?? 'soporte')
+
+  let baseQuery = supabase
     .from('deals')
     .select(`
       id, stage, score, estimated_value, next_action,
@@ -28,6 +32,14 @@ export default async function PipelinePage() {
     .eq('status', 'open')
     .not('stage', 'in', '("cerrado_ganado","cerrado_perdido","no_calificado","frio")')
     .order('score', { ascending: false })
+
+  if (visibleIds !== null) {
+    baseQuery = visibleIds.length > 0
+      ? baseQuery.in('id', visibleIds)
+      : baseQuery.eq('id', 'no-match')
+  }
+
+  const { data: deals } = await baseQuery
 
   const byStage = stages.reduce((acc, s) => {
     acc[s.key] = deals?.filter((d: any) => d.stage === s.key) ?? []

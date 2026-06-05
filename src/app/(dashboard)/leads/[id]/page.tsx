@@ -1,13 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { createClient, getCurrentProfile } from '@/lib/supabase/server'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, User, Calendar, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Building2, Calendar, TrendingUp, User } from 'lucide-react'
 import DealStageSelector from '@/components/deals/deal-stage-selector'
 import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
 import DeleteDealButton from '@/components/deals/delete-deal-button'
 import DealEditFields from '@/components/deals/deal-edit-fields'
 import ContactEdit from '@/components/deals/contact-edit'
+import DealMembers from '@/components/deals/deal-members'
+import { canSeeDeal } from '@/lib/visibility'
 
 const stageColors: Record<string, string> = {
   nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
@@ -33,20 +35,38 @@ const stageLabels: Record<string, string> = {
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
+  const { user, profile, supabase } = await getCurrentProfile()
+
+  const role = profile?.role ?? 'soporte'
+  const userId = user.id
+
+  // Verificar acceso a este deal específico
+  const hasAccess = await canSeeDeal(supabase, userId, role, id)
+  if (!hasAccess) {
+    redirect(`/acceso-denegado?from=/leads/${id}&role=${role}`)
+  }
 
   const { data: deal } = await supabase
     .from('deals')
-    .select(`*, companies(*), contacts:primary_contact_id(*), profiles:owner_id(full_name)`)
+    .select(`*, companies(*), contacts:primary_contact_id(*), profiles:owner_id(id, full_name)`)
     .eq('id', id)
     .single()
 
   if (!deal) notFound()
 
-  const [{ data: history }, { data: interactions }, { data: tasks }] = await Promise.all([
+  const canManage = ['super_admin', 'gerente'].includes(role)
+  const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role)
+  const canDelete = ['super_admin'].includes(role)
+
+  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
+    supabase.from('deal_members').select('id, user_id, profiles:user_id(full_name, email, role)').eq('deal_id', id),
+    // Solo para gerente: cargar el equipo completo para asignar
+    canManage
+      ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true).in('role', ['comercial', 'produccion', 'soporte'])
+      : Promise.resolve({ data: [] }),
   ])
 
   const score = deal.score ?? 0
@@ -62,7 +82,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <span className={`text-xs px-3 py-1 rounded-full font-semibold ${stageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>
             {stageLabels[deal.stage]}
           </span>
-          <DeleteDealButton dealId={deal.id} companyId={deal.company_id} contactId={deal.primary_contact_id} />
+          {canDelete && (
+            <DeleteDealButton dealId={deal.id} companyId={deal.company_id} contactId={deal.primary_contact_id} />
+          )}
         </div>
       </div>
 
@@ -84,8 +106,6 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </p>
               </div>
             </div>
-
-            {/* Score badge */}
             <div className="shrink-0 text-center">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${
                 score >= 60 ? 'bg-emerald-100 text-emerald-700' :
@@ -98,13 +118,12 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             {[
               { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—', icon: TrendingUp, color: 'text-indigo-600 bg-indigo-50' },
-              { label: 'Probabilidad', value: deal.probability ? `${deal.probability}%` : '—', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'Fuente', value: deal.source ?? '—', icon: User, color: 'text-amber-600 bg-amber-50' },
-              { label: 'Responsable', value: deal.profiles?.full_name ?? '—', icon: User, color: 'text-purple-600 bg-purple-50' },
+              { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—',           icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
+              { label: 'Fuente',         value: deal.source ?? '—',                                         icon: User, color: 'text-amber-600 bg-amber-50' },
+              { label: 'Responsable',    value: deal.profiles?.full_name ?? '—',                            icon: User, color: 'text-purple-600 bg-purple-50' },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-2.5">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
@@ -121,13 +140,29 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
           {/* Columna izquierda */}
           <div className="lg:col-span-1 space-y-4">
             {/* Detalles editables */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detalles</h2>
-              <DealEditFields deal={deal} />
+              {canEdit
+                ? <DealEditFields deal={deal} />
+                : (
+                  <div className="space-y-2 divide-y divide-slate-100">
+                    {[
+                      { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—' },
+                      { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—' },
+                      { label: 'Próxima acción', value: deal.next_action ?? '—' },
+                      { label: 'Fuente',         value: deal.source ?? '—' },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="py-1">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                        <p className="text-sm font-semibold text-slate-800 mt-0.5">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )
+              }
               {deal.expected_close_date && (
                 <div className="mt-3 pt-3 border-t border-slate-100">
                   <p className="text-xs text-slate-400 font-medium">Cierre esperado</p>
@@ -141,12 +176,22 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
             <ContactEdit contact={deal.contacts} company={deal.companies} />
 
+            {/* Gestión de equipo — visible para todos, editable solo para gerente */}
+            <DealMembers
+              dealId={deal.id}
+              ownerId={deal.owner_id}
+              members={(members ?? []) as any}
+              teamUsers={(teamUsers ?? []) as any}
+              currentUserId={userId}
+              canManage={canManage}
+            />
+
             {/* Historial de etapas */}
             {history && history.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                 <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Historial</h2>
                 <div className="space-y-2.5">
-                  {history.map((h: any, i: number) => (
+                  {history.map((h: any) => (
                     <div key={h.id} className="flex items-start gap-2.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
                       <div className="min-w-0">
@@ -169,7 +214,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
           {/* Columna derecha */}
           <div className="lg:col-span-2 space-y-4">
-            <DealStageSelector dealId={deal.id} currentStage={deal.stage} />
+            {canEdit && <DealStageSelector dealId={deal.id} currentStage={deal.stage} />}
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />
             <DealTasks dealId={deal.id} tasks={tasks ?? []} />
           </div>
