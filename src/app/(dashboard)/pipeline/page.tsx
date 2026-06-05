@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, TrendingUp } from 'lucide-react'
 
@@ -14,6 +14,7 @@ const stages = [
 ]
 
 export default async function PipelinePage() {
+  await requirePermission('pipeline')
   const supabase = await createClient()
 
   const { data: deals } = await supabase

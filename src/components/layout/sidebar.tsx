@@ -4,25 +4,21 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  TrendingUp,
-  CheckSquare,
-  FolderOpen,
-  Activity,
-  Settings,
-  LogOut,
-  Zap,
+  LayoutDashboard, Users, Building2, TrendingUp,
+  CheckSquare, FolderOpen, Activity, Settings,
+  LogOut, Zap, UserCog,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import GlobalSearch from './global-search'
-import type { NavCounts } from '@/app/(dashboard)/layout'
+import { getPermissions, getRoleMeta } from '@/lib/roles'
+import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
+import type { Role } from '@/lib/roles'
 
 interface SidebarProps {
   counts: NavCounts
+  profile: UserProfile | null
 }
 
 interface NavItem {
@@ -31,54 +27,76 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   countKey?: keyof NavCounts
   alertKey?: keyof NavCounts
+  permission?: keyof ReturnType<typeof getPermissions>
 }
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Principal',
     items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Pipeline', href: '/pipeline', icon: TrendingUp, countKey: 'pipeline' },
-      { label: 'Leads', href: '/leads', icon: Users, countKey: 'leads' },
-      { label: 'Empresas', href: '/empresas', icon: Building2, countKey: 'empresas' },
+      { label: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard },
+      { label: 'Pipeline',   href: '/pipeline',   icon: TrendingUp,  countKey: 'pipeline',  permission: 'pipeline' },
+      { label: 'Leads',      href: '/leads',      icon: Users,       countKey: 'leads',     permission: 'leads' },
+      { label: 'Empresas',   href: '/empresas',   icon: Building2,   countKey: 'empresas',  permission: 'empresas' },
     ],
   },
   {
     label: 'Gestión',
     items: [
-      { label: 'Tareas', href: '/tareas', icon: CheckSquare, countKey: 'tareas', alertKey: 'tareasVencidas' },
-      { label: 'Proyectos', href: '/proyectos', icon: FolderOpen, countKey: 'proyectos' },
+      { label: 'Tareas',     href: '/tareas',     icon: CheckSquare, countKey: 'tareas',    alertKey: 'tareasVencidas', permission: 'tareas' },
+      { label: 'Proyectos',  href: '/proyectos',  icon: FolderOpen,  countKey: 'proyectos', permission: 'proyectos' },
     ],
   },
   {
-    label: 'Sistema',
+    label: 'Administración',
     items: [
-      { label: 'Actividad', href: '/admin/actividad', icon: Activity },
-      { label: 'Configuración', href: '/configuracion', icon: Settings },
+      { label: 'Equipo',     href: '/admin/usuarios', icon: UserCog,  permission: 'usuarios' },
+      { label: 'Actividad',  href: '/admin/actividad', icon: Activity, permission: 'actividad' },
+      { label: 'Configuración', href: '/configuracion', icon: Settings, permission: 'configuracion' },
     ],
   },
 ]
 
-const mobileNav = [
+const mobileNavBase: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Pipeline', href: '/pipeline', icon: TrendingUp },
-  { label: 'Leads', href: '/leads', icon: Users },
-  { label: 'Tareas', href: '/tareas', icon: CheckSquare },
-  { label: 'Más', href: '/configuracion', icon: Settings },
+  { label: 'Pipeline',  href: '/pipeline',  icon: TrendingUp,   permission: 'pipeline' },
+  { label: 'Leads',     href: '/leads',     icon: Users,        permission: 'leads' },
+  { label: 'Proyectos', href: '/proyectos', icon: FolderOpen,   permission: 'proyectos' },
+  { label: 'Tareas',    href: '/tareas',    icon: CheckSquare,  permission: 'tareas' },
 ]
 
-export default function Sidebar({ counts }: SidebarProps) {
+function getInitials(name: string | null, email: string | null): string {
+  if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+  if (email) return email.slice(0, 2).toUpperCase()
+  return 'U'
+}
+
+export default function Sidebar({ counts, profile }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const role = (profile?.role ?? 'soporte') as Role
+  const perms = getPermissions(role)
+  const roleMeta = getRoleMeta(role)
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
+  // Filtrar items según permisos
+  function itemVisible(item: NavItem): boolean {
+    if (!item.permission) return true
+    const val = perms[item.permission]
+    if (typeof val === 'boolean') return val
+    return val !== 'none'
+  }
+
+  const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null)
+  const displayName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
   return (
     <>
@@ -86,7 +104,7 @@ export default function Sidebar({ counts }: SidebarProps) {
       <aside className="hidden md:flex w-60 flex-col h-full relative overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' }}>
 
-        {/* Brillo decorativo superior */}
+        {/* Glow decorativo */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
 
@@ -104,7 +122,6 @@ export default function Sidebar({ counts }: SidebarProps) {
           </div>
         </div>
 
-        {/* Separador */}
         <div className="mx-4 h-px bg-white/5" />
 
         {/* Búsqueda */}
@@ -114,77 +131,81 @@ export default function Sidebar({ counts }: SidebarProps) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 pb-3 overflow-y-auto space-y-4 relative z-10">
-          {navGroups.map((group) => (
-            <div key={group.label}>
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map(({ label, href, icon: Icon, countKey, alertKey }) => {
-                  const active = isActive(href)
-                  const count = countKey ? counts[countKey] : null
-                  const alertCount = alertKey ? counts[alertKey] : 0
-                  const hasAlert = alertCount > 0
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter(itemVisible)
+            if (visibleItems.length === 0) return null
 
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={cn(
-                        'group flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative',
-                        active
-                          ? 'text-white'
-                          : 'text-slate-400 hover:text-white hover:bg-white/5'
-                      )}
-                    >
-                      {/* Fondo activo con glow */}
-                      {active && (
-                        <span className="absolute inset-0 rounded-xl"
-                          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.2))' }} />
-                      )}
-                      {/* Borde izquierdo activo */}
-                      {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
-                          style={{ background: 'linear-gradient(to bottom, #818cf8, #a78bfa)' }} />
-                      )}
+            return (
+              <div key={group.label}>
+                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {visibleItems.map(({ label, href, icon: Icon, countKey, alertKey }) => {
+                    const active = isActive(href)
+                    const count = countKey ? counts[countKey] : null
+                    const alertCount = alertKey ? counts[alertKey] : 0
+                    const hasAlert = alertCount > 0
 
-                      <Icon className={cn('w-4 h-4 shrink-0 relative z-10 transition-transform duration-200',
-                        active ? 'text-indigo-300' : 'group-hover:scale-110')} />
-
-                      <span className="flex-1 relative z-10 font-medium">{label}</span>
-
-                      {/* Badge contador */}
-                      {count !== null && count > 0 && (
-                        <span className={cn(
-                          'relative z-10 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center transition-all',
-                          hasAlert
-                            ? 'bg-red-500/30 text-red-300 ring-1 ring-red-500/40'
-                            : active
-                              ? 'bg-indigo-400/30 text-indigo-200'
-                              : 'bg-white/10 text-slate-300 group-hover:bg-white/15'
+                    return (
+                      <Link key={href} href={href}
+                        className={cn(
+                          'group flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative',
+                          active ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
                         )}>
-                          {count > 99 ? '99+' : count}
-                        </span>
-                      )}
-
-                      {/* Punto de alerta para tareas vencidas */}
-                      {hasAlert && !active && (
-                        <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                      )}
-                    </Link>
-                  )
-                })}
+                        {active && (
+                          <span className="absolute inset-0 rounded-xl"
+                            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.2))' }} />
+                        )}
+                        {active && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
+                            style={{ background: 'linear-gradient(to bottom, #818cf8, #a78bfa)' }} />
+                        )}
+                        <Icon className={cn('w-4 h-4 shrink-0 relative z-10 transition-transform duration-200',
+                          active ? 'text-indigo-300' : 'group-hover:scale-110')} />
+                        <span className="flex-1 relative z-10 font-medium">{label}</span>
+                        {count !== null && count > 0 && (
+                          <span className={cn(
+                            'relative z-10 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center transition-all',
+                            hasAlert
+                              ? 'bg-red-500/30 text-red-300 ring-1 ring-red-500/40'
+                              : active
+                                ? 'bg-indigo-400/30 text-indigo-200'
+                                : 'bg-white/10 text-slate-300 group-hover:bg-white/15'
+                          )}>
+                            {count > 99 ? '99+' : count}
+                          </span>
+                        )}
+                        {hasAlert && !active && (
+                          <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
-        {/* Footer — logout */}
-        <div className="px-3 py-4 border-t border-white/5 relative z-10">
-          <button
-            onClick={handleLogout}
-            className="group flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200"
-          >
+        {/* Footer — perfil + logout */}
+        <div className="px-3 py-4 border-t border-white/5 relative z-10 space-y-2">
+          {/* Info de usuario */}
+          <div className="flex items-center gap-2.5 px-3 py-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-white truncate">{displayName}</p>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ring-inset ${roleMeta.color}`}>
+                {roleMeta.label}
+              </span>
+            </div>
+          </div>
+
+          <button onClick={handleLogout}
+            className="group flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
             <LogOut className="w-4 h-4 shrink-0 group-hover:rotate-12 transition-transform duration-200" />
             <span className="font-medium">Cerrar sesión</span>
           </button>
@@ -199,27 +220,29 @@ export default function Sidebar({ counts }: SidebarProps) {
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             <Zap className="w-3 h-3 text-white" />
           </div>
-          <h1 className="text-sm font-bold text-white">CRM <span className="text-xs text-indigo-300/70 font-normal">Automatizaciones</span></h1>
+          <h1 className="text-sm font-bold text-white">CRM</h1>
         </div>
-        <button onClick={handleLogout} className="text-slate-400 hover:text-white transition-colors p-1">
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ring-1 ${roleMeta.color}`}>
+            {roleMeta.label}
+          </span>
+          <button onClick={handleLogout} className="text-slate-400 hover:text-white transition-colors p-1">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* ── Bottom nav móvil ────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex"
         style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        {mobileNav.map(({ label, href, icon: Icon }) => {
+        {mobileNavBase.filter(itemVisible).slice(0, 5).map(({ label, href, icon: Icon }) => {
           const active = isActive(href)
           return (
-            <Link
-              key={href}
-              href={href}
+            <Link key={href} href={href}
               className={cn(
                 'flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
                 active ? 'text-indigo-300' : 'text-slate-500'
-              )}
-            >
+              )}>
               <Icon className={cn('w-5 h-5', active ? 'text-indigo-300' : 'text-slate-500')} />
               {label}
             </Link>

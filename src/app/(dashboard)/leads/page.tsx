@@ -1,10 +1,11 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, Users } from 'lucide-react'
 import LeadsTable from '@/components/leads/leads-table'
 
 export default async function LeadsPage() {
+  await requirePermission('leads')
   const supabase = await createClient()
 
   const { data: deals } = await supabase

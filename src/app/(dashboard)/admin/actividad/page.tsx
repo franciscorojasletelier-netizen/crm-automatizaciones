@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, requirePermission } from '@/lib/supabase/server'
 import { Activity, Clock, User, Shield, Wifi } from 'lucide-react'
 
 function timeAgo(date: string) {
@@ -26,6 +26,7 @@ function getInitials(name: string) {
 export default async function ActividadPage() {
   const supabase = await createClient()
 
+  await requirePermission('actividad')
   const [{ data: users }, { data: activity }, { data: sessions }] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, role, is_active').order('full_name'),
     supabase.from('user_activity_log').select('id, action_type, entity_type, metadata, created_at, profiles:user_id(full_name, email)').order('created_at', { ascending: false }).limit(40),
