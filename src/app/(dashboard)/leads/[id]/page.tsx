@@ -36,8 +36,9 @@ const stageLabels: Record<string, string> = {
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, supabase } = await getCurrentProfile()
+  const { user, role, profile, supabase } = await getCurrentProfile()
   const userId = user.id
+  const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
   // Verificar acceso a este deal específico
   const hasAccess = await canSeeDeal(supabase, userId, role, id)
@@ -269,7 +270,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <DealChat
               dealId={deal.id}
               currentUserId={userId}
-              currentUserName={''}
+              currentUserName={userName}
               initialMessages={(chatMessages ?? []) as any}
             />
           </div>
