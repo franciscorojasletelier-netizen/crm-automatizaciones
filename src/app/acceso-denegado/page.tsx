@@ -1,22 +1,24 @@
 import Link from 'next/link'
-import { ShieldX, ArrowLeft, Zap } from 'lucide-react'
-import { getRoleMeta } from '@/lib/roles'
+import { ShieldX, Zap } from 'lucide-react'
+import { getRoleMeta, normalizeRole } from '@/lib/roles'
 
 export default async function AccesoDenegadoPage({
   searchParams,
 }: {
   searchParams: Promise<{ from?: string; role?: string }>
 }) {
-  const { from, role } = await searchParams
-  const roleMeta = getRoleMeta(role ?? 'soporte')
+  const { from, role: rawRole } = await searchParams
+  const role = normalizeRole(rawRole ?? 'soporte')
+  const roleMeta = getRoleMeta(role)
 
   const sectionNames: Record<string, string> = {
-    '/pipeline':  'Pipeline de ventas',
-    '/leads':     'Leads',
-    '/empresas':  'Empresas',
-    '/tareas':    'Tareas',
-    '/proyectos': 'Proyectos',
-    '/admin':     'Panel de administración',
+    '/pipeline':      'Pipeline de ventas',
+    '/leads':         'Leads',
+    '/empresas':      'Empresas',
+    '/tareas':        'Tareas',
+    '/proyectos':     'Proyectos',
+    '/admin/usuarios':'Gestión de usuarios',
+    '/admin':         'Panel de administración',
     '/configuracion': 'Configuración del sistema',
   }
 
@@ -28,7 +30,7 @@ export default async function AccesoDenegadoPage({
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center space-y-6">
 
-        {/* Icono */}
+        {/* Ícono */}
         <div className="relative inline-flex">
           <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-lg"
             style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
@@ -43,9 +45,12 @@ export default async function AccesoDenegadoPage({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Acceso restringido</h1>
           <p className="text-slate-500 mt-2 leading-relaxed">
-            Tu rol de <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ring-1 inline-block mx-1 ${roleMeta.color} ring-current`}>
+            Tu rol de{' '}
+            <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ring-1 inline-block mx-1 ${roleMeta.color} ring-current`}>
               {roleMeta.label}
-            </span> no tiene permisos para acceder a <strong className="text-slate-700">{sectionName}</strong>.
+            </span>{' '}
+            no tiene permisos para acceder a{' '}
+            <strong className="text-slate-700">{sectionName}</strong>.
           </p>
         </div>
 
@@ -55,7 +60,7 @@ export default async function AccesoDenegadoPage({
           <p className="text-sm text-slate-600 leading-relaxed">{roleMeta.description}</p>
         </div>
 
-        {/* Acción */}
+        {/* Acciones */}
         <div className="flex flex-col gap-2">
           <Link href="/dashboard"
             className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all"
@@ -63,11 +68,10 @@ export default async function AccesoDenegadoPage({
             <Zap className="w-4 h-4" />
             Ir a mi Dashboard
           </Link>
-          <button onClick={() => history.back()}
+          <Link href="/leads"
             className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Volver
-          </button>
+            Volver a Leads
+          </Link>
         </div>
 
         <p className="text-xs text-slate-400">

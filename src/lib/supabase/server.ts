@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getPermissions, type Role } from '@/lib/roles'
+import { getPermissions, normalizeRole, type Role } from '@/lib/roles'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -26,7 +26,7 @@ export async function createClient() {
   )
 }
 
-// Helper para obtener perfil del usuario actual con manejo de errores
+// Helper: obtiene perfil con el rol YA normalizado
 export async function getCurrentProfile() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -38,22 +38,25 @@ export async function getCurrentProfile() {
     .eq('id', user.id)
     .single()
 
-  return { user, profile, supabase }
+  // Normalizar rol legacy (admin → super_admin, etc.)
+  const role = normalizeRole(profile?.role ?? 'soporte')
+
+  return { user, profile, role, supabase }
 }
 
-// Guard de permiso — redirige si no tiene acceso
+// Guard de permiso — redirige si el rol no tiene acceso
 export async function requirePermission(
   permission: keyof ReturnType<typeof getPermissions>
 ) {
-  const { profile } = await getCurrentProfile()
-  const role = (profile?.role ?? 'soporte') as Role
+  const { profile, role, supabase, user } = await getCurrentProfile()
+
   const perms = getPermissions(role)
   const val = perms[permission]
-
   const hasAccess = typeof val === 'boolean' ? val : val !== 'none'
+
   if (!hasAccess) {
     redirect(`/acceso-denegado?from=protected&role=${role}`)
   }
 
-  return { role, perms, profile }
+  return { role, perms, profile, supabase, user }
 }

@@ -180,7 +180,7 @@ const LEGACY_ROLE_MAP: Record<string, Role> = {
   finanzas:    'soporte',
 }
 
-function normalizeRole(role: string): Role {
+export function normalizeRole(role: string): Role {
   if (role in PERMISSIONS) return role as Role
   if (role in LEGACY_ROLE_MAP) return LEGACY_ROLE_MAP[role]
   return 'soporte'
