@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { runAutomationsForStageChange } from '@/lib/automations'
 import {
   X, AlertTriangle, XCircle, MinusCircle, PauseCircle,
   MessageSquare, Loader2, CheckCircle2, Paperclip,
@@ -362,6 +363,17 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
         )
       }
     }
+
+    // Ejecutar automatizaciones en segundo plano (no bloquea UI)
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    runAutomationsForStageChange({
+      supabase,
+      dealId:  deal.id,
+      toStage: targetStage,
+      status:  updates.status as 'won' | 'lost' | 'open' | undefined,
+      ownerId: (updatedDeal as any)?.owner_id ?? undefined,
+      userId:  currentUser?.id ?? '',
+    })
 
     setSaving(false)
     setReasonModal(null); setProposalModal(null); setGanadoModal(null)
