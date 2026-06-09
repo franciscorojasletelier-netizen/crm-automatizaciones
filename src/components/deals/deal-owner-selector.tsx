@@ -13,10 +13,11 @@ interface Profile {
 }
 
 interface Props {
-  dealId:      string
+  dealId:       string
   currentOwner: { id: string; full_name: string | null } | null
-  teamUsers:   Profile[]
-  canReassign: boolean
+  teamUsers:    Profile[]
+  canReassign:  boolean
+  onReassigned?: (dealId: string, newOwner: Profile) => void
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -42,7 +43,7 @@ function getAvatarColor(id: string) {
   return colors[hash % colors.length]
 }
 
-export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, canReassign }: Props) {
+export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, canReassign, onReassigned }: Props) {
   const [open, setOpen]     = useState(false)
   const [saving, setSaving] = useState(false)
   const [owner, setOwner]   = useState(currentOwner)
@@ -77,6 +78,8 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
         })
       }
       setOwner({ id: user.id, full_name: user.full_name })
+      // Callback para eliminación optimista en la tabla
+      onReassigned?.(dealId, user)
       router.refresh()
     }
     setSaving(false)

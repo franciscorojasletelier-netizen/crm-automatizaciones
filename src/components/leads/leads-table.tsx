@@ -53,10 +53,22 @@ function ScoreBadge({ score }: { score: number | null }) {
   )
 }
 
-export default function LeadsTable({ deals, teamUsers = [], canReassign = false }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean }) {
+export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean }) {
+  const [deals, setDeals]   = useState(initialDeals)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
+
+  // Cuando el server rerenderiza, sincronizar
+  useEffect(() => { setDeals(initialDeals) }, [initialDeals])
+
+  function handleReassigned(dealId: string, newOwner: any) {
+    setDeals(prev => prev.map(d =>
+      d.id === dealId
+        ? { ...d, profiles: { id: newOwner.id, full_name: newOwner.full_name } }
+        : d
+    ))
+  }
 
   const sources = useMemo(() => Array.from(new Set(deals.map(d => d.source).filter(Boolean))) as string[], [deals])
 
@@ -201,6 +213,7 @@ export default function LeadsTable({ deals, teamUsers = [], canReassign = false 
                     currentOwner={deal.profiles ? { id: deal.profiles.id, full_name: deal.profiles.full_name } : null}
                     teamUsers={teamUsers}
                     canReassign={canReassign}
+                    onReassigned={handleReassigned}
                   />
                 </td>
                 <td className="px-5 py-3.5 text-slate-500 max-w-[180px] truncate text-xs">
