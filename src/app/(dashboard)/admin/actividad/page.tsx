@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { createClient, requirePermission } from '@/lib/supabase/server'
-import { Activity, Clock, User, Shield, Wifi } from 'lucide-react'
+import { Activity, Clock, User, Shield, Wifi, ClipboardList, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
@@ -27,10 +28,15 @@ export default async function ActividadPage() {
   const supabase = await createClient()
 
   await requirePermission('actividad')
-  const [{ data: users }, { data: activity }, { data: sessions }] = await Promise.all([
+  const [{ data: users }, { data: activity }, { data: sessions }, { data: taskHistory }] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, role, is_active').order('full_name'),
     supabase.from('user_activity_log').select('id, action_type, entity_type, metadata, created_at, profiles:user_id(full_name, email)').order('created_at', { ascending: false }).limit(40),
     supabase.from('user_sessions').select('id, started_at, last_seen_at, profiles:user_id(full_name)').order('last_seen_at', { ascending: false }).limit(10),
+    supabase.from('task_history').select(`
+      id, field_changed, old_value, new_value, comment, created_at,
+      changer:changed_by(full_name),
+      task:task_id(title, deals(companies(name)))
+    `).order('created_at', { ascending: false }).limit(50),
   ])
 
   return (
@@ -71,6 +77,66 @@ export default async function ActividadPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Historial de cambios en tareas */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
+            <ClipboardList className="w-3.5 h-3.5 text-violet-600" />
+          </div>
+          <h2 className="text-sm font-semibold text-slate-900 flex-1">Cambios en tareas</h2>
+          {taskHistory && taskHistory.length > 0 && (
+            <span className="text-xs font-bold bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full">{taskHistory.length}</span>
+          )}
+        </div>
+        <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
+          {(!taskHistory || taskHistory.length === 0) ? (
+            <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin cambios registrados aún</p>
+          ) : (taskHistory as any[]).map((h) => {
+            const task = h.task as any
+            const formatVal = (v: string | null) => {
+              if (!v) return 'Sin fecha'
+              const d = new Date(v)
+              if (isNaN(d.getTime())) return v
+              return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            }
+            return (
+              <div key={h.id} className="px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Quién + qué tarea */}
+                    <p className="text-sm text-slate-800 leading-snug">
+                      <span className="font-bold text-slate-900">{(h.changer as any)?.full_name ?? 'Usuario'}</span>
+                      <span className="text-slate-400 mx-1.5">reprogramó</span>
+                      <span className="font-semibold text-indigo-700">{task?.title ?? 'tarea'}</span>
+                      {task?.deals?.companies?.name && (
+                        <span className="text-slate-400 ml-1">· {task.deals.companies.name}</span>
+                      )}
+                    </p>
+                    {/* Valor anterior → nuevo */}
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      <span className="text-[11px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded line-through">
+                        {formatVal(h.old_value)}
+                      </span>
+                      <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">
+                        {formatVal(h.new_value)}
+                      </span>
+                    </div>
+                    {/* Comentario */}
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 leading-relaxed">
+                      💬 {h.comment}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 mt-0.5">
+                    {timeAgo(h.created_at)}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
