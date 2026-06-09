@@ -263,6 +263,23 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
   function onDragStart(e: React.DragEvent, deal: KanbanDeal) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('dealId', deal.id)
+
+    // Imagen de arrastre personalizada — mini chip con nombre empresa
+    const ghost = document.createElement('div')
+    ghost.style.cssText = [
+      'position:fixed', 'top:-200px', 'left:-200px',
+      'background:linear-gradient(135deg,#6366f1,#8b5cf6)',
+      'color:white', 'padding:8px 14px', 'border-radius:12px',
+      'font-size:13px', 'font-weight:700', 'white-space:nowrap',
+      'box-shadow:0 8px 24px rgba(99,102,241,0.4)',
+      'pointer-events:none', 'z-index:9999',
+    ].join(';')
+    ghost.textContent = `✦ ${deal.companies?.name ?? 'Deal'}`
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, 20)
+    // Limpiar el elemento ghost después de un tick
+    setTimeout(() => document.body.removeChild(ghost), 0)
+
     setDraggingId(deal.id)
   }
   function onDragEnd() {
@@ -448,8 +465,10 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
                       draggable
                       onDragStart={e => onDragStart(e, deal)}
                       onDragEnd={onDragEnd}
-                      className={`bg-white border border-slate-200 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:border-indigo-300 hover:shadow-md transition-all duration-150 relative overflow-hidden group ${
-                        draggingId === deal.id ? 'opacity-40 scale-95 shadow-none' : ''
+                      className={`rounded-xl p-3 cursor-grab active:cursor-grabbing transition-all duration-150 relative overflow-hidden group ${
+                        draggingId === deal.id
+                          ? 'border-2 border-dashed border-indigo-300 bg-indigo-50/50 shadow-none'
+                          : 'bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-md'
                       }`}
                     >
                       {/* Barra color top */}
