@@ -2,13 +2,14 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { Users, TrendingUp, CheckSquare, AlertCircle, DollarSign, Target, ArrowRight, Clock } from 'lucide-react'
 import Link from 'next/link'
+import DashboardDonut from '@/components/dashboard/donut-chart'
 
 async function getStats() {
   const supabase = await createClient()
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [dealsOpen, dealsWonMonth, tasksOverdue, leadsNew, wonValue, projects, pipeline, recentDeals, overdueTasks] = await Promise.all([
+  const [dealsOpen, dealsWonMonth, tasksOverdue, leadsNew, wonValue, projects, pipeline, recentDeals, overdueTasks, allDealsForChart] = await Promise.all([
     supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'open'),
     supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'won').gte('updated_at', startOfMonth),
     supabase.from('tasks').select('id', { count: 'exact' }).eq('is_completed', false).lt('due_date', now.toISOString()),
@@ -24,6 +25,8 @@ async function getStats() {
       id, title, due_date,
       deals(companies(name))
     `).eq('is_completed', false).lt('due_date', now.toISOString()).order('due_date', { ascending: true }).limit(5),
+    // Para gráfico donut
+    supabase.from('deals').select(`stage, source, estimated_value, profiles:owner_id(full_name), companies(industry)`),
   ])
 
   const valorGanado = wonValue.data?.reduce((sum, d) => sum + (Number(d.estimated_value) || 0), 0) ?? 0
@@ -32,6 +35,61 @@ async function getStats() {
   pipeline.data?.forEach(d => {
     stageCounts[d.stage] = (stageCounts[d.stage] || 0) + 1
   })
+
+  // Chart data
+  const chartDeals = allDealsForChart.data ?? []
+
+  // Por etapa
+  const STAGE_COLORS: Record<string, string> = {
+    nuevo_lead: '#3b82f6', contactado: '#eab308', calificado: '#a855f7',
+    reunion_agendada: '#6366f1', reunion_realizada: '#06b6d4',
+    propuesta_enviada: '#f97316', negociacion: '#ec4899',
+    cerrado_ganado: '#22c55e', cerrado_perdido: '#ef4444',
+    no_calificado: '#9ca3af', frio: '#64748b',
+  }
+  const STAGE_LABELS: Record<string, string> = {
+    nuevo_lead: 'Nuevo Lead', contactado: 'Contactado', calificado: 'Calificado',
+    reunion_agendada: 'Reunión Agendada', reunion_realizada: 'Reunión Realizada',
+    propuesta_enviada: 'Propuesta Enviada', negociacion: 'Negociación',
+    cerrado_ganado: 'Ganado', cerrado_perdido: 'Perdido',
+    no_calificado: 'No Calificado', frio: 'Frío',
+  }
+  const stageMap: Record<string, number> = {}
+  chartDeals.forEach((d: any) => { stageMap[d.stage] = (stageMap[d.stage] || 0) + 1 })
+  const byEtapa = Object.entries(stageMap).map(([k, v]) => ({
+    label: STAGE_LABELS[k] ?? k, value: v, color: STAGE_COLORS[k] ?? '#94a3b8'
+  })).sort((a, b) => b.value - a.value)
+
+  // Por fuente
+  const FUENTE_COLORS = ['#6366f1','#f97316','#22c55e','#eab308','#ec4899','#06b6d4','#a855f7','#94a3b8']
+  const fuenteMap: Record<string, number> = {}
+  chartDeals.forEach((d: any) => {
+    const k = (d.source as string) || 'Sin fuente'
+    fuenteMap[k] = (fuenteMap[k] || 0) + 1
+  })
+  const byFuente = Object.entries(fuenteMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({
+    label: k, value: v, color: FUENTE_COLORS[i % FUENTE_COLORS.length]
+  }))
+
+  // Por industria
+  const industryMap: Record<string, number> = {}
+  chartDeals.forEach((d: any) => {
+    const k = (d.companies as any)?.industry || 'Sin industria'
+    industryMap[k] = (industryMap[k] || 0) + 1
+  })
+  const byIndustria = Object.entries(industryMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({
+    label: k, value: v, color: FUENTE_COLORS[i % FUENTE_COLORS.length]
+  }))
+
+  // Por responsable
+  const ownerMap: Record<string, number> = {}
+  chartDeals.forEach((d: any) => {
+    const k = (d.profiles as any)?.full_name || 'Sin asignar'
+    ownerMap[k] = (ownerMap[k] || 0) + 1
+  })
+  const byResponsable = Object.entries(ownerMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({
+    label: k, value: v, color: FUENTE_COLORS[i % FUENTE_COLORS.length]
+  }))
 
   return {
     dealsOpen: dealsOpen.count ?? 0,
@@ -43,6 +101,7 @@ async function getStats() {
     stageCounts,
     recentDeals: recentDeals.data ?? [],
     overdueTasks: overdueTasks.data ?? [],
+    byEtapa, byFuente, byIndustria, byResponsable,
   }
 }
 
@@ -205,6 +264,14 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Gráfico Donut */}
+      <DashboardDonut
+        byEtapa={stats.byEtapa}
+        byFuente={stats.byFuente}
+        byIndustria={stats.byIndustria}
+        byResponsable={stats.byResponsable}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
 

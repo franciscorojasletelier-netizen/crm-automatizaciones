@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
-import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users } from 'lucide-react'
+import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Download } from 'lucide-react'
 import Link from 'next/link'
 
 const stageLabels: Record<string, string> = {
@@ -140,9 +140,20 @@ export default async function ReportesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Reportes</h1>
           <p className="text-sm text-slate-500 mt-0.5">Análisis de rendimiento comercial</p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
-          <BarChart3 className="w-3.5 h-3.5" />
-          Datos en tiempo real
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-xs text-slate-400 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+            <BarChart3 className="w-3.5 h-3.5" />
+            Datos en tiempo real
+          </div>
+          <a
+            href="/api/reports/export"
+            download
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Exportar Excel
+          </a>
         </div>
       </div>
 
