@@ -364,14 +364,18 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
       })
     }
 
-    // Notificar gerentes si etapa negativa
+    // ── Notificaciones de etapa ────────────────────────────────
+    const stageLabel    = ALL_STAGES.find(s => s.key === targetStage)?.label ?? targetStage
+    const companyName   = (updatedDeal as any)?.companies?.name ?? 'deal'
+    const ownerId       = (updatedDeal as any)?.owner_id ?? null
+    const { data: { user: meUser } } = await supabase.auth.getUser()
+
+    // A) Notificar gerentes si etapa negativa
     if (REASON_REQUIRED.includes(targetStage) && reason) {
       const { data: gerentes } = await supabase
         .from('profiles').select('id')
         .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
       if (gerentes?.length) {
-        const stageLabel = ALL_STAGES.find(s => s.key === targetStage)?.label ?? targetStage
-        const companyName = (updatedDeal as any)?.companies?.name ?? 'deal'
         await supabase.from('notifications').insert(
           gerentes.map((g: any) => ({
             user_id: g.id, type: 'stage_changed',
@@ -383,15 +387,50 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
       }
     }
 
+    // B) Notificar al owner si la etapa cambió (y no es él mismo quien mueve)
+    if (ownerId && ownerId !== meUser?.id) {
+      const emoji = targetStage === 'cerrado_ganado' ? '🎉'
+                  : REASON_REQUIRED.includes(targetStage) ? '⚠️'
+                  : '🔄'
+      await supabase.from('notifications').insert({
+        user_id:     ownerId,
+        type:        'stage_changed',
+        title:       `${emoji} ${companyName} movido a "${stageLabel}"`,
+        body:        reason ? `Motivo: ${reason}` : `Tu deal cambió de etapa`,
+        entity_type: 'deal',
+        entity_id:   deal.id,
+      })
+    }
+
+    // C) Notificar a todos los gerentes si deal ganado
+    if (targetStage === 'cerrado_ganado') {
+      const { data: gerentes } = await supabase
+        .from('profiles').select('id')
+        .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
+      if (gerentes?.length) {
+        const valueStr = updatedDeal?.estimated_value
+          ? ` · $${Number(updatedDeal.estimated_value).toLocaleString('es-CL')}`
+          : ''
+        await supabase.from('notifications').insert(
+          gerentes.filter((g: any) => g.id !== meUser?.id && g.id !== ownerId)
+            .map((g: any) => ({
+              user_id: g.id, type: 'stage_changed',
+              title: `🎉 Deal GANADO: ${companyName}${valueStr}`,
+              body: `Cerrado exitosamente`,
+              entity_type: 'deal', entity_id: deal.id,
+            }))
+        )
+      }
+    }
+
     // Ejecutar automatizaciones en segundo plano (no bloquea UI)
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
     runAutomationsForStageChange({
       supabase,
       dealId:  deal.id,
       toStage: targetStage,
       status:  updates.status as 'won' | 'lost' | 'open' | undefined,
-      ownerId: (updatedDeal as any)?.owner_id ?? undefined,
-      userId:  currentUser?.id ?? '',
+      ownerId: ownerId ?? undefined,
+      userId:  meUser?.id ?? '',
     })
 
     setSaving(false)

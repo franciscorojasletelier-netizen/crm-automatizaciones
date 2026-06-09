@@ -51,14 +51,28 @@ export async function runAutomationsForStageChange(ctx: AutomationContext) {
           const dueDate = new Date()
           dueDate.setDate(dueDate.getDate() + (cfg.days_after ?? 1))
 
-          const { error } = await supabase.from('tasks').insert({
+          const { data: newTask, error } = await supabase.from('tasks').insert({
             title:        cfg.title ?? 'Tarea de seguimiento',
             deal_id:      dealId,
             assigned_to:  ownerId ?? userId,
             due_date:     dueDate.toISOString(),
             is_completed: false,
-          })
+          }).select('id').single()
           if (error) throw error
+
+          // Notificar al asignado si es diferente del ejecutor
+          const assignedTo = ownerId ?? userId
+          if (newTask && assignedTo && assignedTo !== userId) {
+            const dueDateStr = dueDate.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+            await supabase.from('notifications').insert({
+              user_id:     assignedTo,
+              type:        'task_due',
+              title:       `📋 Nueva tarea asignada: ${cfg.title ?? 'Tarea de seguimiento'}`,
+              body:        `Vence el ${dueDateStr} · Creada por automatización "${rule.name}"`,
+              entity_type: 'task',
+              entity_id:   newTask.id,
+            })
+          }
           logDetails = { task_title: cfg.title, days_after: cfg.days_after }
 
         } else if (rule.action_type === 'notify_owner' && ownerId) {
