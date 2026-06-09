@@ -28,15 +28,31 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
     const tomorrowEnd= new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString()
 
-    // Obtener todos los usuarios activos con email
-    const { data: profiles, error: profErr } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('is_active', true)
-
-    if (profErr || !profiles) {
-      return NextResponse.json({ error: 'Could not fetch profiles', detail: profErr?.message }, { status: 500 })
+    // Obtener usuarios via auth admin (evita RLS de profiles)
+    const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ perPage: 200 })
+    if (authErr || !authData) {
+      return NextResponse.json({ error: 'Could not fetch users', detail: authErr?.message }, { status: 500 })
     }
+
+    // Obtener perfiles para nombres (ignorar error RLS — usamos metadata como fallback)
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, is_active')
+    const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]))
+
+    // Construir lista de usuarios activos con email
+    const profiles = authData.users
+      .filter(u => u.email && !u.banned_until)
+      .map(u => {
+        const p = profileMap.get(u.id) as any
+        return {
+          id:        u.id,
+          email:     p?.email ?? u.email,
+          full_name: p?.full_name ?? u.user_metadata?.full_name ?? u.email?.split('@')[0] ?? 'equipo',
+          is_active: p?.is_active ?? true,
+        }
+      })
+      .filter(u => u.is_active && u.email)
 
     let sent = 0
     const errors: string[] = []
@@ -44,20 +60,20 @@ export async function GET(request: NextRequest) {
     for (const profile of profiles) {
       if (!profile.email) continue
 
-      // Tareas para hoy/mañana
+      // Tareas para hoy/mañana (sin columna priority)
       const { data: tasks } = await supabase
         .from('tasks')
-        .select('id, title, due_date, priority, deals(companies(name))')
+        .select('id, title, due_date, deals(companies(name))')
         .eq('assigned_to', profile.id)
         .eq('is_completed', false)
         .gte('due_date', todayStart)
         .lt('due_date', tomorrowEnd)
         .order('due_date', { ascending: true })
 
-      // Tareas vencidas
+      // Tareas vencidas (sin columna priority)
       const { data: overdue } = await supabase
         .from('tasks')
-        .select('id, title, due_date, priority, deals(companies(name))')
+        .select('id, title, due_date, deals(companies(name))')
         .eq('assigned_to', profile.id)
         .eq('is_completed', false)
         .lt('due_date', todayStart)
@@ -125,13 +141,10 @@ function buildEmailHtml(
     weekday: 'long', day: 'numeric', month: 'long',
   })
 
-  const priorityEmoji: Record<string, string> = { alta: '🔴', media: '🟡', baja: '🟢' }
-
   const row = (t: Record<string, unknown>, isOverdue: boolean) => {
     const title    = String(t.title ?? '')
     const company  = (t.deals as Record<string, unknown> | null)?.companies
     const compName = (company as Record<string, unknown> | null)?.name
-    const priority = String(t.priority ?? 'media')
     const dueDate  = t.due_date ? new Date(String(t.due_date)).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : ''
 
     return `<tr>
@@ -140,7 +153,7 @@ function buildEmailHtml(
         ${compName ? `<br><span style="color:#94a3b8;font-size:12px">${String(compName)}</span>` : ''}
       </td>
       <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};font-size:12px;white-space:nowrap;color:${isOverdue ? '#ef4444' : '#64748b'}">
-        ${isOverdue ? `Vencida el ${dueDate}` : `${priorityEmoji[priority] ?? '🟡'} ${priority}`}
+        ${isOverdue ? `⚠️ Vencida el ${dueDate}` : `📅 ${dueDate}`}
       </td>
     </tr>`
   }
