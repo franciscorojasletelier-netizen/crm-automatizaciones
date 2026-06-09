@@ -38,7 +38,13 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
       .insert({ deal_id: dealId, type, content, direction: 'outbound' })
       .select('*, profiles:user_id(full_name)')
       .single()
-    if (data) { setList([data, ...list]); setContent(''); setShowing(false) }
+    if (data) {
+      setList([data, ...list]); setContent(''); setShowing(false)
+      // Mantener last_contacted_at al día — alimenta el indicador "Xd sin contacto"
+      await supabase.from('deals')
+        .update({ last_contacted_at: new Date().toISOString() })
+        .eq('id', dealId)
+    }
     setLoading(false)
     router.refresh()
   }

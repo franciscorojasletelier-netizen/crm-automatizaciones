@@ -53,10 +53,14 @@ export default function NuevoLeadForm() {
       if (form.source === 'Meta Ads' || form.source === 'LinkedIn') score += 10
       if (form.industry) score += 5
 
+      // Asignar al usuario que lo crea — sin esto, un comercial no vería su propio lead
+      const { data: { user } } = await supabase.auth.getUser()
+
       const { error: dealError } = await supabase.from('deals').insert({
         company_id: company.id, primary_contact_id: contact.id, source: form.source,
         estimated_value: form.estimated_value ? parseFloat(form.estimated_value) : null,
         next_action: form.next_action, score, stage: 'nuevo_lead', status: 'open',
+        owner_id: user?.id ?? null,
       })
       if (dealError) throw dealError
       router.push('/leads')

@@ -10,73 +10,75 @@ export default async function NotificacionesPage() {
   const today = now.toISOString().split('T')[0]  // "2026-06-09"
   const todayEnd = today + 'T23:59:59'
 
-  // ── 1. AUTO-NOTIFICAR tareas vencidas asignadas al usuario ──
-  const { data: overdueTasks } = await supabase
-    .from('tasks')
-    .select(`id, title, due_date, deals(companies(name))`)
-    .eq('assigned_to', user.id)
-    .eq('is_completed', false)
-    .lt('due_date', now.toISOString())
-    .order('due_date', { ascending: true })
-    .limit(20)
+  // ── AUTO-NOTIFICAR tareas vencidas y de hoy (queries en paralelo) ──
+  const [{ data: overdueTasks }, { data: todayTasks }, { data: todayNotifs }] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select(`id, title, due_date, deals(companies(name))`)
+      .eq('assigned_to', user.id)
+      .eq('is_completed', false)
+      .lt('due_date', now.toISOString())
+      .order('due_date', { ascending: true })
+      .limit(20),
+    supabase
+      .from('tasks')
+      .select(`id, title, due_date, deals(companies(name))`)
+      .eq('assigned_to', user.id)
+      .eq('is_completed', false)
+      .gte('due_date', today)
+      .lte('due_date', todayEnd)
+      .limit(10),
+    // Notificaciones ya emitidas hoy — una sola query en vez de una por tarea
+    supabase
+      .from('notifications')
+      .select('entity_id, type')
+      .eq('user_id', user.id)
+      .in('type', ['task_overdue', 'task_due'])
+      .gte('created_at', today),
+  ])
+
+  const alreadyNotified = new Set(
+    (todayNotifs ?? []).map(n => `${n.type}:${n.entity_id}`)
+  )
+
+  const newNotifs: any[] = []
 
   for (const task of overdueTasks ?? []) {
-    // No duplicar: verificar si ya existe notif de este tipo hoy
-    const { count } = await supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('entity_id', task.id)
-      .eq('type', 'task_overdue')
-      .gte('created_at', today)
-
-    if ((count ?? 0) === 0) {
-      const company = (task.deals as any)?.companies?.name
-      const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
-      await supabase.from('notifications').insert({
-        user_id:     user.id,
-        type:        'task_overdue',
-        title:       `⏰ Tarea vencida: ${task.title}`,
-        body:        `Venció el ${dueStr}${company ? ` · ${company}` : ''}`,
-        entity_type: 'task',
-        entity_id:   task.id,
-      })
-    }
+    if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
+    const company = (task.deals as any)?.companies?.name
+    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+    newNotifs.push({
+      user_id:     user.id,
+      type:        'task_overdue',
+      title:       `⏰ Tarea vencida: ${task.title}`,
+      body:        `Venció el ${dueStr}${company ? ` · ${company}` : ''}`,
+      entity_type: 'task',
+      entity_id:   task.id,
+    })
   }
 
-  // ── 2. AUTO-NOTIFICAR tareas que vencen HOY ────────────────
-  const { data: todayTasks } = await supabase
-    .from('tasks')
-    .select(`id, title, due_date, deals(companies(name))`)
-    .eq('assigned_to', user.id)
-    .eq('is_completed', false)
-    .gte('due_date', today)
-    .lte('due_date', todayEnd)
-    .limit(10)
-
   for (const task of todayTasks ?? []) {
-    const { count } = await supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('entity_id', task.id)
-      .eq('type', 'task_due')
-      .gte('created_at', today)
+    if (alreadyNotified.has(`task_due:${task.id}`)) continue
+    // Una tarea vencida hoy no debe generar ambas notificaciones
+    if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
+    if (newNotifs.some(n => n.entity_id === task.id)) continue
+    const company = (task.deals as any)?.companies?.name
+    const dueStr  = task.due_date
+      ? new Date(task.due_date).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+      : null
+    newNotifs.push({
+      user_id:     user.id,
+      type:        'task_due',
+      title:       `📋 Tarea para hoy: ${task.title}`,
+      body:        `${dueStr ? `A las ${dueStr}` : 'Hoy'}${company ? ` · ${company}` : ''}`,
+      entity_type: 'task',
+      entity_id:   task.id,
+    })
+  }
 
-    if ((count ?? 0) === 0) {
-      const company = (task.deals as any)?.companies?.name
-      const dueStr  = task.due_date
-        ? new Date(task.due_date).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-        : null
-      await supabase.from('notifications').insert({
-        user_id:     user.id,
-        type:        'task_due',
-        title:       `📋 Tarea para hoy: ${task.title}`,
-        body:        `${dueStr ? `A las ${dueStr}` : 'Hoy'}${company ? ` · ${company}` : ''}`,
-        entity_type: 'task',
-        entity_id:   task.id,
-      })
-    }
+  // Un solo insert masivo en vez de uno por tarea
+  if (newNotifs.length > 0) {
+    await supabase.from('notifications').insert(newNotifs)
   }
 
   // ── Leer todas las notificaciones del usuario ──────────────

@@ -48,27 +48,109 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Se requiere company_name, contact_name, name o company' }, { status: 400 })
     }
 
-    // Crear empresa
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .insert({ name: company_name ?? contact_name, industry, website })
-      .select('id').single()
+    // ── DEDUPLICACIÓN: buscar contacto existente por email ─────
+    let company: { id: string } | null = null
+    let contact: { id: string } | null = null
+    let isDuplicate = false
 
-    if (companyError) throw companyError
+    if (contact_email) {
+      const { data: existingContact } = await supabase
+        .from('contacts')
+        .select('id, company_id')
+        .ilike('email', contact_email.trim())
+        .limit(1)
+        .maybeSingle()
 
-    // Crear contacto
-    const { data: contact, error: contactError } = await supabase
-      .from('contacts')
-      .insert({
-        company_id: company.id,
-        full_name: contact_name ?? company_name,
-        email: contact_email,
-        phone: contact_phone,
-        job_title: contact_job_title,
-      })
-      .select('id').single()
+      if (existingContact) {
+        isDuplicate = true
+        contact = { id: existingContact.id }
+        company = existingContact.company_id ? { id: existingContact.company_id } : null
 
-    if (contactError) throw contactError
+        // Si ya tiene un deal abierto, no crear otro: registrar interacción y salir
+        const { data: openDeal } = await supabase
+          .from('deals')
+          .select('id')
+          .eq('primary_contact_id', existingContact.id)
+          .eq('status', 'open')
+          .limit(1)
+          .maybeSingle()
+
+        if (openDeal) {
+          await supabase.from('interactions').insert({
+            deal_id: openDeal.id,
+            contact_id: existingContact.id,
+            type: 'note',
+            direction: 'inbound',
+            content: `🔁 El lead volvió a contactar via ${source}${message ? `:\n${message}` : ''}`,
+          })
+          return NextResponse.json({
+            success: true,
+            duplicate: true,
+            lead_id: openDeal.id,
+            message: 'Contacto existente con deal abierto — interacción registrada',
+          }, { status: 200, headers: CORS_HEADERS })
+        }
+      }
+    }
+
+    // Buscar empresa existente por nombre si no la tenemos del contacto
+    if (!company && company_name) {
+      const { data: existingCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .ilike('name', company_name.trim())
+        .limit(1)
+        .maybeSingle()
+      if (existingCompany) company = { id: existingCompany.id }
+    }
+
+    // Crear empresa solo si no existe
+    if (!company) {
+      const { data: newCompany, error: companyError } = await supabase
+        .from('companies')
+        .insert({ name: company_name ?? contact_name, industry, website })
+        .select('id').single()
+      if (companyError) throw companyError
+      company = newCompany
+    }
+
+    // Crear contacto solo si no existe
+    if (!contact) {
+      const { data: newContact, error: contactError } = await supabase
+        .from('contacts')
+        .insert({
+          company_id: company!.id,
+          full_name: contact_name ?? company_name,
+          email: contact_email,
+          phone: contact_phone,
+          job_title: contact_job_title,
+        })
+        .select('id').single()
+      if (contactError) throw contactError
+      contact = newContact
+    }
+
+    // ── ASIGNACIÓN AUTOMÁTICA (round-robin por carga) ──────────
+    // El comercial activo con menos deals abiertos recibe el lead
+    let assignedOwnerId: string | null = null
+    const { data: comerciales } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('role', 'comercial')
+      .eq('is_active', true)
+
+    if (comerciales && comerciales.length > 0) {
+      const counts = await Promise.all(comerciales.map(async c => {
+        const { count } = await supabase
+          .from('deals')
+          .select('id', { count: 'exact', head: true })
+          .eq('owner_id', c.id)
+          .eq('status', 'open')
+        return { id: c.id, name: c.full_name, count: count ?? 0 }
+      }))
+      counts.sort((a, b) => a.count - b.count)
+      assignedOwnerId = counts[0].id
+    }
 
     // Calcular score inicial
     let score = 0
@@ -76,12 +158,13 @@ export async function POST(request: NextRequest) {
     if (source === 'Meta Ads' || source === 'LinkedIn') score += 10
     if (industry) score += 5
 
-    // Crear deal
+    // Crear deal (asignado automáticamente al comercial con menos carga)
     const { data: deal, error: dealError } = await supabase
       .from('deals')
       .insert({
-        company_id: company.id,
-        primary_contact_id: contact.id,
+        company_id: company!.id,
+        primary_contact_id: contact!.id,
+        owner_id: assignedOwnerId,
         source,
         estimated_value: estimated_value ? parseFloat(estimated_value) : null,
         next_action: next_action ?? 'Contactar lead entrante',
@@ -92,6 +175,45 @@ export async function POST(request: NextRequest) {
       .select('id').single()
 
     if (dealError) throw dealError
+
+    // ── NOTIFICACIONES IN-APP ──────────────────────────────────
+    const notifTargets: { user_id: string; title: string; body: string }[] = []
+
+    // Al comercial asignado
+    if (assignedOwnerId) {
+      notifTargets.push({
+        user_id: assignedOwnerId,
+        title: `🆕 Nuevo lead asignado: ${company_name ?? contact_name}`,
+        body: `Fuente: ${source}${contact_email ? ` · ${contact_email}` : ''} — contactar pronto`,
+      })
+    }
+
+    // A los gerentes
+    const { data: gerentes } = await supabase
+      .from('profiles')
+      .select('id')
+      .in('role', ['gerente', 'super_admin', 'admin'])
+      .eq('is_active', true)
+    gerentes?.forEach(g => {
+      if (g.id !== assignedOwnerId) {
+        notifTargets.push({
+          user_id: g.id,
+          title: `📥 Lead entrante: ${company_name ?? contact_name}`,
+          body: `Fuente: ${source}${isDuplicate ? ' · contacto recurrente' : ''}`,
+        })
+      }
+    })
+
+    if (notifTargets.length > 0) {
+      await supabase.from('notifications').insert(
+        notifTargets.map(n => ({
+          ...n,
+          type: 'deal_assigned',
+          entity_type: 'deal',
+          entity_id: deal.id,
+        }))
+      )
+    }
 
     // Registrar mensaje inicial como interacciÃ³n si viene del formulario
     if (message) {

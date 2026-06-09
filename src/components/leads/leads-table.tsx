@@ -41,6 +41,29 @@ const stageDot: Record<string, string> = {
   no_calificado: 'bg-gray-400', frio: 'bg-slate-400',
 }
 
+const CLOSED = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado', 'frio']
+
+// Días desde el último contacto (o desde la creación si nunca se contactó)
+function daysSinceContact(deal: any): number {
+  const ref = deal.last_contacted_at ?? deal.created_at
+  if (!ref) return 0
+  return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000)
+}
+
+function StaleBadge({ deal }: { deal: any }) {
+  if (CLOSED.includes(deal.stage)) return null
+  const days = daysSinceContact(deal)
+  if (days < 3) return null
+  const isUrgent = days >= 7
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+      isUrgent ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
+    }`} title={deal.last_contacted_at ? 'Días desde el último contacto' : 'Días desde la creación, sin contacto registrado'}>
+      {isUrgent ? '🔥' : '⏳'} {days}d sin contacto
+    </span>
+  )
+}
+
 function ScoreBadge({ score }: { score: number | null }) {
   const s = score ?? 0
   const color = s >= 60 ? 'text-emerald-700 bg-emerald-50 ring-emerald-200'
@@ -173,9 +196,12 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
               <tr key={deal.id} className="hover:bg-indigo-50/40 transition-colors group">
                 <td className="px-5 py-3.5">
                   <Link href={`/leads/${deal.id}`} className="block">
-                    <p className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">
-                      {deal.companies?.name ?? '—'}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                        {deal.companies?.name ?? '—'}
+                      </p>
+                      <StaleBadge deal={deal} />
+                    </div>
                     {deal.companies?.industry && (
                       <p className="text-xs text-slate-400 mt-0.5">{deal.companies.industry}</p>
                     )}
@@ -243,7 +269,10 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
           <Link key={deal.id} href={`/leads/${deal.id}`}
             className="flex flex-col bg-white rounded-2xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-md transition-all">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <p className="font-bold text-slate-900">{deal.companies?.name ?? '—'}</p>
+              <div>
+                <p className="font-bold text-slate-900">{deal.companies?.name ?? '—'}</p>
+                <StaleBadge deal={deal} />
+              </div>
               <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${stageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>
                 {stageLabels[deal.stage] ?? deal.stage}
               </span>

@@ -47,11 +47,15 @@ export default function NewTaskButton() {
 
     setLoading(true)
     setError('')
+    // Asignar al creador — sin assigned_to la tarea no aparece en recordatorios ni notificaciones
+    const { data: { user } } = await supabase.auth.getUser()
     const { error: err } = await supabase.from('tasks').insert({
       title: title.trim(),
       description: description.trim() || null,
       due_date: dueDate || null,
       deal_id: null,
+      assigned_to: user?.id ?? null,
+      created_by: user?.id ?? null,
     })
     if (err) {
       setError(err.message)

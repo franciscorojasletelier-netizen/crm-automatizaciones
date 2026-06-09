@@ -42,9 +42,14 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
       return
     }
     setLoading(true)
+    // Asignar al creador — sin assigned_to la tarea no aparece en recordatorios
+    const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase
       .from('tasks')
-      .insert({ deal_id: dealId, title, due_date: dueDate || null })
+      .insert({
+        deal_id: dealId, title, due_date: dueDate || null,
+        assigned_to: user?.id ?? null, created_by: user?.id ?? null,
+      })
       .select('*, profiles:assigned_to(full_name)')
       .single()
     if (data) {
