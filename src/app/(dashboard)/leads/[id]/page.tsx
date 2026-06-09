@@ -12,6 +12,7 @@ import DealMembers from '@/components/deals/deal-members'
 import DealChat from '@/components/chat/deal-chat'
 import { canSeeDeal } from '@/lib/visibility'
 import DealSpecBanner from '@/components/deals/deal-spec-banner'
+import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 
 const stageColors: Record<string, string> = {
   nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
@@ -82,7 +83,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
     supabase.from('deal_members').select('id, user_id, profiles:user_id(full_name, email, role)').eq('deal_id', id),
     canManage
-      ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true).in('role', ['comercial', 'produccion', 'soporte'])
+      ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true).in('role', ['super_admin', 'admin', 'gerente', 'comercial', 'produccion', 'soporte'])
       : Promise.resolve({ data: [] }),
     supabase.from('team_messages')
       .select('id, content, user_id, created_at, profiles:user_id(full_name, email)')
@@ -159,7 +160,6 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—', icon: TrendingUp, color: 'text-indigo-600 bg-indigo-50' },
               { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—',           icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
               { label: 'Fuente',         value: deal.source ?? '—',                                         icon: User, color: 'text-amber-600 bg-amber-50' },
-              { label: 'Responsable',    value: deal.profiles?.full_name ?? '—',                            icon: User, color: 'text-purple-600 bg-purple-50' },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-2.5">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
@@ -171,6 +171,13 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
             ))}
+            {/* Responsable — con selector si es gerente/admin */}
+            <DealOwnerSelector
+              dealId={deal.id}
+              currentOwner={deal.profiles ? { id: (deal.profiles as any).id, full_name: (deal.profiles as any).full_name } : null}
+              teamUsers={teamUsers ?? []}
+              canReassign={canManage}
+            />
           </div>
 
           {/* Propuesta adjunta — visible si existe */}

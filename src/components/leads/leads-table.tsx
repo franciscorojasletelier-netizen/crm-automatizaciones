@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Search, X, SlidersHorizontal } from 'lucide-react'
+import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 
 const stageLabels: Record<string, string> = {
   nuevo_lead: 'Nuevo Lead',
@@ -52,7 +53,7 @@ function ScoreBadge({ score }: { score: number | null }) {
   )
 }
 
-export default function LeadsTable({ deals }: { deals: any[] }) {
+export default function LeadsTable({ deals, teamUsers = [], canReassign = false }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean }) {
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
@@ -142,6 +143,7 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Score</th>
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Valor est.</th>
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Fuente</th>
+              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Responsable</th>
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Próxima acción</th>
               <th className="px-5 py-3.5" />
             </tr>
@@ -149,7 +151,7 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
           <tbody className="divide-y divide-slate-50">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-14 text-center">
+                <td colSpan={9} className="px-5 py-14 text-center">
                   <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
                   <p className="text-slate-400 text-sm font-medium">No hay leads que coincidan con los filtros</p>
                 </td>
@@ -192,6 +194,14 @@ export default function LeadsTable({ deals }: { deals: any[] }) {
                     ? <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{deal.source}</span>
                     : <span className="text-slate-300">—</span>
                   }
+                </td>
+                <td className="px-3 py-2.5 min-w-[160px]" onClick={e => e.stopPropagation()}>
+                  <DealOwnerSelector
+                    dealId={deal.id}
+                    currentOwner={deal.profiles ? { id: deal.profiles.id, full_name: deal.profiles.full_name } : null}
+                    teamUsers={teamUsers}
+                    canReassign={canReassign}
+                  />
                 </td>
                 <td className="px-5 py-3.5 text-slate-500 max-w-[180px] truncate text-xs">
                   {deal.next_action ?? <span className="text-slate-300">—</span>}

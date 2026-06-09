@@ -47,6 +47,13 @@ export default async function LeadsPage() {
 
   const { data: deals } = await query
 
+  // Team users para reasignación (solo gerente/admin los ve)
+  const canReassign = ['super_admin', 'admin', 'gerente'].includes(role)
+  const { data: teamUsers } = canReassign
+    ? await supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true)
+        .in('role', ['super_admin', 'admin', 'gerente', 'comercial', 'produccion', 'soporte'])
+    : { data: [] }
+
   // Deals ganados con proyectos pendientes de especificaciones (requieren atención de comercial)
   const { data: pendingSpecRaw } = await supabase
     .from('projects')
@@ -136,7 +143,7 @@ export default async function LeadsPage() {
         </div>
       )}
 
-      <LeadsTable deals={deals ?? []} />
+      <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign} />
     </div>
   )
 }
