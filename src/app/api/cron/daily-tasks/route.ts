@@ -28,31 +28,14 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
     const tomorrowEnd= new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString()
 
-    // Obtener usuarios via auth admin (evita RLS de profiles)
-    const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ perPage: 200 })
-    if (authErr || !authData) {
-      return NextResponse.json({ error: 'Could not fetch users', detail: authErr?.message }, { status: 500 })
+    // Obtener perfiles via función SECURITY DEFINER (bypass RLS)
+    const { data: profileRows, error: profErr } = await supabase
+      .rpc('get_all_profiles_for_cron')
+    if (profErr || !profileRows) {
+      return NextResponse.json({ error: 'Could not fetch profiles', detail: profErr?.message }, { status: 500 })
     }
 
-    // Obtener perfiles para nombres (ignorar error RLS — usamos metadata como fallback)
-    const { data: profileRows } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, is_active')
-    const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]))
-
-    // Construir lista de usuarios activos con email
-    const profiles = authData.users
-      .filter(u => u.email && !u.banned_until)
-      .map(u => {
-        const p = profileMap.get(u.id) as any
-        return {
-          id:        u.id,
-          email:     p?.email ?? u.email,
-          full_name: p?.full_name ?? u.user_metadata?.full_name ?? u.email?.split('@')[0] ?? 'equipo',
-          is_active: p?.is_active ?? true,
-        }
-      })
-      .filter(u => u.is_active && u.email)
+    const profiles = profileRows as { id: string; full_name: string; email: string; is_active: boolean }[]
 
     let sent = 0
     const errors: string[] = []
@@ -60,25 +43,20 @@ export async function GET(request: NextRequest) {
     for (const profile of profiles) {
       if (!profile.email) continue
 
-      // Tareas para hoy/mañana (sin columna priority)
+      // Tareas para hoy/mañana via función SECURITY DEFINER
       const { data: tasks } = await supabase
-        .from('tasks')
-        .select('id, title, due_date, deals(companies(name))')
-        .eq('assigned_to', profile.id)
-        .eq('is_completed', false)
-        .gte('due_date', todayStart)
-        .lt('due_date', tomorrowEnd)
-        .order('due_date', { ascending: true })
+        .rpc('get_tasks_for_cron', {
+          p_user_id: profile.id,
+          p_from:    todayStart,
+          p_to:      tomorrowEnd,
+        })
 
-      // Tareas vencidas (sin columna priority)
+      // Tareas vencidas via función SECURITY DEFINER
       const { data: overdue } = await supabase
-        .from('tasks')
-        .select('id, title, due_date, deals(companies(name))')
-        .eq('assigned_to', profile.id)
-        .eq('is_completed', false)
-        .lt('due_date', todayStart)
-        .order('due_date', { ascending: true })
-        .limit(5)
+        .rpc('get_overdue_tasks_for_cron', {
+          p_user_id: profile.id,
+          p_before:  todayStart,
+        })
 
       const taskList   = tasks   ?? []
       const overdueList= overdue ?? []
