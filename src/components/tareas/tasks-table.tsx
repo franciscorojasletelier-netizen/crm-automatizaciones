@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Search, AlertTriangle, Clock, CheckCircle2, Circle, CheckSquare, Building2, User, X } from 'lucide-react'
 import TaskCheck from './task-check'
+import TaskDetailPanel from './task-detail-panel'
 
 type Task = {
   id: string
@@ -57,6 +58,7 @@ type FilterKey = typeof FILTERS[number]['key']
 export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   const tasks = useMemo(() => {
     let list = initialTasks.map(t => ({ ...t, status: getStatus(t) }))
@@ -96,6 +98,10 @@ export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
   }), [initialTasks])
 
   return (
+    <>
+    {selectedTask && (
+      <TaskDetailPanel task={selectedTask} onClose={() => setSelectedTask(null)} />
+    )}
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
       {/* Search + Filters bar */}
@@ -194,12 +200,17 @@ export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
 
                   {/* Tarea */}
                   <td className="px-4 py-3.5 max-w-xs">
-                    <p className={`font-semibold text-slate-900 leading-snug ${isDone ? 'line-through text-slate-400' : ''}`}>
-                      {task.title}
-                    </p>
-                    {task.description && (
-                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{task.description}</p>
-                    )}
+                    <button
+                      onClick={() => setSelectedTask(task)}
+                      className="text-left group/title"
+                    >
+                      <p className={`font-semibold leading-snug group-hover/title:text-indigo-700 transition-colors ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                        {task.title}
+                      </p>
+                      {task.description && (
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{task.description}</p>
+                      )}
+                    </button>
                   </td>
 
                   {/* Empresa */}
@@ -266,9 +277,10 @@ export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
 
       {tasks.length > 0 && (
         <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400 text-right">
-          {tasks.length} {tasks.length === 1 ? 'tarea' : 'tareas'} mostradas
+          {tasks.length} {tasks.length === 1 ? 'tarea' : 'tareas'} mostradas · <span className="text-indigo-400">Haz clic en el nombre para ver detalle e historial</span>
         </div>
       )}
     </div>
+    </>
   )
 }
