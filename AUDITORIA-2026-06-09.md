@@ -1,5 +1,8 @@
 # Auditoría del CRM — 09 junio 2026
 
+> **Fase 2 (mismo día):** mejoras nivel pro-CRM, inspiradas en los patrones de
+> Pipedrive, Attio y Twenty CRM. Ver sección "Fase 2" al final.
+
 Análisis completo de backend, frontend y experiencia de usuario.
 Todo lo listado como "corregido" quedó implementado en este commit.
 
@@ -97,3 +100,50 @@ sí se actualiza (ver punto 4). Visible en desktop y móvil. Los deals cerrados 
 4. **Zona horaria**: los cálculos de "hoy" usan UTC del servidor. Para Chile (UTC-3/-4)
    una tarea de las 23:00 puede contar como "mañana". Si esto molesta, normalizar con
    `America/Santiago`.
+
+---
+
+## 🚀 FASE 2 — Mejoras nivel pro-CRM (verificadas en producción)
+
+### 10. Pipeline rediseñado (patrón Pipedrive)
+La investigación confirmó la mejor práctica de Pipedrive: los deals ganados/perdidos
+**no deben ser columnas del kanban**. Cambios:
+- Solo las **7 etapas activas** son columnas — ahora llenan todo el ancho sin scroll horizontal.
+- **Bandeja de cierre**: al arrastrar una tarjeta aparece desde abajo una barra con
+  4 zonas grandes (🏆 GANADO / ✕ PERDIDO / ⊘ NO CALIFICADO / ❄️ FRÍO). Sueltas ahí
+  para cerrar el deal — igual que Pipedrive.
+- **Cerrados recientes**: sección colapsable al pie con chips de los deals cerrados.
+  Se pueden **arrastrar de vuelta** a una columna para reabrirlos (el status vuelve
+  a "open" automáticamente).
+
+### 11. Acciones masivas en Leads (bulk actions)
+Checkboxes en cada fila + "seleccionar todo". Al seleccionar aparece una barra
+flotante oscura: "N seleccionados — Reasignar a: [equipo]". Un solo update masivo
++ notificación resumida al nuevo responsable. Solo visible para gerente/admin.
+
+### 12. Importación CSV de leads
+Botón "Importar CSV" junto a "Nuevo lead":
+- Parser propio: soporta separador coma o punto y coma, y comillas.
+- Detección automática de columnas en español o inglés (Empresa/Company,
+  Contacto/Name, Email, Teléfono/Phone, Industria, Fuente/Source, Valor/Value...).
+- Deduplicación por email (omite contactos ya registrados).
+- Vista previa antes de importar + plantilla de ejemplo descargable.
+- Resumen final: importados / duplicados omitidos / errores.
+
+### 13. Forecast ponderado (Reportes)
+Nueva KPI que reemplaza el conteo simple de pipeline:
+`Forecast = Σ (valor estimado × probabilidad)` de los deals abiertos.
+Si un deal no tiene probabilidad asignada se usa la estándar por etapa
+(Nuevo Lead 10% → Negociación 80%). Es la métrica de proyección de ingresos
+que usan Salesforce y HubSpot.
+
+### 14. Leyenda del donut compacta (Dashboard)
+La leyenda pasó de una lista vertical de ancho completo a una **grilla de 2
+columnas** compacta — se eliminó el aire muerto a la derecha del gráfico.
+
+### Referencias usadas
+- Pipedrive: patrón de bandeja de cierre y "deal rotting"
+  (https://www.pipedrive.com/en/features/pipeline-management)
+- Twenty CRM (CRM open-source más popular de GitHub): densidad de tablas y diseño
+  (https://github.com/twentyhq/twenty)
+- Attio: barra de acciones masivas flotante
