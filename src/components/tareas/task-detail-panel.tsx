@@ -97,6 +97,10 @@ export default function TaskDetailPanel({
     const oldIso = task.due_date
     const newIso = newDate ? new Date(newDate).toISOString() : null
 
+    // Get current user id for audit
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaveError('No autenticado'); setSaving(false); return }
+
     // Update task
     const { error: updateErr } = await supabase
       .from('tasks')
@@ -109,14 +113,20 @@ export default function TaskDetailPanel({
       return
     }
 
-    // Insert history
-    await supabase.from('task_history').insert({
+    // Insert history — changed_by required by RLS
+    const { error: histErr } = await supabase.from('task_history').insert({
       task_id:       task.id,
+      changed_by:    user.id,
       field_changed: 'due_date',
       old_value:     oldIso,
       new_value:     newIso,
       comment:       comment.trim(),
     })
+    if (histErr) {
+      setSaveError('Tarea actualizada, pero error al guardar historial: ' + histErr.message)
+      setSaving(false)
+      return
+    }
 
     setComment('')
     router.refresh()

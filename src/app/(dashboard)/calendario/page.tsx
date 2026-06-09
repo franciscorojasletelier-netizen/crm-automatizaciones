@@ -13,7 +13,7 @@ export default async function CalendarioPage() {
   let query = supabase
     .from('tasks')
     .select(`
-      id, title, due_date, is_completed, priority,
+      id, title, due_date, is_completed,
       deals(id, companies(name)),
       profiles:assigned_to(full_name)
     `)

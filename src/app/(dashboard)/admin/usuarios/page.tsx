@@ -14,9 +14,11 @@ export default async function UsuariosPage() {
   const { data: currentProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
 
-  // Solo gerente y super_admin
-  if (!['super_admin', 'gerente'].includes(currentProfile?.role ?? '')) {
-    redirect('/acceso-denegado?from=/admin/usuarios&role=' + currentProfile?.role)
+  // Normalizar rol (admin legacy → super_admin)
+  const { normalizeRole } = await import('@/lib/roles')
+  const normalizedRole = normalizeRole(currentProfile?.role ?? '')
+  if (!['super_admin', 'gerente'].includes(normalizedRole)) {
+    redirect('/acceso-denegado?from=/admin/usuarios&role=' + normalizedRole)
   }
 
   const { data: users } = await supabase
