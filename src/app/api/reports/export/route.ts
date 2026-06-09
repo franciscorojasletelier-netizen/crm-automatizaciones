@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import * as XLSX from 'xlsx'
+import * as XLSX from 'xlsx-js-style'
+
+// ── Tipos locales ──────────────────────────────────────────────
+type CellStyle = {
+  fill?:      { fgColor?: { rgb: string }; patternType?: string }
+  font?:      { bold?: boolean; color?: { rgb: string }; sz?: number; name?: string }
+  alignment?: { horizontal?: string; vertical?: string; wrapText?: boolean }
+  border?:    { top?: BorderSide; bottom?: BorderSide; left?: BorderSide; right?: BorderSide }
+  numFmt?:    string
+}
+type BorderSide = { style?: string; color?: { rgb: string } }
 
 // ── Helpers de estilo ──────────────────────────────────────────
 const PURPLE   = '6366f1'
@@ -14,9 +24,9 @@ const WHITE    = 'ffffff'
 const SLATE700 = '334155'
 const SLATE500 = '64748b'
 
-function hStyle(bg: string, fg = WHITE, bold = true, sz = 11): XLSX.CellStyle {
+function hStyle(bg: string, fg = WHITE, bold = true, sz = 11): CellStyle {
   return {
-    fill:  { fgColor: { rgb: bg }, patternType: 'solid' } as any,
+    fill:  { fgColor: { rgb: bg }, patternType: 'solid' },
     font:  { bold, color: { rgb: fg }, sz },
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     border: {
@@ -25,9 +35,9 @@ function hStyle(bg: string, fg = WHITE, bold = true, sz = 11): XLSX.CellStyle {
   }
 }
 
-function dStyle(bg = WHITE, fg = SLATE700, bold = false, align: 'left'|'center'|'right' = 'left'): XLSX.CellStyle {
+function dStyle(bg = WHITE, fg = SLATE700, bold = false, align: 'left'|'center'|'right' = 'left'): CellStyle {
   return {
-    fill: { fgColor: { rgb: bg }, patternType: 'solid' } as any,
+    fill: { fgColor: { rgb: bg }, patternType: 'solid' },
     font: { bold, color: { rgb: fg }, sz: 10 },
     alignment: { horizontal: align, vertical: 'center' },
     border: {
@@ -36,9 +46,9 @@ function dStyle(bg = WHITE, fg = SLATE700, bold = false, align: 'left'|'center'|
   }
 }
 
-function moneyStyle(bg = WHITE): XLSX.CellStyle {
+function moneyStyle(bg = WHITE): CellStyle {
   return {
-    fill: { fgColor: { rgb: bg }, patternType: 'solid' } as any,
+    fill: { fgColor: { rgb: bg }, patternType: 'solid' },
     font: { color: { rgb: GREEN }, sz: 10, bold: true },
     alignment: { horizontal: 'right', vertical: 'center' },
     numFmt: '"$"#,##0',
@@ -46,9 +56,9 @@ function moneyStyle(bg = WHITE): XLSX.CellStyle {
   }
 }
 
-function pctStyle(bg = WHITE): XLSX.CellStyle {
+function pctStyle(bg = WHITE): CellStyle {
   return {
-    fill: { fgColor: { rgb: bg }, patternType: 'solid' } as any,
+    fill: { fgColor: { rgb: bg }, patternType: 'solid' },
     font: { color: { rgb: PURPLE }, sz: 10, bold: true },
     alignment: { horizontal: 'center', vertical: 'center' },
     border: { bottom: { style: 'hair', color: { rgb: SLATE200 } } },
@@ -56,7 +66,7 @@ function pctStyle(bg = WHITE): XLSX.CellStyle {
 }
 
 // Agrega una celda con estilo
-function sc(ws: XLSX.WorkSheet, r: number, c: number, v: any, style: XLSX.CellStyle) {
+function sc(ws: Record<string, any>, r: number, c: number, v: any, style: CellStyle) {
   const ref = XLSX.utils.encode_cell({ r, c })
   const t   = typeof v === 'number' ? 'n' : 's'
   ws[ref] = { v, t, s: style }
@@ -72,7 +82,7 @@ function sc(ws: XLSX.WorkSheet, r: number, c: number, v: any, style: XLSX.CellSt
   }
 }
 
-function merge(ws: XLSX.WorkSheet, s: {r:number,c:number}, e: {r:number,c:number}) {
+function merge(ws: Record<string, any>, s: {r:number,c:number}, e: {r:number,c:number}) {
   if (!ws['!merges']) ws['!merges'] = []
   ws['!merges'].push({ s, e })
 }
@@ -169,7 +179,7 @@ export async function GET() {
     // HOJA 1: RESUMEN EJECUTIVO
     // ────────────────────────────────────────────────────────────
     {
-      const ws: XLSX.WorkSheet = {}
+      const ws: Record<string, any> = {}
       ws['!cols'] = [{ wch: 30 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }]
       ws['!rows'] = [{ hpt: 40 }, { hpt: 16 }, { hpt: 32 }, { hpt: 28 }]
 
@@ -201,7 +211,7 @@ export async function GET() {
       sc(ws, r, 2, totalWon,     { ...dStyle('eef2ff', PURPLE, true, 'center'), font: { color: { rgb: PURPLE }, sz: 14, bold: true } })
       sc(ws, r, 3, avgDealSize,  { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } as any })
       sc(ws, r, 4, allDeals.filter(d => d.status === 'open').length, { ...dStyle('eef2ff', PURPLE, true, 'center'), font: { color: { rgb: PURPLE }, sz: 14, bold: true } })
-      ws['!rows']!.push({ hpt: 36 })
+      ;(ws['!rows'] as any[]).push({ hpt: 36 })
       r++
 
       r++ // espacio
@@ -273,7 +283,7 @@ export async function GET() {
     // HOJA 2: TODOS LOS DEALS
     // ────────────────────────────────────────────────────────────
     {
-      const ws: XLSX.WorkSheet = {}
+      const ws: Record<string, any> = {}
       ws['!cols'] = [
         { wch: 26 }, { wch: 16 }, { wch: 22 }, { wch: 12 }, { wch: 18 },
         { wch: 20 }, { wch: 16 }, { wch: 8  }, { wch: 40 }, { wch: 14 },
@@ -322,7 +332,7 @@ export async function GET() {
     // HOJA 3: GANADOS & PERDIDOS
     // ────────────────────────────────────────────────────────────
     {
-      const ws: XLSX.WorkSheet = {}
+      const ws: Record<string, any> = {}
       ws['!cols'] = [{ wch: 26 }, { wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 10 }]
 
       let r = 0
@@ -391,7 +401,7 @@ export async function GET() {
     // HOJA 4: LEADERBOARD
     // ────────────────────────────────────────────────────────────
     {
-      const ws: XLSX.WorkSheet = {}
+      const ws: Record<string, any> = {}
       ws['!cols'] = [{ wch: 5 }, { wch: 24 }, { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 }]
 
       let r = 0
@@ -429,7 +439,7 @@ export async function GET() {
     // HOJA 5: TAREAS
     // ────────────────────────────────────────────────────────────
     {
-      const ws: XLSX.WorkSheet = {}
+      const ws: Record<string, any> = {}
       ws['!cols'] = [{ wch: 40 }, { wch: 26 }, { wch: 20 }, { wch: 14 }, { wch: 12 }]
 
       let r = 0
@@ -465,7 +475,7 @@ export async function GET() {
     // HOJA 6: EQUIPO
     // ────────────────────────────────────────────────────────────
     {
-      const ws: XLSX.WorkSheet = {}
+      const ws: Record<string, any> = {}
       ws['!cols'] = [{ wch: 26 }, { wch: 32 }, { wch: 22 }, { wch: 10 }]
 
       let r = 0
