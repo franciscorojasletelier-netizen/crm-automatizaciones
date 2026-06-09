@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User, ChevronDown, Check, Loader2 } from 'lucide-react'
+import { ChevronDown, Check, Loader2 } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -47,8 +48,12 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   const [open, setOpen]     = useState(false)
   const [saving, setSaving] = useState(false)
   const [owner, setOwner]   = useState(currentOwner)
+  const [pos, setPos]       = useState({ top: 0, left: 0, width: 0, dropUp: false })
+  const [mounted, setMounted] = useState(false)
   const ref    = useRef<HTMLDivElement>(null)
   const router = useRouter()
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -57,6 +62,22 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [])
+
+  function handleOpen() {
+    if (saving) return
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      const dropUp = spaceBelow < 290
+      setPos({
+        top:    dropUp ? rect.top + window.scrollY - 8 : rect.bottom + window.scrollY + 4,
+        left:   rect.left + window.scrollX,
+        width:  Math.max(rect.width, 240),
+        dropUp,
+      })
+    }
+    setOpen(o => !o)
+  }
 
   async function assign(user: Profile) {
     if (user.id === owner?.id) { setOpen(false); return }
@@ -106,7 +127,7 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => !saving && setOpen(o => !o)}
+        onClick={handleOpen}
         className={`flex items-center gap-2.5 w-full text-left rounded-xl transition-all group ${
           open ? 'ring-2 ring-indigo-300 bg-indigo-50' : 'hover:bg-slate-50'
         }`}
@@ -124,10 +145,20 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''} group-hover:text-indigo-500`} />
       </button>
 
-      {open && (
-        <div className="absolute z-50 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3 py-2.5 border-b border-slate-100">
-            <p className="text-xs font-bold text-slate-500">Reasignar lead a</p>
+      {open && mounted && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top:    pos.dropUp ? 'auto' : pos.top - window.scrollY,
+            bottom: pos.dropUp ? window.innerHeight - (pos.top - window.scrollY) : 'auto',
+            left:   pos.left - window.scrollX,
+            width:  pos.width,
+            zIndex: 9999,
+          }}
+          className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in duration-150"
+        >
+          <div className="px-3 py-2.5 border-b border-slate-100 bg-slate-50">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Reasignar lead a</p>
           </div>
           <div className="max-h-64 overflow-y-auto py-1">
             {teamUsers.length === 0 && (
@@ -154,7 +185,8 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
