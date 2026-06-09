@@ -297,7 +297,9 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
   function onDrop(e: React.DragEvent, targetStage: string) {
     e.preventDefault()
     setDragOverStage(null)
+    // Guardar id antes de limpiar el estado
     const dealId = e.dataTransfer.getData('dealId') || draggingId
+    setDraggingId(null)  // limpiar inmediatamente → card se ve normal al soltar
     if (!dealId) return
     const deal = deals.find(d => d.id === dealId)
     if (!deal || deal.stage === targetStage) return
