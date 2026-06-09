@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
@@ -14,14 +14,14 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  // Cliente creado dentro del handler para que las env vars estén disponibles
+  // Cliente creado dentro del handler para que las env vars estÃ©n disponibles
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
     process.env.SUPABASE_SECRET_KEY!.trim()
   )
 
   try {
-    // Verificar token de autenticación del webhook
+    // Verificar token de autenticaciÃ³n del webhook
     const authHeader = request.headers.get('authorization')
     const webhookToken = process.env.WEBHOOK_SECRET_TOKEN?.trim()
     if (webhookToken && authHeader !== `Bearer ${webhookToken}`) {
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     if (dealError) throw dealError
 
-    // Registrar mensaje inicial como interacción si viene del formulario
+    // Registrar mensaje inicial como interacciÃ³n si viene del formulario
     if (message) {
       await supabase.from('interactions').insert({
         deal_id: deal.id,
@@ -104,21 +104,21 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Enviar emails automáticos (sin bloquear la respuesta)
+    // Enviar emails automÃ¡ticos (sin bloquear la respuesta)
     const resendKey = process.env.RESEND_API_KEY?.trim()
     if (resendKey && contact_email) {
       const resend = new Resend(resendKey)
       // Email al cliente
       resend.emails.send({
-        from: 'Autopilot SpA <onboarding@resend.dev>',
+        from: 'Autopilot SpA <noreply@autopilotspa.cl>',
         to: contact_email,
-        subject: '¡Recibimos tu mensaje! — Autopilot SpA',
+        subject: 'Â¡Recibimos tu mensaje! â€” Autopilot SpA',
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
-            <h2 style="color:#111">¡Hola${contact_name ? ` ${contact_name.split(' ')[0]}` : ''}! 👋</h2>
+            <h2 style="color:#111">Â¡Hola${contact_name ? ` ${contact_name.split(' ')[0]}` : ''}! ðŸ‘‹</h2>
             <p style="color:#444;line-height:1.6">
               Gracias por contactarnos. Recibimos tu mensaje y uno de nuestros especialistas
-              te responderá en <strong>menos de 2 horas hábiles</strong>.
+              te responderÃ¡ en <strong>menos de 2 horas hÃ¡biles</strong>.
             </p>
             ${message ? `<div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:24px 0;color:#555;font-style:italic;">"${message}"</div>` : ''}
             <p style="color:#444;line-height:1.6">
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
               <a href="https://autopilotspa.cl" style="color:#000;font-weight:bold;">autopilotspa.cl</a>
             </p>
             <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
-            <p style="color:#999;font-size:12px;">Autopilot SpA — Automatización e Inteligencia Artificial</p>
+            <p style="color:#999;font-size:12px;">Autopilot SpA â€” AutomatizaciÃ³n e Inteligencia Artificial</p>
           </div>
         `,
       }).catch(e => console.warn('Error email cliente:', e))
@@ -134,25 +134,25 @@ export async function POST(request: NextRequest) {
 
     if (resendKey) {
       const resend = new Resend(resendKey)
-      // Notificación interna a Autopilot SpA
+      // NotificaciÃ³n interna a Autopilot SpA
       resend.emails.send({
-        from: 'CRM Autopilot <onboarding@resend.dev>',
+        from: 'CRM Autopilot <noreply@autopilotspa.cl>',
         to: 'autopilotspa@gmail.com',
-        subject: `🔔 Nuevo lead: ${contact_name ?? company_name} (${source})`,
+        subject: `ðŸ”” Nuevo lead: ${contact_name ?? company_name} (${source})`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
             <h2 style="color:#111">Nuevo lead recibido</h2>
             <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${contact_name ?? '—'}</td></tr>
-              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${contact_email ?? '—'}</td></tr>
-              <tr><td style="padding:8px;color:#666;">Teléfono</td><td style="padding:8px;">${contact_phone ?? '—'}</td></tr>
-              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${company_name ?? '—'}</td></tr>
+              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${contact_name ?? 'â€”'}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${contact_email ?? 'â€”'}</td></tr>
+              <tr><td style="padding:8px;color:#666;">TelÃ©fono</td><td style="padding:8px;">${contact_phone ?? 'â€”'}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${company_name ?? 'â€”'}</td></tr>
               <tr><td style="padding:8px;color:#666;">Fuente</td><td style="padding:8px;">${source}</td></tr>
               ${message ? `<tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Mensaje</td><td style="padding:8px;">${message}</td></tr>` : ''}
             </table>
             <a href="https://crm-automatizaciones.vercel.app/leads"
                style="display:inline-block;background:#111;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
-              Ver en el CRM →
+              Ver en el CRM â†’
             </a>
           </div>
         `,
@@ -176,3 +176,4 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({ status: 'ok', endpoint: '/api/webhooks/lead' })
 }
+

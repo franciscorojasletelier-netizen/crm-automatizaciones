@@ -5,17 +5,16 @@ import { createClient } from '@supabase/supabase-js'
 // vercel.json: "schedule": "0 11 * * *"
 
 export async function GET(request: NextRequest) {
-  // Verificar authorization (solo si CRON_SECRET está definido y sin espacios)
   const authHeader = request.headers.get('authorization')
   const cronSecret = (process.env.CRON_SECRET ?? '').trim()
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey  = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  const resendKey    = process.env.RESEND_API_KEY
-  const appUrl       = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crm-automatizaciones.vercel.app'
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const resendKey   = process.env.RESEND_API_KEY
+  const appUrl      = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crm-automatizaciones.vercel.app'
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ error: 'Missing Supabase config' }, { status: 500 })
@@ -24,11 +23,11 @@ export async function GET(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseKey)
 
   try {
-    const now        = new Date()
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-    const tomorrowEnd= new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString()
+    const now         = new Date()
+    const todayStart  = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    const tomorrowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString()
 
-    // Obtener perfiles via función SECURITY DEFINER (bypass RLS)
+    // Perfiles via función SECURITY DEFINER (bypass RLS)
     const { data: profileRows, error: profErr } = await supabase
       .rpc('get_all_profiles_for_cron')
     if (profErr || !profileRows) {
@@ -58,26 +57,24 @@ export async function GET(request: NextRequest) {
           p_before:  todayStart,
         })
 
-      const taskList   = tasks   ?? []
-      const overdueList= overdue ?? []
+      const taskList    = tasks   ?? []
+      const overdueList = overdue ?? []
 
       if (taskList.length === 0 && overdueList.length === 0) continue
 
       const userName = (profile.full_name ?? '').split(' ')[0] || 'equipo'
       const subject  = overdueList.length > 0
-        ? `⚠️ ${overdueList.length} tarea(s) vencida(s) — CRM`
-        : `📋 Tienes ${taskList.length} tarea(s) para hoy — CRM`
+        ? `⚠️ ${overdueList.length} tarea(s) vencida(s) — CRM Autopilot`
+        : `📋 Tienes ${taskList.length} tarea(s) para hoy — CRM Autopilot`
 
       const html = buildEmailHtml(userName, taskList, overdueList, appUrl)
 
       if (!resendKey) {
-        // Sin API key, solo loguear
         console.log(`[CRON] Would email ${profile.email}: ${subject}`)
         sent++
         continue
       }
 
-      // Enviar con Resend via fetch (evita problemas de importación)
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -85,7 +82,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from:    'CRM Automatizaciones <onboarding@resend.dev>',
+          from:    'CRM Autopilot <noreply@autopilotspa.cl>',
           to:      [profile.email],
           subject,
           html,
@@ -108,7 +105,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ── Template de email ────────────────────────────────────────────
+// ── Template HTML ────────────────────────────────────────────────
 function buildEmailHtml(
   userName: string,
   tasks: Record<string, unknown>[],
@@ -120,15 +117,14 @@ function buildEmailHtml(
   })
 
   const row = (t: Record<string, unknown>, isOverdue: boolean) => {
-    const title    = String(t.title ?? '')
-    const company  = (t.deals as Record<string, unknown> | null)?.companies
-    const compName = (company as Record<string, unknown> | null)?.name
-    const dueDate  = t.due_date ? new Date(String(t.due_date)).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : ''
+    const title   = String(t.title ?? '')
+    const dueDate = t.due_date
+      ? new Date(String(t.due_date)).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+      : ''
 
     return `<tr>
       <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};">
         <strong style="color:${isOverdue ? '#991b1b' : '#1e293b'}">${title}</strong>
-        ${compName ? `<br><span style="color:#94a3b8;font-size:12px">${String(compName)}</span>` : ''}
       </td>
       <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};font-size:12px;white-space:nowrap;color:${isOverdue ? '#ef4444' : '#64748b'}">
         ${isOverdue ? `⚠️ Vencida el ${dueDate}` : `📅 ${dueDate}`}
@@ -155,13 +151,13 @@ function buildEmailHtml(
   ${tasks.length > 0 ? `
   <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:4px;margin-bottom:20px">
     <div style="padding:16px 16px 8px">
-      <p style="margin:0;font-weight:700;color:#1e293b;font-size:14px">📋 ${tasks.length} tarea(s) para hoy</p>
+      <p style="margin:0;font-weight:700;color:#1e293b;font-size:14px">📋 ${tasks.length} tarea(s) para hoy / mañana</p>
     </div>
     <table style="width:100%;border-collapse:collapse">${tasks.map(t => row(t, false)).join('')}</table>
   </div>` : `
   <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:24px;text-align:center;margin-bottom:20px">
     <p style="font-size:32px;margin:0">🎉</p>
-    <p style="font-weight:700;color:#1e293b">¡Sin tareas pendientes para hoy!</p>
+    <p style="font-weight:700;color:#1e293b">¡Sin tareas pendientes!</p>
   </div>`}
 
   <div style="text-align:center;margin-bottom:24px">
@@ -169,6 +165,6 @@ function buildEmailHtml(
       Ver mis tareas en el CRM →
     </a>
   </div>
-  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">CRM Automatizaciones · Notificación automática diaria</p>
+  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">CRM Autopilot · Notificación automática diaria</p>
 </div></body></html>`
 }

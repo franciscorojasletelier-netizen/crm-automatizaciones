@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     .lt('due_date', todayEnd)
     .order('due_date', { ascending: true })
 
-  // Tareas vencidas (de ayer hacia atrás)
+  // Tareas vencidas (de ayer hacia atrÃ¡s)
   const { data: overdueTasks } = await supabase
     .from('tasks')
     .select('id, title, due_date, deals(companies(name))')
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   const formatDate = (d: string) => new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
 
   const todayHtml = todayTasks && todayTasks.length > 0 ? `
-    <h3 style="color:#111;font-size:14px;margin:0 0 8px;">📋 Tareas para hoy (${todayTasks.length})</h3>
+    <h3 style="color:#111;font-size:14px;margin:0 0 8px;">ðŸ“‹ Tareas para hoy (${todayTasks.length})</h3>
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
       ${todayTasks.map((t: any) => `
         <tr style="border-bottom:1px solid #f0f0f0;">
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   ` : ''
 
   const overdueHtml = overdueTasks && overdueTasks.length > 0 ? `
-    <h3 style="color:#dc2626;font-size:14px;margin:0 0 8px;">⚠️ Tareas vencidas (${overdueTasks.length})</h3>
+    <h3 style="color:#dc2626;font-size:14px;margin:0 0 8px;">âš ï¸ Tareas vencidas (${overdueTasks.length})</h3>
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
       ${overdueTasks.map((t: any) => `
         <tr style="border-bottom:1px solid #f0f0f0;">
@@ -69,12 +69,12 @@ export async function GET(request: NextRequest) {
   ` : ''
 
   await resend.emails.send({
-    from: 'CRM Autopilot <onboarding@resend.dev>',
+    from: 'CRM Autopilot <noreply@autopilotspa.cl>',
     to: 'autopilotspa@gmail.com',
-    subject: `📅 ${todayTasks?.length ?? 0} tarea${(todayTasks?.length ?? 0) !== 1 ? 's' : ''} para hoy — ${now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}`,
+    subject: `ðŸ“… ${todayTasks?.length ?? 0} tarea${(todayTasks?.length ?? 0) !== 1 ? 's' : ''} para hoy â€” ${now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
-        <h2 style="color:#111;margin:0 0 4px;">Buenos días 👋</h2>
+        <h2 style="color:#111;margin:0 0 4px;">Buenos dÃ­as ðŸ‘‹</h2>
         <p style="color:#666;font-size:14px;margin:0 0 24px;">
           ${now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
@@ -82,12 +82,13 @@ export async function GET(request: NextRequest) {
         ${overdueHtml}
         <a href="https://crm-automatizaciones.vercel.app/tareas"
            style="display:inline-block;background:#111;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:bold;">
-          Ver tareas en el CRM →
+          Ver tareas en el CRM â†’
         </a>
-        <p style="color:#ccc;font-size:11px;margin-top:24px;">Este email se envía automáticamente cada día a las 8:00 AM</p>
+        <p style="color:#ccc;font-size:11px;margin-top:24px;">Este email se envÃ­a automÃ¡ticamente cada dÃ­a a las 8:00 AM</p>
       </div>
     `,
   })
 
   return NextResponse.json({ status: 'ok', sent: true, today: todayTasks?.length ?? 0, overdue: overdueTasks?.length ?? 0 })
 }
+

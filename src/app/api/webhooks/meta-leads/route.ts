@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 
         // Enviar notificacion por email
         await resend.emails.send({
-          from: 'Autopilot CRM <onboarding@resend.dev>',
+          from: 'Autopilot CRM <noreply@autopilotspa.cl>',
           to: 'autopilotspa@gmail.com',
           subject: `Nuevo lead de Facebook Ads: ${contact_name}`,
           html: `
@@ -169,3 +169,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error' }, { status: 500, headers: CORS_HEADERS })
   }
 }
+
