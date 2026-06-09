@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from:    'CRM Automatizaciones <noreply@autopilot.cl>',
+          from:    'CRM Automatizaciones <onboarding@resend.dev>',
           to:      [profile.email],
           subject,
           html,
