@@ -117,17 +117,22 @@ function buildEmailHtml(
   })
 
   const row = (t: Record<string, unknown>, isOverdue: boolean) => {
-    const title   = String(t.title ?? '')
-    const dueDate = t.due_date
-      ? new Date(String(t.due_date)).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
-      : ''
+    const title = String(t.title ?? '')
+    const d = t.due_date ? new Date(String(t.due_date)) : null
+    const dateStr = d ? d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : ''
+    const hasTime = d && (d.getHours() !== 0 || d.getMinutes() !== 0)
+    const timeStr = hasTime ? d!.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : null
+
+    const dateDisplay = timeStr
+      ? `${dateStr} <span style="background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:600">🕐 ${timeStr}</span>`
+      : dateStr
 
     return `<tr>
       <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};">
         <strong style="color:${isOverdue ? '#991b1b' : '#1e293b'}">${title}</strong>
       </td>
       <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};font-size:12px;white-space:nowrap;color:${isOverdue ? '#ef4444' : '#64748b'}">
-        ${isOverdue ? `⚠️ Vencida el ${dueDate}` : `📅 ${dueDate}`}
+        ${isOverdue ? `⚠️ Vencida el ${dateDisplay}` : `📅 ${dateDisplay}`}
       </td>
     </tr>`
   }

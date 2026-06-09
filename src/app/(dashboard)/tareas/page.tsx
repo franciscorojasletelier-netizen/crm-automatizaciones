@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { CheckCircle2, Clock, AlertTriangle, CheckSquare } from 'lucide-react'
 import TaskCheck from '@/components/tareas/task-check'
+import NewTaskButton from '@/components/tareas/new-task-button'
 import Link from 'next/link'
 
 function isOverdue(due: string | null) {
@@ -12,12 +13,17 @@ function isOverdue(due: string | null) {
 function isDueSoon(due: string | null) {
   if (!due) return false
   const diff = new Date(due).getTime() - Date.now()
-  return diff > 0 && diff < 1000 * 60 * 60 * 48 // dentro de 48h
+  return diff > 0 && diff < 1000 * 60 * 60 * 48
 }
 
-function formatDate(date: string | null) {
-  if (!date) return '—'
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
+function formatDateTime(date: string | null) {
+  if (!date) return { date: '—', time: null }
+  const d = new Date(date)
+  const dateStr = d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  // Show time only if it's not midnight (has a specific hour/minute set)
+  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
+  const timeStr = hasTime ? d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : null
+  return { date: dateStr, time: timeStr }
 }
 
 export default async function TareasPage() {
@@ -32,7 +38,7 @@ export default async function TareasPage() {
     `)
     .order('is_completed', { ascending: true })
     .order('due_date', { ascending: true })
-    .limit(100)
+    .limit(200)
 
   const pending = tasks?.filter(t => !t.is_completed) ?? []
   const completed = tasks?.filter(t => t.is_completed) ?? []
@@ -44,12 +50,15 @@ export default async function TareasPage() {
     <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Tareas</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          <span className="font-semibold text-slate-700">{pending.length}</span> pendientes ·{' '}
-          <span className="font-semibold text-slate-700">{completed.length}</span> completadas
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Tareas</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            <span className="font-semibold text-slate-700">{pending.length}</span> pendientes ·{' '}
+            <span className="font-semibold text-slate-700">{completed.length}</span> completadas
+          </p>
+        </div>
+        <NewTaskButton />
       </div>
 
       {/* Stats rápidas */}
@@ -165,9 +174,9 @@ function TaskSection({ title, icon, badge, borderColor = 'border-slate-200', tas
                  : variant === 'soon'    ? 'hover:bg-amber-50/40'
                  : 'hover:bg-slate-50'
 
-  const dateColor = variant === 'overdue' ? 'bg-red-50 text-red-600 border border-red-100'
-                  : variant === 'soon'    ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                  : 'bg-slate-100 text-slate-500'
+  const dateBg = variant === 'overdue' ? 'bg-red-50 text-red-600 border border-red-100'
+               : variant === 'soon'    ? 'bg-amber-50 text-amber-600 border border-amber-100'
+               : 'bg-slate-100 text-slate-500'
 
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borderColor}`}>
@@ -178,11 +187,12 @@ function TaskSection({ title, icon, badge, borderColor = 'border-slate-200', tas
       </div>
       <div className="divide-y divide-slate-50">
         {tasks.map((task: any) => {
-          const overdue = variant === 'overdue'
+          const isOv = variant === 'overdue'
+          const { date: dateStr, time: timeStr } = formatDateTime(task.due_date)
           return (
             <div key={task.id} className={`px-5 py-3.5 flex items-start gap-3.5 transition-colors ${rowHover}`}>
               <div className="mt-0.5">
-                <TaskCheck taskId={task.id} isCompleted={false} isOverdue={overdue} />
+                <TaskCheck taskId={task.id} isCompleted={false} isOverdue={isOv} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-900">{task.title}</p>
@@ -202,10 +212,15 @@ function TaskSection({ title, icon, badge, borderColor = 'border-slate-200', tas
                 </div>
               </div>
               {task.due_date && (
-                <div className="shrink-0 text-right">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${dateColor}`}>
-                    {new Date(task.due_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
-                  </span>
+                <div className="shrink-0 text-right space-y-1">
+                  <div className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${dateBg}`}>
+                    {dateStr}
+                  </div>
+                  {timeStr && (
+                    <div className="text-xs font-medium px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center gap-1 justify-center">
+                      <Clock className="w-3 h-3" />{timeStr}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
