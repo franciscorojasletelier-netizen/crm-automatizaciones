@@ -110,43 +110,38 @@ function DonutChart({ slices }: { slices: Slice[] }) {
         </div>
       </div>
 
-      {/* Leyenda */}
-      <div className="flex-1 space-y-1 min-w-0">
-        {slices.map((slice, i) => {
-          const pct = totalDeals > 0 ? Math.round((slice.value / totalDeals) * 100) : 0
-          const amtPct = totalAmount > 0 ? Math.round((slice.amount / totalAmount) * 100) : 0
-          return (
-            <div
-              key={i}
-              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${hovered === i ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: slice.color }} />
-
-              {/* Label */}
-              <span className="text-xs text-slate-600 font-medium flex-1 truncate">{slice.label}</span>
-
-              {/* Deals count */}
-              <span className="text-xs font-bold text-slate-900 tabular-nums">{slice.value}</span>
-              <span className="text-[10px] text-slate-400 w-6 text-right tabular-nums">{pct}%</span>
-
-              {/* Valor $ */}
-              {slice.amount > 0 && (
-                <span className="text-[11px] font-bold text-emerald-600 tabular-nums min-w-[48px] text-right">
-                  {fmt(slice.amount)}
-                </span>
-              )}
-            </div>
-          )
-        })}
+      {/* Leyenda — compacta en 2 columnas */}
+      <div className="flex-1 min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-0.5">
+          {slices.map((slice, i) => {
+            const pct = totalDeals > 0 ? Math.round((slice.value / totalDeals) * 100) : 0
+            return (
+              <div
+                key={i}
+                className={`flex items-center gap-2 rounded-lg px-2 py-1 cursor-pointer transition-colors ${hovered === i ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: slice.color }} />
+                <span className="text-xs text-slate-600 font-medium flex-1 truncate">{slice.label}</span>
+                <span className="text-xs font-bold text-slate-900 tabular-nums">{slice.value}</span>
+                <span className="text-[10px] text-slate-400 w-7 text-right tabular-nums">{pct}%</span>
+                {slice.amount > 0 && (
+                  <span className="text-[11px] font-bold text-emerald-600 tabular-nums min-w-[44px] text-right">
+                    {fmt(slice.amount)}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
 
         {/* Total row */}
         {totalAmount > 0 && (
-          <div className="flex items-center gap-2 px-2 pt-2 mt-1 border-t border-slate-100">
+          <div className="flex items-center gap-2 px-2 pt-2 mt-2 border-t border-slate-100">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex-1">Total</span>
             <span className="text-xs font-bold text-slate-700">{totalDeals} deals</span>
-            <span className="text-[11px] font-bold text-emerald-700 min-w-[48px] text-right">{fmt(totalAmount)}</span>
+            <span className="text-[11px] font-bold text-emerald-700 min-w-[44px] text-right">{fmt(totalAmount)}</span>
           </div>
         )}
       </div>

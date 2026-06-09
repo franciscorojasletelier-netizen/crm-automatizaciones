@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Search, X, SlidersHorizontal } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare } from 'lucide-react'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 
 const stageLabels: Record<string, string> = {
@@ -93,6 +95,50 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     ))
   }
 
+  // ── Selección múltiple y acciones masivas ──────────────────
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkSaving, setBulkSaving] = useState(false)
+  const router = useRouter()
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  async function bulkReassign(targetUserId: string) {
+    if (selected.size === 0 || bulkSaving) return
+    setBulkSaving(true)
+    const supabase = createClient()
+    const ids = [...selected]
+    const { error } = await supabase.from('deals').update({ owner_id: targetUserId }).in('id', ids)
+    if (!error) {
+      const target = teamUsers.find(u => u.id === targetUserId)
+      // Notificar al nuevo responsable (una sola notificación resumida)
+      const { data: { user: me } } = await supabase.auth.getUser()
+      if (me && targetUserId !== me.id) {
+        await supabase.from('notifications').insert({
+          user_id:     targetUserId,
+          type:        'deal_assigned',
+          title:       `📋 Te asignaron ${ids.length} lead${ids.length > 1 ? 's' : ''}`,
+          body:        `Reasignación masiva — revisa tu lista de leads`,
+          entity_type: 'deal',
+          entity_id:   ids[0],
+        })
+      }
+      setDeals(prev => prev.map(d =>
+        selected.has(d.id)
+          ? { ...d, profiles: target ? { id: target.id, full_name: target.full_name } : d.profiles }
+          : d
+      ))
+      setSelected(new Set())
+      router.refresh()
+    }
+    setBulkSaving(false)
+  }
+
   const sources = useMemo(() => Array.from(new Set(deals.map(d => d.source).filter(Boolean))) as string[], [deals])
 
   const filtered = useMemo(() => deals.filter(deal => {
@@ -172,6 +218,23 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100">
+              {canReassign && (
+                <th className="pl-4 pr-0 py-3.5 w-8">
+                  <input
+                    type="checkbox"
+                    checked={paginated.length > 0 && paginated.every((d: any) => selected.has(d.id))}
+                    onChange={e => {
+                      setSelected(prev => {
+                        const next = new Set(prev)
+                        if (e.target.checked) paginated.forEach((d: any) => next.add(d.id))
+                        else paginated.forEach((d: any) => next.delete(d.id))
+                        return next
+                      })
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                  />
+                </th>
+              )}
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa</th>
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Contacto</th>
               <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Etapa</th>
@@ -186,14 +249,24 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
           <tbody className="divide-y divide-slate-50">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-5 py-14 text-center">
+                <td colSpan={canReassign ? 10 : 9} className="px-5 py-14 text-center">
                   <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
                   <p className="text-slate-400 text-sm font-medium">No hay leads que coincidan con los filtros</p>
                 </td>
               </tr>
             )}
             {paginated.map((deal: any) => (
-              <tr key={deal.id} className="hover:bg-indigo-50/40 transition-colors group">
+              <tr key={deal.id} className={`transition-colors group ${selected.has(deal.id) ? 'bg-indigo-50/60' : 'hover:bg-indigo-50/40'}`}>
+                {canReassign && (
+                  <td className="pl-4 pr-0 py-3.5 w-8">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(deal.id)}
+                      onChange={() => toggleSelect(deal.id)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                    />
+                  </td>
+                )}
                 <td className="px-5 py-3.5">
                   <Link href={`/leads/${deal.id}`} className="block">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -303,6 +376,42 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
               className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               Siguiente →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Barra flotante de acciones masivas ── */}
+      {canReassign && selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-3 bg-slate-900 text-white rounded-2xl shadow-2xl pl-5 pr-3 py-3">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="w-4 h-4 text-indigo-400" />
+              <span className="text-sm font-bold">{selected.size} seleccionado{selected.size > 1 ? 's' : ''}</span>
+            </div>
+            <div className="w-px h-6 bg-slate-700" />
+            <div className="flex items-center gap-2">
+              <Users className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs text-slate-400 font-medium">Reasignar a:</span>
+              <select
+                disabled={bulkSaving}
+                defaultValue=""
+                onChange={e => { if (e.target.value) bulkReassign(e.target.value) }}
+                className="bg-slate-800 text-white text-sm font-semibold rounded-xl px-3 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="" disabled>Elegir...</option>
+                {teamUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.full_name ?? u.email}</option>
+                ))}
+              </select>
+              {bulkSaving && <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />}
+            </div>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              title="Cancelar selección"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>

@@ -42,7 +42,7 @@ async function getReportData(supabase: any) {
     supabase.from('deals').select('id', { count: 'exact', head: true }),
     supabase.from('deals').select('id, estimated_value, updated_at').eq('status', 'won'),
     supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'lost'),
-    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    supabase.from('deals').select('estimated_value, probability, stage').eq('status', 'open'),
     supabase.from('deals').select('stage, status'),
     // Leaderboard: ejecutivos con sus deals
     supabase.from('profiles')
@@ -105,8 +105,23 @@ async function getReportData(supabase: any) {
   const avgDealSize = totalWon > 0 ? Math.round(totalRevenue / totalWon) : 0
   const winRate = (totalWon + totalLost) > 0 ? Math.round((totalWon / (totalWon + totalLost)) * 100) : 0
 
+  // Forecast ponderado: Σ(valor × probabilidad) de deals abiertos.
+  // Si el deal no tiene probabilidad asignada, se usa una por etapa (estándar CRM).
+  const STAGE_PROBABILITY: Record<string, number> = {
+    nuevo_lead: 10, contactado: 20, calificado: 30,
+    reunion_agendada: 40, reunion_realizada: 50,
+    propuesta_enviada: 60, negociacion: 80,
+  }
+  const openDealsData = activeDeals.data ?? []
+  const forecast = Math.round(openDealsData.reduce((sum: number, d: any) => {
+    const prob = (d.probability && d.probability > 0) ? d.probability : (STAGE_PROBABILITY[d.stage] ?? 10)
+    return sum + (Number(d.estimated_value) || 0) * (prob / 100)
+  }, 0))
+  const openCount = openDealsData.length
+
   return {
     totalDeals, totalWon, totalLost, totalRevenue, avgDealSize, winRate,
+    forecast, openCount,
     monthlyRevenue, execPerformance, stageCounts, recentWon: recentWon.data ?? [],
   }
 }
@@ -188,13 +203,13 @@ export default async function ReportesPage() {
             bar: 'from-amber-500 to-orange-500',
           },
           {
-            label: 'Pipeline activo',
-            value: data.totalDeals.toString(),
-            sub: 'Deals en curso',
+            label: 'Forecast ponderado',
+            value: `$${data.forecast.toLocaleString()}`,
+            sub: `${data.openCount} deals abiertos × probabilidad`,
             icon: Award,
-            color: 'text-blue-600 bg-blue-50',
-            border: 'border-blue-100',
-            bar: 'from-blue-500 to-blue-600',
+            color: 'text-violet-600 bg-violet-50',
+            border: 'border-violet-100',
+            bar: 'from-violet-500 to-purple-600',
           },
         ].map(({ label, value, sub, icon: Icon, color, border, bar }) => (
           <div key={label} className={`bg-white rounded-2xl border ${border} p-4 md:p-5 shadow-sm relative overflow-hidden`}>

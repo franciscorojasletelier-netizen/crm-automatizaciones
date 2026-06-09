@@ -40,6 +40,18 @@ const ALL_STAGES = [
 const REASON_REQUIRED = ['cerrado_perdido', 'no_calificado', 'frio']
 const CLOSED_STAGES   = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado']
 
+// Etapas terminales: van en la bandeja de cierre (patrón Pipedrive), no como columnas
+const TERMINAL_STAGES = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado', 'frio']
+const ACTIVE_STAGES   = ALL_STAGES.filter(s => !TERMINAL_STAGES.includes(s.key))
+
+// Config visual de la bandeja de cierre
+const TRAY_ZONES = [
+  { key: 'cerrado_ganado',  label: 'GANADO',        emoji: '🏆', base: 'bg-green-50 border-green-300 text-green-700',  hover: 'bg-green-500 border-green-600 text-white scale-105' },
+  { key: 'cerrado_perdido', label: 'PERDIDO',       emoji: '✕',  base: 'bg-red-50 border-red-300 text-red-700',        hover: 'bg-red-500 border-red-600 text-white scale-105' },
+  { key: 'no_calificado',   label: 'NO CALIFICADO', emoji: '⊘',  base: 'bg-gray-50 border-gray-300 text-gray-600',     hover: 'bg-gray-500 border-gray-600 text-white scale-105' },
+  { key: 'frio',            label: 'FRÍO',          emoji: '❄️', base: 'bg-slate-50 border-slate-300 text-slate-600',  hover: 'bg-slate-500 border-slate-600 text-white scale-105' },
+]
+
 // Config para modales de etapas negativas
 const MODAL_CONFIG: Record<string, {
   icon: React.ComponentType<{ className?: string }>
@@ -253,11 +265,14 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
   const router = useRouter()
   const supabase = createClient()
 
+  const [showClosed, setShowClosed] = useState(false)
+
   // Agrupar por etapa
   const byStage: Record<string, KanbanDeal[]> = {}
   for (const s of ALL_STAGES) {
     byStage[s.key] = deals.filter(d => d.stage === s.key)
   }
+  const closedDeals = deals.filter(d => TERMINAL_STAGES.includes(d.stage))
 
   // ── Drag handlers ──────────────────────────────────────────
   function onDragStart(e: React.DragEvent, deal: KanbanDeal) {
@@ -333,6 +348,9 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
     const updates: Record<string, any> = { stage: targetStage }
     if (CLOSED_STAGES.includes(targetStage)) {
       updates.status = targetStage === 'cerrado_ganado' ? 'won' : 'lost'
+    } else {
+      // Mover a etapa activa reabre el deal (permite rescatar desde cerrados)
+      updates.status = 'open'
     }
     if (reason)  updates.lost_reason  = reason
     if (comment) updates.lost_comment = comment
@@ -451,12 +469,12 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
 
       {/* Instrucción */}
       <p className="text-xs text-slate-400 mb-3 font-medium">
-        💡 Arrastra las tarjetas entre columnas para cambiar etapa. Las etapas marcadas con <span className="text-amber-600 font-bold">✏️</span> requieren justificación.
+        💡 Arrastra las tarjetas entre columnas. Para cerrar un deal, arrástralo a la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo al arrastrar.
       </p>
 
-      {/* Kanban Board */}
+      {/* Kanban Board — solo etapas activas */}
       <div className="flex gap-3 overflow-x-auto pb-4 flex-1 items-start select-none">
-        {ALL_STAGES.map(stage => {
+        {ACTIVE_STAGES.map(stage => {
           const stageDeals = byStage[stage.key] ?? []
           const isOver = dragOverStage === stage.key
           const needsReason = REASON_REQUIRED.includes(stage.key)
@@ -464,7 +482,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
           const isGanado   = stage.key === 'cerrado_ganado'
 
           return (
-            <div key={stage.key} className="flex flex-col min-w-[220px] w-[220px] flex-shrink-0">
+            <div key={stage.key} className="flex flex-col flex-1 min-w-[190px]">
 
               {/* Column header */}
               <div className="flex items-center gap-1.5 mb-2.5 px-1">
@@ -587,6 +605,87 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
           )
         })}
       </div>
+
+      {/* ── Bandeja de cierre (patrón Pipedrive) — aparece al arrastrar ── */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-200 ease-out ${
+          draggingId ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        <div className="bg-white/95 backdrop-blur border-t-2 border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 py-3">
+          <div className="max-w-3xl mx-auto grid grid-cols-4 gap-3">
+            {TRAY_ZONES.map(zone => {
+              const isOver = dragOverStage === zone.key
+              return (
+                <div
+                  key={zone.key}
+                  onDragOver={e => onDragOver(e, zone.key)}
+                  onDragLeave={onDragLeave}
+                  onDrop={e => onDrop(e, zone.key)}
+                  className={`flex flex-col items-center justify-center gap-0.5 h-16 rounded-2xl border-2 border-dashed font-bold text-xs tracking-wider transition-all duration-150 ${
+                    isOver ? zone.hover : zone.base
+                  }`}
+                >
+                  <span className="text-lg leading-none">{zone.emoji}</span>
+                  {zone.label}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Cerrados recientes (colapsable) ── */}
+      {closedDeals.length > 0 && (
+        <div className="mt-2 border-t border-slate-200 pt-3">
+          <button
+            onClick={() => setShowClosed(v => !v)}
+            className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors uppercase tracking-wider"
+          >
+            <span className={`transition-transform duration-150 ${showClosed ? 'rotate-90' : ''}`}>▸</span>
+            Cerrados recientes
+            <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full normal-case">{closedDeals.length}</span>
+            <span className="font-medium text-slate-400 normal-case tracking-normal">— arrastra de vuelta al pipeline para reabrir</span>
+          </button>
+
+          {showClosed && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {closedDeals.map(deal => {
+                const st = ALL_STAGES.find(s => s.key === deal.stage)!
+                return (
+                  <div
+                    key={deal.id}
+                    draggable
+                    onDragStart={e => onDragStart(e, deal)}
+                    onDragEnd={onDragEnd}
+                    className={`flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl border cursor-grab active:cursor-grabbing transition-all hover:shadow-sm ${
+                      draggingId === deal.id
+                        ? 'border-dashed border-indigo-300 bg-indigo-50/50 opacity-60'
+                        : `bg-white border-slate-200 hover:border-slate-300`
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${st.color} flex-shrink-0`} />
+                    <span className="text-xs font-bold text-slate-700">{deal.companies?.name ?? 'Deal'}</span>
+                    {deal.estimated_value && (
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        ${Number(deal.estimated_value).toLocaleString()}
+                      </span>
+                    )}
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${st.light} ${st.text}`}>{st.label}</span>
+                    <Link
+                      href={`/leads/${deal.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                    >
+                      <span className="text-[9px] font-bold">→</span>
+                    </Link>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Modales ─────────────────────────────────────────── */}
 

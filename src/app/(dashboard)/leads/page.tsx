@@ -3,6 +3,7 @@ import { createClient, requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, Eye, AlertTriangle } from 'lucide-react'
 import LeadsTable from '@/components/leads/leads-table'
+import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { getVisibleDealIds } from '@/lib/visibility'
 
 export default async function LeadsPage() {
@@ -95,6 +96,8 @@ export default async function LeadsPage() {
           </div>
         </div>
         {canCreate && (
+          <div className="flex items-center gap-2">
+          <ImportLeadsButton />
           <Link href="/leads/nuevo"
             className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
@@ -102,6 +105,7 @@ export default async function LeadsPage() {
             <span className="hidden sm:inline">Nuevo lead</span>
             <span className="sm:hidden">Nuevo</span>
           </Link>
+          </div>
         )}
       </div>
 
