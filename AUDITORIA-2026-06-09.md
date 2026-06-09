@@ -147,3 +147,48 @@ columnas** compacta — se eliminó el aire muerto a la derecha del gráfico.
 - Twenty CRM (CRM open-source más popular de GitHub): densidad de tablas y diseño
   (https://github.com/twentyhq/twenty)
 - Attio: barra de acciones masivas flotante
+
+---
+
+## 🏆 FASE 3 — Patrones de los 3 líderes del mercado (verificados en producción)
+
+Análisis de Salesforce, HubSpot y Attio. Se implementó la feature distintiva de cada uno:
+
+### 15. Vista dual del pipeline — patrón HubSpot
+HubSpot estructura su pipeline en dos vistas sincronizadas: kanban + lista filtrable.
+Ahora el pipeline tiene un toggle **Tablero | Lista**:
+- Tablero: el kanban con drag & drop.
+- Lista: tabla densa con los mismos deals ordenados por valor — Empresa, Etapa,
+  Valor, Score, Responsable, Próxima acción y **Últ. contacto** con semáforo de
+  color (gris < 3 días, ámbar 3-6, rojo 7+).
+
+### 16. Detección de deals estancados — patrón Salesforce Pipeline Inspection
+Salesforce marca oportunidades "que necesitan atención" cuando llevan demasiado
+tiempo sin actividad. Implementado:
+- Deal con **7+ días sin contacto** → barra superior roja + 🔥 en la tarjeta del kanban.
+- Contador **"🔥 N estancados (7d+ sin contacto)"** en la barra del pipeline.
+- En la vista lista, columna de último contacto con semáforo.
+
+### 17. Command palette con acciones — patrón Attio
+Attio se distingue por su command palette y shortcuts. El buscador global (Ctrl+K)
+ahora es un **palette de comandos**: al abrirlo muestra "Acciones rápidas" (Crear
+nuevo lead, Ir a Dashboard / Pipeline / Reportes / Equipo, etc.) filtrables por
+texto y navegables con flechas + Enter, además de la búsqueda de empresas,
+contactos y leads.
+
+### Fuentes del análisis de mercado
+- HubSpot pipeline management: https://www.hubspot.com/products/crm/pipeline-management
+- HubSpot, propiedades obligatorias por etapa: https://salesdorado.com/en/crm/crm-software/sales-pipeline-hubspot-crm/
+- Salesforce Pipeline Inspection: https://www.salesforceben.com/ultimate-guide-to-salesforce-pipeline-inspection/
+- Salesforce deal health: https://trailhead.salesforce.com/content/learn/modules/sell-smarter-with-pipeline-inspection/understand-deal-health-with-insights-and-scores
+- Attio UX review: https://crm.org/news/attio-review
+- Pipedrive deal scoring: https://www.processculture.com.au/articles/pipedrive-new-deal-scoring-feature-explained
+
+### Qué tienen los líderes que aún NO está (requiere decisión/credenciales del dueño)
+1. **Email integrado** (HubSpot/Attio): enviar y registrar correos desde el CRM con
+   Gmail/Outlook OAuth. Es la feature #1 que falta — requiere configurar OAuth.
+2. **IA predictiva** (Salesforce Einstein, HubSpot Breeze): scoring predictivo y
+   resúmenes automáticos. Requiere conectar una API de IA (ej. Claude) — factible
+   como siguiente fase si se desea.
+3. **Enriquecimiento de datos** (Attio): autocompletar datos de empresas desde
+   fuentes externas. Requiere API de terceros de pago.
