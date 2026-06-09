@@ -54,42 +54,42 @@ async function getStats() {
     cerrado_ganado: 'Ganado', cerrado_perdido: 'Perdido',
     no_calificado: 'No Calificado', frio: 'Frío',
   }
-  const stageMap: Record<string, number> = {}
-  chartDeals.forEach((d: any) => { stageMap[d.stage] = (stageMap[d.stage] || 0) + 1 })
-  const byEtapa = Object.entries(stageMap).map(([k, v]) => ({
-    label: STAGE_LABELS[k] ?? k, value: v, color: STAGE_COLORS[k] ?? '#94a3b8'
-  })).sort((a, b) => b.value - a.value)
+  // Helper: agrupar por clave y sumar count + amount
+  function groupBy(key: (d: any) => string, colorList: string[]) {
+    const map: Record<string, { count: number; amount: number }> = {}
+    chartDeals.forEach((d: any) => {
+      const k = key(d) || 'Sin datos'
+      if (!map[k]) map[k] = { count: 0, amount: 0 }
+      map[k].count++
+      map[k].amount += Number(d.estimated_value) || 0
+    })
+    return Object.entries(map)
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([k, v], i) => ({
+        label: k, value: v.count, amount: v.amount,
+        color: colorList[i % colorList.length],
+      }))
+  }
 
-  // Por fuente
   const FUENTE_COLORS = ['#6366f1','#f97316','#22c55e','#eab308','#ec4899','#06b6d4','#a855f7','#94a3b8']
-  const fuenteMap: Record<string, number> = {}
-  chartDeals.forEach((d: any) => {
-    const k = (d.source as string) || 'Sin fuente'
-    fuenteMap[k] = (fuenteMap[k] || 0) + 1
-  })
-  const byFuente = Object.entries(fuenteMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({
-    label: k, value: v, color: FUENTE_COLORS[i % FUENTE_COLORS.length]
-  }))
 
-  // Por industria
-  const industryMap: Record<string, number> = {}
+  // Por etapa (con colores propios)
+  const stageMap: Record<string, { count: number; amount: number }> = {}
   chartDeals.forEach((d: any) => {
-    const k = (d.companies as any)?.industry || 'Sin industria'
-    industryMap[k] = (industryMap[k] || 0) + 1
+    if (!stageMap[d.stage]) stageMap[d.stage] = { count: 0, amount: 0 }
+    stageMap[d.stage].count++
+    stageMap[d.stage].amount += Number(d.estimated_value) || 0
   })
-  const byIndustria = Object.entries(industryMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({
-    label: k, value: v, color: FUENTE_COLORS[i % FUENTE_COLORS.length]
-  }))
+  const byEtapa = Object.entries(stageMap)
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([k, v]) => ({
+      label: STAGE_LABELS[k] ?? k, value: v.count, amount: v.amount,
+      color: STAGE_COLORS[k] ?? '#94a3b8',
+    }))
 
-  // Por responsable
-  const ownerMap: Record<string, number> = {}
-  chartDeals.forEach((d: any) => {
-    const k = (d.profiles as any)?.full_name || 'Sin asignar'
-    ownerMap[k] = (ownerMap[k] || 0) + 1
-  })
-  const byResponsable = Object.entries(ownerMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({
-    label: k, value: v, color: FUENTE_COLORS[i % FUENTE_COLORS.length]
-  }))
+  const byFuente      = groupBy(d => d.source,                         FUENTE_COLORS)
+  const byIndustria   = groupBy(d => d.companies?.industry,            FUENTE_COLORS)
+  const byResponsable = groupBy(d => d.profiles?.full_name,            FUENTE_COLORS)
 
   return {
     dealsOpen: dealsOpen.count ?? 0,

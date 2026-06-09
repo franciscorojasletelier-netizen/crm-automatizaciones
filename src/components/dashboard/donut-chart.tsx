@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 
-type Slice = { label: string; value: number; color: string }
+// amount = suma de estimated_value en CLP
+type Slice = { label: string; value: number; amount: number; color: string }
 
 type Filter = 'etapa' | 'fuente' | 'industria' | 'responsable'
 
@@ -20,11 +21,19 @@ const FILTER_LABELS: Record<Filter, string> = {
   responsable: 'Por responsable',
 }
 
+function fmt(n: number) {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `$${Math.round(n / 1_000)}K`
+  return `$${n.toLocaleString()}`
+}
+
 // ── SVG Donut ─────────────────────────────────────────────────
 function DonutChart({ slices }: { slices: Slice[] }) {
   const [hovered, setHovered] = useState<number | null>(null)
-  const total = slices.reduce((s, x) => s + x.value, 0)
-  if (total === 0) {
+  const totalDeals  = slices.reduce((s, x) => s + x.value, 0)
+  const totalAmount = slices.reduce((s, x) => s + x.amount, 0)
+
+  if (totalDeals === 0) {
     return (
       <div className="flex items-center justify-center h-44">
         <p className="text-sm text-slate-400">Sin datos</p>
@@ -32,11 +41,11 @@ function DonutChart({ slices }: { slices: Slice[] }) {
     )
   }
 
-  const SIZE = 160
-  const STROKE = 28
+  const SIZE   = 168
+  const STROKE = 30
   const RADIUS = (SIZE - STROKE) / 2
   const CIRC   = 2 * Math.PI * RADIUS
-  const GAP    = 2 // px gap between segments
+  const GAP    = 3
 
   let cumPct = 0
 
@@ -46,65 +55,100 @@ function DonutChart({ slices }: { slices: Slice[] }) {
       <div className="relative flex-shrink-0">
         <svg width={SIZE} height={SIZE} style={{ transform: 'rotate(-90deg)' }}>
           {slices.map((slice, i) => {
-            const pct     = slice.value / total
-            const dash    = Math.max(pct * CIRC - GAP, 0)
-            const gap     = CIRC - dash
-            const offset  = cumPct * CIRC
-            cumPct       += pct
+            const pct    = slice.value / totalDeals
+            const dash   = Math.max(pct * CIRC - GAP, 0)
+            const gap    = CIRC - dash
+            const offset = cumPct * CIRC
+            cumPct      += pct
 
             return (
               <circle
                 key={i}
                 cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
                 fill="none"
-                stroke={hovered === null || hovered === i ? slice.color : slice.color + '55'}
-                strokeWidth={hovered === i ? STROKE + 4 : STROKE}
+                stroke={hovered === null || hovered === i ? slice.color : slice.color + '44'}
+                strokeWidth={hovered === i ? STROKE + 5 : STROKE}
                 strokeDasharray={`${dash} ${gap}`}
                 strokeDashoffset={-offset}
                 strokeLinecap="butt"
-                style={{ transition: 'all 0.2s', cursor: 'pointer' }}
+                style={{ transition: 'all 0.18s ease', cursor: 'pointer' }}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
               />
             )
           })}
         </svg>
-        {/* Centro */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+
+        {/* Centro — muestra deals + $ al hover */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2">
           {hovered !== null ? (
             <>
-              <p className="text-xl font-bold text-slate-900">{slices[hovered].value}</p>
-              <p className="text-[10px] text-slate-500 font-medium text-center max-w-[60px] leading-tight">
-                {slices[hovered].label}
+              <p className="text-lg font-bold text-slate-900 leading-none">{slices[hovered].value}</p>
+              <p className="text-[10px] font-semibold leading-tight mt-0.5"
+                style={{ color: slices[hovered].color }}>
+                {slices[hovered].label.length > 12
+                  ? slices[hovered].label.slice(0, 11) + '…'
+                  : slices[hovered].label}
               </p>
+              {slices[hovered].amount > 0 && (
+                <p className="text-[11px] font-bold text-emerald-600 mt-1 leading-none">
+                  {fmt(slices[hovered].amount)}
+                </p>
+              )}
             </>
           ) : (
             <>
-              <p className="text-xl font-bold text-slate-900">{total}</p>
-              <p className="text-[10px] text-slate-400 font-medium">deals</p>
+              <p className="text-2xl font-bold text-slate-900 leading-none">{totalDeals}</p>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">deals</p>
+              {totalAmount > 0 && (
+                <p className="text-[11px] font-bold text-emerald-600 mt-1 leading-none">
+                  {fmt(totalAmount)}
+                </p>
+              )}
             </>
           )}
         </div>
       </div>
 
       {/* Leyenda */}
-      <div className="flex-1 space-y-1.5 min-w-0">
+      <div className="flex-1 space-y-1 min-w-0">
         {slices.map((slice, i) => {
-          const pct = total > 0 ? Math.round((slice.value / total) * 100) : 0
+          const pct = totalDeals > 0 ? Math.round((slice.value / totalDeals) * 100) : 0
+          const amtPct = totalAmount > 0 ? Math.round((slice.amount / totalAmount) * 100) : 0
           return (
             <div
               key={i}
-              className={`flex items-center gap-2 rounded-lg px-2 py-1 cursor-pointer transition-colors ${hovered === i ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
+              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${hovered === i ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
             >
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: slice.color }} />
+
+              {/* Label */}
               <span className="text-xs text-slate-600 font-medium flex-1 truncate">{slice.label}</span>
+
+              {/* Deals count */}
               <span className="text-xs font-bold text-slate-900 tabular-nums">{slice.value}</span>
-              <span className="text-[10px] text-slate-400 w-8 text-right">{pct}%</span>
+              <span className="text-[10px] text-slate-400 w-6 text-right tabular-nums">{pct}%</span>
+
+              {/* Valor $ */}
+              {slice.amount > 0 && (
+                <span className="text-[11px] font-bold text-emerald-600 tabular-nums min-w-[48px] text-right">
+                  {fmt(slice.amount)}
+                </span>
+              )}
             </div>
           )
         })}
+
+        {/* Total row */}
+        {totalAmount > 0 && (
+          <div className="flex items-center gap-2 px-2 pt-2 mt-1 border-t border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex-1">Total</span>
+            <span className="text-xs font-bold text-slate-700">{totalDeals} deals</span>
+            <span className="text-[11px] font-bold text-emerald-700 min-w-[48px] text-right">{fmt(totalAmount)}</span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -129,7 +173,7 @@ export default function DashboardDonut({ byEtapa, byFuente, byIndustria, byRespo
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">Distribución de deals</h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">Pasa el cursor sobre el gráfico para ver detalles</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Hover sobre gráfico o leyenda para ver detalles</p>
         </div>
         {/* Filtros */}
         <div className="flex gap-1 flex-wrap">
