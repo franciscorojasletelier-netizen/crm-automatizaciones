@@ -57,7 +57,28 @@ export default function GlobalSearch() {
     return () => clearTimeout(timer)
   }, [query])
 
+  // ── Comandos rápidos (patrón Attio: command palette, no solo búsqueda) ──
+  const COMMANDS = [
+    { icon: '➕', label: 'Crear nuevo lead',        keywords: 'nuevo crear lead deal',          href: '/leads/nuevo' },
+    { icon: '📊', label: 'Ir a Dashboard',          keywords: 'dashboard inicio resumen',       href: '/dashboard' },
+    { icon: '📈', label: 'Ir a Pipeline',           keywords: 'pipeline kanban tablero embudo', href: '/pipeline' },
+    { icon: '👥', label: 'Ir a Leads',              keywords: 'leads lista prospectos',         href: '/leads' },
+    { icon: '🏢', label: 'Ir a Empresas',           keywords: 'empresas companias clientes',    href: '/empresas' },
+    { icon: '✅', label: 'Ir a Tareas',             keywords: 'tareas pendientes todo',         href: '/tareas' },
+    { icon: '📅', label: 'Ir a Calendario',         keywords: 'calendario agenda fechas',       href: '/calendario' },
+    { icon: '🔔', label: 'Ir a Notificaciones',     keywords: 'notificaciones avisos alertas',  href: '/notificaciones' },
+    { icon: '📉', label: 'Ir a Reportes',           keywords: 'reportes informes analisis kpi', href: '/reportes' },
+    { icon: '⚡', label: 'Ir a Automatizaciones',   keywords: 'automatizaciones reglas flujos', href: '/automatizaciones' },
+    { icon: '🗂️', label: 'Ir a Proyectos',          keywords: 'proyectos entregables',          href: '/proyectos' },
+    { icon: '🧑‍💼', label: 'Ir a Equipo',           keywords: 'equipo usuarios roles admin',    href: '/admin/usuarios' },
+  ]
+  const q = query.trim().toLowerCase()
+  const matchedCommands = q
+    ? COMMANDS.filter(c => c.label.toLowerCase().includes(q) || c.keywords.includes(q)).slice(0, 5)
+    : COMMANDS.slice(0, 6)
+
   const allItems = [
+    ...matchedCommands.map(c => ({ type: 'command', data: c, href: c.href })),
     ...results.deals.map(d => ({ type: 'deal', data: d, href: `/leads/${d.id}` })),
     ...results.contacts.map(c => ({ type: 'contact', data: c, href: `/empresas` })),
   ]
@@ -116,11 +137,25 @@ export default function GlobalSearch() {
 
             {/* Resultados */}
             <div className="max-h-[380px] overflow-y-auto">
-              {!loading && !query && (
-                <div className="py-10 text-center">
-                  <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                  <p className="text-sm text-slate-400 font-medium">Escribe para buscar</p>
-                  <p className="text-xs text-slate-300 mt-0.5">Empresas, contactos, leads</p>
+              {/* Comandos rápidos (patrón Attio) */}
+              {matchedCommands.length > 0 && (
+                <div className="py-2">
+                  <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    ⌘ Acciones rápidas
+                  </p>
+                  {matchedCommands.map((cmd, i) => {
+                    const isSelected = selected === i
+                    return (
+                      <button key={cmd.href + cmd.label} onClick={() => go(cmd.href)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}>
+                        <span className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-sm">
+                          {cmd.icon}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-700 flex-1">{cmd.label}</span>
+                        <ArrowRight className={`w-4 h-4 shrink-0 transition-colors ${isSelected ? 'text-indigo-500' : 'text-slate-200'}`} />
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
@@ -137,7 +172,7 @@ export default function GlobalSearch() {
                     <TrendingUp className="w-3 h-3" /> Leads
                   </p>
                   {results.deals.map((deal: any, i: number) => {
-                    const idx = i
+                    const idx = matchedCommands.length + i
                     const isSelected = selected === idx
                     return (
                       <button key={deal.id} onClick={() => go(`/leads/${deal.id}`)}
@@ -169,7 +204,7 @@ export default function GlobalSearch() {
                     <Users className="w-3 h-3" /> Contactos
                   </p>
                   {results.contacts.map((c: any, i: number) => {
-                    const idx = results.deals.length + i
+                    const idx = matchedCommands.length + results.deals.length + i
                     const isSelected = selected === idx
                     return (
                       <button key={c.id} onClick={() => go('/empresas')}

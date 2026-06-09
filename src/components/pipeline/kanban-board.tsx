@@ -17,9 +17,21 @@ export type KanbanDeal = {
   score: number | null
   estimated_value: number | null
   next_action: string | null
+  last_contacted_at?: string | null
+  created_at?: string | null
   companies: { name: string } | null
   contacts: { full_name: string } | null
   profiles: { full_name: string } | null
+}
+
+// Deal estancado: 7+ días sin contacto registrado (patrón Salesforce Pipeline Inspection)
+function staleDays(deal: KanbanDeal): number {
+  const ref = deal.last_contacted_at ?? deal.created_at
+  if (!ref) return 0
+  return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000)
+}
+function isStalled(deal: KanbanDeal): boolean {
+  return staleDays(deal) >= 7
 }
 
 // ── Etapas ────────────────────────────────────────────────────
@@ -266,6 +278,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
   const supabase = createClient()
 
   const [showClosed, setShowClosed] = useState(false)
+  const [view, setView] = useState<'board' | 'list'>('board')
 
   // Agrupar por etapa
   const byStage: Record<string, KanbanDeal[]> = {}
@@ -273,6 +286,8 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
     byStage[s.key] = deals.filter(d => d.stage === s.key)
   }
   const closedDeals = deals.filter(d => TERMINAL_STAGES.includes(d.stage))
+  const activeList  = deals.filter(d => !TERMINAL_STAGES.includes(d.stage))
+  const stalledCount = activeList.filter(isStalled).length
 
   // ── Drag handlers ──────────────────────────────────────────
   function onDragStart(e: React.DragEvent, deal: KanbanDeal) {
@@ -467,12 +482,96 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
         </div>
       )}
 
-      {/* Instrucción */}
-      <p className="text-xs text-slate-400 mb-3 font-medium">
-        💡 Arrastra las tarjetas entre columnas. Para cerrar un deal, arrástralo a la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo al arrastrar.
-      </p>
+      {/* Barra de herramientas: instrucción + estancados + toggle de vista */}
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <p className="text-xs text-slate-400 font-medium flex-1 min-w-[200px]">
+          {view === 'board'
+            ? <>💡 Arrastra las tarjetas entre columnas. Para cerrar un deal, suéltalo en la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo.</>
+            : <>📋 Vista de lista — los mismos deals del tablero, ordenados por valor.</>
+          }
+        </p>
+
+        {stalledCount > 0 && (
+          <span className="flex items-center gap-1.5 text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl">
+            🔥 {stalledCount} estancado{stalledCount > 1 ? 's' : ''} (7d+ sin contacto)
+          </span>
+        )}
+
+        {/* Toggle Tablero / Lista (patrón HubSpot) */}
+        <div className="flex bg-slate-100 rounded-xl p-0.5">
+          {([['board', 'Tablero'], ['list', 'Lista']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setView(key)}
+              className={`px-3 py-1.5 rounded-[10px] text-xs font-bold transition-all ${
+                view === key ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Vista LISTA (patrón HubSpot: tabla sincronizada con el tablero) ── */}
+      {view === 'list' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                {['Empresa', 'Etapa', 'Valor', 'Score', 'Responsable', 'Próxima acción', 'Últ. contacto', ''].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {[...activeList].sort((a, b) => (Number(b.estimated_value) || 0) - (Number(a.estimated_value) || 0)).map(deal => {
+                const st = ALL_STAGES.find(s => s.key === deal.stage)!
+                const stalled = isStalled(deal)
+                const days = staleDays(deal)
+                return (
+                  <tr key={deal.id} className="hover:bg-indigo-50/40 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{deal.companies?.name ?? 'Sin empresa'}</span>
+                        {stalled && <span className="text-[10px]">🔥</span>}
+                      </div>
+                      {deal.contacts?.full_name && <p className="text-[11px] text-slate-400">{deal.contacts.full_name}</p>}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-semibold ${st.light} ${st.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${st.color}`} />
+                        {st.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 font-bold text-slate-700 tabular-nums">
+                      {deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—'}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`text-xs font-bold ${(deal.score ?? 0) >= 60 ? 'text-emerald-600' : (deal.score ?? 0) >= 30 ? 'text-amber-600' : 'text-slate-400'}`}>
+                        {deal.score ?? 0}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-slate-600 font-medium">{deal.profiles?.full_name ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-slate-500 max-w-[200px] truncate">{deal.next_action ?? '—'}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`text-[11px] font-semibold ${stalled ? 'text-red-500' : days >= 3 ? 'text-amber-600' : 'text-slate-400'}`}>
+                        {days === 0 ? 'Hoy' : `${days}d`}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <Link href={`/leads/${deal.id}`}
+                        className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-indigo-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
+                        <span className="text-[10px] font-bold">→</span>
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Kanban Board — solo etapas activas */}
+      {view === 'board' && (
       <div className="flex gap-3 overflow-x-auto pb-4 flex-1 items-start select-none">
         {ACTIVE_STAGES.map(stage => {
           const stageDeals = byStage[stage.key] ?? []
@@ -530,13 +629,18 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
                           : 'bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-md'
                       }`}
                     >
-                      {/* Barra color top */}
-                      <div className={`absolute top-0 left-0 right-0 h-0.5 ${stage.color}`} />
+                      {/* Barra color top — roja si está estancado */}
+                      <div className={`absolute top-0 left-0 right-0 h-0.5 ${isStalled(deal) ? 'bg-red-400' : stage.color}`} />
 
                       {/* Empresa */}
-                      <p className="text-sm font-bold text-slate-900 leading-tight truncate group-hover:text-indigo-700 transition-colors">
-                        {deal.companies?.name ?? 'Sin empresa'}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-slate-900 leading-tight truncate group-hover:text-indigo-700 transition-colors">
+                          {deal.companies?.name ?? 'Sin empresa'}
+                        </p>
+                        {isStalled(deal) && (
+                          <span className="text-[10px] shrink-0" title={`${staleDays(deal)} días sin contacto`}>🔥</span>
+                        )}
+                      </div>
 
                       {/* Contacto */}
                       {deal.contacts?.full_name && (
@@ -605,6 +709,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
           )
         })}
       </div>
+      )}
 
       {/* ── Bandeja de cierre (patrón Pipedrive) — aparece al arrastrar ── */}
       <div

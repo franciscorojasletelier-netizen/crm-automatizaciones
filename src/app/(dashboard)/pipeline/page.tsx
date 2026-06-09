@@ -16,7 +16,7 @@ export default async function PipelinePage() {
   let query = supabase
     .from('deals')
     .select(`
-      id, stage, score, estimated_value, next_action,
+      id, stage, score, estimated_value, next_action, last_contacted_at, created_at,
       companies(name),
       contacts:primary_contact_id(full_name),
       profiles:owner_id(full_name)
