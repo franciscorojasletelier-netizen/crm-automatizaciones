@@ -589,7 +589,8 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
       {/* ── Vista LISTA (patrón HubSpot: tabla sincronizada con el tablero) ── */}
       {view === 'list' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[760px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 {['Empresa', 'Etapa', 'Valor', 'Score', 'Responsable', 'Próxima acción', 'Últ. contacto', ''].map(h => (
@@ -643,6 +644,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -794,7 +796,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
         }`}
       >
         <div className="bg-white/95 backdrop-blur border-t-2 border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 py-3">
-          <div className="max-w-3xl mx-auto grid grid-cols-4 gap-3">
+          <div className="max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {TRAY_ZONES.map(zone => {
               const isOver = dragOverStage === zone.key
               return (

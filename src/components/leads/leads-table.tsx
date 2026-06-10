@@ -383,8 +383,8 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
 
       {/* ── Barra flotante de acciones masivas ── */}
       {canReassign && selected.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center gap-3 bg-slate-900 text-white rounded-2xl shadow-2xl pl-5 pr-3 py-3">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 sm:gap-3 bg-slate-900 text-white rounded-2xl shadow-2xl pl-4 sm:pl-5 pr-3 py-3 flex-wrap justify-center">
             <div className="flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-indigo-400" />
               <span className="text-sm font-bold">{selected.size} seleccionado{selected.size > 1 ? 's' : ''}</span>

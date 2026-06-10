@@ -50,7 +50,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
   let cumPct = 0
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
       {/* SVG */}
       <div className="relative flex-shrink-0">
         <svg width={SIZE} height={SIZE} style={{ transform: 'rotate(-90deg)' }}>
