@@ -42,14 +42,15 @@ export async function getVisibleDealIds(
 /**
  * Devuelve los IDs de proyectos que el usuario puede ver.
  * - super_admin / gerente   → null (ve todo)
- * - produccion / soporte    → propios + compartidos (project_members)
+ * - soporte                 → null (rol analista de solo lectura: ve todos los proyectos)
+ * - produccion              → propios + compartidos (project_members)
  */
 export async function getVisibleProjectIds(
   supabase: SupabaseClient,
   userId: string,
   role: string
 ): Promise<string[] | null> {
-  if (['super_admin', 'gerente'].includes(role)) return null
+  if (['super_admin', 'gerente', 'soporte'].includes(role)) return null
 
   const ids: string[] = []
 
@@ -105,9 +106,10 @@ export async function canSeeProject(
   role: string,
   projectId: string
 ): Promise<boolean> {
-  if (['super_admin', 'gerente'].includes(role)) return true
+  // Soporte es analista de solo lectura: ve todos los proyectos
+  if (['super_admin', 'gerente', 'soporte'].includes(role)) return true
 
-  if (['produccion', 'soporte'].includes(role)) {
+  if (role === 'produccion') {
     const { data: project } = await supabase
       .from('projects').select('owner_id').eq('id', projectId).single()
     if (project?.owner_id === userId) return true

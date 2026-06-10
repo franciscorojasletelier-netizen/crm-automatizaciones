@@ -21,8 +21,8 @@ export default async function CalendarioPage() {
     .lte('due_date', end)
     .order('due_date', { ascending: true })
 
-  // Ejecutivos solo ven sus tareas
-  if (role === 'comercial') {
+  // Solo gerente/admin ven el calendario de todo el equipo; el resto ve sus tareas
+  if (!['super_admin', 'gerente'].includes(role)) {
     query = query.eq('assigned_to', user.id)
   }
 
