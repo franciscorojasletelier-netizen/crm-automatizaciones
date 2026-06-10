@@ -29,11 +29,21 @@ async function getLayoutData() {
 
     const now = new Date().toISOString()
 
-    const [profileRes, leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, role, is_active').eq('id', user.id).single(),
+    // El rol decide si los contadores son globales (gerente/admin) o propios
+    const profileRes = await supabase.from('profiles')
+      .select('id, full_name, email, role, is_active').eq('id', user.id).single()
+    const seesAll = ['super_admin', 'admin', 'gerente'].includes((profileRes.data as any)?.role ?? '')
+
+    const tasksBase = () => {
+      let q = supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false)
+      if (!seesAll) q = q.eq('assigned_to', user.id)
+      return q
+    }
+
+    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones] = await Promise.all([
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-      supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false),
-      supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false).lt('due_date', now),
+      tasksBase(),
+      tasksBase().lt('due_date', now),
       supabase.from('companies').select('id', { count: 'exact', head: true }),
       supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'activo'),
       supabase.from('team_messages')

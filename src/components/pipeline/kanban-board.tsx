@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { runAutomationsForStageChange } from '@/lib/automations'
+import { useRef } from 'react'
 import {
   X, AlertTriangle, XCircle, MinusCircle, PauseCircle,
-  MessageSquare, Loader2, CheckCircle2, Paperclip,
+  MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText,
 } from 'lucide-react'
 
 // ── Tipos ──────────────────────────────────────────────────────
@@ -179,14 +180,32 @@ function ReasonModal({
   )
 }
 
-// ── Modal para Propuesta Enviada (sin subir archivo desde kanban) ──
-function ProposalWarningModal({ deal, onConfirm, onCancel, saving }: {
-  deal: KanbanDeal; onConfirm: () => void; onCancel: () => void; saving: boolean
+// ── Modal para Propuesta Enviada — ADJUNTO OBLIGATORIO ─────────
+// Si el usuario cancela o no adjunta, el deal se queda en su etapa anterior.
+const MAX_PROPOSAL_MB = 10
+const PROPOSAL_ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx'
+
+function ProposalUploadModal({ deal, onConfirm, onCancel, saving }: {
+  deal: KanbanDeal; onConfirm: (file: File) => void; onCancel: () => void; saving: boolean
 }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [fileError, setFileError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleFile(f: File) {
+    setFileError('')
+    if (f.size > MAX_PROPOSAL_MB * 1024 * 1024) {
+      setFileError(`El archivo supera el límite de ${MAX_PROPOSAL_MB} MB`)
+      return
+    }
+    setFile(f)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={saving ? undefined : onCancel} />
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
         <div className="px-6 py-5 bg-orange-50 border-b border-orange-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white border border-orange-200 flex items-center justify-center shadow-sm">
@@ -197,20 +216,54 @@ function ProposalWarningModal({ deal, onConfirm, onCancel, saving }: {
               <p className="text-xs text-slate-500 mt-0.5">{deal.companies?.name ?? 'Deal'}</p>
             </div>
           </div>
-        </div>
-        <div className="p-6">
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              Recuerda <strong>adjuntar el documento de propuesta</strong> desde el detalle del deal. Se puede hacer en cualquier momento.
-            </p>
+          <div className="mt-3 flex items-center gap-2 bg-white border border-orange-200 rounded-xl px-3 py-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+            <p className="text-xs font-semibold text-orange-700">El documento de propuesta es obligatorio para esta etapa</p>
           </div>
         </div>
+
+        <div className="p-6 space-y-3">
+          {!file ? (
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+              onClick={() => inputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all ${
+                dragOver ? 'border-orange-400 bg-orange-50' : 'border-slate-300 hover:border-orange-300 hover:bg-orange-50/50'
+              }`}
+            >
+              <input ref={inputRef} type="file" accept={PROPOSAL_ACCEPT} className="hidden"
+                onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              <Upload className={`w-6 h-6 mx-auto mb-2 ${dragOver ? 'text-orange-500' : 'text-slate-300'}`} />
+              <p className="text-sm font-semibold text-slate-700">{dragOver ? '¡Suelta aquí!' : 'Arrastra la propuesta aquí'}</p>
+              <p className="text-xs text-slate-400 mt-1">o haz clic para seleccionar · PDF, Word, PowerPoint · Máx. {MAX_PROPOSAL_MB} MB</p>
+            </div>
+          ) : (
+            <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-3.5 flex items-center gap-3">
+              <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-emerald-900 truncate">{file.name}</p>
+                <p className="text-xs text-emerald-600">{(file.size / 1024 / 1024).toFixed(1)} MB · listo para subir</p>
+              </div>
+              {!saving && (
+                <button onClick={() => setFile(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-emerald-200 text-emerald-500">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {fileError && (
+            <p className="text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{fileError}</p>
+          )}
+        </div>
+
         <div className="px-6 pb-6 flex gap-2">
-          <button onClick={onConfirm} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Moviendo...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar movimiento</>}
+          <button onClick={() => file && onConfirm(file)} disabled={!file || saving}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+            style={{ background: (!file || saving) ? '#94a3b8' : 'linear-gradient(135deg, #f97316, #ea580c)' }}>
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <><CheckCircle2 className="w-4 h-4" /> Adjuntar y mover</>}
           </button>
           {!saving && (
             <button onClick={onCancel} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50">
@@ -351,8 +404,31 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
     applyMove(deal, targetStage, null, null)
   }
 
+  // Subir propuesta a Storage y luego mover — el deal NO se mueve si falla la subida
+  async function handleProposalConfirm(deal: KanbanDeal, file: File) {
+    setSaving(true)
+    setError('')
+    try {
+      const path = `${deal.id}/${Date.now()}_${file.name}`
+      const { error: storageError } = await supabase.storage
+        .from('propuestas').upload(path, file, { upsert: true })
+      if (storageError) throw storageError
+      const { data: urlData } = supabase.storage.from('propuestas').getPublicUrl(path)
+      await applyMove(deal, 'propuesta_enviada', null, null, {
+        proposal_url: urlData.publicUrl,
+        proposal_filename: file.name,
+        proposal_size: file.size,
+        proposal_uploaded_at: new Date().toISOString(),
+      })
+    } catch (err: any) {
+      setError(`Error subiendo propuesta: ${err?.message ?? 'desconocido'} — el deal no se movió`)
+      setSaving(false)
+      setProposalModal(null)
+    }
+  }
+
   // ── Apply move ─────────────────────────────────────────────
-  async function applyMove(deal: KanbanDeal, targetStage: string, reason: string | null, comment: string | null) {
+  async function applyMove(deal: KanbanDeal, targetStage: string, reason: string | null, comment: string | null, extraUpdates?: Record<string, any>) {
     setSaving(true)
     setError('')
 
@@ -360,7 +436,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
     const prevStage = deal.stage
     setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: targetStage } : d))
 
-    const updates: Record<string, any> = { stage: targetStage }
+    const updates: Record<string, any> = { stage: targetStage, ...(extraUpdates ?? {}) }
     if (CLOSED_STAGES.includes(targetStage)) {
       updates.status = targetStage === 'cerrado_ganado' ? 'won' : 'lost'
     } else {
@@ -804,12 +880,12 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
         />
       )}
 
-      {/* Propuesta enviada */}
+      {/* Propuesta enviada — adjunto obligatorio */}
       {proposalModal && (
-        <ProposalWarningModal
+        <ProposalUploadModal
           deal={proposalModal.deal}
           saving={saving}
-          onConfirm={() => applyMove(proposalModal.deal, 'propuesta_enviada', null, null)}
+          onConfirm={file => handleProposalConfirm(proposalModal.deal, file)}
           onCancel={() => setProposalModal(null)}
         />
       )}
