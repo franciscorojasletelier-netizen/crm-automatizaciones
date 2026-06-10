@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/server'
 import { AlertTriangle, Clock, CheckCircle2 } from 'lucide-react'
 import NewTaskButton from '@/components/tareas/new-task-button'
 import TasksTable from '@/components/tareas/tasks-table'
@@ -16,9 +16,12 @@ function isDueSoon(due: string | null) {
 }
 
 export default async function TareasPage() {
-  const supabase = await createClient()
+  const { user, role, supabase } = await getCurrentProfile()
 
-  const { data: tasks } = await supabase
+  // Gerente/admin ven todas las tareas; el resto solo las suyas
+  const seesAll = ['super_admin', 'gerente'].includes(role)
+
+  let query = supabase
     .from('tasks')
     .select(`
       id, title, description, due_date, is_completed, created_at,
@@ -28,6 +31,12 @@ export default async function TareasPage() {
     .order('is_completed', { ascending: true })
     .order('due_date', { ascending: true })
     .limit(200)
+
+  if (!seesAll) {
+    query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`)
+  }
+
+  const { data: tasks } = await query
 
   const all      = tasks ?? []
   const pending  = all.filter(t => !t.is_completed)
