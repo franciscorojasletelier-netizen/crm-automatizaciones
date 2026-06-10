@@ -1,8 +1,20 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import crypto from 'crypto'
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'meta_verify_autopilot_2026'
+
+function verifyMetaSignature(raw: string, signature: string | null): boolean {
+  const appSecret = process.env.META_APP_SECRET?.trim()
+  if (!appSecret || !signature) return false
+  const expected = 'sha256=' + crypto.createHmac('sha256', appSecret).update(raw).digest('hex')
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+  } catch {
+    return false
+  }
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -33,7 +45,11 @@ export async function OPTIONS() {
 // Recepcion de leads (POST)
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const raw = await request.text()
+    if (!verifyMetaSignature(raw, request.headers.get('x-hub-signature-256'))) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401, headers: CORS_HEADERS })
+    }
+    const body = JSON.parse(raw)
     console.log('[Meta Webhook] Payload recibido:', JSON.stringify(body, null, 2))
 
     // Meta envia: { object: "page", entry: [{ id, time, changes: [{ field: "leadgen", value: { ... } }] }] }

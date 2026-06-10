@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
+
+// Valida la firma HMAC-SHA256 que Meta envía en X-Hub-Signature-256
+function verifyMetaSignature(raw: string, signature: string | null): boolean {
+  const appSecret = process.env.META_APP_SECRET?.trim()
+  if (!appSecret) return false           // sin secret configurado → rechazar
+  if (!signature) return false
+  const expected = 'sha256=' + crypto.createHmac('sha256', appSecret).update(raw).digest('hex')
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+  } catch {
+    return false
+  }
+}
 
 // GET — verificación del webhook por Meta
 export async function GET(request: NextRequest) {
@@ -24,8 +38,12 @@ export async function POST(request: NextRequest) {
   )
 
   try {
-    const body = await request.json()
-    console.log('Meta webhook recibido:', JSON.stringify(body, null, 2))
+    // Validar firma de Meta sobre el cuerpo crudo antes de procesar
+    const raw = await request.text()
+    if (!verifyMetaSignature(raw, request.headers.get('x-hub-signature-256'))) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+    const body = JSON.parse(raw)
 
     const entries = body.entry ?? []
 
