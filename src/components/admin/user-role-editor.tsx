@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_META, getRoleMeta, type Role } from '@/lib/roles'
@@ -22,7 +23,27 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
   const [active, setActive] = useState(isActive)
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [pos, setPos] = useState({ top: 0, right: 0, dropUp: false })
+  const btnRef = useRef<HTMLButtonElement>(null)
   const router = useRouter()
+
+  useEffect(() => { setMounted(true) }, [])
+
+  function handleOpen() {
+    if (saving) return
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      const dropUp = spaceBelow < 320  // ~altura del menú con 4-5 roles
+      setPos({
+        top:   dropUp ? rect.top : rect.bottom + 6,
+        right: window.innerWidth - rect.right,
+        dropUp,
+      })
+    }
+    setOpen(o => !o)
+  }
   const supabase = createClient()
   const roleMeta = getRoleMeta(role)
 
@@ -62,17 +83,25 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
 
       {/* Selector de rol */}
       <div className="relative">
-        <button onClick={() => setOpen(!open)} disabled={saving}
+        <button ref={btnRef} onClick={handleOpen} disabled={saving}
           className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl ring-1 transition-all hover:shadow-sm ${roleMeta.color}`}>
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
           {roleMeta.label}
           <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
-        {open && (
+        {open && mounted && createPortal(
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-2xl border border-slate-200 shadow-xl z-20 overflow-hidden">
+            <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+            <div
+              style={{
+                position: 'fixed',
+                top:    pos.dropUp ? 'auto' : pos.top,
+                bottom: pos.dropUp ? window.innerHeight - pos.top + 6 : 'auto',
+                right:  pos.right,
+                zIndex: 99,
+              }}
+              className="w-52 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
               <div className="p-1.5 space-y-0.5">
                 {assignableRoles.map(r => {
                   const meta = ROLE_META[r]
@@ -97,7 +126,8 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
                 })}
               </div>
             </div>
-          </>
+          </>,
+          document.body
         )}
       </div>
     </div>
