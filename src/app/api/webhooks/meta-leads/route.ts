@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 
         // Enviar notificacion por email
         await resend.emails.send({
-          from: 'Autopilot CRM <noreply@autopilotspa.cl>',
+          from: process.env.EMAIL_FROM?.trim() || 'Autopilot CRM <onboarding@resend.dev>',
           to: 'autopilotspa@gmail.com',
           subject: `Nuevo lead de Facebook Ads: ${contact_name}`,
           html: `

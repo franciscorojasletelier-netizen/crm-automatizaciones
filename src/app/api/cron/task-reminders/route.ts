@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   ` : ''
 
   await resend.emails.send({
-    from: 'CRM Autopilot <noreply@autopilotspa.cl>',
+    from: process.env.EMAIL_FROM?.trim() || 'CRM Autopilot <onboarding@resend.dev>',
     to: 'autopilotspa@gmail.com',
     subject: `ðŸ“… ${todayTasks?.length ?? 0} tarea${(todayTasks?.length ?? 0) !== 1 ? 's' : ''} para hoy â€” ${now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}`,
     html: `

@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
       const resend = new Resend(resendKey)
       // Email al cliente
       resend.emails.send({
-        from: 'Autopilot SpA <noreply@autopilotspa.cl>',
+        from: process.env.EMAIL_FROM?.trim() || 'Autopilot SpA <onboarding@resend.dev>',
         to: contact_email,
         subject: 'Â¡Recibimos tu mensaje! â€” Autopilot SpA',
         html: `
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
       const resend = new Resend(resendKey)
       // NotificaciÃ³n interna a Autopilot SpA
       resend.emails.send({
-        from: 'CRM Autopilot <noreply@autopilotspa.cl>',
+        from: process.env.EMAIL_FROM?.trim() || 'CRM Autopilot <onboarding@resend.dev>',
         to: 'autopilotspa@gmail.com',
         subject: `ðŸ”” Nuevo lead: ${contact_name ?? company_name} (${source})`,
         html: `

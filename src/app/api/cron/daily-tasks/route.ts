@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from:    'CRM Autopilot <noreply@autopilotspa.cl>',
+          from:    process.env.EMAIL_FROM?.trim() || 'CRM Autopilot <onboarding@resend.dev>',
           to:      [profile.email],
           subject,
           html,
