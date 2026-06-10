@@ -51,7 +51,7 @@ security definer
 set search_path = public
 stable
 as $$
-  select role from profiles where id = auth.uid()
+  select role::text from profiles where id = auth.uid()
 $$;
 
 -- ¿El usuario actual es gerente o super_admin?
@@ -63,7 +63,7 @@ set search_path = public
 stable
 as $$
   select coalesce(
-    (select role in ('super_admin','admin','gerente') from profiles where id = auth.uid()),
+    (select role::text in ('super_admin','admin','gerente') from profiles where id = auth.uid()),
     false
   )
 $$;
@@ -110,8 +110,8 @@ create policy "profiles_update_self_norole" on profiles
   using (auth.uid() = id)
   with check (
     auth.uid() = id
-    and role      = current_user_role()                          -- role no cambia
-    and is_active = (select is_active from profiles where id = auth.uid())
+    and role::text = current_user_role()                         -- role no cambia
+    and is_active  = (select is_active from profiles where id = auth.uid())
   );
 
 -- UPDATE: gerentes/super_admin cambian role/estado de OTROS (nunca de sí mismos)
