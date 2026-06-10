@@ -5,6 +5,41 @@
 -- ════════════════════════════════════════════════════════════════
 
 -- ────────────────────────────────────────────────────────────────
+-- PREREQUISITO: tablas de membresía (nunca se aplicó su migración)
+-- ────────────────────────────────────────────────────────────────
+create table if not exists deal_members (
+  id         uuid primary key default gen_random_uuid(),
+  deal_id    uuid not null references deals(id)    on delete cascade,
+  user_id    uuid not null references profiles(id) on delete cascade,
+  added_by   uuid          references profiles(id) on delete set null,
+  created_at timestamptz default now(),
+  unique (deal_id, user_id)
+);
+create index if not exists idx_deal_members_deal_id on deal_members(deal_id);
+create index if not exists idx_deal_members_user_id on deal_members(user_id);
+alter table deal_members enable row level security;
+
+create table if not exists project_members (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references projects(id)  on delete cascade,
+  user_id    uuid not null references profiles(id)  on delete cascade,
+  added_by   uuid          references profiles(id)  on delete set null,
+  created_at timestamptz default now(),
+  unique (project_id, user_id)
+);
+create index if not exists idx_project_members_project_id on project_members(project_id);
+create index if not exists idx_project_members_user_id    on project_members(user_id);
+alter table project_members enable row level security;
+
+-- Sembrar membresías con los owners actuales
+insert into deal_members (deal_id, user_id)
+  select id, owner_id from deals where owner_id is not null
+  on conflict (deal_id, user_id) do nothing;
+insert into project_members (project_id, user_id)
+  select id, owner_id from projects where owner_id is not null
+  on conflict (project_id, user_id) do nothing;
+
+-- ────────────────────────────────────────────────────────────────
 -- 0. FUNCIONES HELPER (SECURITY DEFINER — evitan recursión de RLS)
 -- ────────────────────────────────────────────────────────────────
 
@@ -248,3 +283,34 @@ create policy "propuestas_auth_write" on storage.objects
 
 create policy "propuestas_auth_update" on storage.objects
   for update using (bucket_id = 'propuestas' and auth.uid() is not null);
+
+
+-- ────────────────────────────────────────────────────────────────
+-- 5. Políticas de las tablas de membresía
+-- ────────────────────────────────────────────────────────────────
+drop policy if exists "deal_members_select" on deal_members;
+create policy "deal_members_select" on deal_members
+  for select using (user_id = auth.uid() or added_by = auth.uid() or is_manager());
+
+drop policy if exists "deal_members_insert" on deal_members;
+create policy "deal_members_insert" on deal_members
+  for insert with check (is_manager());
+
+drop policy if exists "deal_members_delete" on deal_members;
+create policy "deal_members_delete" on deal_members
+  for delete using (is_manager());
+
+drop policy if exists "project_members_select" on project_members;
+create policy "project_members_select" on project_members
+  for select using (user_id = auth.uid() or added_by = auth.uid() or is_manager());
+
+drop policy if exists "project_members_insert" on project_members;
+create policy "project_members_insert" on project_members
+  for insert with check (is_manager());
+
+drop policy if exists "project_members_delete" on project_members;
+create policy "project_members_delete" on project_members
+  for delete using (is_manager());
+
+grant select, insert, delete on deal_members    to authenticated;
+grant select, insert, delete on project_members to authenticated;
