@@ -481,9 +481,9 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
         .from('propuestas').upload(path, file, { upsert: true })
       if (storageError) throw storageError
 
-      const { data: urlData } = supabase.storage.from('propuestas').getPublicUrl(path)
+      // Guardar el PATH (bucket privado) — se sirve vía /api/propuestas con URL firmada
       await applyStageChange('propuesta_enviada', null, null, {
-        proposal_url: urlData.publicUrl,
+        proposal_url: path,
         proposal_filename: file.name,
         proposal_size: file.size,
         proposal_uploaded_at: new Date().toISOString(),
@@ -544,7 +544,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {proposalUrl && (
-                  <a href={proposalUrl} target="_blank" rel="noopener noreferrer"
+                  <a href={`/api/propuestas?deal=${dealId}`} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[10px] font-bold text-orange-600 hover:text-orange-800 bg-orange-100 hover:bg-orange-200 px-2 py-1 rounded-lg transition-colors">
                     <Eye className="w-3 h-3" /> Ver
                   </a>

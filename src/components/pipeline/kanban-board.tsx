@@ -413,9 +413,9 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
       const { error: storageError } = await supabase.storage
         .from('propuestas').upload(path, file, { upsert: true })
       if (storageError) throw storageError
-      const { data: urlData } = supabase.storage.from('propuestas').getPublicUrl(path)
+      // Guardar el PATH (bucket privado) — se sirve vía /api/propuestas con URL firmada
       await applyMove(deal, 'propuesta_enviada', null, null, {
-        proposal_url: urlData.publicUrl,
+        proposal_url: path,
         proposal_filename: file.name,
         proposal_size: file.size,
         proposal_uploaded_at: new Date().toISOString(),

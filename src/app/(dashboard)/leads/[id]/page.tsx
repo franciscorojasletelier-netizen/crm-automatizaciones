@@ -196,7 +196,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 )}
               </div>
               {deal.proposal_url && (
-                <a href={deal.proposal_url} target="_blank" rel="noopener noreferrer"
+                <a href={`/api/propuestas?deal=${deal.id}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl border border-orange-200 transition-all shrink-0">
                   <Eye className="w-3.5 h-3.5" /> Ver propuesta
                 </a>
