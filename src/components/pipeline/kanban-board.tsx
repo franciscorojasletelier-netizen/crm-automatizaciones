@@ -650,7 +650,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
 
       {/* Kanban Board — solo etapas activas */}
       {view === 'board' && (
-      <div className="flex gap-3 overflow-x-auto pb-4 flex-1 items-start select-none">
+      <div className="flex gap-2.5 overflow-x-auto pb-4 flex-1 items-start select-none scroll-smooth [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
         {ACTIVE_STAGES.map(stage => {
           const stageDeals = byStage[stage.key] ?? []
           const isOver = dragOverStage === stage.key
@@ -659,7 +659,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
           const isGanado   = stage.key === 'cerrado_ganado'
 
           return (
-            <div key={stage.key} className="flex flex-col flex-1 min-w-[190px]">
+            <div key={stage.key} className="flex flex-col flex-shrink-0 w-[170px] sm:w-[190px] md:flex-1 md:min-w-[190px]">
 
               {/* Column header */}
               <div className="flex items-center gap-1.5 mb-2.5 px-1">

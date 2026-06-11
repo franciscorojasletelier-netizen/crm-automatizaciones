@@ -246,21 +246,22 @@ export default async function DashboardPage() {
           style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
         <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-10 blur-3xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, #8b5cf6, transparent)' }} />
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-green-400/20 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-green-400/20 flex items-center justify-center shrink-0">
                 <DollarSign className="w-4 h-4 text-green-400" />
               </div>
               <p className="text-sm text-slate-400 font-medium">Valor ganado este mes</p>
             </div>
-            <p className="text-4xl font-bold text-white tracking-tight">
+            <p className="text-3xl md:text-4xl font-bold text-white tracking-tight truncate">
               ${stats.valorGanado.toLocaleString()}
             </p>
           </div>
           <Link href="/pipeline"
-            className="hidden md:flex items-center gap-2 text-sm text-indigo-300 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl">
-            Ver pipeline <ArrowRight className="w-4 h-4" />
+            className="flex items-center gap-2 text-xs md:text-sm text-indigo-300 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 md:px-4 py-2 rounded-xl shrink-0">
+            <span className="hidden sm:inline">Ver pipeline</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>

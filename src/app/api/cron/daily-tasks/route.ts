@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Could not fetch profiles', detail: profErr?.message }, { status: 500 })
     }
 
-    const profiles = profileRows as { id: string; full_name: string; email: string; is_active: boolean }[]
+    const profiles = profileRows as { id: string; full_name: string; email: string; is_active: boolean; role?: string }[]
 
     let sent = 0
     const errors: string[] = []

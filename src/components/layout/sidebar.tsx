@@ -67,11 +67,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 ]
 
 const mobileNavBase: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Pipeline',  href: '/pipeline',  icon: TrendingUp,   permission: 'pipeline' },
-  { label: 'Leads',     href: '/leads',     icon: Users,        permission: 'leads' },
-  { label: 'Proyectos', href: '/proyectos', icon: FolderOpen,   permission: 'proyectos' },
-  { label: 'Tareas',    href: '/tareas',    icon: CheckSquare,  permission: 'tareas' },
+  { label: 'Dashboard', href: '/dashboard',      icon: LayoutDashboard },
+  { label: 'Pipeline',  href: '/pipeline',       icon: TrendingUp,  permission: 'pipeline' },
+  { label: 'Leads',     href: '/leads',          icon: Users,       permission: 'leads' },
+  { label: 'Tareas',    href: '/tareas',         icon: CheckSquare, permission: 'tareas',         countKey: 'tareas',        alertKey: 'tareasVencidas' },
+  { label: 'Notifs',    href: '/notificaciones', icon: Bell,        permission: 'notificaciones', countKey: 'notificaciones', alertKey: 'notificaciones' },
 ]
 
 function getInitials(name: string | null, email: string | null): string {
@@ -247,37 +247,63 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
       </aside>
 
       {/* ── Header móvil ────────────────────────── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between"
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 px-4 py-2.5 flex items-center justify-between gap-3"
         style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+        {/* Logo + nombre */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-7 h-7 rounded-xl flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            <Zap className="w-3 h-3 text-white" />
+            <Zap className="w-3.5 h-3.5 text-white" />
           </div>
-          <h1 className="text-sm font-bold text-white">CRM</h1>
+          <div className="leading-tight">
+            <p className="text-xs font-bold text-white leading-none">CRM</p>
+            <p className="text-[9px] text-indigo-300/60 leading-none mt-0.5">Autopilot</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ring-1 ${roleMeta.color}`}>
-            {roleMeta.label}
-          </span>
-          <button onClick={handleLogout} className="text-slate-400 hover:text-white transition-colors p-1">
-            <LogOut className="w-4 h-4" />
-          </button>
+
+        {/* Búsqueda compacta */}
+        <div className="flex-1 min-w-0">
+          <GlobalSearch />
+        </div>
+
+        {/* Avatar + rol */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            {initials}
+          </div>
         </div>
       </div>
 
       {/* ── Bottom nav móvil ────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex"
-        style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        {mobileNavBase.filter(itemVisible).slice(0, 5).map(({ label, href, icon: Icon }) => {
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex safe-area-inset-bottom"
+        style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {mobileNavBase.filter(itemVisible).slice(0, 5).map(({ label, href, icon: Icon, countKey, alertKey }) => {
           const active = isActive(href)
+          const count = countKey ? liveCounts[countKey] : 0
+          const alertCount = alertKey ? liveCounts[alertKey] : 0
+          const hasAlert = alertCount > 0
           return (
             <Link key={href} href={href}
               className={cn(
-                'flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
+                'flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors relative',
                 active ? 'text-indigo-300' : 'text-slate-500'
               )}>
-              <Icon className={cn('w-5 h-5', active ? 'text-indigo-300' : 'text-slate-500')} />
+              {/* Indicador activo */}
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-indigo-400" />
+              )}
+              <div className="relative">
+                <Icon className={cn('w-5 h-5', active ? 'text-indigo-300' : 'text-slate-500')} />
+                {count > 0 && (
+                  <span className={cn(
+                    'absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center',
+                    hasAlert ? 'bg-red-500 text-white' : 'bg-indigo-500 text-white'
+                  )}>
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
+              </div>
               {label}
             </Link>
           )

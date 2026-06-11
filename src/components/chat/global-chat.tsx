@@ -144,10 +144,10 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   }))
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-20 md:bottom-6 right-3 md:right-6 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
-          style={{ height: '500px' }}>
+        <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+          style={{ height: 'min(500px, calc(100dvh - 10rem))' }}>
 
           <div className="px-4 py-3 flex items-center gap-2 shrink-0"
             style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
