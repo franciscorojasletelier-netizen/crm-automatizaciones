@@ -314,6 +314,42 @@ function GanadoModal({ deal, onConfirm, onCancel, saving }: {
   )
 }
 
+// ── Modal selector de etapa (móvil) ──────────────────────────
+function MobileStagePickerModal({ deal, currentStage, onSelect, onCancel }: {
+  deal: KanbanDeal; currentStage: string; onSelect: (stage: string) => void; onCancel: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl overflow-hidden">
+        <div className="px-5 pt-5 pb-3 border-b border-slate-100">
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Mover deal</p>
+          <p className="text-sm font-bold text-slate-900 truncate">{deal.companies?.name ?? 'Deal'}</p>
+        </div>
+        <div className="p-3 grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pb-8"
+          style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+          {ACTIVE_STAGES.map(s => {
+            const isCurrent = s.key === currentStage
+            return (
+              <button key={s.key} onClick={() => !isCurrent && onSelect(s.key)} disabled={isCurrent}
+                className={`flex items-center gap-2 px-3 py-3 rounded-2xl text-sm font-semibold border-2 transition-all text-left ${
+                  isCurrent
+                    ? `${s.light} ${s.text} border-current opacity-60 cursor-default`
+                    : 'border-slate-200 text-slate-700 hover:border-slate-300 active:scale-95'
+                }`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${s.color} shrink-0`} />
+                <span className="leading-tight">{s.label}</span>
+                {isCurrent && <span className="ml-auto text-[10px]">✓</span>}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Componente principal ───────────────────────────────────────
 export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal[] }) {
   const [deals, setDeals] = useState<KanbanDeal[]>(initialDeals)
@@ -324,6 +360,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
   const [reasonModal,   setReasonModal]   = useState<{ deal: KanbanDeal; stage: string } | null>(null)
   const [proposalModal, setProposalModal] = useState<{ deal: KanbanDeal } | null>(null)
   const [ganadoModal,   setGanadoModal]   = useState<{ deal: KanbanDeal } | null>(null)
+  const [mobilePicker,  setMobilePicker]  = useState<KanbanDeal | null>(null)
 
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState('')
@@ -386,21 +423,13 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
     if (!dealId) return
     const deal = deals.find(d => d.id === dealId)
     if (!deal || deal.stage === targetStage) return
+    handleMoveRequest(deal, targetStage)
+  }
 
-    // Según la etapa, mostrar modal correspondiente
-    if (targetStage === 'cerrado_ganado') {
-      setGanadoModal({ deal })
-      return
-    }
-    if (REASON_REQUIRED.includes(targetStage)) {
-      setReasonModal({ deal, stage: targetStage })
-      return
-    }
-    if (targetStage === 'propuesta_enviada') {
-      setProposalModal({ deal })
-      return
-    }
-    // Etapa normal: aplicar directamente
+  function handleMoveRequest(deal: KanbanDeal, targetStage: string) {
+    if (targetStage === 'cerrado_ganado') { setGanadoModal({ deal }); return }
+    if (REASON_REQUIRED.includes(targetStage)) { setReasonModal({ deal, stage: targetStage }); return }
+    if (targetStage === 'propuesta_enviada') { setProposalModal({ deal }); return }
     applyMove(deal, targetStage, null, null)
   }
 
@@ -761,6 +790,14 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
                               </span>
                             </div>
                           )}
+                          {/* Botón Mover — solo visible en móvil */}
+                          <button
+                            onClick={e => { e.stopPropagation(); e.preventDefault(); setMobilePicker(deal) }}
+                            className="md:hidden text-[9px] font-bold px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 active:scale-95 transition-all"
+                            title="Cambiar etapa"
+                          >
+                            Mover
+                          </button>
                           {/* Link al detalle */}
                           <Link
                             href={`/leads/${deal.id}`}
@@ -899,6 +936,16 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
           saving={saving}
           onConfirm={() => applyMove(ganadoModal.deal, 'cerrado_ganado', null, null)}
           onCancel={() => setGanadoModal(null)}
+        />
+      )}
+
+      {/* Selector de etapa móvil */}
+      {mobilePicker && (
+        <MobileStagePickerModal
+          deal={mobilePicker}
+          currentStage={mobilePicker.stage}
+          onSelect={stage => { setMobilePicker(null); handleMoveRequest(mobilePicker, stage) }}
+          onCancel={() => setMobilePicker(null)}
         />
       )}
     </>
