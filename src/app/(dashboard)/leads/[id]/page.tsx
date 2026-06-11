@@ -13,6 +13,7 @@ import DealChat from '@/components/chat/deal-chat'
 import { canSeeDeal } from '@/lib/visibility'
 import DealSpecBanner from '@/components/deals/deal-spec-banner'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
+import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 
 const stageColors: Record<string, string> = {
   nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
@@ -261,6 +262,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             </div>
 
             <ContactEdit contact={deal.contacts} company={deal.companies} canSeePhone={canSeePhone} />
+
+            {/* Chat WhatsApp — visible para todos, envío solo para comerciales+ */}
+            <WhatsAppChat
+              dealId={deal.id}
+              contactName={(deal.contacts as any)?.full_name ?? 'Cliente'}
+              contactPhone={canSeePhone ? ((deal.contacts as any)?.phone ?? null) : null}
+              canSend={canEdit}
+            />
 
             {/* Gestión de equipo — visible para todos, editable solo para gerente */}
             <DealMembers
