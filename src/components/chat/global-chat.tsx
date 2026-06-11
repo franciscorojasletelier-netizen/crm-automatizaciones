@@ -62,38 +62,33 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
     if (open) { scrollDown(); setUnread(0) }
   }, [open, messages.length, scrollDown])
 
-  // Realtime — solo mensajes de OTROS usuarios
+  // Poll mensajes de otros usuarios cada 5 s cuando el chat está abierto
   useEffect(() => {
-    const channel = supabase
-      .channel(`global-chat-${Date.now()}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'team_messages',
-      }, async (payload) => {
-        const msg = payload.new as any
-        if (msg.deal_id !== null && msg.deal_id !== undefined) return // ignorar mensajes de deals
-        if (msg.user_id === currentUserId) return // el propio ya está (optimistic)
+    if (!open) return
+    const latestId = messages[messages.length - 1]?.id
 
-        const { data: profile } = await supabase
-          .from('profiles').select('full_name, email').eq('id', msg.user_id).single()
+    const fetchNew = async () => {
+      const query = supabase
+        .from('team_messages')
+        .select('id, content, user_id, created_at, profiles(full_name, email)')
+        .is('deal_id', null)
+        .order('created_at', { ascending: true })
+        .limit(50)
 
-        const newMsg: Message = { ...msg, profiles: profile ?? { full_name: null, email: null } }
-        setMessages(prev => {
-          if (prev.find(m => m.id === newMsg.id)) return prev
-          return [...prev, newMsg]
-        })
-        if (!open) setUnread(n => n + 1)
+      const { data } = await query
+      if (!data) return
+      setMessages(prev => {
+        const ids = new Set(prev.map(m => m.id))
+        const incoming = (data as any[]).filter(m => !ids.has(m.id) && m.user_id !== currentUserId)
+        if (!incoming.length) return prev
+        if (!open) setUnread(n => n + incoming.length)
+        return [...prev, ...incoming]
       })
-      .on('postgres_changes', {
-        event: 'DELETE', schema: 'public', table: 'team_messages',
-      }, (payload) => {
-        setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id))
-      })
-      .subscribe()
+    }
 
-    return () => { supabase.removeChannel(channel) }
-  }, [supabase, open, currentUserId])
+    const interval = setInterval(fetchNew, 5_000)
+    return () => clearInterval(interval)
+  }, [open, supabase, currentUserId, messages])
 
   async function sendMessage() {
     const text = input.trim()

@@ -94,27 +94,17 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
 
   useEffect(() => {
     if (!profile?.id) return
-    const channel = supabase
-      .channel(`notif-count-${profile.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'notifications',
-        filter: `user_id=eq.${profile.id}`,
-      }, () => {
-        setNotifCount(n => n + 1)
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'notifications',
-        filter: `user_id=eq.${profile.id}`,
-      }, () => {
-        // Recalcular al marcar como leídas
-        supabase.from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', profile.id)
-          .eq('is_read', false)
-          .then(({ count }) => setNotifCount(count ?? 0))
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    const fetchCount = () =>
+      supabase.from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', profile.id)
+        .eq('is_read', false)
+        .then(({ count }) => { if (count !== null) setNotifCount(count) })
+
+    // Poll cada 30 s — evita WebSocket errors en plan gratuito de Supabase
+    fetchCount()
+    const interval = setInterval(fetchCount, 30_000)
+    return () => clearInterval(interval)
   }, [profile?.id, supabase])
 
   // Merge el conteo realtime con los counts del servidor

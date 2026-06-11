@@ -59,37 +59,27 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
 
   useEffect(() => { scrollDown() }, [messages.length, scrollDown])
 
-  // Realtime — solo para mensajes de OTROS usuarios
+  // Poll mensajes del deal cada 5 s — evita WebSocket errors en plan gratuito
   useEffect(() => {
-    const channel = supabase
-      .channel(`deal-chat-${dealId}-${Date.now()}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'team_messages',
-        filter: `deal_id=eq.${dealId}`,
-      }, async (payload) => {
-        const msg = payload.new as any
-        if (msg.user_id === currentUserId) return // el propio ya se añadió optimistamente
+    const fetchNew = async () => {
+      const { data } = await supabase
+        .from('team_messages')
+        .select('id, content, user_id, created_at, profiles(full_name, email)')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: true })
+        .limit(100)
 
-        const { data: profile } = await supabase
-          .from('profiles').select('full_name, email').eq('id', msg.user_id).single()
-
-        setMessages(prev => {
-          if (prev.find(m => m.id === msg.id)) return prev
-          return [...prev, { ...msg, profiles: profile ?? { full_name: null, email: null } }]
-        })
+      if (!data) return
+      setMessages(prev => {
+        const ids = new Set(prev.map(m => m.id))
+        const incoming = (data as any[]).filter(m => !ids.has(m.id))
+        return incoming.length ? [...prev, ...incoming] : prev
       })
-      .on('postgres_changes', {
-        event: 'DELETE', schema: 'public', table: 'team_messages',
-        filter: `deal_id=eq.${dealId}`,
-      }, (payload) => {
-        setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id))
-      })
-      .subscribe()
+    }
 
-    return () => { supabase.removeChannel(channel) }
-  }, [dealId, currentUserId, supabase])
+    const interval = setInterval(fetchNew, 5_000)
+    return () => clearInterval(interval)
+  }, [dealId, supabase])
 
   async function sendMessage() {
     const text = input.trim()
