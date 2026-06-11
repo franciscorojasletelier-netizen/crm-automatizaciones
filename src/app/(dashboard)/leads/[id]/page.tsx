@@ -48,9 +48,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     redirect(`/acceso-denegado?from=/leads/${id}&role=${role}`)
   }
 
+  const canSeePhone = ['super_admin', 'admin'].includes(role)
+
+  // Si el rol no puede ver teléfonos, excluirlo de la query para que no llegue al cliente
+  const contactSelect = canSeePhone ? '*' : 'id, full_name, email, job_title'
+
   const { data: deal } = await supabase
     .from('deals')
-    .select(`*, companies(*), contacts:primary_contact_id(*), profiles:owner_id(id, full_name)`)
+    .select(`*, companies(*), contacts:primary_contact_id(${contactSelect}), profiles:owner_id(id, full_name)`)
     .eq('id', id)
     .single()
 
@@ -127,7 +132,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                   {deal.contacts?.full_name && deal.contacts?.email && <span className="mx-1.5 text-slate-300">·</span>}
                   {deal.contacts?.email && <span>{deal.contacts.email}</span>}
                 </p>
-                {deal.contacts?.phone && (() => {
+                {canSeePhone && deal.contacts?.phone && (() => {
                   const phone = deal.contacts.phone.replace(/\D/g, '')
                   const intlPhone = phone.startsWith('56') ? phone : `56${phone}`
                   const nombre = deal.contacts.full_name?.split(' ')[0] ?? 'te'
@@ -255,7 +260,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               )}
             </div>
 
-            <ContactEdit contact={deal.contacts} company={deal.companies} />
+            <ContactEdit contact={deal.contacts} company={deal.companies} canSeePhone={canSeePhone} />
 
             {/* Gestión de equipo — visible para todos, editable solo para gerente */}
             <DealMembers

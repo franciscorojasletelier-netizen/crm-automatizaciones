@@ -28,7 +28,7 @@ function EditInput({ label, value, onChange }: { label: string; value: string; o
   )
 }
 
-export default function ContactEdit({ contact, company }: { contact: any; company: any }) {
+export default function ContactEdit({ contact, company, canSeePhone = false }: { contact: any; company: any; canSeePhone?: boolean }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
@@ -67,7 +67,7 @@ export default function ContactEdit({ contact, company }: { contact: any; compan
           <div className="space-y-2">
             <EditInput label="Nombre" value={contactData.full_name} onChange={v => setContactData(p => ({ ...p, full_name: v }))} />
             <EditInput label="Email" value={contactData.email} onChange={v => setContactData(p => ({ ...p, email: v }))} />
-            <EditInput label="Teléfono" value={contactData.phone} onChange={v => setContactData(p => ({ ...p, phone: v }))} />
+            {canSeePhone && <EditInput label="Teléfono" value={contactData.phone} onChange={v => setContactData(p => ({ ...p, phone: v }))} />}
             <EditInput label="Cargo" value={contactData.job_title} onChange={v => setContactData(p => ({ ...p, job_title: v }))} />
           </div>
         </div>
@@ -97,7 +97,18 @@ export default function ContactEdit({ contact, company }: { contact: any; compan
         <div className="space-y-2">
           <InfoRow icon={User}     label="Nombre"  value={contact?.full_name} />
           <InfoRow icon={Mail}     label="Email"   value={contact?.email} />
-          <InfoRow icon={Phone}    label="Teléfono" value={contact?.phone} />
+          {canSeePhone
+            ? <InfoRow icon={Phone} label="Teléfono" value={contact?.phone} />
+            : contact?.phone
+              ? <div className="flex items-start gap-2.5">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Teléfono</p>
+                    <p className="text-sm font-medium text-slate-400 italic">Solo visible para administradores</p>
+                  </div>
+                </div>
+              : null
+          }
           <InfoRow icon={Briefcase} label="Cargo"  value={contact?.job_title} />
         </div>
       </div>
