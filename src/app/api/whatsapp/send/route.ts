@@ -6,7 +6,12 @@ const WA_API_URL = 'https://graph.facebook.com/v20.0'
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, role } = await getCurrentProfile()
+    let user: any, role: string
+    try {
+      ;({ user, role } = await getCurrentProfile())
+    } catch {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
 
     // Solo roles con acceso comercial pueden enviar
     const allowed = ['super_admin', 'admin', 'gerente', 'comercial']
