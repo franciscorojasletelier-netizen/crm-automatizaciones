@@ -163,7 +163,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             {[
-              { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—', icon: TrendingUp, color: 'text-indigo-600 bg-indigo-50' },
+              { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString('es-CL')}` : '—', icon: TrendingUp, color: 'text-indigo-600 bg-indigo-50' },
               { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—',           icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
               { label: 'Fuente',         value: deal.source ?? '—',                                         icon: User, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (
@@ -237,7 +237,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 : (
                   <div className="space-y-2 divide-y divide-slate-100">
                     {[
-                      { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—' },
+                      { label: 'Valor estimado', value: deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString('es-CL')}` : '—' },
                       { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—' },
                       { label: 'Próxima acción', value: deal.next_action ?? '—' },
                       { label: 'Fuente',         value: deal.source ?? '—' },
