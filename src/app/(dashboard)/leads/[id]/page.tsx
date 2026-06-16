@@ -49,7 +49,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     redirect(`/acceso-denegado?from=/leads/${id}&role=${role}`)
   }
 
-  const canSeePhone = ['super_admin', 'admin'].includes(role)
+  const canSeePhone = ['super_admin', 'admin', 'gerente', 'comercial'].includes(role)
 
   // Si el rol no puede ver teléfonos, excluirlo de la query para que no llegue al cliente
   const contactSelect = canSeePhone ? '*' : 'id, full_name, email, job_title'
