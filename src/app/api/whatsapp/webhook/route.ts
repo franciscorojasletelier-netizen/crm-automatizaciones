@@ -15,7 +15,7 @@ function verifySignature(raw: string, signature: string | null): boolean {
 
 // GET — verificación del webhook por Meta
 export async function GET(request: NextRequest) {
-  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'meta_verify_autopilot_2026'
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim() || 'meta_verify_autopilot_2026'
   const { searchParams } = new URL(request.url)
   const mode      = searchParams.get('hub.mode')
   const token     = searchParams.get('hub.verify_token')
