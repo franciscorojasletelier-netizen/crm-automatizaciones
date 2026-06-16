@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
+export const dynamic = 'force-dynamic'
+
 function verifySignature(raw: string, signature: string | null): boolean {
   const secret = process.env.META_APP_SECRET?.trim()
   if (!secret || !signature) return false
@@ -22,7 +24,10 @@ export async function GET(request: NextRequest) {
   const challenge = searchParams.get('hub.challenge')
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    return new NextResponse(challenge, { status: 200 })
+    return new NextResponse(challenge, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    })
   }
   return NextResponse.json({ error: 'Verificación fallida' }, { status: 403 })
 }
