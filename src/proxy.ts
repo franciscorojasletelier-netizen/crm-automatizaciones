@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   const isAuthRoute   = pathname.startsWith('/login')
-  const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp') || pathname.startsWith('/api/admin')
+  const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp')
   const isPublicPage  = pathname.startsWith('/acceso-denegado')
 
   // ── Sin sesión → login ──────────────────────
