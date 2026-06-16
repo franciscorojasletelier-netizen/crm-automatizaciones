@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
       .update({ phone })
       .eq('email', email)
       .select('id, full_name, phone')
-      .single()
-    results.push({ email, phone, ok: !error, data, error: error?.message })
+    results.push({ email, phone, ok: !error, count: data?.length ?? 0, error: error?.message })
   }
 
   return NextResponse.json({ results })
