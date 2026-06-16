@@ -24,12 +24,17 @@ export async function POST(request: NextRequest) {
     { email: 'vparra@agrodelsur.cl',       phone: '+56977889890' },
   ]
 
-  // Debug: get deal contacts
+  // Debug: get contacts with their current phone
+  const { data: contacts } = await supabase
+    .from('contacts')
+    .select('id, full_name, email, phone')
+    .limit(10)
+
+  // Also get deals with contact info
   const { data: deals } = await supabase
     .from('deals')
     .select('id, primary_contact_id, contacts:primary_contact_id(id, full_name, email, phone)')
-    .like('id', 'd0000000%')
-    .limit(6)
+    .limit(3)
 
   const results = []
   for (const { email, phone } of updates) {
@@ -41,5 +46,5 @@ export async function POST(request: NextRequest) {
     results.push({ email, phone, ok: !error, count: data?.length ?? 0, error: error?.message })
   }
 
-  return NextResponse.json({ deals, results })
+  return NextResponse.json({ contacts, deals, results })
 }
