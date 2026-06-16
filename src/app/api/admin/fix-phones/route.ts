@@ -24,6 +24,13 @@ export async function POST(request: NextRequest) {
     { email: 'vparra@agrodelsur.cl',       phone: '+56977889890' },
   ]
 
+  // Debug: get deal contacts
+  const { data: deals } = await supabase
+    .from('deals')
+    .select('id, primary_contact_id, contacts:primary_contact_id(id, full_name, email, phone)')
+    .like('id', 'd0000000%')
+    .limit(6)
+
   const results = []
   for (const { email, phone } of updates) {
     const { data, error } = await supabase
@@ -34,5 +41,5 @@ export async function POST(request: NextRequest) {
     results.push({ email, phone, ok: !error, count: data?.length ?? 0, error: error?.message })
   }
 
-  return NextResponse.json({ results })
+  return NextResponse.json({ deals, results })
 }
