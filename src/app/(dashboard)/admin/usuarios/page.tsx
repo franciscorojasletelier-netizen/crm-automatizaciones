@@ -5,6 +5,7 @@ import { ROLE_META, PERMISSIONS, getRoleMeta, type Role } from '@/lib/roles'
 import { Users, CheckCircle2, XCircle, Shield } from 'lucide-react'
 import UserRoleEditor from '@/components/admin/user-role-editor'
 import AddUserButton from '@/components/admin/add-user-button'
+import AreasManager from '@/components/admin/areas-manager'
 
 export default async function UsuariosPage() {
   const supabase = await createClient()
@@ -26,6 +27,11 @@ export default async function UsuariosPage() {
     .from('profiles')
     .select('id, full_name, email, role, is_active, created_at')
     .order('role').order('full_name')
+
+  const { data: areas } = await supabase
+    .from('areas')
+    .select('id, name, color')
+    .order('name')
 
   const currentRole = currentProfile?.role as Role
 
@@ -55,10 +61,14 @@ export default async function UsuariosPage() {
             <span className="font-semibold text-emerald-600">{totalActive}</span> activos
           </p>
         </div>
-        <AddUserButton
-          editorRole={normalizedRole}
-          people={(users ?? []).map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email }))}
-        />
+        <div className="flex items-center gap-2">
+          <AreasManager areas={areas ?? []} />
+          <AddUserButton
+            editorRole={normalizedRole}
+            people={(users ?? []).map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email }))}
+            areas={areas ?? []}
+          />
+        </div>
       </div>
 
       {/* Resumen de roles */}

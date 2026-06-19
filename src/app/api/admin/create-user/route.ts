@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
   const password = body.password ?? ''
   const newRole = body.role as Role
   const managerId = body.managerId || null
+  const jobTitle = (body.jobTitle ?? '').trim() || null
+  const areaId = body.areaId || null
 
   if (!fullName) return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -74,6 +76,8 @@ export async function POST(request: NextRequest) {
     email,
     role: newRole,
     manager_id: managerId,
+    job_title: jobTitle,
+    area_id: areaId,
     is_active: true,
   })
 

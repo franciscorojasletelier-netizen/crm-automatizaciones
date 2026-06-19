@@ -20,10 +20,21 @@ export default async function OrganigramaPage() {
 
   const { data: people } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role, is_active, manager_id')
+    .select('id, full_name, email, role, is_active, manager_id, job_title, area_id, areas:area_id(name, color)')
     .order('full_name')
 
-  const activePeople = (people ?? []).filter((p: any) => p.is_active) as OrgPerson[]
+  const { data: areas } = await supabase
+    .from('areas')
+    .select('id, name, color')
+    .order('name')
+
+  const activePeople = (people ?? [])
+    .filter((p: any) => p.is_active)
+    .map((p: any) => ({
+      ...p,
+      area_name: p.areas?.name ?? null,
+      area_color: p.areas?.color ?? null,
+    })) as OrgPerson[]
 
   return (
     <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
@@ -59,7 +70,7 @@ export default async function OrganigramaPage() {
             <p className="text-sm text-slate-400 font-medium">No hay personas activas</p>
           </div>
         ) : (
-          <OrgChart people={activePeople} currentUserId={user.id} isAdmin={isAdmin} />
+          <OrgChart people={activePeople} areas={areas ?? []} currentUserId={user.id} isAdmin={isAdmin} editorRole={role} />
         )}
       </div>
     </div>

@@ -12,9 +12,16 @@ interface Person {
   email: string | null
 }
 
+export interface Area {
+  id: string
+  name: string
+  color: string
+}
+
 interface Props {
   editorRole: Role
   people: Person[]
+  areas: Area[]
 }
 
 const ASSIGNABLE: Record<string, Role[]> = {
@@ -29,7 +36,7 @@ function genPassword() {
   return p
 }
 
-export default function AddUserButton({ editorRole, people }: Props) {
+export default function AddUserButton({ editorRole, people, areas }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -42,11 +49,13 @@ export default function AddUserButton({ editorRole, people }: Props) {
   const [password, setPassword] = useState(genPassword())
   const [role, setRole] = useState<Role>(assignable[assignable.length - 1] ?? 'soporte')
   const [managerId, setManagerId] = useState('')
+  const [jobTitle, setJobTitle] = useState('')
+  const [areaId, setAreaId] = useState('')
 
   function reset() {
     setFullName(''); setEmail(''); setPassword(genPassword())
     setRole(assignable[assignable.length - 1] ?? 'soporte')
-    setManagerId(''); setError(''); setDone(false)
+    setManagerId(''); setJobTitle(''); setAreaId(''); setError(''); setDone(false)
   }
 
   function close() { setOpen(false); reset() }
@@ -62,7 +71,7 @@ export default function AddUserButton({ editorRole, people }: Props) {
     const res = await fetch('/api/admin/create-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName, email, password, role, managerId }),
+      body: JSON.stringify({ fullName, email, password, role, managerId, jobTitle, areaId }),
     })
     const data = await res.json()
     setSaving(false)
@@ -164,9 +173,31 @@ export default function AddUserButton({ editorRole, people }: Props) {
                   <p className="text-[10px] text-slate-400 mt-1">El usuario podrá cambiarla luego.</p>
                 </div>
 
-                {/* Rol */}
+                {/* Cargo libre */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Rol / Puesto</label>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
+                  <input value={jobTitle} onChange={e => setJobTitle(e.target.value)}
+                    placeholder="Ej: Jefe de Marketing, Contador, Diseñador…"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                </div>
+
+                {/* Área */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
+                  <select value={areaId} onChange={e => setAreaId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
+                    <option value="">— Sin área —</option>
+                    {areas.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Nivel de acceso (permisos del sistema) */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                    Nivel de acceso <span className="font-normal text-slate-400">(qué puede hacer en el CRM)</span>
+                  </label>
                   <select value={role} onChange={e => setRole(e.target.value as Role)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
                     {assignable.map(r => (
