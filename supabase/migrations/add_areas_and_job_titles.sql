@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS areas (
 
 ALTER TABLE areas ENABLE ROW LEVEL SECURITY;
 
+-- Privilegios de tabla para el rol authenticated (ademas de las policies RLS)
+GRANT SELECT, INSERT, UPDATE, DELETE ON areas TO authenticated;
+
 -- Todos los autenticados pueden ver las areas
 DROP POLICY IF EXISTS "areas_select" ON areas;
 CREATE POLICY "areas_select" ON areas

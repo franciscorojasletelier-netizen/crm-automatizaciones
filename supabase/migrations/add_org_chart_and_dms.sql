@@ -35,6 +35,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE direct_messages;
 -- ── 3. RLS: solo emisor y receptor acceden a sus mensajes ───
 ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
 
+-- Privilegios de tabla para el rol authenticated (ademas de las policies RLS)
+GRANT SELECT, INSERT, UPDATE, DELETE ON direct_messages TO authenticated;
+
 -- Leer: si soy parte de la conversación (emisor o receptor)
 CREATE POLICY "dm_select_participants" ON direct_messages
   FOR SELECT TO authenticated
