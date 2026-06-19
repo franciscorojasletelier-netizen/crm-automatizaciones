@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { ROLE_META, PERMISSIONS, getRoleMeta, type Role } from '@/lib/roles'
 import { Users, CheckCircle2, XCircle, Shield } from 'lucide-react'
 import UserRoleEditor from '@/components/admin/user-role-editor'
+import AddUserButton from '@/components/admin/add-user-button'
 
 export default async function UsuariosPage() {
   const supabase = await createClient()
@@ -46,12 +47,18 @@ export default async function UsuariosPage() {
     <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Equipo</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          <span className="font-semibold text-slate-700">{users?.length ?? 0}</span> usuarios ·{' '}
-          <span className="font-semibold text-emerald-600">{totalActive}</span> activos
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Equipo</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            <span className="font-semibold text-slate-700">{users?.length ?? 0}</span> usuarios ·{' '}
+            <span className="font-semibold text-emerald-600">{totalActive}</span> activos
+          </p>
+        </div>
+        <AddUserButton
+          editorRole={normalizedRole}
+          people={(users ?? []).map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email }))}
+        />
       </div>
 
       {/* Resumen de roles */}
