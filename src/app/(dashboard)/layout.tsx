@@ -19,6 +19,7 @@ export interface UserProfile {
   email: string | null
   role: Role
   is_active: boolean
+  section_access: string[] | null
 }
 
 async function getLayoutData() {
@@ -31,7 +32,7 @@ async function getLayoutData() {
 
     // El rol decide si los contadores son globales (gerente/admin) o propios
     const profileRes = await supabase.from('profiles')
-      .select('id, full_name, email, role, is_active').eq('id', user.id).single()
+      .select('id, full_name, email, role, is_active, section_access').eq('id', user.id).single()
     const seesAll = ['super_admin', 'admin', 'gerente'].includes((profileRes.data as any)?.role ?? '')
 
     const tasksBase = () => {

@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { canAccessRoute } from '@/lib/roles'
+import { canAccessRouteWithAccess } from '@/lib/roles'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -49,7 +49,7 @@ export async function proxy(request: NextRequest) {
   if (user && !isPublicRoute && !isPublicPage && !isAuthRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_active')
+      .select('role, is_active, section_access')
       .eq('id', user.id)
       .single()
 
@@ -62,8 +62,9 @@ export async function proxy(request: NextRequest) {
     }
 
     const role = profile?.role ?? 'soporte'
+    const sectionAccess = (profile as any)?.section_access ?? null
 
-    if (!canAccessRoute(role, pathname)) {
+    if (!canAccessRouteWithAccess(role, sectionAccess, pathname)) {
       const url = request.nextUrl.clone()
       url.pathname = '/acceso-denegado'
       url.searchParams.set('from', pathname)

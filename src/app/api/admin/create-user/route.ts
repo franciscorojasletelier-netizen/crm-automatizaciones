@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
-import { normalizeRole, type Role } from '@/lib/roles'
+import { normalizeRole, NAV_SECTIONS } from '@/lib/roles'
 
-// Roles que cada editor puede asignar al crear usuarios
-const ASSIGNABLE: Record<string, Role[]> = {
-  super_admin: ['gerente', 'comercial', 'produccion', 'soporte'],
-  gerente:     ['comercial', 'produccion', 'soporte'],
-}
+const VALID_SECTIONS = new Set(NAV_SECTIONS.map(s => s.key))
 
 export async function POST(request: NextRequest) {
-  // 1. Autenticación y permiso del solicitante
+  // 1. Autenticación y permiso del solicitante (solo jefaturas)
   let role: string
   try {
     ({ role } = await getCurrentProfile())
@@ -18,8 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
   const editorRole = normalizeRole(role)
-  const allowedRoles = ASSIGNABLE[editorRole]
-  if (!allowedRoles) {
+  if (!['super_admin', 'gerente'].includes(editorRole)) {
     return NextResponse.json({ error: 'Sin permiso para crear usuarios' }, { status: 403 })
   }
 
@@ -28,10 +23,13 @@ export async function POST(request: NextRequest) {
   const fullName = (body.fullName ?? '').trim()
   const email = (body.email ?? '').trim().toLowerCase()
   const password = body.password ?? ''
-  const newRole = body.role as Role
   const managerId = body.managerId || null
   const jobTitle = (body.jobTitle ?? '').trim() || null
   const areaId = body.areaId || null
+  const isAdmin = !!body.isAdmin
+  const sectionAccess: string[] = Array.isArray(body.sectionAccess)
+    ? body.sectionAccess.filter((s: string) => VALID_SECTIONS.has(s))
+    : []
 
   if (!fullName) return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -40,9 +38,13 @@ export async function POST(request: NextRequest) {
   if (password.length < 6) {
     return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
   }
-  if (!allowedRoles.includes(newRole)) {
-    return NextResponse.json({ error: `No puedes asignar el rol "${newRole}"` }, { status: 403 })
+  // Un gerente no puede crear administradores
+  if (isAdmin && editorRole !== 'super_admin') {
+    return NextResponse.json({ error: 'Solo un Super Admin puede crear administradores' }, { status: 403 })
   }
+
+  // El nivel base (para seguridad de datos / RLS) se deriva del interruptor Administrador
+  const derivedRole = isAdmin ? 'gerente' : 'comercial'
 
   // 3. Cliente con service role (servidor)
   const admin = createClient(
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // 4. Crear el usuario en Auth (email ya confirmado para que pueda iniciar sesión)
+  // 4. Crear el usuario en Auth (email confirmado para que pueda iniciar sesión)
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email,
     password,
@@ -69,20 +71,20 @@ export async function POST(request: NextRequest) {
 
   const newUserId = created.user.id
 
-  // 5. Crear el perfil (no hay trigger automático en esta BD)
+  // 5. Crear el perfil
   const { error: profErr } = await admin.from('profiles').insert({
     id: newUserId,
     full_name: fullName,
     email,
-    role: newRole,
+    role: derivedRole,
     manager_id: managerId,
     job_title: jobTitle,
     area_id: areaId,
+    section_access: sectionAccess,
     is_active: true,
   })
 
   if (profErr) {
-    // Rollback: si falla el perfil, eliminar el usuario de Auth para no dejar huérfanos
     await admin.auth.admin.deleteUser(newUserId)
     return NextResponse.json({ error: `Error creando el perfil: ${profErr.message}` }, { status: 400 })
   }

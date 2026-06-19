@@ -4,8 +4,8 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
-import { getRoleMeta, ROLE_META, type Role } from '@/lib/roles'
-import { MessageCircle, Loader2, Pencil, X } from 'lucide-react'
+import { getRoleMeta, NAV_SECTIONS } from '@/lib/roles'
+import { MessageCircle, Loader2, Pencil, X, Shield, Check } from 'lucide-react'
 import DirectChat from '@/components/chat/direct-chat'
 
 export interface OrgPerson {
@@ -19,6 +19,7 @@ export interface OrgPerson {
   area_id: string | null
   area_name: string | null
   area_color: string | null
+  section_access: string[] | null
 }
 
 export interface Area {
@@ -39,10 +40,7 @@ interface Props {
   editorRole: string
 }
 
-const ASSIGNABLE: Record<string, Role[]> = {
-  super_admin: ['gerente', 'comercial', 'produccion', 'soporte'],
-  gerente:     ['comercial', 'produccion', 'soporte'],
-}
+const ADMIN_ONLY = new Set(['usuarios', 'actividad', 'configuracion'])
 
 function getInitials(name: string | null, email: string | null) {
   if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
@@ -240,21 +238,32 @@ function EditModal({
   const [jobTitle, setJobTitle] = useState(node.job_title ?? '')
   const [areaId, setAreaId] = useState(node.area_id ?? '')
   const [managerId, setManagerId] = useState(node.manager_id ?? '')
-  const [role, setRole] = useState<string>(node.role)
+  const [isAdmin, setIsAdmin] = useState(['super_admin', 'gerente'].includes(node.role))
+  const [sections, setSections] = useState<string[]>(
+    Array.isArray(node.section_access) ? node.section_access : NAV_SECTIONS.map(s => s.key)
+  )
   const [saving, setSaving] = useState(false)
 
   const name = node.full_name ?? node.email ?? 'Usuario'
   const managerOptions = people.filter(p => !excluded.has(p.id))
-  const assignable = ASSIGNABLE[editorRole] ?? []
-  const roleOptions = Array.from(new Set([node.role, ...assignable]))
+  const canMakeAdmin = editorRole === 'super_admin'
+
+  function toggleSection(key: string) {
+    setSections(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
+  }
 
   async function save() {
     setSaving(true)
+    // El nivel base (RLS/datos) se deriva del interruptor; conserva super_admin si ya lo era
+    const derivedRole = isAdmin
+      ? (node.role === 'super_admin' ? 'super_admin' : 'gerente')
+      : 'comercial'
     await supabase.from('profiles').update({
       job_title: jobTitle.trim() || null,
       area_id: areaId || null,
       manager_id: managerId || null,
-      role,
+      role: derivedRole,
+      section_access: sections,
     }).eq('id', node.id)
     setSaving(false)
     onSaved()
@@ -296,14 +305,42 @@ function EditModal({
               {managerOptions.map(p => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
             </select>
           </div>
+          {/* Interruptor Administrador */}
+          {canMakeAdmin && (
+            <button type="button" onClick={() => setIsAdmin(v => !v)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${isAdmin ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white'}`}>
+              <Shield className={`w-4 h-4 ${isAdmin ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <div className="flex-1 text-left">
+                <p className="text-xs font-semibold text-slate-700">Administrador</p>
+                <p className="text-[10px] text-slate-400">Gestiona usuarios, áreas y datos sensibles</p>
+              </div>
+              <span className={`w-9 h-5 rounded-full transition-colors relative ${isAdmin ? 'bg-indigo-500' : 'bg-slate-300'}`}>
+                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isAdmin ? 'left-[18px]' : 'left-0.5'}`} />
+              </span>
+            </button>
+          )}
+
+          {/* Checklist de secciones */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">
-              Nivel de acceso <span className="font-normal text-slate-400">(permisos en el CRM)</span>
-            </label>
-            <select value={role} onChange={e => setRole(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
-              {roleOptions.map(r => <option key={r} value={r}>{ROLE_META[r as Role]?.label ?? r}</option>)}
-            </select>
+            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Acceso a secciones</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {NAV_SECTIONS.map(s => {
+                const checked = sections.includes(s.key)
+                const disabled = ADMIN_ONLY.has(s.key) && !isAdmin
+                return (
+                  <button key={s.key} type="button" disabled={disabled} onClick={() => toggleSection(s.key)}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-left transition-colors ${
+                      disabled ? 'opacity-40 cursor-not-allowed border-slate-100' :
+                      checked ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'
+                    }`}>
+                    <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${checked ? 'bg-indigo-500' : 'border border-slate-300'}`}>
+                      {checked && <Check className="w-3 h-3 text-white" />}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-700 truncate">{s.label}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <div className="flex gap-2 pt-1">

@@ -125,6 +125,45 @@ export const PERMISSIONS: Record<Role, RolePermissions> = {
   },
 }
 
+// ── Secciones navegables (para el checklist de acceso) ──────
+export interface NavSection {
+  key: string
+  label: string
+  permission?: keyof RolePermissions // permiso base del rol que la habilita (techo)
+}
+
+export const NAV_SECTIONS: NavSection[] = [
+  { key: 'dashboard',        label: 'Dashboard',        permission: 'dashboard' },
+  { key: 'pipeline',         label: 'Pipeline',         permission: 'pipeline' },
+  { key: 'leads',            label: 'Leads',            permission: 'leads' },
+  { key: 'empresas',         label: 'Empresas',         permission: 'empresas' },
+  { key: 'tareas',           label: 'Tareas',           permission: 'tareas' },
+  { key: 'proyectos',        label: 'Proyectos',        permission: 'proyectos' },
+  { key: 'calendario',       label: 'Calendario',       permission: 'calendario' },
+  { key: 'organigrama',      label: 'Organigrama' }, // todos
+  { key: 'notificaciones',   label: 'Notificaciones',   permission: 'notificaciones' },
+  { key: 'reportes',         label: 'Reportes',         permission: 'reportes' },
+  { key: 'automatizaciones', label: 'Automatizaciones', permission: 'automatizaciones' },
+  { key: 'actividad',        label: 'Actividad',        permission: 'actividad' },
+  { key: 'usuarios',         label: 'Equipo / Usuarios', permission: 'usuarios' },
+  { key: 'configuracion',    label: 'Configuración',    permission: 'configuracion' },
+]
+
+// ¿Puede el usuario acceder a una sección?
+// El rol es el "techo" (qué permite como máximo) y section_access es un filtro restrictivo.
+// section_access NULL/undefined => sin filtro extra (solo manda el rol).
+export function canAccessSection(
+  role: string,
+  sectionAccess: string[] | null | undefined,
+  key: string
+): boolean {
+  const section = NAV_SECTIONS.find(s => s.key === key)
+  // Base: lo que el rol permite. Si la sección no tiene permiso asociado (ej. organigrama), todos.
+  const base = section?.permission ? hasPermission(role, section.permission) : true
+  if (Array.isArray(sectionAccess)) return base && sectionAccess.includes(key)
+  return base
+}
+
 // ── Helpers ────────────────────────────────────
 
 // Mapeo de roles viejos → nuevos (compatibilidad hacia atrás)
@@ -183,6 +222,38 @@ export function canAccessRoute(role: string, pathname: string): boolean {
     }
   }
   return true // rutas no protegidas son accesibles
+}
+
+// Mapeo de rutas a secciones del checklist
+export const ROUTE_SECTIONS: Array<{ pattern: RegExp; key: string }> = [
+  { pattern: /^\/dashboard/,        key: 'dashboard' },
+  { pattern: /^\/pipeline/,         key: 'pipeline' },
+  { pattern: /^\/leads/,            key: 'leads' },
+  { pattern: /^\/empresas/,         key: 'empresas' },
+  { pattern: /^\/tareas/,           key: 'tareas' },
+  { pattern: /^\/proyectos/,        key: 'proyectos' },
+  { pattern: /^\/calendario/,       key: 'calendario' },
+  { pattern: /^\/organigrama/,      key: 'organigrama' },
+  { pattern: /^\/notificaciones/,   key: 'notificaciones' },
+  { pattern: /^\/reportes/,         key: 'reportes' },
+  { pattern: /^\/automatizaciones/, key: 'automatizaciones' },
+  { pattern: /^\/admin\/usuarios/,  key: 'usuarios' },
+  { pattern: /^\/admin/,            key: 'actividad' },
+  { pattern: /^\/configuracion/,    key: 'configuracion' },
+]
+
+// Versión que respeta el checklist por usuario (section_access) además del rol
+export function canAccessRouteWithAccess(
+  role: string,
+  sectionAccess: string[] | null | undefined,
+  pathname: string
+): boolean {
+  for (const r of ROUTE_SECTIONS) {
+    if (r.pattern.test(pathname)) {
+      return canAccessSection(role, sectionAccess, r.key)
+    }
+  }
+  return true // rutas no mapeadas son accesibles
 }
 
 // Redirección por defecto según rol

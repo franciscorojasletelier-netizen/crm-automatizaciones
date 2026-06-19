@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import GlobalSearch from './global-search'
-import { getPermissions, getRoleMeta } from '@/lib/roles'
+import { getPermissions, getRoleMeta, canAccessSection } from '@/lib/roles'
 import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
 import type { Role } from '@/lib/roles'
 
@@ -112,7 +112,6 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
   const liveCounts = { ...counts, notificaciones: notifCount }
 
   const role = (profile?.role ?? 'soporte') as Role
-  const perms = getPermissions(role)
   const roleMeta = getRoleMeta(role)
 
   async function handleLogout() {
@@ -122,12 +121,15 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
-  // Filtrar items según permisos
+  // Clave de sección de un item (para el checklist de acceso)
+  function sectionKeyOf(item: NavItem): string {
+    if (item.permission) return item.permission as string
+    return item.href.replace(/^\//, '').split('/')[0]
+  }
+
+  // Filtrar items según el checklist de acceso del usuario (y su rol como techo)
   function itemVisible(item: NavItem): boolean {
-    if (!item.permission) return true
-    const val = perms[item.permission]
-    if (typeof val === 'boolean') return val
-    return val !== 'none'
+    return canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item))
   }
 
   const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null)

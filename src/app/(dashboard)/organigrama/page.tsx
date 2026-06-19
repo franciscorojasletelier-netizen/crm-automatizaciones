@@ -20,7 +20,7 @@ export default async function OrganigramaPage() {
 
   const { data: people } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role, is_active, manager_id, job_title, area_id, areas:area_id(name, color)')
+    .select('id, full_name, email, role, is_active, manager_id, job_title, area_id, section_access, areas:area_id(name, color)')
     .order('full_name')
 
   const { data: areas } = await supabase
