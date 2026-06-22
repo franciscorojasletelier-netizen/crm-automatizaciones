@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { UserPlus, X, Loader2, Check, RefreshCw, Copy, Shield } from 'lucide-react'
-import { NAV_SECTIONS, type Role } from '@/lib/roles'
+import { type Role, type SectionMode } from '@/lib/roles'
+import SectionChecklist from '@/components/admin/section-checklist'
 
 interface Person {
   id: string
@@ -31,9 +32,6 @@ function genPassword() {
   return p
 }
 
-// Secciones que solo tienen efecto si la persona es Administrador
-const ADMIN_ONLY = new Set(['usuarios', 'actividad', 'configuracion'])
-
 export default function AddUserButton({ editorRole, people, areas }: Props) {
   const router = useRouter()
   const canMakeAdmin = editorRole === 'super_admin'
@@ -49,19 +47,16 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
   const [jobTitle, setJobTitle] = useState('')
   const [areaId, setAreaId] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
-  const [sections, setSections] = useState<string[]>(['dashboard', 'organigrama'])
+  const DEFAULT_SECTIONS: Record<string, SectionMode> = { dashboard: 'full', organigrama: 'full' }
+  const [sections, setSections] = useState<Record<string, SectionMode>>(DEFAULT_SECTIONS)
 
   function reset() {
     setFullName(''); setEmail(''); setPassword(genPassword())
     setManagerId(''); setJobTitle(''); setAreaId('')
-    setIsAdmin(false); setSections(['dashboard', 'organigrama'])
+    setIsAdmin(false); setSections(DEFAULT_SECTIONS)
     setError(''); setDone(false)
   }
   function close() { setOpen(false); reset() }
-
-  function toggleSection(key: string) {
-    setSections(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
-  }
 
   async function submit() {
     if (saving) return
@@ -185,30 +180,16 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
                 )}
 
                 {/* Checklist de secciones */}
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Acceso a secciones</label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {NAV_SECTIONS.map(s => {
-                      const checked = sections.includes(s.key)
-                      const adminOnly = ADMIN_ONLY.has(s.key)
-                      const disabled = adminOnly && !isAdmin
-                      return (
-                        <button key={s.key} type="button" disabled={disabled}
-                          onClick={() => toggleSection(s.key)}
-                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-left transition-colors ${
-                            disabled ? 'opacity-40 cursor-not-allowed border-slate-100' :
-                            checked ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'
-                          }`}>
-                          <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${checked ? 'bg-indigo-500' : 'border border-slate-300'}`}>
-                            {checked && <Check className="w-3 h-3 text-white" />}
-                          </span>
-                          <span className="text-[11px] font-medium text-slate-700 truncate">{s.label}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1.5">Las secciones de gestión (Equipo, Actividad, Configuración) requieren Administrador.</p>
-                </div>
+                <SectionChecklist
+                  value={sections}
+                  isAdmin={isAdmin}
+                  onChange={(key, mode) => setSections(prev => {
+                    const next = { ...prev }
+                    if (mode === null) delete next[key]
+                    else next[key] = mode
+                    return next
+                  })}
+                />
 
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2"><p className="text-xs text-red-700">{error}</p></div>

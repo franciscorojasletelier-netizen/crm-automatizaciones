@@ -1,8 +1,8 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { ROLE_META, PERMISSIONS, getRoleMeta, type Role } from '@/lib/roles'
-import { Users, CheckCircle2, XCircle, Shield } from 'lucide-react'
+import { ROLE_META, getRoleMeta, type Role } from '@/lib/roles'
+import { Users, CheckCircle2, XCircle } from 'lucide-react'
 import UserRoleEditor from '@/components/admin/user-role-editor'
 import AddUserButton from '@/components/admin/add-user-button'
 import AreasManager from '@/components/admin/areas-manager'
@@ -163,60 +163,6 @@ export default async function UsuariosPage() {
         </div>
       </div>
 
-      {/* Leyenda de permisos */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-            <Shield className="w-3.5 h-3.5 text-purple-600" />
-          </div>
-          <h2 className="text-sm font-semibold text-slate-900">Matriz de permisos</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-slate-100">
-                <th className="text-left px-5 py-3 font-bold text-slate-500 uppercase tracking-wider">Sección</th>
-                {(Object.entries(ROLE_META) as [Role, any][]).map(([role, meta]) => (
-                  <th key={role} className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider text-center whitespace-nowrap">
-                    <span className={`px-2 py-0.5 rounded-full ring-1 ${meta.color}`}>{meta.label}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {[
-                { label: 'Dashboard',     key: 'dashboard' },
-                { label: 'Pipeline',      key: 'pipeline' },
-                { label: 'Leads',         key: 'leads' },
-                { label: 'Empresas',      key: 'empresas' },
-                { label: 'Tareas',        key: 'tareas' },
-                { label: 'Proyectos',     key: 'proyectos' },
-                { label: 'Actividad',     key: 'actividad' },
-                { label: 'Usuarios',      key: 'usuarios' },
-                { label: 'Configuración', key: 'configuracion' },
-              ].map(({ label, key }) => (
-                <tr key={key} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-5 py-3 font-semibold text-slate-700">{label}</td>
-                  {(Object.keys(ROLE_META) as Role[]).map(role => {
-                    const val = PERMISSIONS[role][key as keyof typeof PERMISSIONS[typeof role]]
-                    const display = val === true ? '✓ Completo'
-                      : val === false ? '—'
-                      : val === 'full' ? '✓ Completo'
-                      : val === 'read' ? '👁 Solo lectura'
-                      : '—'
-                    const color = val === true || val === 'full' ? 'text-emerald-600 font-semibold'
-                      : val === 'read' ? 'text-amber-600 font-medium'
-                      : 'text-slate-300'
-                    return (
-                      <td key={role} className={`px-3 py-3 text-center ${color}`}>{display}</td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   )
 }

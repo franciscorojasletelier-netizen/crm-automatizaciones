@@ -4,9 +4,10 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
-import { getRoleMeta, NAV_SECTIONS } from '@/lib/roles'
-import { MessageCircle, Loader2, Pencil, X, Shield, Check } from 'lucide-react'
+import { getRoleMeta, NAV_SECTIONS, type SectionMode } from '@/lib/roles'
+import { MessageCircle, Loader2, Pencil, X, Shield } from 'lucide-react'
 import DirectChat from '@/components/chat/direct-chat'
+import SectionChecklist from '@/components/admin/section-checklist'
 
 export interface OrgPerson {
   id: string
@@ -19,7 +20,7 @@ export interface OrgPerson {
   area_id: string | null
   area_name: string | null
   area_color: string | null
-  section_access: string[] | null
+  section_access: Record<string, SectionMode> | string[] | null
 }
 
 export interface Area {
@@ -39,8 +40,6 @@ interface Props {
   isAdmin: boolean
   editorRole: string
 }
-
-const ADMIN_ONLY = new Set(['usuarios', 'actividad', 'configuracion'])
 
 function getInitials(name: string | null, email: string | null) {
   if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
@@ -239,18 +238,18 @@ function EditModal({
   const [areaId, setAreaId] = useState(node.area_id ?? '')
   const [managerId, setManagerId] = useState(node.manager_id ?? '')
   const [isAdmin, setIsAdmin] = useState(['super_admin', 'gerente'].includes(node.role))
-  const [sections, setSections] = useState<string[]>(
-    Array.isArray(node.section_access) ? node.section_access : NAV_SECTIONS.map(s => s.key)
-  )
+  const [sections, setSections] = useState<Record<string, SectionMode>>(() => {
+    if (Array.isArray(node.section_access)) {
+      return Object.fromEntries(node.section_access.map(k => [k, 'full' as SectionMode]))
+    }
+    if (node.section_access && typeof node.section_access === 'object') return node.section_access
+    return Object.fromEntries(NAV_SECTIONS.map(s => [s.key, 'full' as SectionMode]))
+  })
   const [saving, setSaving] = useState(false)
 
   const name = node.full_name ?? node.email ?? 'Usuario'
   const managerOptions = people.filter(p => !excluded.has(p.id))
   const canMakeAdmin = editorRole === 'super_admin'
-
-  function toggleSection(key: string) {
-    setSections(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
-  }
 
   async function save() {
     setSaving(true)
@@ -321,27 +320,16 @@ function EditModal({
           )}
 
           {/* Checklist de secciones */}
-          <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Acceso a secciones</label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {NAV_SECTIONS.map(s => {
-                const checked = sections.includes(s.key)
-                const disabled = ADMIN_ONLY.has(s.key) && !isAdmin
-                return (
-                  <button key={s.key} type="button" disabled={disabled} onClick={() => toggleSection(s.key)}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-left transition-colors ${
-                      disabled ? 'opacity-40 cursor-not-allowed border-slate-100' :
-                      checked ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'
-                    }`}>
-                    <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${checked ? 'bg-indigo-500' : 'border border-slate-300'}`}>
-                      {checked && <Check className="w-3 h-3 text-white" />}
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-700 truncate">{s.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <SectionChecklist
+            value={sections}
+            isAdmin={isAdmin}
+            onChange={(key, mode) => setSections(prev => {
+              const next = { ...prev }
+              if (mode === null) delete next[key]
+              else next[key] = mode
+              return next
+            })}
+          />
 
           <div className="flex gap-2 pt-1">
             <button onClick={onClose} className="flex-1 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl py-2 transition-colors">

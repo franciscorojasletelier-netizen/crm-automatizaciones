@@ -149,19 +149,50 @@ export const NAV_SECTIONS: NavSection[] = [
   { key: 'configuracion',    label: 'Configuración',    permission: 'configuracion' },
 ]
 
-// ¿Puede el usuario acceder a una sección?
+// Acceso por sección: 'full' (ver y editar) | 'read' (solo lectura) | sin acceso.
+export type SectionMode = 'full' | 'read'
+// Formato nuevo: objeto { seccion: 'full' | 'read' }. Formato legacy: array de keys (= 'full').
+export type SectionAccess = Record<string, SectionMode> | string[] | null | undefined
+
+function hasSectionEntry(sectionAccess: SectionAccess, key: string): boolean {
+  if (Array.isArray(sectionAccess)) return sectionAccess.includes(key)
+  if (sectionAccess && typeof sectionAccess === 'object') return key in sectionAccess
+  return false
+}
+
+// ¿Puede el usuario ACCEDER (ver) a una sección?
 // El rol es el "techo" (qué permite como máximo) y section_access es un filtro restrictivo.
 // section_access NULL/undefined => sin filtro extra (solo manda el rol).
 export function canAccessSection(
   role: string,
-  sectionAccess: string[] | null | undefined,
+  sectionAccess: SectionAccess,
   key: string
 ): boolean {
   const section = NAV_SECTIONS.find(s => s.key === key)
-  // Base: lo que el rol permite. Si la sección no tiene permiso asociado (ej. organigrama), todos.
   const base = section?.permission ? hasPermission(role, section.permission) : true
-  if (Array.isArray(sectionAccess)) return base && sectionAccess.includes(key)
-  return base
+  if (sectionAccess == null) return base
+  return base && hasSectionEntry(sectionAccess, key)
+}
+
+// Modo efectivo de una sección: 'none' | 'read' | 'full'
+export function getSectionMode(
+  role: string,
+  sectionAccess: SectionAccess,
+  key: string
+): 'none' | SectionMode {
+  if (!canAccessSection(role, sectionAccess, key)) return 'none'
+  // Legacy (array) o sin checklist (null) => acceso completo
+  if (sectionAccess == null || Array.isArray(sectionAccess)) return 'full'
+  return sectionAccess[key] === 'read' ? 'read' : 'full'
+}
+
+// ¿Puede EDITAR en una sección (no es solo lectura)?
+export function canEditSection(
+  role: string,
+  sectionAccess: SectionAccess,
+  key: string
+): boolean {
+  return getSectionMode(role, sectionAccess, key) === 'full'
 }
 
 // ── Helpers ────────────────────────────────────
@@ -245,7 +276,7 @@ export const ROUTE_SECTIONS: Array<{ pattern: RegExp; key: string }> = [
 // Versión que respeta el checklist por usuario (section_access) además del rol
 export function canAccessRouteWithAccess(
   role: string,
-  sectionAccess: string[] | null | undefined,
+  sectionAccess: SectionAccess,
   pathname: string
 ): boolean {
   for (const r of ROUTE_SECTIONS) {

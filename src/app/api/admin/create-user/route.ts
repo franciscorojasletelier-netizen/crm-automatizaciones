@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
-import { normalizeRole, NAV_SECTIONS } from '@/lib/roles'
+import { normalizeRole, NAV_SECTIONS, type SectionMode } from '@/lib/roles'
 
 const VALID_SECTIONS = new Set(NAV_SECTIONS.map(s => s.key))
+const VALID_MODES = new Set<SectionMode>(['full', 'read'])
 
 export async function POST(request: NextRequest) {
   // 1. Autenticación y permiso del solicitante (solo jefaturas)
@@ -27,9 +28,14 @@ export async function POST(request: NextRequest) {
   const jobTitle = (body.jobTitle ?? '').trim() || null
   const areaId = body.areaId || null
   const isAdmin = !!body.isAdmin
-  const sectionAccess: string[] = Array.isArray(body.sectionAccess)
-    ? body.sectionAccess.filter((s: string) => VALID_SECTIONS.has(s))
-    : []
+  const sectionAccess: Record<string, SectionMode> = {}
+  if (body.sectionAccess && typeof body.sectionAccess === 'object' && !Array.isArray(body.sectionAccess)) {
+    for (const [key, mode] of Object.entries(body.sectionAccess)) {
+      if (VALID_SECTIONS.has(key) && VALID_MODES.has(mode as SectionMode)) {
+        sectionAccess[key] = mode as SectionMode
+      }
+    }
+  }
 
   if (!fullName) return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
