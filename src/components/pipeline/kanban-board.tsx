@@ -351,7 +351,7 @@ function MobileStagePickerModal({ deal, currentStage, onSelect, onCancel }: {
 }
 
 // ── Componente principal ───────────────────────────────────────
-export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal[] }) {
+export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: KanbanDeal[]; readOnly?: boolean }) {
   const [deals, setDeals] = useState<KanbanDeal[]>(initialDeals)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
@@ -381,6 +381,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
 
   // ── Drag handlers ──────────────────────────────────────────
   function onDragStart(e: React.DragEvent, deal: KanbanDeal) {
+    if (readOnly) { e.preventDefault(); return }
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('dealId', deal.id)
 
@@ -417,6 +418,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
   function onDrop(e: React.DragEvent, targetStage: string) {
     e.preventDefault()
     setDragOverStage(null)
+    if (readOnly) return
     // Guardar id antes de limpiar el estado
     const dealId = e.dataTransfer.getData('dealId') || draggingId
     setDraggingId(null)  // limpiar inmediatamente → card se ve normal al soltar
@@ -727,7 +729,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
                   stageDeals.map(deal => (
                     <div
                       key={deal.id}
-                      draggable
+                      draggable={!readOnly}
                       onDragStart={e => onDragStart(e, deal)}
                       onDragEnd={onDragEnd}
                       className={`rounded-xl p-3 cursor-grab active:cursor-grabbing transition-all duration-150 relative overflow-hidden group ${
@@ -875,7 +877,7 @@ export default function KanbanBoard({ initialDeals }: { initialDeals: KanbanDeal
                 return (
                   <div
                     key={deal.id}
-                    draggable
+                    draggable={!readOnly}
                     onDragStart={e => onDragStart(e, deal)}
                     onDragEnd={onDragEnd}
                     className={`flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl border cursor-grab active:cursor-grabbing transition-all hover:shadow-sm ${

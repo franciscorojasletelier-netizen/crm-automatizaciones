@@ -6,7 +6,7 @@ import { getVisibleDealIds } from '@/lib/visibility'
 import KanbanBoard from '@/components/pipeline/kanban-board'
 
 export default async function PipelinePage() {
-  const { role, supabase, user } = await requirePermission('pipeline')
+  const { role, supabase, user, canEdit } = await requirePermission('pipeline')
 
   const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 
@@ -58,16 +58,18 @@ export default async function PipelinePage() {
             )}
           </div>
         </div>
-        <Link href="/leads/nuevo"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-          <Plus className="w-4 h-4" />
-          Nuevo lead
-        </Link>
+        {canEdit && (
+          <Link href="/leads/nuevo"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <Plus className="w-4 h-4" />
+            Nuevo lead
+          </Link>
+        )}
       </div>
 
       {/* Kanban con drag & drop */}
-      <KanbanBoard initialDeals={(deals ?? []) as any} />
+      <KanbanBoard initialDeals={(deals ?? []) as any} readOnly={!canEdit} />
     </div>
   )
 }
