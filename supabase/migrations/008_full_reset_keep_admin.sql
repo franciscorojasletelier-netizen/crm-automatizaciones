@@ -1,6 +1,6 @@
 -- ============================================================
 --  RESET TOTAL — deja el CRM en blanco, conserva SOLO la cuenta
---  super_admin con email autopilotspa@gmail.com
+--  admin con email autopilotspa@gmail.com
 --  ⚠️⚠️ IRREVERSIBLE — borra TODOS los leads, empresas, tareas,
 --  proyectos, mensajes, automatizaciones, notificaciones, logs.
 --  Ejecutar en Supabase → SQL Editor
@@ -8,24 +8,20 @@
 
 DO $$
 DECLARE
-  v_keep_id    uuid;
+  -- ID confirmado de la cuenta a conservar (autopilotspa@gmail.com, rol admin)
+  v_keep_id uuid := 'be6ed719-e19f-44cb-9649-f4f32a30a347';
   v_keep_count int;
 BEGIN
 
-  -- ── Seguridad: debe existir EXACTAMENTE una cuenta admin con ese email ──
+  -- ── Seguridad: ese ID debe existir tal cual en auth.users y profiles ──
   SELECT count(*) INTO v_keep_count
   FROM auth.users u
   JOIN profiles p ON p.id = u.id
-  WHERE u.email = 'autopilotspa@gmail.com' AND p.role = 'super_admin';
+  WHERE u.id = v_keep_id AND u.email = 'autopilotspa@gmail.com';
 
   IF v_keep_count != 1 THEN
-    RAISE EXCEPTION 'Se esperaba exactamente 1 cuenta super_admin con email autopilotspa@gmail.com, se encontraron %. Abortando por seguridad — no se borró nada.', v_keep_count;
+    RAISE EXCEPTION 'No se encontró la cuenta esperada (id=%, email=autopilotspa@gmail.com). Abortando por seguridad — no se borró nada.', v_keep_id;
   END IF;
-
-  SELECT u.id INTO v_keep_id
-  FROM auth.users u
-  JOIN profiles p ON p.id = u.id
-  WHERE u.email = 'autopilotspa@gmail.com' AND p.role = 'super_admin';
 
   -- ── Borrar todo en orden de dependencias ────────────────────
   DELETE FROM task_history;
