@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { getCurrentProfile } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/server'
 import { AlertTriangle, Clock, CheckCircle2 } from 'lucide-react'
 import NewTaskButton from '@/components/tareas/new-task-button'
 import TasksTable from '@/components/tareas/tasks-table'
@@ -16,7 +16,7 @@ function isDueSoon(due: string | null) {
 }
 
 export default async function TareasPage() {
-  const { user, role, supabase } = await getCurrentProfile()
+  const { user, role, supabase, canEdit } = await requirePermission('tareas')
 
   // Gerente/admin ven todas las tareas; el resto solo las suyas
   const seesAll = ['super_admin', 'gerente'].includes(role)
@@ -56,7 +56,7 @@ export default async function TareasPage() {
             <span className="font-semibold text-slate-700">{completed.length}</span> completadas
           </p>
         </div>
-        <NewTaskButton />
+        {canEdit && <NewTaskButton />}
       </div>
 
       {/* Stats */}
@@ -91,7 +91,7 @@ export default async function TareasPage() {
       </div>
 
       {/* Tabla con búsqueda y filtros */}
-      <TasksTable tasks={all as any} />
+      <TasksTable tasks={all as any} readOnly={!canEdit} />
     </div>
   )
 }

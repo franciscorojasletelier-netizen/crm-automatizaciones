@@ -55,7 +55,7 @@ const FILTERS = [
 
 type FilterKey = typeof FILTERS[number]['key']
 
-export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
+export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: Task[]; readOnly?: boolean }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -100,7 +100,7 @@ export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
   return (
     <>
     {selectedTask && (
-      <TaskDetailPanel task={selectedTask} onClose={() => setSelectedTask(null)} />
+      <TaskDetailPanel task={selectedTask} onClose={() => setSelectedTask(null)} readOnly={readOnly} />
     )}
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
@@ -195,7 +195,7 @@ export default function TasksTable({ tasks: initialTasks }: { tasks: Task[] }) {
                 >
                   {/* Check */}
                   <td className="px-4 py-3.5 text-center">
-                    <TaskCheck taskId={task.id} isCompleted={isDone} isOverdue={isOv} />
+                    <TaskCheck taskId={task.id} isCompleted={isDone} isOverdue={isOv} readOnly={readOnly} />
                   </td>
 
                   {/* Tarea */}

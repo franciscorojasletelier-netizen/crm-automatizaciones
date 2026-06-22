@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { canEditSection } from '@/lib/roles'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2, User, DollarSign, Calendar, AlertTriangle } from 'lucide-react'
@@ -23,7 +24,8 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, supabase } = await getCurrentProfile()
+  const { user, role, supabase, sectionAccess } = await getCurrentProfile()
+  const canEditProyectos = canEditSection(role, sectionAccess, 'proyectos')
 
   // Query principal sin aliases complejos
   const { data: project } = await supabase
@@ -60,8 +62,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const statusInfo = statusConfig[proj.status] ?? { label: proj.status, color: 'bg-slate-100 text-slate-600' }
   const isPending = proj.status === 'pendiente_especificaciones'
 
-  const canRequest = ['produccion', 'super_admin', 'gerente', 'admin'].includes(role)
-  const canResolve = ['comercial', 'gerente', 'super_admin', 'admin'].includes(role)
+  const canRequest = ['produccion', 'super_admin', 'gerente', 'admin'].includes(role) && canEditProyectos
+  const canResolve = ['comercial', 'gerente', 'super_admin', 'admin'].includes(role) && canEditProyectos
 
   const dealOwnerId = proj.deals?.owner_id ?? null
 
@@ -200,9 +202,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               projectId={project.id}
               currentPhase={project.phase}
               currentStatus={project.status}
+              readOnly={!canEditProyectos}
             />
-            <ProjectDeliverables projectId={project.id} deliverables={deliverables ?? []} />
-            <ProjectNotes projectId={project.id} notes={notes ?? []} />
+            <ProjectDeliverables projectId={project.id} deliverables={deliverables ?? []} readOnly={!canEditProyectos} />
+            <ProjectNotes projectId={project.id} notes={notes ?? []} readOnly={!canEditProyectos} />
           </div>
         </div>
       </div>

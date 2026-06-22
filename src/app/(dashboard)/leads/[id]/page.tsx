@@ -11,6 +11,7 @@ import ContactEdit from '@/components/deals/contact-edit'
 import DealMembers from '@/components/deals/deal-members'
 import DealChat from '@/components/chat/deal-chat'
 import { canSeeDeal } from '@/lib/visibility'
+import { canEditSection } from '@/lib/roles'
 import DealSpecBanner from '@/components/deals/deal-spec-banner'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
@@ -39,7 +40,7 @@ const stageLabels: Record<string, string> = {
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, profile, supabase } = await getCurrentProfile()
+  const { user, role, profile, sectionAccess, supabase } = await getCurrentProfile()
   const userId = user.id
   const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
@@ -62,9 +63,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
   if (!deal) notFound()
 
-  const canManage = ['super_admin', 'gerente'].includes(role)
-  const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role)
-  const canDelete = ['super_admin'].includes(role)
+  const canManage = ['super_admin', 'gerente'].includes(role) && canEditSection(role, sectionAccess, 'leads')
+  const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role) && canEditSection(role, sectionAccess, 'leads')
+  const canDelete = ['super_admin'].includes(role) && canEditSection(role, sectionAccess, 'leads')
 
   // Buscar proyecto vinculado al deal con specs pendientes
   const { data: linkedProjects } = await supabase

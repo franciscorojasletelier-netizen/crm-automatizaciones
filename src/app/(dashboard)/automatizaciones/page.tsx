@@ -5,7 +5,7 @@ import AutomationRulesList from '@/components/automations/automation-rules-list'
 import AutomationRuleForm from '@/components/automations/automation-rule-form'
 
 export default async function AutomatizacionesPage() {
-  const { supabase, profile } = await requirePermission('automatizaciones')
+  const { supabase, profile, canEdit } = await requirePermission('automatizaciones')
 
   const [{ data: rules }, { data: logs }] = await Promise.all([
     supabase
@@ -67,13 +67,15 @@ export default async function AutomatizacionesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Formulario crear regla */}
-        <div className="lg:col-span-1">
-          <AutomationRuleForm createdBy={profile?.id ?? ''} />
-        </div>
+        {canEdit && (
+          <div className="lg:col-span-1">
+            <AutomationRuleForm createdBy={profile?.id ?? ''} />
+          </div>
+        )}
 
         {/* Lista de reglas */}
-        <div className="lg:col-span-2 space-y-4">
-          <AutomationRulesList rules={(rules ?? []) as any} logs={(logs ?? []) as any} />
+        <div className={canEdit ? 'lg:col-span-2 space-y-4' : 'lg:col-span-3 space-y-4'}>
+          <AutomationRulesList rules={(rules ?? []) as any} logs={(logs ?? []) as any} canEdit={canEdit} />
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ interface Log {
 interface Props {
   rules: Rule[]
   logs: Log[]
+  canEdit?: boolean
 }
 
 const triggerLabels: Record<string, string> = {
@@ -75,19 +76,21 @@ function actionSummary(rule: Rule): string {
   return ''
 }
 
-export default function AutomationRulesList({ rules: initialRules, logs }: Props) {
+export default function AutomationRulesList({ rules: initialRules, logs, canEdit = true }: Props) {
   const [rules, setRules] = useState<Rule[]>(initialRules)
   const [tab, setTab] = useState<'rules' | 'logs'>('rules')
   const supabase = createClient()
   const router = useRouter()
 
   async function toggleActive(rule: Rule) {
+    if (!canEdit) return
     setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: !r.is_active } : r))
     await supabase.from('automation_rules').update({ is_active: !rule.is_active }).eq('id', rule.id)
     router.refresh()
   }
 
   async function deleteRule(id: string) {
+    if (!canEdit) return
     if (!confirm('¿Eliminar esta regla? Esta acción no se puede deshacer.')) return
     setRules(prev => prev.filter(r => r.id !== id))
     await supabase.from('automation_rules').delete().eq('id', id)
@@ -174,6 +177,7 @@ export default function AutomationRulesList({ rules: initialRules, logs }: Props
                     </div>
                   </div>
                 </div>
+                {canEdit && (
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button onClick={() => toggleActive(rule)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-700"
@@ -188,6 +192,7 @@ export default function AutomationRulesList({ rules: initialRules, logs }: Props
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
+                )}
               </div>
             </div>
           ))}

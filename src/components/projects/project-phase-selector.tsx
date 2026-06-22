@@ -22,8 +22,8 @@ const statuses = [
   { key: 'pendiente_especificaciones', label: '⚠️ Pend. Especificaciones', clickable: false, active: 'bg-amber-400 text-white ring-amber-500',     inactive: 'bg-amber-50 text-amber-700 cursor-not-allowed opacity-70' },
 ]
 
-export default function ProjectPhaseSelector({ projectId, currentPhase, currentStatus }: {
-  projectId: string; currentPhase: string; currentStatus: string
+export default function ProjectPhaseSelector({ projectId, currentPhase, currentStatus, readOnly }: {
+  projectId: string; currentPhase: string; currentStatus: string; readOnly?: boolean
 }) {
   const [phase, setPhase] = useState(currentPhase)
   const [status, setStatus] = useState(currentStatus)
@@ -37,7 +37,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
   useEffect(() => { setStatus(currentStatus) }, [currentStatus])
 
   async function handlePhaseChange(newPhase: string) {
-    if (newPhase === phase) return
+    if (readOnly || newPhase === phase) return
     // Bloquear si está pendiente de especificaciones
     if (isPending) {
       setError('El proyecto está en espera de respuesta del área comercial. No se puede cambiar la fase hasta que se resuelva.')
@@ -52,7 +52,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
   }
 
   async function handleStatusChange(newStatus: string) {
-    if (newStatus === status) return
+    if (readOnly || newStatus === status) return
     // Bloquear si está pendiente de especificaciones
     if (isPending) {
       setError('El proyecto está en espera del área comercial. Solo ellos pueden reactivarlo desde el deal vinculado.')
@@ -98,8 +98,8 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
           {phases.map(p => (
             <button key={p.key}
               onClick={() => handlePhaseChange(p.key)}
-              disabled={loading || isPending}
-              title={isPending ? 'Bloqueado — esperando respuesta de comercial' : undefined}
+              disabled={loading || isPending || readOnly}
+              title={readOnly ? 'Solo lectura' : isPending ? 'Bloqueado — esperando respuesta de comercial' : undefined}
               className={`text-xs px-3 py-1.5 rounded-xl font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${
                 phase === p.key ? `${p.active} ring-1` : p.inactive
               }`}>
@@ -115,9 +115,10 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
           {statuses.map(s => (
             <button key={s.key}
               onClick={() => (!isPending && s.clickable) ? handleStatusChange(s.key) : (isPending ? setError('Bloqueado — esperando respuesta del área comercial.') : undefined)}
-              disabled={loading || (!isPending && !s.clickable)}
+              disabled={loading || readOnly || (!isPending && !s.clickable)}
               title={
-                isPending ? 'Bloqueado — esperando respuesta de comercial'
+                readOnly ? 'Solo lectura'
+                : isPending ? 'Bloqueado — esperando respuesta de comercial'
                 : !s.clickable ? 'Se gestiona automáticamente desde el flujo de especificaciones'
                 : undefined
               }

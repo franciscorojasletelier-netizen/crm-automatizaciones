@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Building2, Pencil, Check, X, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
-export default function CompanyRow({ company, dealId }: { company: any; dealId?: string }) {
+export default function CompanyRow({ company, dealId, canEdit = true }: { company: any; dealId?: string; canEdit?: boolean }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [data, setData] = useState({
@@ -28,7 +28,7 @@ export default function CompanyRow({ company, dealId }: { company: any; dealId?:
     router.refresh()
   }
 
-  if (editing) {
+  if (editing && canEdit) {
     return (
       <tr className="bg-indigo-50/60">
         <td className="px-5 py-4" colSpan={5}>
@@ -129,10 +129,12 @@ export default function CompanyRow({ company, dealId }: { company: any; dealId?:
           }`}>
             {data.is_existing_client ? 'Cliente' : 'Prospecto'}
           </span>
-          <button onClick={() => setEditing(true)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-indigo-100 text-slate-400 hover:text-indigo-600">
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
+          {canEdit && (
+            <button onClick={() => setEditing(true)}
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-indigo-100 text-slate-400 hover:text-indigo-600">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </td>
     </tr>

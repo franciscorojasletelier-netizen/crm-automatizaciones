@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getPermissions, normalizeRole, type Role } from '@/lib/roles'
+import { getPermissions, normalizeRole, canEditSection, type Role, type SectionAccess } from '@/lib/roles'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -34,21 +34,23 @@ export async function getCurrentProfile() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role, is_active')
+    .select('id, full_name, email, role, is_active, section_access')
     .eq('id', user.id)
     .single()
 
   // Normalizar rol legacy (admin → super_admin, etc.)
   const role = normalizeRole(profile?.role ?? 'soporte')
+  const sectionAccess = ((profile as any)?.section_access ?? null) as SectionAccess
 
-  return { user, profile, role, supabase }
+  return { user, profile, role, sectionAccess, supabase }
 }
 
-// Guard de permiso — redirige si el rol no tiene acceso
+// Guard de permiso — redirige si el rol no tiene acceso.
+// `permission` también se usa como key de NAV_SECTIONS para calcular canEdit (modo lectura/completo).
 export async function requirePermission(
   permission: keyof ReturnType<typeof getPermissions>
 ) {
-  const { profile, role, supabase, user } = await getCurrentProfile()
+  const { profile, role, sectionAccess, supabase, user } = await getCurrentProfile()
 
   const perms = getPermissions(role)
   const val = perms[permission]
@@ -58,5 +60,7 @@ export async function requirePermission(
     redirect(`/acceso-denegado?from=protected&role=${role}`)
   }
 
-  return { role, perms, profile, supabase, user }
+  const canEdit = canEditSection(role, sectionAccess, permission as string)
+
+  return { role, perms, profile, sectionAccess, canEdit, supabase, user }
 }

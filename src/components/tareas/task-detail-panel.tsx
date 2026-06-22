@@ -56,9 +56,11 @@ function toDatetimeLocal(iso: string | null) {
 export default function TaskDetailPanel({
   task,
   onClose,
+  readOnly,
 }: {
   task: Task
   onClose: () => void
+  readOnly?: boolean
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -181,6 +183,20 @@ export default function TaskDetailPanel({
           )}
 
           {/* Edit date/time */}
+          {readOnly ? (
+            <div className="px-5 py-4 border-b border-slate-100">
+              <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                <div>
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase">Fecha programada</p>
+                  <p className={`text-sm font-semibold ${isOverdue ? 'text-red-600' : 'text-slate-700'}`}>
+                    {formatDt(task.due_date)}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">Tienes acceso de solo lectura a esta sección.</p>
+            </div>
+          ) : (
           <div className="px-5 py-5 border-b border-slate-100 space-y-4">
             <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" /> Reprogramar tarea
@@ -246,6 +262,7 @@ export default function TaskDetailPanel({
               {saving ? 'Guardando...' : 'Guardar cambio'}
             </button>
           </div>
+          )}
 
           {/* History timeline */}
           <div className="px-5 py-5">

@@ -7,7 +7,7 @@ import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { getVisibleDealIds } from '@/lib/visibility'
 
 export default async function LeadsPage() {
-  const { role, perms, profile, supabase, user } = await requirePermission('leads')
+  const { role, perms, profile, supabase, user, canEdit } = await requirePermission('leads')
   const userId = user?.id ?? ''
 
   // Filtrar por visibilidad según rol
@@ -78,7 +78,7 @@ export default async function LeadsPage() {
   const total = deals?.length ?? 0
   const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
   const isFiltered = visibleIds !== null // true = ve solo los suyos
-  const canCreate = perms.canCreateLeads
+  const canCreate = perms.canCreateLeads && canEdit
 
   return (
     <div className="p-4 md:p-6 space-y-5 min-h-full bg-slate-50">
@@ -147,7 +147,7 @@ export default async function LeadsPage() {
         </div>
       )}
 
-      <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign} />
+      <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} />
     </div>
   )
 }

@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Circle, CheckCircle, AlertCircle } from 'lucide-react'
 
-export default function TaskCheck({ taskId, isCompleted, isOverdue }: {
+export default function TaskCheck({ taskId, isCompleted, isOverdue, readOnly }: {
   taskId: string
   isCompleted: boolean
   isOverdue: boolean
+  readOnly?: boolean
 }) {
   const [done, setDone] = useState(isCompleted)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   async function toggle() {
+    if (readOnly) return
     setLoading(true)
     const supabase = createClient()
     await supabase.from('tasks').update({ is_completed: !done }).eq('id', taskId)
@@ -24,7 +26,7 @@ export default function TaskCheck({ taskId, isCompleted, isOverdue }: {
   }
 
   return (
-    <button onClick={toggle} disabled={loading} className="mt-0.5 shrink-0 hover:scale-110 transition-transform disabled:opacity-50">
+    <button onClick={toggle} disabled={loading || readOnly} className={`mt-0.5 shrink-0 transition-transform disabled:opacity-50 ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
       {done
         ? <CheckCircle className="w-4 h-4 text-green-500" />
         : isOverdue

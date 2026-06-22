@@ -14,7 +14,7 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
 }
 
-export default function ProjectNotes({ projectId, notes }: { projectId: string; notes: any[] }) {
+export default function ProjectNotes({ projectId, notes, readOnly }: { projectId: string; notes: any[]; readOnly?: boolean }) {
   const [list, setList] = useState(notes)
   const [showing, setShowing] = useState(false)
   const [content, setContent] = useState('')
@@ -42,16 +42,18 @@ export default function ProjectNotes({ projectId, notes }: { projectId: string; 
             <Lock className="w-2.5 h-2.5" /> Privado
           </span>
         </div>
-        <button onClick={() => setShowing(!showing)}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-            showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-          }`}>
-          {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {showing ? 'Cancelar' : 'Agregar'}
-        </button>
+        {!readOnly && (
+          <button onClick={() => setShowing(!showing)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
+              showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+            }`}>
+            {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {showing ? 'Cancelar' : 'Agregar'}
+          </button>
+        )}
       </div>
 
-      {showing && (
+      {showing && !readOnly && (
         <div className="p-4 border-b border-slate-100 bg-amber-50/50 space-y-3">
           <textarea value={content} onChange={e => setContent(e.target.value)} rows={3}
             placeholder="Nota interna del equipo (no visible para el cliente)..."

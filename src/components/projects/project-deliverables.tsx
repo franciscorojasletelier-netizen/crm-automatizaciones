@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, Circle, Plus, X, Calendar, Package } from 'lucide-react'
 
-export default function ProjectDeliverables({ projectId, deliverables }: { projectId: string; deliverables: any[] }) {
+export default function ProjectDeliverables({ projectId, deliverables, readOnly }: { projectId: string; deliverables: any[]; readOnly?: boolean }) {
   const [list, setList] = useState(deliverables)
   const [showing, setShowing] = useState(false)
   const [title, setTitle] = useState('')
@@ -27,6 +27,7 @@ export default function ProjectDeliverables({ projectId, deliverables }: { proje
   }
 
   async function handleToggle(id: string, current: boolean) {
+    if (readOnly) return
     await supabase.from('project_deliverables')
       .update({ is_completed: !current, completed_at: !current ? new Date().toISOString() : null }).eq('id', id)
     setList(list.map(d => d.id === id ? { ...d, is_completed: !current } : d))
@@ -48,13 +49,15 @@ export default function ProjectDeliverables({ projectId, deliverables }: { proje
             </span>
           )}
         </div>
-        <button onClick={() => setShowing(!showing)}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-            showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-          }`}>
-          {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {showing ? 'Cancelar' : 'Agregar'}
-        </button>
+        {!readOnly && (
+          <button onClick={() => setShowing(!showing)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
+              showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+            }`}>
+            {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {showing ? 'Cancelar' : 'Agregar'}
+          </button>
+        )}
       </div>
 
       {/* Barra de progreso */}
@@ -70,7 +73,7 @@ export default function ProjectDeliverables({ projectId, deliverables }: { proje
         </div>
       )}
 
-      {showing && (
+      {showing && !readOnly && (
         <div className="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
           <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Nombre del entregable"
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
@@ -100,7 +103,8 @@ export default function ProjectDeliverables({ projectId, deliverables }: { proje
         )}
         {pending.map((d: any) => (
           <div key={d.id} className="px-5 py-3.5 flex items-start gap-3.5 hover:bg-slate-50/50 transition-colors">
-            <button onClick={() => handleToggle(d.id, d.is_completed)} className="mt-0.5 shrink-0 hover:scale-110 transition-transform">
+            <button onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly}
+              className={`mt-0.5 shrink-0 transition-transform ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
               <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500 transition-colors" />
             </button>
             <div className="flex-1 min-w-0">
@@ -119,7 +123,7 @@ export default function ProjectDeliverables({ projectId, deliverables }: { proje
           <div className="divide-y divide-slate-50 opacity-50">
             {done.map((d: any) => (
               <div key={d.id} className="px-5 py-3 flex items-center gap-3.5">
-                <button onClick={() => handleToggle(d.id, d.is_completed)} className="shrink-0">
+                <button onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly} className="shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </button>
                 <p className="text-sm text-slate-500 line-through">{d.title}</p>
