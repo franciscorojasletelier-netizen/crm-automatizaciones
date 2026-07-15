@@ -15,6 +15,7 @@ import { canEditSection } from '@/lib/roles'
 import DealSpecBanner from '@/components/deals/deal-spec-banner'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
+import DealAiInsights from '@/components/deals/deal-ai-insights'
 
 const stageColors: Record<string, string> = {
   nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
@@ -230,6 +231,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Columna izquierda */}
           <div className="lg:col-span-1 space-y-4">
+            {/* Análisis IA */}
+            <DealAiInsights dealId={deal.id} />
+
             {/* Detalles editables */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detalles</h2>
