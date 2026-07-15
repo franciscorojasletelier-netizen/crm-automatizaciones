@@ -63,7 +63,9 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
   }, [fetchMessages])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Solo desplaza el contenedor del chat, no la página completa
+    const list = bottomRef.current?.parentElement
+    if (list) list.scrollTop = list.scrollHeight
   }, [messages])
 
   async function send() {

@@ -55,7 +55,9 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   const supabase = createClient()
 
   const scrollDown = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Solo desplaza el contenedor del chat, no la página completa
+    const list = bottomRef.current?.parentElement
+    if (list) list.scrollTop = list.scrollHeight
   }, [])
 
   useEffect(() => {

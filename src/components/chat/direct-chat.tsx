@@ -57,7 +57,9 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
     `and(sender_id.eq.${recipient.id},recipient_id.eq.${currentUserId})`
 
   const scrollDown = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Solo desplaza el contenedor del chat, no la página completa
+    const list = bottomRef.current?.parentElement
+    if (list) list.scrollTop = list.scrollHeight
   }, [])
 
   const fetchMessages = useCallback(async () => {
