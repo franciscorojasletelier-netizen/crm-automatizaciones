@@ -18,10 +18,19 @@ const RIESGO_STYLE: Record<string, { badge: string; label: string }> = {
   alto:  { badge: 'bg-red-100 text-red-700 ring-1 ring-red-200',             label: 'Riesgo alto' },
 }
 
-export default function DealAiInsights({ dealId }: { dealId: string }) {
+interface Props {
+  dealId: string
+  initialInsights?: Insights | null
+  initialCreatedAt?: string | null
+  initialCreatedByName?: string | null
+}
+
+export default function DealAiInsights({ dealId, initialInsights, initialCreatedAt, initialCreatedByName }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [insights, setInsights] = useState<Insights | null>(null)
+  const [insights, setInsights] = useState<Insights | null>(initialInsights ?? null)
+  const [createdAt, setCreatedAt] = useState<string | null>(initialCreatedAt ?? null)
+  const [createdByName, setCreatedByName] = useState<string | null>(initialCreatedByName ?? null)
 
   async function analyze() {
     setLoading(true)
@@ -35,6 +44,8 @@ export default function DealAiInsights({ dealId }: { dealId: string }) {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al analizar'); return }
       setInsights(data.insights)
+      setCreatedAt(data.created_at ?? new Date().toISOString())
+      setCreatedByName(data.created_by_name ?? null)
     } catch {
       setError('Error de conexión')
     } finally {
@@ -131,6 +142,13 @@ export default function DealAiInsights({ dealId }: { dealId: string }) {
               </span>
               <p className="text-xs text-slate-500 leading-relaxed">{insights.razon_riesgo}</p>
             </div>
+
+            {createdAt && (
+              <p className="text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                Analizado el {new Date(createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                {createdByName ? ` por ${createdByName}` : ''} · queda guardado en el deal
+              </p>
+            )}
           </div>
         )}
       </div>

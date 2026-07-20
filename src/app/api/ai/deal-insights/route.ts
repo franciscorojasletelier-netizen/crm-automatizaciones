@@ -177,7 +177,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Respuesta vacía del modelo' }, { status: 502 })
     }
 
-    return NextResponse.json({ ok: true, insights: JSON.parse(text.text) })
+    const insights = JSON.parse(text.text)
+
+    // Persistir: el análisis queda guardado en el deal y viaja entre etapas y personas
+    const { data: saved } = await supabase
+      .from('deal_ai_insights')
+      .insert({ deal_id: dealId, insights, created_by: userId })
+      .select('created_at, profiles:created_by(full_name)')
+      .single()
+
+    return NextResponse.json({
+      ok: true,
+      insights,
+      created_at: (saved as any)?.created_at ?? new Date().toISOString(),
+      created_by_name: (saved as any)?.profiles?.full_name ?? null,
+    })
   } catch (err: any) {
     if (err instanceof Anthropic.RateLimitError) {
       return NextResponse.json({ error: 'Límite de uso de IA alcanzado, intenta en unos minutos' }, { status: 429 })

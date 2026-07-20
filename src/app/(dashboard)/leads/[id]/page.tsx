@@ -86,7 +86,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     specRequesterName = (reqProfile as any)?.full_name ?? null
   }
 
-  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }] = await Promise.all([
+  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
@@ -99,7 +99,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       .eq('deal_id', id)
       .order('created_at', { ascending: true })
       .limit(100),
+    supabase.from('deal_ai_insights')
+      .select('insights, created_at, profiles:created_by(full_name)')
+      .eq('deal_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1),
   ])
+
+  const lastInsight = (aiInsights as any)?.[0] ?? null
 
   const score = deal.score ?? 0
 
@@ -233,7 +240,12 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           {/* Columna izquierda */}
           <div className="lg:col-span-1 space-y-4">
             {/* Análisis IA */}
-            <DealAiInsights dealId={deal.id} />
+            <DealAiInsights
+              dealId={deal.id}
+              initialInsights={lastInsight?.insights ?? null}
+              initialCreatedAt={lastInsight?.created_at ?? null}
+              initialCreatedByName={lastInsight?.profiles?.full_name ?? null}
+            />
 
             {/* Detalles editables */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
