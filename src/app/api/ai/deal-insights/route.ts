@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   const [{ data: deal }, { data: whatsapp }, { data: interactions }, { data: history }, { data: tasks }] =
     await Promise.all([
       supabase.from('deals')
-        .select('stage, status, estimated_value, probability, source, next_action, score, created_at, last_contacted_at, lost_reason, lost_comment, companies(name, industry), contacts:primary_contact_id(full_name, job_title)')
+        .select('stage, status, estimated_value, probability, source, next_action, score, created_at, last_contacted_at, lost_reason, lost_comment, companies(name, industry, website), contacts:primary_contact_id(full_name, job_title)')
         .eq('id', dealId).single(),
       supabase.from('whatsapp_messages')
         .select('direction, body, created_at')
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     deal: {
       empresa: (deal as any).companies?.name,
       industria: (deal as any).companies?.industry,
+      sitio_web: (deal as any).companies?.website,
       contacto: (deal as any).contacts?.full_name,
       cargo_contacto: (deal as any).contacts?.job_title,
       etapa: deal.stage,
@@ -80,61 +81,99 @@ export async function POST(request: NextRequest) {
 
   const anthropic = new Anthropic()
 
-  try {
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 2048,
-      thinking: { type: 'adaptive' },
-      output_config: {
-        effort: 'medium',
-        format: {
-          type: 'json_schema',
-          schema: {
-            type: 'object',
-            properties: {
-              resumen: {
-                type: 'string',
-                description: 'Resumen ejecutivo del estado del deal en 2-4 frases, en español',
-              },
-              proxima_accion: {
-                type: 'string',
-                description: 'La próxima acción concreta recomendada para avanzar este deal, en español',
-              },
-              riesgo: {
-                type: 'string',
-                enum: ['bajo', 'medio', 'alto'],
-                description: 'Nivel de riesgo de perder este deal',
-              },
-              razon_riesgo: {
-                type: 'string',
-                description: 'Explicación breve del nivel de riesgo asignado, en español',
-              },
-            },
-            required: ['resumen', 'proxima_accion', 'riesgo', 'razon_riesgo'],
-            additionalProperties: false,
+  const baseOutputConfig = {
+    effort: 'medium',
+    format: {
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          resumen: {
+            type: 'string',
+            description: 'Resumen ejecutivo del estado del deal en 2-4 frases, en español',
+          },
+          contexto_empresa: {
+            type: 'string',
+            description: 'Qué encontraste sobre la empresa en la web: a qué se dedica, tamaño aproximado, noticias o señales relevantes. Si no encontraste nada útil, dilo brevemente.',
+          },
+          enfoque_recomendado: {
+            type: 'string',
+            description: 'Cómo debería el vendedor enfocar la conversación con este cliente según lo investigado: qué dolor probable tiene la empresa y qué propuesta de valor de automatización le calza mejor.',
+          },
+          proxima_accion: {
+            type: 'string',
+            description: 'La próxima acción concreta recomendada para avanzar este deal, en español',
+          },
+          riesgo: {
+            type: 'string',
+            enum: ['bajo', 'medio', 'alto'],
+            description: 'Nivel de riesgo de perder este deal',
+          },
+          razon_riesgo: {
+            type: 'string',
+            description: 'Explicación breve del nivel de riesgo asignado, en español',
           },
         },
+        required: ['resumen', 'contexto_empresa', 'enfoque_recomendado', 'proxima_accion', 'riesgo', 'razon_riesgo'],
+        additionalProperties: false,
       },
-      system:
-        'Eres un analista comercial senior de Autopilot SpA, una agencia chilena de automatización. ' +
-        'Analizas deals del CRM y entregas diagnósticos accionables en español chileno profesional. ' +
-        'Todos los valores monetarios están en pesos chilenos (CLP). ' +
-        'Sé directo y concreto: la próxima acción debe ser algo que el ejecutivo pueda hacer hoy. ' +
-        'Considera el tiempo sin contacto, el tono de los mensajes de WhatsApp, la etapa del pipeline y las tareas pendientes.',
-      messages: [
-        {
-          role: 'user',
-          content: `Analiza este deal y entrega tu diagnóstico:\n\n${JSON.stringify(context, null, 2)}`,
-        },
-      ],
+    },
+  } as const
+
+  const systemPrompt =
+    'Eres un analista comercial senior de Autopilot SpA, una agencia chilena de automatización de procesos. ' +
+    'Analizas deals del CRM y entregas diagnósticos accionables en español chileno profesional. ' +
+    'Todos los valores monetarios están en pesos chilenos (CLP). ' +
+    'IMPORTANTE: usa la búsqueda web para investigar a la empresa del deal (busca su nombre, su sitio web si está disponible, ' +
+    'y su industria en Chile) antes de dar tu diagnóstico. El objetivo es que el vendedor sepa con quién está tratando: ' +
+    'a qué se dedica la empresa, su tamaño aproximado, y qué dolores de negocio probablemente tiene que la automatización pueda resolver. ' +
+    'Con eso, recomienda el enfoque de venta. Si la búsqueda no arroja nada útil (empresa muy pequeña o sin presencia web), ' +
+    'dilo honestamente y basa el enfoque en la industria declarada. ' +
+    'Sé directo y concreto: la próxima acción debe ser algo que el ejecutivo pueda hacer hoy. ' +
+    'Considera el tiempo sin contacto, el tono de los mensajes de WhatsApp, la etapa del pipeline y las tareas pendientes.'
+
+  let messages: Anthropic.MessageParam[] = [
+    {
+      role: 'user',
+      content: `Analiza este deal y entrega tu diagnóstico:\n\n${JSON.stringify(context, null, 2)}`,
+    },
+  ]
+
+  try {
+    let response = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 6000,
+      thinking: { type: 'adaptive' },
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }],
+      output_config: baseOutputConfig,
+      system: systemPrompt,
+      messages,
     })
+
+    // La búsqueda web corre en un loop del servidor; si se pausa, se reanuda
+    let continuations = 0
+    while (response.stop_reason === 'pause_turn' && continuations < 3) {
+      continuations++
+      messages = [messages[0], { role: 'assistant', content: response.content }]
+      response = await anthropic.messages.create({
+        model: 'claude-opus-4-8',
+        max_tokens: 6000,
+        thinking: { type: 'adaptive' },
+        tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }],
+        output_config: baseOutputConfig,
+        system: systemPrompt,
+        messages,
+      })
+    }
 
     if (response.stop_reason === 'refusal') {
       return NextResponse.json({ error: 'El análisis no pudo completarse' }, { status: 502 })
     }
 
-    const text = response.content.find(b => b.type === 'text')
-    if (!text || text.type !== 'text') {
+    // Con búsqueda web puede haber varios bloques de texto; el JSON final es el último
+    const textBlocks = response.content.filter(b => b.type === 'text')
+    const text = textBlocks[textBlocks.length - 1]
+    if (!text) {
       return NextResponse.json({ error: 'Respuesta vacía del modelo' }, { status: 502 })
     }
 

@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, Loader2, AlertTriangle, TrendingUp, RefreshCw } from 'lucide-react'
+import { Sparkles, Loader2, AlertTriangle, TrendingUp, RefreshCw, Globe, Target } from 'lucide-react'
 
 interface Insights {
   resumen: string
+  contexto_empresa?: string
+  enfoque_recomendado?: string
   proxima_accion: string
   riesgo: 'bajo' | 'medio' | 'alto'
   razon_riesgo: string
@@ -60,7 +62,7 @@ export default function DealAiInsights({ dealId }: { dealId: string }) {
         {!insights && !loading && !error && (
           <div className="text-center py-2 space-y-3">
             <p className="text-xs text-slate-400">
-              Resume el historial completo del deal, sugiere la próxima acción y evalúa el riesgo.
+              Investiga la empresa en la web, resume el historial del deal, sugiere el enfoque de venta y evalúa el riesgo.
             </p>
             <button onClick={analyze}
               className="inline-flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
@@ -74,7 +76,7 @@ export default function DealAiInsights({ dealId }: { dealId: string }) {
         {loading && (
           <div className="flex items-center justify-center gap-2 py-6 text-violet-500">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-xs font-medium">Analizando historial del deal…</span>
+            <span className="text-xs font-medium">Investigando la empresa y analizando el deal…</span>
           </div>
         )}
 
@@ -97,6 +99,24 @@ export default function DealAiInsights({ dealId }: { dealId: string }) {
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Resumen</p>
               <p className="text-sm text-slate-700 leading-relaxed">{insights.resumen}</p>
             </div>
+
+            {insights.contexto_empresa && (
+              <div className="bg-sky-50/60 border border-sky-100 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold text-sky-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Globe className="w-3 h-3" /> Sobre la empresa
+                </p>
+                <p className="text-xs text-sky-900 leading-relaxed">{insights.contexto_empresa}</p>
+              </div>
+            )}
+
+            {insights.enfoque_recomendado && (
+              <div className="bg-violet-50/60 border border-violet-100 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Target className="w-3 h-3" /> Enfoque de venta
+                </p>
+                <p className="text-xs text-violet-900 leading-relaxed">{insights.enfoque_recomendado}</p>
+              </div>
+            )}
 
             <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl px-3 py-2.5">
               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1 flex items-center gap-1">
