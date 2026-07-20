@@ -281,14 +281,6 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
             <ContactEdit contact={deal.contacts} company={deal.companies} canSeePhone={canSeePhone} />
 
-            {/* Chat WhatsApp — visible para todos, envío solo para comerciales+ */}
-            <WhatsAppChat
-              dealId={deal.id}
-              contactName={(deal.contacts as any)?.full_name ?? 'Cliente'}
-              contactPhone={canSeePhone ? ((deal.contacts as any)?.phone ?? null) : null}
-              canSend={canEdit}
-            />
-
             {/* Gestión de equipo — visible para todos, editable solo para gerente */}
             <DealMembers
               dealId={deal.id}
@@ -346,6 +338,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </div>
+
+      {/* Chat WhatsApp flotante — visible para todos, envío solo para comerciales+ */}
+      <WhatsAppChat
+        dealId={deal.id}
+        contactName={(deal.contacts as any)?.full_name ?? 'Cliente'}
+        contactPhone={canSeePhone ? ((deal.contacts as any)?.phone ?? null) : null}
+        canSend={canEdit}
+      />
     </div>
   )
 }
