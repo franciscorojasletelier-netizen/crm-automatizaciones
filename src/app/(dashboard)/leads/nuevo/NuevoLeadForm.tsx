@@ -151,8 +151,8 @@ export default function NuevoLeadForm() {
                   {sources.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="Valor estimado (USD)">
-                <input type="number" value={form.estimated_value} onChange={e => set('estimated_value', e.target.value)} className={inputCls} placeholder="5000" />
+              <Field label="Valor estimado (CLP)">
+                <input type="number" value={form.estimated_value} onChange={e => set('estimated_value', e.target.value)} className={inputCls} placeholder="5.000.000" />
               </Field>
               <div className="col-span-2">
                 <Field label="Próxima acción">

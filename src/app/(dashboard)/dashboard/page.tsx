@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Users, TrendingUp, CheckSquare, AlertCircle, DollarSign, Target, ArrowRight, Clock } from 'lucide-react'
 import Link from 'next/link'
 import DashboardDonut from '@/components/dashboard/donut-chart'
+import { formatCLP } from '@/lib/format'
 
 async function getStats() {
   const supabase = await createClient()
@@ -255,7 +256,7 @@ export default async function DashboardPage() {
               <p className="text-sm text-slate-400 font-medium">Valor ganado este mes</p>
             </div>
             <p className="text-3xl md:text-4xl font-bold text-white tracking-tight truncate">
-              ${stats.valorGanado.toLocaleString()}
+              {formatCLP(stats.valorGanado)}
             </p>
           </div>
           <Link href="/pipeline"
@@ -389,7 +390,7 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-3 shrink-0">
                 {deal.estimated_value && (
                   <span className="text-sm font-semibold text-slate-700">
-                    ${Number(deal.estimated_value).toLocaleString()}
+                    {formatCLP(deal.estimated_value)}
                   </span>
                 )}
                 <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${dealStageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>

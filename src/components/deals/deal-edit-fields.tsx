@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Pencil, Check, X } from 'lucide-react'
+import { formatCLP } from '@/lib/format'
 
 function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix }: {
   label: string; value: string | null; fieldKey: string; dealId: string; type?: string; prefix?: string
@@ -49,7 +50,9 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix }
         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
         <p className="text-sm font-semibold text-slate-800 mt-0.5">
           {value
-            ? `${prefix ?? ''}${type === 'number' ? Number(value).toLocaleString() : value}`
+            ? (prefix === '$' && type === 'number'
+                ? formatCLP(value)
+                : `${prefix ?? ''}${type === 'number' ? Number(value).toLocaleString('es-CL') : value}`)
             : <span className="text-slate-300 font-normal italic text-xs">Sin valor</span>
           }
         </p>

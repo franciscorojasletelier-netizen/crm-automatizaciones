@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { getVisibleDealIds } from '@/lib/visibility'
 import KanbanBoard from '@/components/pipeline/kanban-board'
+import { formatCLP } from '@/lib/format'
 
 export default async function PipelinePage() {
   const { role, supabase, user, canEdit } = await requirePermission('pipeline')
@@ -52,7 +53,7 @@ export default async function PipelinePage() {
               <>
                 <span className="text-sm text-slate-400">·</span>
                 <p className="text-sm text-slate-500">
-                  <span className="font-semibold text-slate-700">${totalValue.toLocaleString()}</span> en pipeline
+                  <span className="font-semibold text-slate-700">{formatCLP(totalValue)}</span> en pipeline
                 </p>
               </>
             )}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare } from 'lucide-react'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
+import { formatCLP } from '@/lib/format'
 
 const stageLabels: Record<string, string> = {
   nuevo_lead: 'Nuevo Lead',
@@ -297,7 +298,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                 </td>
                 <td className="px-5 py-3.5">
                   <span className="font-semibold text-slate-700">
-                    {deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : <span className="text-slate-300">—</span>}
+                    {deal.estimated_value ? formatCLP(deal.estimated_value) : <span className="text-slate-300">—</span>}
                   </span>
                 </td>
                 <td className="px-5 py-3.5">
@@ -353,7 +354,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <p className="text-sm text-slate-600 font-medium">{deal.contacts?.full_name ?? '—'}</p>
             {deal.contacts?.email && <p className="text-xs text-slate-400">{deal.contacts.email}</p>}
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              {deal.estimated_value && <span className="font-bold text-slate-700">${Number(deal.estimated_value).toLocaleString()}</span>}
+              {deal.estimated_value && <span className="font-bold text-slate-700">{formatCLP(deal.estimated_value)}</span>}
               {deal.source && <span className="bg-slate-100 px-2 py-0.5 rounded-md">{deal.source}</span>}
               <ScoreBadge score={deal.score} />
             </div>

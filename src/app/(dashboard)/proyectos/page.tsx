@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { createClient, requirePermission } from '@/lib/supabase/server'
 import { getVisibleProjectIds } from '@/lib/visibility'
+import { formatCLP } from '@/lib/format'
 import Link from 'next/link'
 import { FolderOpen, ChevronRight, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
 
@@ -160,7 +161,7 @@ export default async function ProyectosPage() {
                   <div className="flex items-center justify-between text-xs mt-3">
                     <div className="flex items-center gap-3">
                       {project.budget && (
-                        <span className="font-semibold text-slate-700">${Number(project.budget).toLocaleString()}</span>
+                        <span className="font-semibold text-slate-700">{formatCLP(project.budget)}</span>
                       )}
                       {project.profiles?.full_name && (
                         <div className="flex items-center gap-1.5">

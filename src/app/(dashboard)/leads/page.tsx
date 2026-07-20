@@ -5,6 +5,7 @@ import { Plus, Eye, AlertTriangle } from 'lucide-react'
 import LeadsTable from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { getVisibleDealIds } from '@/lib/visibility'
+import { formatCLP } from '@/lib/format'
 
 export default async function LeadsPage() {
   const { role, perms, profile, supabase, user, canEdit } = await requirePermission('leads')
@@ -90,7 +91,7 @@ export default async function LeadsPage() {
             {totalValue > 0 && (
               <>
                 <span className="text-slate-300">·</span>
-                <span><span className="font-semibold text-slate-700">${totalValue.toLocaleString()}</span> en valor estimado</span>
+                <span><span className="font-semibold text-slate-700">{formatCLP(totalValue)}</span> en valor estimado</span>
               </>
             )}
           </div>

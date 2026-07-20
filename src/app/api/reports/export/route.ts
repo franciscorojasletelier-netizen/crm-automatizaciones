@@ -226,7 +226,7 @@ export async function GET() {
       r++
 
       sc(ws, r, 0, 'Mes',            hStyle('334155', WHITE, true, 10))
-      sc(ws, r, 1, 'Revenue ($)',     hStyle('334155', WHITE, true, 10))
+      sc(ws, r, 1, 'Revenue (CLP)',     hStyle('334155', WHITE, true, 10))
       sc(ws, r, 2, 'Barra visual',    hStyle('334155', WHITE, true, 10))
       sc(ws, r, 3, '', hStyle('334155'))
       sc(ws, r, 4, '', hStyle('334155'))
@@ -292,7 +292,7 @@ export async function GET() {
       let r = 0
 
       // Título
-      const HEADERS = ['Empresa','Industria','Etapa','Estado','Valor Estimado ($)','Responsable','Fuente','Score','Próxima Acción','Actualización']
+      const HEADERS = ['Empresa','Industria','Etapa','Estado','Valor Estimado (CLP)','Responsable','Fuente','Score','Próxima Acción','Actualización']
       sc(ws, r, 0, '🗂️ TODOS LOS DEALS', hStyle(PURPLE, WHITE, true, 12))
       for (let c = 1; c < HEADERS.length; c++) sc(ws, r, c, '', hStyle(PURPLE))
       merge(ws, { r, c: 0 }, { r, c: HEADERS.length - 1 })
@@ -344,7 +344,7 @@ export async function GET() {
       r++
 
       sc(ws, r, 0, 'Empresa',        hStyle(SLATE700, WHITE, true, 10))
-      sc(ws, r, 1, 'Valor ($)',      hStyle(SLATE700, WHITE, true, 10))
+      sc(ws, r, 1, 'Valor (CLP)',      hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 2, 'Responsable',    hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 3, 'Fecha de Cierre',hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 4, '',               hStyle(SLATE700))
@@ -377,7 +377,7 @@ export async function GET() {
       r++
 
       sc(ws, r, 0, 'Empresa',        hStyle(SLATE700, WHITE, true, 10))
-      sc(ws, r, 1, 'Valor ($)',      hStyle(SLATE700, WHITE, true, 10))
+      sc(ws, r, 1, 'Valor (CLP)',      hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 2, 'Motivo',         hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 3, 'Fecha',          hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 4, '',               hStyle(SLATE700))
@@ -411,7 +411,7 @@ export async function GET() {
       merge(ws, { r, c: 0 }, { r, c: 6 })
       r++
 
-      const LHEADERS = ['#', 'Ejecutivo', 'Revenue ($)', 'Ganados', 'Perdidos', 'En Curso', 'Win Rate']
+      const LHEADERS = ['#', 'Ejecutivo', 'Revenue (CLP)', 'Ganados', 'Perdidos', 'En Curso', 'Win Rate']
       LHEADERS.forEach((h, c) => sc(ws, r, c, h, hStyle(SLATE700, WHITE, true, 10)))
       r++
 

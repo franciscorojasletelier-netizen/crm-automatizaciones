@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Search, Building2, Users, TrendingUp, ArrowRight, Loader2 } from 'lucide-react'
+import { formatCLP } from '@/lib/format'
 
 const stageLabels: Record<string, string> = {
   nuevo_lead: 'Nuevo Lead', contactado: 'Contactado', calificado: 'Calificado',
@@ -187,7 +188,7 @@ export default function GlobalSearch() {
                             <p className="text-xs text-slate-400 truncate">
                               {deal.contacts?.full_name && `${deal.contacts.full_name} · `}
                               {stageLabels[deal.stage] ?? deal.stage}
-                              {deal.estimated_value && ` · $${Number(deal.estimated_value).toLocaleString()}`}
+                              {deal.estimated_value && ` · ${formatCLP(deal.estimated_value)}`}
                             </p>
                           </div>
                         </div>

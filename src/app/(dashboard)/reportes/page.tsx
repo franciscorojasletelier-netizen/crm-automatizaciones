@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
 import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Download } from 'lucide-react'
 import Link from 'next/link'
+import { formatCLP } from '@/lib/format'
 
 const stageLabels: Record<string, string> = {
   nuevo_lead:        'Nuevo Lead',
@@ -177,7 +178,7 @@ export default async function ReportesPage() {
         {[
           {
             label: 'Revenue total',
-            value: `$${data.totalRevenue.toLocaleString()}`,
+            value: formatCLP(data.totalRevenue),
             sub: 'Deals cerrados ganados',
             icon: DollarSign,
             color: 'text-emerald-600 bg-emerald-50',
@@ -195,7 +196,7 @@ export default async function ReportesPage() {
           },
           {
             label: 'Valor promedio',
-            value: `$${data.avgDealSize.toLocaleString()}`,
+            value: formatCLP(data.avgDealSize),
             sub: 'Por deal ganado',
             icon: TrendingUp,
             color: 'text-amber-600 bg-amber-50',
@@ -204,7 +205,7 @@ export default async function ReportesPage() {
           },
           {
             label: 'Forecast ponderado',
-            value: `$${data.forecast.toLocaleString()}`,
+            value: formatCLP(data.forecast),
             sub: `${data.openCount} deals abiertos × probabilidad`,
             icon: Award,
             color: 'text-violet-600 bg-violet-50',
@@ -240,7 +241,7 @@ export default async function ReportesPage() {
               return (
                 <div key={m.label} className="flex-1 flex flex-col items-center gap-1.5">
                   <p className="text-[9px] font-bold text-slate-500 leading-none">
-                    {m.revenue > 0 ? `$${(m.revenue / 1000).toFixed(0)}k` : ''}
+                    {m.revenue > 0 ? `$${Math.round(m.revenue / 1000).toLocaleString('es-CL')} mil` : ''}
                   </p>
                   <div className="w-full flex items-end" style={{ height: '100px' }}>
                     <div
@@ -360,7 +361,7 @@ export default async function ReportesPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3.5 text-right font-bold text-emerald-700">
-                      {exec.revenue > 0 ? `$${exec.revenue.toLocaleString()}` : '—'}
+                      {exec.revenue > 0 ? formatCLP(exec.revenue) : '—'}
                     </td>
                     <td className="px-3 py-3.5 text-right">
                       <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
@@ -424,7 +425,7 @@ export default async function ReportesPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   {deal.estimated_value && (
                     <span className="text-sm font-bold text-emerald-700">
-                      ${Number(deal.estimated_value).toLocaleString()}
+                      {formatCLP(deal.estimated_value)}
                     </span>
                   )}
                   <span className="text-xs text-slate-400">

@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       system:
         'Eres un analista comercial senior de Autopilot SpA, una agencia chilena de automatización. ' +
         'Analizas deals del CRM y entregas diagnósticos accionables en español chileno profesional. ' +
+        'Todos los valores monetarios están en pesos chilenos (CLP). ' +
         'Sé directo y concreto: la próxima acción debe ser algo que el ejecutivo pueda hacer hoy. ' +
         'Considera el tiempo sin contacto, el tono de los mensajes de WhatsApp, la etapa del pipeline y las tareas pendientes.',
       messages: [

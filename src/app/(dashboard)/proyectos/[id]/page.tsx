@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canEditSection } from '@/lib/roles'
+import { formatCLP } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2, User, DollarSign, Calendar, AlertTriangle } from 'lucide-react'
@@ -107,7 +108,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             {[
               { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-indigo-600 bg-indigo-50' },
-              { label: 'Presupuesto',  value: project.budget ? `$${Number(project.budget).toLocaleString()}` : '—', icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
+              { label: 'Presupuesto',  value: formatCLP(project.budget), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
               { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-purple-600 bg-purple-50' },
               { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL') : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (

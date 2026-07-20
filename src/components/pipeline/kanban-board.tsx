@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { runAutomationsForStageChange } from '@/lib/automations'
+import { formatCLP } from '@/lib/format'
 import { useRef } from 'react'
 import {
   X, AlertTriangle, XCircle, MinusCircle, PauseCircle,
@@ -289,7 +290,7 @@ function GanadoModal({ deal, onConfirm, onCancel, saving }: {
           <h2 className="text-base font-bold text-slate-900">¡Deal ganado!</h2>
           <p className="text-xs text-slate-500 mt-0.5">{deal.companies?.name ?? 'Deal'}</p>
           {deal.estimated_value && (
-            <p className="text-lg font-bold text-green-700 mt-2">${Number(deal.estimated_value).toLocaleString()}</p>
+            <p className="text-lg font-bold text-green-700 mt-2">{formatCLP(deal.estimated_value)}</p>
           )}
         </div>
         <div className="p-6">
@@ -549,7 +550,7 @@ export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: 
         .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
       if (gerentes?.length) {
         const valueStr = updatedDeal?.estimated_value
-          ? ` · $${Number(updatedDeal.estimated_value).toLocaleString('es-CL')}`
+          ? ` · ${formatCLP(updatedDeal.estimated_value)}`
           : ''
         await supabase.from('notifications').insert(
           gerentes.filter((g: any) => g.id !== meUser?.id && g.id !== ownerId)
@@ -650,7 +651,7 @@ export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: 
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-bold text-slate-700 tabular-nums">
-                      {deal.estimated_value ? `$${Number(deal.estimated_value).toLocaleString()}` : '—'}
+                      {deal.estimated_value ? formatCLP(deal.estimated_value) : '—'}
                     </td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs font-bold ${(deal.score ?? 0) >= 60 ? 'text-emerald-600' : (deal.score ?? 0) >= 30 ? 'text-amber-600' : 'text-slate-400'}`}>
@@ -759,7 +760,7 @@ export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: 
                       {/* Valor */}
                       {deal.estimated_value && (
                         <p className="text-sm font-bold text-slate-700 mt-2">
-                          ${Number(deal.estimated_value).toLocaleString()}
+                          {formatCLP(deal.estimated_value)}
                         </p>
                       )}
 
@@ -890,7 +891,7 @@ export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: 
                     <span className="text-xs font-bold text-slate-700">{deal.companies?.name ?? 'Deal'}</span>
                     {deal.estimated_value && (
                       <span className="text-[10px] font-semibold text-slate-400">
-                        ${Number(deal.estimated_value).toLocaleString()}
+                        {formatCLP(deal.estimated_value)}
                       </span>
                     )}
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${st.light} ${st.text}`}>{st.label}</span>
