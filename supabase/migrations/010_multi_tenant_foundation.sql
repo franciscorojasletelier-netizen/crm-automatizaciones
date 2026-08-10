@@ -73,8 +73,6 @@ alter table project_deliverables   add column if not exists organization_id uuid
 alter table project_notes          add column if not exists organization_id uuid references organizations(id);
 alter table deal_ai_insights       add column if not exists organization_id uuid references organizations(id);
 alter table notifications          add column if not exists organization_id uuid references organizations(id);
-alter table automation_rules       add column if not exists organization_id uuid references organizations(id);
-alter table automation_logs        add column if not exists organization_id uuid references organizations(id);
 alter table areas                  add column if not exists organization_id uuid references organizations(id);
 alter table direct_messages        add column if not exists organization_id uuid references organizations(id);
 alter table team_messages          add column if not exists organization_id uuid references organizations(id);
@@ -110,8 +108,6 @@ begin
   update project_notes           set organization_id = v_org_id where organization_id is null;
   update deal_ai_insights        set organization_id = v_org_id where organization_id is null;
   update notifications           set organization_id = v_org_id where organization_id is null;
-  update automation_rules        set organization_id = v_org_id where organization_id is null;
-  update automation_logs         set organization_id = v_org_id where organization_id is null;
   update areas                   set organization_id = v_org_id where organization_id is null;
   update direct_messages         set organization_id = v_org_id where organization_id is null;
   update team_messages           set organization_id = v_org_id where organization_id is null;
@@ -146,8 +142,6 @@ alter table project_deliverables   alter column organization_id set not null;
 alter table project_notes          alter column organization_id set not null;
 alter table deal_ai_insights       alter column organization_id set not null;
 alter table notifications          alter column organization_id set not null;
-alter table automation_rules       alter column organization_id set not null;
-alter table automation_logs        alter column organization_id set not null;
 alter table areas                  alter column organization_id set not null;
 alter table direct_messages        alter column organization_id set not null;
 alter table team_messages          alter column organization_id set not null;
@@ -181,8 +175,6 @@ create index if not exists idx_pd_org                 on project_deliverables(or
 create index if not exists idx_pn_org                 on project_notes(organization_id, project_id);
 create index if not exists idx_dai_org                on deal_ai_insights(organization_id, deal_id);
 create index if not exists idx_notif_org              on notifications(organization_id, user_id, is_read);
-create index if not exists idx_ar_org                 on automation_rules(organization_id);
-create index if not exists idx_al_org                 on automation_logs(organization_id, rule_id);
 create index if not exists idx_areas_org              on areas(organization_id);
 create index if not exists idx_dm_org                 on direct_messages(organization_id);
 create index if not exists idx_tm_org                 on team_messages(organization_id, deal_id);
@@ -310,20 +302,6 @@ begin
 end;
 $$;
 
-create or replace function set_org_from_rule()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if new.organization_id is not null then return new; end if;
-  if new.rule_id is not null then
-    select organization_id into new.organization_id from automation_rules where id = new.rule_id;
-  end if;
-  if new.organization_id is null then
-    new.organization_id := current_org_id();
-  end if;
-  return new;
-end;
-$$;
-
 create or replace function set_org_from_recipient()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -354,7 +332,6 @@ $$;
 drop trigger if exists trg_org_companies         on companies;
 drop trigger if exists trg_org_contacts          on contacts;
 drop trigger if exists trg_org_deals             on deals;
-drop trigger if exists trg_org_automation_rules  on automation_rules;
 drop trigger if exists trg_org_areas             on areas;
 drop trigger if exists trg_org_direct_messages   on direct_messages;
 drop trigger if exists trg_org_user_activity_log on user_activity_log;
@@ -364,7 +341,6 @@ drop trigger if exists trg_org_audit_log         on audit_log;
 create trigger trg_org_companies         before insert on companies         for each row execute function set_org_from_user();
 create trigger trg_org_contacts          before insert on contacts          for each row execute function set_org_from_user();
 create trigger trg_org_deals             before insert on deals             for each row execute function set_org_from_user();
-create trigger trg_org_automation_rules  before insert on automation_rules  for each row execute function set_org_from_user();
 create trigger trg_org_areas             before insert on areas             for each row execute function set_org_from_user();
 create trigger trg_org_direct_messages   before insert on direct_messages   for each row execute function set_org_from_user();
 create trigger trg_org_user_activity_log before insert on user_activity_log for each row execute function set_org_from_user();
@@ -397,13 +373,11 @@ create trigger trg_org_project_deliverables before insert on project_deliverable
 create trigger trg_org_project_notes        before insert on project_notes        for each row execute function set_org_from_project();
 create trigger trg_org_project_members      before insert on project_members      for each row execute function set_org_from_project();
 
--- Hija de una tarea / de una regla / de un destinatario
+-- Hija de una tarea / de un destinatario
 drop trigger if exists trg_org_task_history    on task_history;
-drop trigger if exists trg_org_automation_logs on automation_logs;
 drop trigger if exists trg_org_notifications   on notifications;
 
 create trigger trg_org_task_history    before insert on task_history    for each row execute function set_org_from_task();
-create trigger trg_org_automation_logs before insert on automation_logs for each row execute function set_org_from_rule();
 create trigger trg_org_notifications   before insert on notifications   for each row execute function set_org_from_recipient();
 
 -- Projects: caso especial (hereda de deal_id, si no de company_id, si no del usuario)
@@ -654,23 +628,11 @@ drop policy if exists "notifications_delete_own" on notifications;
 create policy "notifications_delete_own" on notifications
   for delete using (organization_id = current_org_id() and auth.uid() = user_id);
 
--- ---- automation_rules / automation_logs ----
-drop policy if exists "automation_rules_manage" on automation_rules;
-create policy "automation_rules_manage" on automation_rules
-  for all using (organization_id = current_org_id() and is_manager())
-  with check (organization_id = current_org_id() and is_manager());
-
-drop policy if exists "automation_rules_read_active" on automation_rules;
-create policy "automation_rules_read_active" on automation_rules
-  for select using (organization_id = current_org_id() and is_active = true);
-
-drop policy if exists "automation_logs_manage" on automation_logs;
-create policy "automation_logs_manage" on automation_logs
-  for select using (organization_id = current_org_id() and is_manager());
-
-drop policy if exists "automation_logs_insert" on automation_logs;
-create policy "automation_logs_insert" on automation_logs
-  for insert with check (auth.uid() is not null and organization_id = current_org_id());
+-- automation_rules / automation_logs: no existen todavía en esta base
+-- (la migración add_features_v2.sql nunca se ejecutó). Si en el futuro
+-- se activa Automatizaciones, hay que repetir el mismo tratamiento que
+-- el resto de las tablas: columna organization_id, trigger de
+-- auto-relleno y estas políticas.
 
 -- ---- areas ----
 drop policy if exists "areas_select" on areas;
