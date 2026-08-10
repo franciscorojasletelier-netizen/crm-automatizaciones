@@ -7,7 +7,7 @@ import KanbanBoard from '@/components/pipeline/kanban-board'
 import { formatCLP } from '@/lib/format'
 
 export default async function PipelinePage() {
-  const { role, supabase, user, canEdit } = await requirePermission('pipeline')
+  const { role, supabase, user, canEdit, organizationId } = await requirePermission('pipeline')
 
   const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 
@@ -70,7 +70,7 @@ export default async function PipelinePage() {
       </div>
 
       {/* Kanban con drag & drop */}
-      <KanbanBoard initialDeals={(deals ?? []) as any} readOnly={!canEdit} />
+      <KanbanBoard initialDeals={(deals ?? []) as any} readOnly={!canEdit} organizationId={organizationId ?? ''} />
     </div>
   )
 }

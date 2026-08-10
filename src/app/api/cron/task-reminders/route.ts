@@ -15,6 +15,23 @@ export async function GET(request: NextRequest) {
   )
   const resend = new Resend(process.env.RESEND_API_KEY?.trim())
 
+  const RECIPIENT = 'autopilotspa@gmail.com'
+
+  // Este cron manda un único email a un destinatario fijo — hay que
+  // acotar las tareas a la organización de ese destinatario, si no,
+  // con service_role (que evita RLS) filtraría tareas de TODAS las
+  // organizaciones del sistema en un solo correo.
+  const { data: recipientProfile } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('email', RECIPIENT)
+    .maybeSingle()
+
+  const orgId = (recipientProfile as any)?.organization_id ?? null
+  if (!orgId) {
+    return NextResponse.json({ status: 'ok', sent: false, reason: 'Destinatario sin organización asignada' })
+  }
+
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
   const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
@@ -24,6 +41,7 @@ export async function GET(request: NextRequest) {
   const { data: todayTasks } = await supabase
     .from('tasks')
     .select('id, title, description, due_date, deals(companies(name))')
+    .eq('organization_id', orgId)
     .eq('is_completed', false)
     .gte('due_date', todayStart)
     .lt('due_date', todayEnd)
@@ -33,6 +51,7 @@ export async function GET(request: NextRequest) {
   const { data: overdueTasks } = await supabase
     .from('tasks')
     .select('id, title, due_date, deals(companies(name))')
+    .eq('organization_id', orgId)
     .eq('is_completed', false)
     .lt('due_date', yesterday)
     .order('due_date', { ascending: false })
@@ -70,7 +89,7 @@ export async function GET(request: NextRequest) {
 
   await resend.emails.send({
     from: process.env.EMAIL_FROM?.trim() || 'CRM Autopilot <onboarding@resend.dev>',
-    to: 'autopilotspa@gmail.com',
+    to: RECIPIENT,
     subject: `ðŸ“… ${todayTasks?.length ?? 0} tarea${(todayTasks?.length ?? 0) !== 1 ? 's' : ''} para hoy â€” ${now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">

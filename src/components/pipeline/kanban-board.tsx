@@ -352,7 +352,7 @@ function MobileStagePickerModal({ deal, currentStage, onSelect, onCancel }: {
 }
 
 // ── Componente principal ───────────────────────────────────────
-export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: KanbanDeal[]; readOnly?: boolean }) {
+export default function KanbanBoard({ initialDeals, readOnly, organizationId }: { initialDeals: KanbanDeal[]; readOnly?: boolean; organizationId: string }) {
   const [deals, setDeals] = useState<KanbanDeal[]>(initialDeals)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
@@ -441,7 +441,7 @@ export default function KanbanBoard({ initialDeals, readOnly }: { initialDeals: 
     setSaving(true)
     setError('')
     try {
-      const path = `${deal.id}/${Date.now()}_${file.name}`
+      const path = `${organizationId}/${deal.id}/${Date.now()}_${file.name}`
       const { error: storageError } = await supabase.storage
         .from('propuestas').upload(path, file, { upsert: true })
       if (storageError) throw storageError

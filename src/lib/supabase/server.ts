@@ -34,15 +34,16 @@ export async function getCurrentProfile() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role, is_active, section_access')
+    .select('id, full_name, email, role, is_active, section_access, organization_id')
     .eq('id', user.id)
     .single()
 
   // Normalizar rol legacy (admin → super_admin, etc.)
   const role = normalizeRole(profile?.role ?? 'soporte')
   const sectionAccess = ((profile as any)?.section_access ?? null) as SectionAccess
+  const organizationId = (profile as any)?.organization_id ?? null
 
-  return { user, profile, role, sectionAccess, supabase }
+  return { user, profile, role, sectionAccess, organizationId, supabase }
 }
 
 // Guard de permiso — redirige si el rol no tiene acceso.
@@ -50,7 +51,7 @@ export async function getCurrentProfile() {
 export async function requirePermission(
   permission: keyof ReturnType<typeof getPermissions>
 ) {
-  const { profile, role, sectionAccess, supabase, user } = await getCurrentProfile()
+  const { profile, role, sectionAccess, organizationId, supabase, user } = await getCurrentProfile()
 
   const perms = getPermissions(role)
   const val = perms[permission]
@@ -62,5 +63,5 @@ export async function requirePermission(
 
   const canEdit = canEditSection(role, sectionAccess, permission as string)
 
-  return { role, perms, profile, sectionAccess, canEdit, supabase, user }
+  return { role, perms, profile, sectionAccess, organizationId, canEdit, supabase, user }
 }

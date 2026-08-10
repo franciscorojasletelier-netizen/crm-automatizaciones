@@ -9,10 +9,14 @@ const VALID_MODES = new Set<SectionMode>(['full', 'read'])
 export async function POST(request: NextRequest) {
   // 1. Autenticación y permiso del solicitante (solo jefaturas)
   let role: string
+  let organizationId: string | null
   try {
-    ({ role } = await getCurrentProfile())
+    ;({ role, organizationId } = await getCurrentProfile())
   } catch {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+  }
+  if (!organizationId) {
+    return NextResponse.json({ error: 'Tu cuenta no tiene una organización asignada' }, { status: 403 })
   }
   const editorRole = normalizeRole(role)
   if (!['super_admin', 'gerente'].includes(editorRole)) {
@@ -88,6 +92,7 @@ export async function POST(request: NextRequest) {
     area_id: areaId,
     section_access: sectionAccess,
     is_active: true,
+    organization_id: organizationId, // hereda la organización de quien lo crea
   })
 
   if (profErr) {

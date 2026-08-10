@@ -28,6 +28,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS })
     }
 
+    // Este webhook crea companies/contacts/deals con service_role (sin
+    // sesión de usuario) — los triggers de auto-relleno de organization_id
+    // no pueden derivarla del usuario actual, así que hay que resolverla
+    // explícitamente aquí. Fase 1: una sola organización real, identificada
+    // por el email de contacto interno.
+    const { data: ownerProfile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('email', 'autopilotspa@gmail.com')
+      .maybeSingle()
+    const orgId = (ownerProfile as any)?.organization_id ?? null
+    if (!orgId) {
+      return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500, headers: CORS_HEADERS })
+    }
+
     const body = await request.json()
 
     // Campos esperados (todos opcionales excepto company_name o contact_name)
@@ -57,6 +72,7 @@ export async function POST(request: NextRequest) {
       const { data: existingContact } = await supabase
         .from('contacts')
         .select('id, company_id')
+        .eq('organization_id', orgId)
         .ilike('email', contact_email.trim())
         .limit(1)
         .maybeSingle()
@@ -98,6 +114,7 @@ export async function POST(request: NextRequest) {
       const { data: existingCompany } = await supabase
         .from('companies')
         .select('id')
+        .eq('organization_id', orgId)
         .ilike('name', company_name.trim())
         .limit(1)
         .maybeSingle()
@@ -108,7 +125,7 @@ export async function POST(request: NextRequest) {
     if (!company) {
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
-        .insert({ name: company_name ?? contact_name, industry, website })
+        .insert({ name: company_name ?? contact_name, industry, website, organization_id: orgId })
         .select('id').single()
       if (companyError) throw companyError
       company = newCompany
@@ -124,6 +141,7 @@ export async function POST(request: NextRequest) {
           email: contact_email,
           phone: contact_phone,
           job_title: contact_job_title,
+          organization_id: orgId,
         })
         .select('id').single()
       if (contactError) throw contactError
@@ -136,6 +154,7 @@ export async function POST(request: NextRequest) {
     const { data: comerciales } = await supabase
       .from('profiles')
       .select('id, full_name')
+      .eq('organization_id', orgId)
       .eq('role', 'comercial')
       .eq('is_active', true)
 
@@ -171,6 +190,7 @@ export async function POST(request: NextRequest) {
         score,
         stage: 'nuevo_lead',
         status: 'open',
+        organization_id: orgId,
       })
       .select('id').single()
 
@@ -192,6 +212,7 @@ export async function POST(request: NextRequest) {
     const { data: gerentes } = await supabase
       .from('profiles')
       .select('id')
+      .eq('organization_id', orgId)
       .in('role', ['gerente', 'super_admin', 'admin'])
       .eq('is_active', true)
     gerentes?.forEach(g => {

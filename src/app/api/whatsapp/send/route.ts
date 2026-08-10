@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { canSeeDeal } from '@/lib/visibility'
 
 const WA_API_URL = 'https://graph.facebook.com/v20.0'
 
 export async function POST(request: NextRequest) {
   try {
-    let user: any, role: string
+    let user: any, role: string, rlsSupabase: any
     try {
-      ;({ user, role } = await getCurrentProfile())
+      ;({ user, role, supabase: rlsSupabase } = await getCurrentProfile())
     } catch {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
@@ -22,6 +23,15 @@ export async function POST(request: NextRequest) {
     const { dealId, message } = await request.json()
     if (!dealId || !message?.trim()) {
       return NextResponse.json({ error: 'dealId y message son requeridos' }, { status: 400 })
+    }
+
+    // Verificar que el usuario puede ver este deal ANTES de usar el cliente
+    // service_role — service_role evade RLS por completo, así que esta
+    // validación explícita es la única barrera contra leer/escribir en
+    // deals de otra organización.
+    const canSee = await canSeeDeal(rlsSupabase, user.id, role, dealId)
+    if (!canSee) {
+      return NextResponse.json({ error: 'Sin acceso a este deal' }, { status: 403 })
     }
 
     const supabase = createClient(
