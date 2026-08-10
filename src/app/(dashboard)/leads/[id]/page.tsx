@@ -42,7 +42,7 @@ const stageLabels: Record<string, string> = {
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, profile, sectionAccess, supabase } = await getCurrentProfile()
+  const { user, role, profile, sectionAccess, organizationId, supabase } = await getCurrentProfile()
   const userId = user.id
   const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
@@ -325,6 +325,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               currentStage={deal.stage}
               proposalFilename={deal.proposal_filename ?? null}
               proposalUrl={deal.proposal_url ?? null}
+              organizationId={organizationId ?? ''}
             />
           )}
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />

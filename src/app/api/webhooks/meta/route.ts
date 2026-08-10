@@ -45,6 +45,19 @@ export async function POST(request: NextRequest) {
     }
     const body = JSON.parse(raw)
 
+    // service_role evade RLS — sin sesión de usuario, hay que resolver
+    // la organización destino explícitamente. Fase 1: una sola
+    // organización real, identificada por el email de contacto interno.
+    const { data: ownerProfile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('email', 'autopilotspa@gmail.com')
+      .maybeSingle()
+    const orgId = (ownerProfile as any)?.organization_id ?? null
+    if (!orgId) {
+      return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500 })
+    }
+
     const entries = body.entry ?? []
 
     for (const entry of entries) {
@@ -94,7 +107,7 @@ export async function POST(request: NextRequest) {
         // Crear empresa
         const { data: company, error: companyError } = await supabase
           .from('companies')
-          .insert({ name: companyName })
+          .insert({ name: companyName, organization_id: orgId })
           .select('id').single()
 
         if (companyError) { console.error('Error creando empresa:', companyError); continue }
@@ -107,6 +120,7 @@ export async function POST(request: NextRequest) {
             full_name: contactName,
             email: contactEmail,
             phone: contactPhone,
+            organization_id: orgId,
           })
           .select('id').single()
 
@@ -128,6 +142,7 @@ export async function POST(request: NextRequest) {
             score,
             stage: 'nuevo_lead',
             status: 'open',
+            organization_id: orgId,
           })
           .select('id').single()
 

@@ -221,6 +221,34 @@ $$;
 grant execute on function current_org_id()   to authenticated;
 grant execute on function is_platform_owner() to authenticated;
 
+-- ⚠️ FIX CRÍTICO: can_see_deal() (ya existente, definida en
+-- security_hardening.sql) solo verificaba rol/ownership, sin
+-- verificar organización. is_manager() no distingue entre
+-- organizaciones — un gerente de la Org A podía "ver" un deal de
+-- la Org B si conocía su ID, porque can_see_deal() nunca comprobaba
+-- a qué organización pertenece el deal. Se redefine agregando el
+-- filtro de organización dentro de la función — así todas las
+-- políticas que ya la usan (interactions, tasks, deal_ai_insights)
+-- quedan corregidas de una sola vez, sin tocar cada política.
+create or replace function can_see_deal(p_deal_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from deals d
+    where d.id = p_deal_id
+      and d.organization_id = current_org_id()
+      and (
+        is_manager()
+        or d.owner_id = auth.uid()
+        or exists (select 1 from deal_members dm where dm.deal_id = d.id and dm.user_id = auth.uid())
+      )
+  )
+$$;
+
 -- ────────────────────────────────────────────────────────────────
 -- 7. TRIGGERS DE AUTO-RELLENO — para que ningún INSERT del código
 --    (~211 call sites en src/) tenga que pasar organization_id a
@@ -517,7 +545,11 @@ create policy "interactions_select" on interactions
 
 drop policy if exists "interactions_insert" on interactions;
 create policy "interactions_insert" on interactions
-  for insert with check (auth.uid() is not null and (deal_id is null or can_see_deal(deal_id)));
+  for insert with check (
+    auth.uid() is not null
+    and (deal_id is null or can_see_deal(deal_id))
+    and organization_id = current_org_id()
+  );
 
 -- ---- tasks ----
 drop policy if exists "tasks_select" on tasks;
@@ -534,7 +566,11 @@ create policy "tasks_select" on tasks
 
 drop policy if exists "tasks_insert" on tasks;
 create policy "tasks_insert" on tasks
-  for insert with check (auth.uid() is not null);
+  for insert with check (
+    auth.uid() is not null
+    and (deal_id is null or can_see_deal(deal_id))
+    and organization_id = current_org_id()
+  );
 
 drop policy if exists "tasks_update" on tasks;
 create policy "tasks_update" on tasks
@@ -554,7 +590,7 @@ create policy "pipeline_stage_history_select" on pipeline_stage_history
 
 drop policy if exists "Authenticated users can insert pipeline history" on pipeline_stage_history;
 create policy "pipeline_stage_history_insert" on pipeline_stage_history
-  for insert with check (auth.uid() is not null);
+  for insert with check (auth.uid() is not null and organization_id = current_org_id());
 
 -- ---- user_activity_log / user_sessions / audit_log ----
 drop policy if exists "Users can view own activity" on user_activity_log;
@@ -596,7 +632,7 @@ create policy "deal_ai_insights_select" on deal_ai_insights
 
 drop policy if exists "deal_ai_insights_insert" on deal_ai_insights;
 create policy "deal_ai_insights_insert" on deal_ai_insights
-  for insert with check (created_by = auth.uid() and can_see_deal(deal_id));
+  for insert with check (created_by = auth.uid() and can_see_deal(deal_id) and organization_id = current_org_id());
 
 -- ---- notifications ----
 drop policy if exists "notifications_select_own" on notifications;
@@ -634,7 +670,7 @@ create policy "automation_logs_manage" on automation_logs
 
 drop policy if exists "automation_logs_insert" on automation_logs;
 create policy "automation_logs_insert" on automation_logs
-  for insert with check (auth.uid() is not null);
+  for insert with check (auth.uid() is not null and organization_id = current_org_id());
 
 -- ---- areas ----
 drop policy if exists "areas_select" on areas;
@@ -685,7 +721,11 @@ create policy "team_messages_select" on team_messages
 
 drop policy if exists "team_messages_insert" on team_messages;
 create policy "team_messages_insert" on team_messages
-  for insert to authenticated with check (user_id = auth.uid());
+  for insert to authenticated with check (
+    user_id = auth.uid()
+    and organization_id = current_org_id()
+    and (deal_id is null or can_see_deal(deal_id))
+  );
 
 drop policy if exists "team_messages_delete" on team_messages;
 create policy "team_messages_delete" on team_messages
@@ -698,7 +738,11 @@ create policy "deal_members_select" on deal_members
 
 drop policy if exists "deal_members_insert" on deal_members;
 create policy "deal_members_insert" on deal_members
-  for insert with check (is_manager());
+  for insert with check (
+    is_manager()
+    and organization_id = current_org_id()
+    and exists (select 1 from deals d where d.id = deal_members.deal_id and d.organization_id = current_org_id())
+  );
 
 drop policy if exists "deal_members_delete" on deal_members;
 create policy "deal_members_delete" on deal_members
@@ -710,7 +754,11 @@ create policy "project_members_select" on project_members
 
 drop policy if exists "project_members_insert" on project_members;
 create policy "project_members_insert" on project_members
-  for insert with check (is_manager());
+  for insert with check (
+    is_manager()
+    and organization_id = current_org_id()
+    and exists (select 1 from projects pr where pr.id = project_members.project_id and pr.organization_id = current_org_id())
+  );
 
 drop policy if exists "project_members_delete" on project_members;
 create policy "project_members_delete" on project_members
@@ -725,7 +773,7 @@ create policy "task_history_select" on task_history
 
 drop policy if exists "task_history_insert" on task_history;
 create policy "task_history_insert" on task_history
-  for insert with check (changed_by = auth.uid());
+  for insert with check (changed_by = auth.uid() and organization_id = current_org_id());
 
 -- ---- whatsapp_messages ----
 drop policy if exists "whatsapp_messages_select" on whatsapp_messages;
@@ -747,10 +795,12 @@ create policy "whatsapp_messages_select" on whatsapp_messages
 drop policy if exists "whatsapp_messages_insert" on whatsapp_messages;
 create policy "whatsapp_messages_insert" on whatsapp_messages
   for insert with check (
-    exists (
+    organization_id = current_org_id()
+    and exists (
       select 1 from deals d
       join profiles p on p.id = auth.uid()
       where d.id = whatsapp_messages.deal_id
+        and d.organization_id = current_org_id()
         and (
           p.role in ('super_admin','admin','gerente','comercial')
           or d.owner_id = auth.uid()

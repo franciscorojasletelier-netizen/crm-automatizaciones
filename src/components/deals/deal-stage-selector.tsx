@@ -371,9 +371,10 @@ interface Props {
   currentStage: string
   proposalFilename?: string | null
   proposalUrl?: string | null
+  organizationId: string
 }
 
-export default function DealStageSelector({ dealId, currentStage, proposalFilename, proposalUrl }: Props) {
+export default function DealStageSelector({ dealId, currentStage, proposalFilename, proposalUrl, organizationId }: Props) {
   const [stage, setStage] = useState(currentStage)
   useEffect(() => { setStage(currentStage) }, [currentStage])
 
@@ -437,7 +438,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
         .from('profiles')
         .select('id')
         .in('role', ['gerente', 'super_admin', 'admin'])
-        .eq('is_active', true)
+        .eq('is_active', true) // ya acotado por RLS a la propia organización
 
       if (gerentes && gerentes.length > 0) {
         const stageLabel = stages.find(s => s.key === newStage)?.label ?? newStage
@@ -476,7 +477,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
     setUploading(true)
     setError('')
     try {
-      const path = `${dealId}/${Date.now()}_${file.name}`
+      const path = `${organizationId}/${dealId}/${Date.now()}_${file.name}`
       const { error: storageError } = await supabase.storage
         .from('propuestas').upload(path, file, { upsert: true })
       if (storageError) throw storageError

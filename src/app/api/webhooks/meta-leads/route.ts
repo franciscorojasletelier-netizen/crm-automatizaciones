@@ -63,6 +63,19 @@ export async function POST(request: NextRequest) {
     )
     const resend = new Resend(process.env.RESEND_API_KEY)
 
+    // service_role evade RLS — sin sesión de usuario, hay que resolver
+    // la organización destino explícitamente. Fase 1: una sola
+    // organización real, identificada por el email de contacto interno.
+    const { data: ownerProfile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('email', 'autopilotspa@gmail.com')
+      .maybeSingle()
+    const orgId = (ownerProfile as any)?.organization_id ?? null
+    if (!orgId) {
+      return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500, headers: CORS_HEADERS })
+    }
+
     for (const entry of body.entry ?? []) {
       for (const change of entry.changes ?? []) {
         if (change.field !== 'leadgen') continue
@@ -108,7 +121,7 @@ export async function POST(request: NextRequest) {
         // Crear empresa
         const { data: company, error: companyError } = await supabase
           .from('companies')
-          .insert({ name: company_name, industry: 'Sin definir' })
+          .insert({ name: company_name, industry: 'Sin definir', organization_id: orgId })
           .select('id')
           .single()
 
@@ -125,6 +138,7 @@ export async function POST(request: NextRequest) {
             full_name: contact_name,
             email,
             phone,
+            organization_id: orgId,
           })
           .select('id')
           .single()
@@ -144,6 +158,7 @@ export async function POST(request: NextRequest) {
             status: 'open',
             source: 'meta_ads',
             next_action: 'Contactar lead de Facebook Ads',
+            organization_id: orgId,
           })
           .select('id')
           .single()
