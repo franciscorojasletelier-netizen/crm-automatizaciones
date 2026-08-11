@@ -8,3 +8,5 @@
 
 grant select on organizations   to authenticated;
 grant select on platform_owners to authenticated;
+grant select, insert, update, delete on organizations   to service_role;
+grant select, insert, update, delete on platform_owners to service_role;
