@@ -38,6 +38,13 @@ create table if not exists platform_owners (
 alter table organizations   enable row level security;
 alter table platform_owners enable row level security;
 
+-- GRANT explícito (patrón ya conocido en este proyecto: RLS por sí
+-- sola no basta, el rol `authenticated` también necesita el GRANT de
+-- tabla o cualquier SELECT devuelve 0 filas aunque la política esté
+-- bien — ver 006_grants_audit_fix.sql para el mismo bug en otras tablas).
+grant select on organizations   to authenticated;
+grant select on platform_owners to authenticated;
+
 -- ────────────────────────────────────────────────────────────────
 -- 1. RENOMBRAR workspace_id → organization_id
 --    (ya existe, sin usar, en estas 9 tablas desde 001_initial_schema.sql)
