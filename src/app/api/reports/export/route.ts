@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/server'
 import * as XLSX from 'xlsx-js-style'
 
 // ── Tipos locales ──────────────────────────────────────────────
@@ -102,7 +102,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const { supabase } = await requirePermission('reportes')
     const now = new Date()
 
     // ── Datos ──────────────────────────────────────────────────

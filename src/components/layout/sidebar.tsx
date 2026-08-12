@@ -19,6 +19,7 @@ import type { Role } from '@/lib/roles'
 interface SidebarProps {
   counts: NavCounts
   profile: UserProfile | null
+  isPlatformOwner?: boolean
 }
 
 interface NavItem {
@@ -81,7 +82,7 @@ function getInitials(name: string | null, email: string | null): string {
   return 'U'
 }
 
-export default function Sidebar({ counts, profile }: SidebarProps) {
+export default function Sidebar({ counts, profile, isPlatformOwner }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -223,6 +224,28 @@ export default function Sidebar({ counts, profile }: SidebarProps) {
               </div>
             )
           })}
+
+          {isPlatformOwner && (
+            <div>
+              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
+                Plataforma
+              </p>
+              <div className="space-y-0.5">
+                <Link href="/plataforma"
+                  className={cn(
+                    'group flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative',
+                    isActive('/plataforma') ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  )}>
+                  {isActive('/plataforma') && (
+                    <span className="absolute inset-0 rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.2))' }} />
+                  )}
+                  <Building2 className={cn('w-4 h-4 shrink-0 relative z-10', isActive('/plataforma') ? 'text-indigo-300' : '')} />
+                  <span className="flex-1 relative z-10 font-medium">Organizaciones</span>
+                </Link>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Footer — perfil + logout */}

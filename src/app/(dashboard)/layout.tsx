@@ -26,7 +26,7 @@ async function getLayoutData() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '' }
+    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false }
 
     const now = new Date().toISOString()
 
@@ -41,7 +41,7 @@ async function getLayoutData() {
       return q
     }
 
-    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones] = await Promise.all([
+    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner] = await Promise.all([
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       tasksBase(),
       tasksBase().lt('due_date', now),
@@ -56,12 +56,14 @@ async function getLayoutData() {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('is_read', false),
+      supabase.from('platform_owners').select('user_id').eq('user_id', user.id).maybeSingle(),
     ])
 
     const profile = profileRes.data as UserProfile | null
 
     return {
       profile,
+      isPlatformOwner: !!platformOwner.data,
       counts: {
         leads: leads.count ?? 0,
         tareas: tareas.count ?? 0,
@@ -76,7 +78,7 @@ async function getLayoutData() {
       userName: profile?.full_name ?? profile?.email ?? 'Usuario',
     }
   } catch {
-    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '' }
+    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false }
   }
 }
 
@@ -85,11 +87,11 @@ function emptyNavCounts(): NavCounts {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { counts, profile, chatMessages, userId, userName } = await getLayoutData()
+  const { counts, profile, chatMessages, userId, userName, isPlatformOwner } = await getLayoutData()
 
   return (
     <div className="flex h-screen bg-slate-50">
-      <Sidebar counts={counts} profile={profile} />
+      <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} />
       <main className="flex-1 overflow-auto pt-[52px] pb-[60px] md:pt-0 md:pb-0">
         {children}
       </main>

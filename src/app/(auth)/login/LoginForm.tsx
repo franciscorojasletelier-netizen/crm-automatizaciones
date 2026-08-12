@@ -1,8 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { Zap, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
 
 export default function LoginForm() {
@@ -10,20 +8,27 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError('Email o contraseña incorrectos')
+
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error ?? 'Email o contraseña incorrectos')
       setLoading(false)
       return
     }
-    router.push('/dashboard')
+
+    // Recarga completa para que el resto de la app lea la cookie de sesión recién seteada
+    window.location.href = '/dashboard'
   }
 
   return (

@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
           .from('deals')
           .insert({
             company_id: company.id,
-            contact_id: contact.id,
+            primary_contact_id: contact.id,
             stage: 'nuevo_lead',
             status: 'open',
             source: 'meta_ads',

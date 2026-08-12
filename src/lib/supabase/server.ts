@@ -43,6 +43,18 @@ export async function getCurrentProfile() {
   const sectionAccess = ((profile as any)?.section_access ?? null) as SectionAccess
   const organizationId = (profile as any)?.organization_id ?? null
 
+  if (organizationId) {
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('is_active')
+      .eq('id', organizationId)
+      .maybeSingle()
+    if (org && org.is_active === false) {
+      await supabase.auth.signOut()
+      redirect('/organizacion-suspendida')
+    }
+  }
+
   return { user, profile, role, sectionAccess, organizationId, supabase }
 }
 

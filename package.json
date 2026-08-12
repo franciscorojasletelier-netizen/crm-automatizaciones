@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:rls": "node scripts/test-rls-isolation.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",

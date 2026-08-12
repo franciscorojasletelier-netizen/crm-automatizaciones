@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
 
   const isAuthRoute   = pathname.startsWith('/login')
   const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp')
-  const isPublicPage  = pathname.startsWith('/acceso-denegado')
+  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida')
 
   // ── Sin sesión → login ──────────────────────
   if (!user && !isAuthRoute && !isPublicRoute && !isPublicPage) {

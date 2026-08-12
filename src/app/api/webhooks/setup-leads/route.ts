@@ -10,6 +10,12 @@ const GRAPH = 'https://graph.facebook.com/v19.0'
 //  4. Devuelve el page token para guardarlo en Vercel
 export async function POST(request: NextRequest) {
   try {
+    const authHeader = request.headers.get('authorization')
+    const webhookToken = process.env.WEBHOOK_SECRET_TOKEN?.trim()
+    if (!webhookToken || authHeader !== `Bearer ${webhookToken}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { userToken } = await request.json()
     if (!userToken) {
       return NextResponse.json({ error: 'Falta userToken' }, { status: 400 })

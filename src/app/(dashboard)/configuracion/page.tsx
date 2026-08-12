@@ -81,7 +81,7 @@ export default async function ConfiguracionPage() {
               <Mail className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-amber-800">Cambio de contraseña</p>
-                <p className="text-xs text-amber-700 mt-0.5">Para cambiar tu contraseña, contáctate con el administrador del sistema o usa el panel de Supabase Authentication.</p>
+                <p className="text-xs text-amber-700 mt-0.5">Para cambiar tu contraseña, contáctate con el administrador del sistema.</p>
               </div>
             </div>
           </div>
