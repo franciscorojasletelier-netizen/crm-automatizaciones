@@ -3,14 +3,16 @@ import { requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, Building2, Globe, Users, TrendingUp } from 'lucide-react'
 import CompanyRow from '@/components/empresas/company-row'
+import { getFieldDefinitions } from '@/lib/fields'
 
 export default async function EmpresasPage() {
-  const { supabase, canEdit } = await requirePermission('empresas')
+  const { supabase, canEdit, organizationId } = await requirePermission('empresas')
+  const companyFields = await getFieldDefinitions(supabase, 'company', organizationId ?? undefined)
 
   const { data: companies } = await supabase
     .from('companies')
     .select(`
-      id, name, industry, website, country, employee_count, is_existing_client, created_at,
+      id, name, industry, website, country, employee_count, is_existing_client, created_at, custom_fields,
       contacts(id),
       deals(id, status)
     `)
@@ -108,7 +110,7 @@ export default async function EmpresasPage() {
               </tr>
             )}
             {companies?.map((company: any) => (
-              <CompanyRow key={company.id} company={company} dealId={dealByCompany[company.id]} canEdit={canEdit} />
+              <CompanyRow key={company.id} company={company} dealId={dealByCompany[company.id]} canEdit={canEdit} fields={companyFields} />
             ))}
           </tbody>
         </table>

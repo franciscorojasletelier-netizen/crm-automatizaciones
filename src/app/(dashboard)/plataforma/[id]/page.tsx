@@ -9,6 +9,7 @@ import { NAV_SECTIONS } from '@/lib/roles'
 import StagesEditor from '@/components/platform/stages-editor'
 import FieldsEditor from '@/components/platform/fields-editor'
 import ModulesEditor from '@/components/platform/modules-editor'
+import UserLimitEditor from '@/components/platform/user-limit-editor'
 
 export default async function OrganizationConfigPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -19,15 +20,16 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   if (!owner) redirect('/dashboard')
 
   const { data: org } = await supabase
-    .from('organizations').select('id, name, is_active').eq('id', id).maybeSingle()
+    .from('organizations').select('id, name, is_active, max_users').eq('id', id).maybeSingle()
   if (!org) notFound()
 
-  const [stages, dealFields, companyFields, contactFields, modulesRes] = await Promise.all([
+  const [stages, dealFields, companyFields, contactFields, modulesRes, usersRes] = await Promise.all([
     getAllStages(supabase, id),
     getFieldDefinitions(supabase, 'deal', id),
     getFieldDefinitions(supabase, 'company', id),
     getFieldDefinitions(supabase, 'contact', id),
     supabase.from('organization_modules').select('module_key, enabled').eq('organization_id', id),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
   ])
 
   const enabledByKey: Record<string, boolean> = {}
@@ -48,6 +50,8 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
             Configuración de embudo, campos y módulos — solo visible para el dueño de la plataforma.
           </p>
         </div>
+
+        <UserLimitEditor orgId={org.id} currentUsers={usersRes.count ?? 0} maxUsers={org.max_users} />
 
         <StagesEditor orgId={org.id} stages={stages} />
 

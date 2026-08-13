@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Pencil, Check, X, User, Building2, Mail, Phone, Briefcase, Globe } from 'lucide-react'
+import DynamicFields from '@/components/fields/dynamic-fields'
+import type { FieldDefinition } from '@/lib/fields'
 
 function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) {
   if (!value) return null
@@ -28,7 +30,9 @@ function EditInput({ label, value, onChange }: { label: string; value: string; o
   )
 }
 
-export default function ContactEdit({ contact, company, canSeePhone = false }: { contact: any; company: any; canSeePhone?: boolean }) {
+export default function ContactEdit({ contact, company, canSeePhone = false, contactFields = [], companyFields = [] }: {
+  contact: any; company: any; canSeePhone?: boolean; contactFields?: FieldDefinition[]; companyFields?: FieldDefinition[]
+}) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
@@ -111,6 +115,11 @@ export default function ContactEdit({ contact, company, canSeePhone = false }: {
           }
           <InfoRow icon={Briefcase} label="Cargo"  value={contact?.job_title} />
         </div>
+        {contactFields.length > 0 && contact?.id && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <DynamicFields entity="contact" entityId={contact.id} fields={contactFields} values={contact?.custom_fields ?? {}} />
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
@@ -127,6 +136,11 @@ export default function ContactEdit({ contact, company, canSeePhone = false }: {
           <InfoRow icon={Briefcase} label="Industria" value={company?.industry} />
           <InfoRow icon={Globe}     label="Sitio web" value={company?.website} />
         </div>
+        {companyFields.length > 0 && company?.id && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <DynamicFields entity="company" entityId={company.id} fields={companyFields} values={company?.custom_fields ?? {}} />
+          </div>
+        )}
       </div>
     </div>
   )

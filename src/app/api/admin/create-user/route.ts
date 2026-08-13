@@ -63,6 +63,20 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
+  // Límite de usuarios por organización (null = sin límite). Se fija desde
+  // el panel de plataforma; el conteo cuenta usuarios activos e inactivos
+  // por igual — desactivar a alguien no libera un cupo, hay que borrarlo.
+  const { data: org } = await admin.from('organizations').select('max_users').eq('id', organizationId).single()
+  if (org?.max_users != null) {
+    const { count } = await admin.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId)
+    if ((count ?? 0) >= org.max_users) {
+      return NextResponse.json(
+        { error: `Se alcanzó el límite de ${org.max_users} usuarios de tu plan. Contactá a tu proveedor para ampliarlo.` },
+        { status: 403 }
+      )
+    }
+  }
+
   // 4. Crear el usuario en Auth (email confirmado para que pueda iniciar sesión)
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email,

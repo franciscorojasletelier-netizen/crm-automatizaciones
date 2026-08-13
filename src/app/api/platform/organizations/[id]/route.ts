@@ -23,13 +23,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const body = await request.json()
-  if (typeof body.isActive !== 'boolean') {
-    return NextResponse.json({ error: 'isActive es requerido' }, { status: 400 })
+  const updates: Record<string, any> = {}
+
+  if (typeof body.isActive === 'boolean') {
+    updates.is_active = body.isActive
+  }
+
+  if ('maxUsers' in body) {
+    if (body.maxUsers !== null && (!Number.isInteger(body.maxUsers) || body.maxUsers < 1)) {
+      return NextResponse.json({ error: 'maxUsers debe ser un entero positivo, o null para sin límite' }, { status: 400 })
+    }
+    updates.max_users = body.maxUsers
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'Nada para actualizar' }, { status: 400 })
   }
 
   const { error } = await supabase
     .from('organizations')
-    .update({ is_active: body.isActive })
+    .update(updates)
     .eq('id', id)
 
   if (error) {

@@ -28,6 +28,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   // que ya se desactivaron, y hay que poder mostrar su nombre igual.
   const stages = await getAllStages(supabase, organizationId ?? undefined)
   const dealFields = await getFieldDefinitions(supabase, 'deal', organizationId ?? undefined)
+  const contactFields = await getFieldDefinitions(supabase, 'contact', organizationId ?? undefined)
+  const companyFields = await getFieldDefinitions(supabase, 'company', organizationId ?? undefined)
   const userId = user.id
   const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
@@ -40,7 +42,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const canSeePhone = ['super_admin', 'admin', 'gerente', 'comercial'].includes(role)
 
   // Si el rol no puede ver teléfonos, excluirlo de la query para que no llegue al cliente
-  const contactSelect = canSeePhone ? '*' : 'id, full_name, email, job_title'
+  const contactSelect = canSeePhone ? '*' : 'id, full_name, email, job_title, custom_fields'
 
   const { data: deal } = await supabase
     .from('deals')
@@ -285,7 +287,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               </div>
             )}
 
-            <ContactEdit contact={deal.contacts} company={deal.companies} canSeePhone={canSeePhone} />
+            <ContactEdit contact={deal.contacts} company={deal.companies} canSeePhone={canSeePhone} contactFields={contactFields} companyFields={companyFields} />
 
             {/* Gestión de equipo — visible para todos, editable solo para gerente */}
             <DealMembers

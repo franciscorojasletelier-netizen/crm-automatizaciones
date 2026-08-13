@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Building2, Pencil, Check, X, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import DynamicFields from '@/components/fields/dynamic-fields'
+import type { FieldDefinition } from '@/lib/fields'
 
-export default function CompanyRow({ company, dealId, canEdit = true }: { company: any; dealId?: string; canEdit?: boolean }) {
+export default function CompanyRow({ company, dealId, canEdit = true, fields = [] }: { company: any; dealId?: string; canEdit?: boolean; fields?: FieldDefinition[] }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [data, setData] = useState({
@@ -59,6 +61,13 @@ export default function CompanyRow({ company, dealId, canEdit = true }: { compan
                 />
                 <span className="font-medium">Es cliente activo</span>
               </label>
+            </div>
+            {fields.length > 0 && (
+              <div className="pt-1 border-t border-slate-100">
+                <DynamicFields entity="company" entityId={company.id} fields={fields} values={company.custom_fields ?? {}} />
+              </div>
+            )}
+            <div className="flex items-center gap-3">
               <div className="flex gap-2 ml-auto">
                 <button onClick={save} disabled={saving}
                   className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl hover:shadow-md disabled:opacity-50 transition-all"
