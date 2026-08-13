@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, User, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Building2, User, TrendingUp, AlertCircle, CheckCircle2, ListPlus } from 'lucide-react'
+import type { FieldDefinition } from '@/lib/fields'
 
 const sources = ['Formulario web', 'Meta Ads', 'LinkedIn', 'Referido', 'Llamada directa', 'Otro']
 const industries = ['Tecnología', 'Manufactura', 'Retail', 'Salud', 'Educación', 'Logística', 'Finanzas', 'Construcción', 'Otro']
@@ -22,7 +23,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const inputCls = "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white placeholder:text-slate-400 text-slate-900 transition-all"
 
-export default function NuevoLeadForm() {
+export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldDefinition[] }) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
@@ -32,13 +33,23 @@ export default function NuevoLeadForm() {
     contact_name: '', contact_email: '', contact_phone: '', contact_job_title: '',
     source: '', estimated_value: '', next_action: '',
   })
+  const [customValues, setCustomValues] = useState<Record<string, any>>({})
 
   function set(field: string, value: string) { setForm(f => ({ ...f, [field]: value })) }
+  function setCustom(key: string, value: any) { setCustomValues(v => ({ ...v, [key]: value })) }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    const missing = dealFields.find(f => f.isRequired && !customValues[f.key])
+    if (missing) {
+      setError(`El campo "${missing.label}" es obligatorio`)
+      setLoading(false)
+      return
+    }
+
     try {
       const { data: company, error: companyError } = await supabase
         .from('companies').insert({ name: form.company_name, industry: form.industry, website: form.website }).select('id').single()
@@ -63,6 +74,7 @@ export default function NuevoLeadForm() {
         // asigna la etapa inicial que tenga configurada esta organización.
         next_action: form.next_action, score, status: 'open',
         owner_id: user?.id ?? null,
+        custom_fields: customValues,
       })
       if (dealError) throw dealError
       router.push('/leads')
@@ -163,6 +175,68 @@ export default function NuevoLeadForm() {
               </div>
             </div>
           </div>
+
+          {/* Campos personalizados de esta organización */}
+          {dealFields.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
+                  <ListPlus className="w-4 h-4 text-slate-600" />
+                </div>
+                <h2 className="text-sm font-bold text-slate-800">Campos adicionales</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {dealFields.map(f => (
+                  <div key={f.id} className={f.fieldType === 'textarea' || f.fieldType === 'multiselect' ? 'col-span-2' : ''}>
+                    <Field label={f.label} required={f.isRequired}>
+                      {f.fieldType === 'textarea' && (
+                        <textarea rows={2} placeholder={f.placeholder ?? ''} value={customValues[f.key] ?? ''}
+                          onChange={e => setCustom(f.key, e.target.value)} className={inputCls} />
+                      )}
+                      {(f.fieldType === 'text' || f.fieldType === 'number' || f.fieldType === 'currency' || f.fieldType === 'date') && (
+                        <input
+                          type={f.fieldType === 'number' || f.fieldType === 'currency' ? 'number' : f.fieldType === 'date' ? 'date' : 'text'}
+                          placeholder={f.placeholder ?? ''} value={customValues[f.key] ?? ''}
+                          onChange={e => setCustom(f.key, e.target.value)} className={inputCls} />
+                      )}
+                      {f.fieldType === 'select' && (
+                        <select value={customValues[f.key] ?? ''} onChange={e => setCustom(f.key, e.target.value)} className={inputCls}>
+                          <option value="">Seleccionar</option>
+                          {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      )}
+                      {f.fieldType === 'multiselect' && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {f.options.map(o => {
+                            const selected: string[] = customValues[f.key] ?? []
+                            const checked = selected.includes(o.value)
+                            return (
+                              <button key={o.value} type="button"
+                                onClick={() => setCustom(f.key, checked ? selected.filter(v => v !== o.value) : [...selected, o.value])}
+                                className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors ${
+                                  checked ? 'bg-indigo-100 border-indigo-300 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                }`}>
+                                {o.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {f.fieldType === 'boolean' && (
+                        <button type="button" onClick={() => setCustom(f.key, !customValues[f.key])}
+                          className={`text-xs px-3 py-2 rounded-xl border font-semibold transition-colors ${
+                            customValues[f.key] ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-slate-500'
+                          }`}>
+                          {customValues[f.key] ? 'Sí' : 'No'}
+                        </button>
+                      )}
+                    </Field>
+                    {f.helpText && <p className="text-[10px] text-slate-400 mt-1">{f.helpText}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">

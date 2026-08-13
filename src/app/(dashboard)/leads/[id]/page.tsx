@@ -7,6 +7,8 @@ import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
 import DeleteDealButton from '@/components/deals/delete-deal-button'
 import DealEditFields from '@/components/deals/deal-edit-fields'
+import DynamicFields from '@/components/fields/dynamic-fields'
+import { getFieldDefinitions, formatFieldValue } from '@/lib/fields'
 import ContactEdit from '@/components/deals/contact-edit'
 import DealMembers from '@/components/deals/deal-members'
 import DealChat from '@/components/chat/deal-chat'
@@ -24,7 +26,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const { user, role, profile, sectionAccess, organizationId, supabase } = await getCurrentProfile()
   // getAllStages y no getStages: el historial puede referenciar etapas
   // que ya se desactivaron, y hay que poder mostrar su nombre igual.
-  const stages = await getAllStages(supabase)
+  const stages = await getAllStages(supabase, organizationId ?? undefined)
+  const dealFields = await getFieldDefinitions(supabase, 'deal', organizationId ?? undefined)
   const userId = user.id
   const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
@@ -260,6 +263,27 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </div>
               )}
             </div>
+
+            {/* Campos personalizados de esta organización */}
+            {dealFields.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Campos adicionales</h2>
+                {canEdit ? (
+                  <DynamicFields entity="deal" entityId={deal.id} fields={dealFields} values={deal.custom_fields ?? {}} />
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {dealFields.map(f => (
+                      <div key={f.id} className="py-1">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{f.label}</p>
+                        <p className="text-sm font-semibold text-slate-800 mt-0.5">
+                          {formatFieldValue(f, (deal.custom_fields ?? {})[f.key]) || '—'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <ContactEdit contact={deal.contacts} company={deal.companies} canSeePhone={canSeePhone} />
 

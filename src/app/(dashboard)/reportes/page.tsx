@@ -111,8 +111,8 @@ async function getReportData(supabase: any, stages: Stage[]) {
 }
 
 export default async function ReportesPage() {
-  const { supabase } = await requirePermission('reportes')
-  const stages = await getStages(supabase)
+  const { supabase, organizationId } = await requirePermission('reportes')
+  const stages = await getStages(supabase, organizationId ?? undefined)
   const data = await getReportData(supabase, stages)
 
   const maxRevenue = Math.max(...data.monthlyRevenue.map(m => m.revenue), 1)

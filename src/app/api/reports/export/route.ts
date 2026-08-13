@@ -96,10 +96,10 @@ const ROLE_LABELS: Record<string, string> = {
 
 export async function GET() {
   try {
-    const { supabase } = await requirePermission('reportes')
+    const { supabase, organizationId } = await requirePermission('reportes')
     // getAllStages: un export histórico puede incluir deals en etapas
     // que ya se desactivaron.
-    const stages = await getAllStages(supabase)
+    const stages = await getAllStages(supabase, organizationId ?? undefined)
     const now = new Date()
 
     // ── Datos ──────────────────────────────────────────────────

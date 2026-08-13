@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccessRouteWithAccess } from '@/lib/roles'
+import { getDisabledModules } from '@/lib/modules'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -49,7 +50,7 @@ export async function proxy(request: NextRequest) {
   if (user && !isPublicRoute && !isPublicPage && !isAuthRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_active, section_access')
+      .select('role, is_active, section_access, organization_id')
       .eq('id', user.id)
       .single()
 
@@ -63,8 +64,13 @@ export async function proxy(request: NextRequest) {
 
     const role = profile?.role ?? 'soporte'
     const sectionAccess = (profile as any)?.section_access ?? null
+    // Explícito: un platform_owner vería los módulos de TODAS las
+    // organizaciones sin este filtro (su policy de SELECT bypasea el
+    // filtro de organización).
+    const orgId = (profile as any)?.organization_id ?? undefined
+    const disabledModules = await getDisabledModules(supabase, orgId)
 
-    if (!canAccessRouteWithAccess(role, sectionAccess, pathname)) {
+    if (!canAccessRouteWithAccess(role, sectionAccess, pathname, disabledModules)) {
       const url = request.nextUrl.clone()
       url.pathname = '/acceso-denegado'
       url.searchParams.set('from', pathname)

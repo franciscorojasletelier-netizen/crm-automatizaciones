@@ -161,13 +161,19 @@ function hasSectionEntry(sectionAccess: SectionAccess, key: string): boolean {
 }
 
 // ¿Puede el usuario ACCEDER (ver) a una sección?
-// El rol es el "techo" (qué permite como máximo) y section_access es un filtro restrictivo.
-// section_access NULL/undefined => sin filtro extra (solo manda el rol).
+// Tres niveles, en orden de "techo": organización (módulos habilitados) >
+// rol (qué permite como máximo) > section_access (filtro restrictivo por
+// usuario). Cualquiera de los tres puede negar; ninguno puede otorgar más
+// de lo que el nivel de arriba ya permitió.
+// disabledModules ausente/undefined => no se restringe por organización
+// (comportamiento previo a la Fase 4, y fail-open si no se cargó el dato).
 export function canAccessSection(
   role: string,
   sectionAccess: SectionAccess,
-  key: string
+  key: string,
+  disabledModules?: Set<string> | null
 ): boolean {
+  if (disabledModules?.has(key)) return false
   const section = NAV_SECTIONS.find(s => s.key === key)
   const base = section?.permission ? hasPermission(role, section.permission) : true
   if (sectionAccess == null) return base
@@ -178,9 +184,10 @@ export function canAccessSection(
 export function getSectionMode(
   role: string,
   sectionAccess: SectionAccess,
-  key: string
+  key: string,
+  disabledModules?: Set<string> | null
 ): 'none' | SectionMode {
-  if (!canAccessSection(role, sectionAccess, key)) return 'none'
+  if (!canAccessSection(role, sectionAccess, key, disabledModules)) return 'none'
   // Legacy (array) o sin checklist (null) => acceso completo
   if (sectionAccess == null || Array.isArray(sectionAccess)) return 'full'
   return sectionAccess[key] === 'read' ? 'read' : 'full'
@@ -190,9 +197,10 @@ export function getSectionMode(
 export function canEditSection(
   role: string,
   sectionAccess: SectionAccess,
-  key: string
+  key: string,
+  disabledModules?: Set<string> | null
 ): boolean {
-  return getSectionMode(role, sectionAccess, key) === 'full'
+  return getSectionMode(role, sectionAccess, key, disabledModules) === 'full'
 }
 
 // ── Helpers ────────────────────────────────────
@@ -277,11 +285,12 @@ export const ROUTE_SECTIONS: Array<{ pattern: RegExp; key: string }> = [
 export function canAccessRouteWithAccess(
   role: string,
   sectionAccess: SectionAccess,
-  pathname: string
+  pathname: string,
+  disabledModules?: Set<string> | null
 ): boolean {
   for (const r of ROUTE_SECTIONS) {
     if (r.pattern.test(pathname)) {
-      return canAccessSection(role, sectionAccess, r.key)
+      return canAccessSection(role, sectionAccess, r.key, disabledModules)
     }
   }
   return true // rutas no mapeadas son accesibles

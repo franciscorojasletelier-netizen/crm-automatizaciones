@@ -9,9 +9,9 @@ import { formatCLP } from '@/lib/format'
 import { getStages } from '@/lib/stages'
 
 export default async function LeadsPage() {
-  const { role, perms, profile, supabase, user, canEdit } = await requirePermission('leads')
+  const { role, perms, profile, supabase, user, canEdit, organizationId } = await requirePermission('leads')
   const userId = user?.id ?? ''
-  const stages = await getStages(supabase)
+  const stages = await getStages(supabase, organizationId ?? undefined)
 
   // Filtrar por visibilidad según rol
   const visibleIds = await getVisibleDealIds(supabase, userId, role)

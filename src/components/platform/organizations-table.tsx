@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Power, PowerOff } from 'lucide-react'
+import Link from 'next/link'
+import { Power, PowerOff, Settings } from 'lucide-react'
 
 type Org = {
   id: string
@@ -74,7 +75,14 @@ export default function OrganizationsTable({ organizations }: { organizations: O
                   {org.is_active ? 'Activa' : 'Suspendida'}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right">
+              <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
+                <Link
+                  href={`/plataforma/${org.id}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Configurar
+                </Link>
                 <button
                   onClick={() => toggle(org)}
                   disabled={busyId === org.id}

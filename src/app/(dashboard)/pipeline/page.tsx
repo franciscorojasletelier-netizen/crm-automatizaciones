@@ -9,7 +9,7 @@ import { getStages, stageByKey } from '@/lib/stages'
 
 export default async function PipelinePage() {
   const { role, supabase, user, canEdit, organizationId } = await requirePermission('pipeline')
-  const stages = await getStages(supabase)
+  const stages = await getStages(supabase, organizationId ?? undefined)
 
   const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 

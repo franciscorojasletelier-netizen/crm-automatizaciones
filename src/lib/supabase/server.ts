@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPermissions, normalizeRole, canEditSection, type Role, type SectionAccess } from '@/lib/roles'
+import { getDisabledModules } from '@/lib/modules'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -65,6 +66,15 @@ export async function requirePermission(
 ) {
   const { profile, role, sectionAccess, organizationId, supabase, user } = await getCurrentProfile()
 
+  // Techo de organización: si el módulo está apagado para esta org, nadie
+  // pasa, sin importar el rol. organizationId explícito: un platform_owner
+  // vería (y le aplicarían) los módulos de TODAS las organizaciones sin
+  // este filtro, porque su policy de SELECT bypasea el filtro de org.
+  const disabledModules = await getDisabledModules(supabase, organizationId ?? undefined)
+  if (disabledModules.has(permission as string)) {
+    redirect(`/acceso-denegado?from=protected&role=${role}`)
+  }
+
   const perms = getPermissions(role)
   const val = perms[permission]
   const hasAccess = typeof val === 'boolean' ? val : val !== 'none'
@@ -73,7 +83,7 @@ export async function requirePermission(
     redirect(`/acceso-denegado?from=protected&role=${role}`)
   }
 
-  const canEdit = canEditSection(role, sectionAccess, permission as string)
+  const canEdit = canEditSection(role, sectionAccess, permission as string, disabledModules)
 
-  return { role, perms, profile, sectionAccess, organizationId, canEdit, supabase, user }
+  return { role, perms, profile, sectionAccess, organizationId, canEdit, supabase, user, disabledModules }
 }

@@ -3,6 +3,7 @@ import GlobalChat from '@/components/chat/global-chat'
 import { createClient } from '@/lib/supabase/server'
 import { type Role } from '@/lib/roles'
 import { getStages } from '@/lib/stages'
+import { getDisabledModules } from '@/lib/modules'
 
 export interface NavCounts {
   leads: number
@@ -27,14 +28,17 @@ async function getLayoutData() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [] }
+    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>() }
 
     const now = new Date().toISOString()
 
     // El rol decide si los contadores son globales (gerente/admin) o propios
     const profileRes = await supabase.from('profiles')
-      .select('id, full_name, email, role, is_active, section_access').eq('id', user.id).single()
+      .select('id, full_name, email, role, is_active, section_access, organization_id').eq('id', user.id).single()
     const seesAll = ['super_admin', 'admin', 'gerente'].includes((profileRes.data as any)?.role ?? '')
+    // Explícito: sin esto, un platform_owner vería en su propio sidebar el
+    // embudo y los módulos de TODAS las organizaciones mezclados.
+    const orgId = (profileRes.data as any)?.organization_id ?? undefined
 
     const tasksBase = () => {
       let q = supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false)
@@ -42,7 +46,7 @@ async function getLayoutData() {
       return q
     }
 
-    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages] = await Promise.all([
+    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, disabledModules] = await Promise.all([
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       tasksBase(),
       tasksBase().lt('due_date', now),
@@ -58,7 +62,8 @@ async function getLayoutData() {
         .eq('user_id', user.id)
         .eq('is_read', false),
       supabase.from('platform_owners').select('user_id').eq('user_id', user.id).maybeSingle(),
-      getStages(supabase),
+      getStages(supabase, orgId),
+      getDisabledModules(supabase, orgId),
     ])
 
     const profile = profileRes.data as UserProfile | null
@@ -67,6 +72,7 @@ async function getLayoutData() {
       profile,
       isPlatformOwner: !!platformOwner.data,
       stages,
+      disabledModules,
       counts: {
         leads: leads.count ?? 0,
         tareas: tareas.count ?? 0,
@@ -81,7 +87,7 @@ async function getLayoutData() {
       userName: profile?.full_name ?? profile?.email ?? 'Usuario',
     }
   } catch {
-    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [] }
+    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>() }
   }
 }
 
@@ -90,11 +96,11 @@ function emptyNavCounts(): NavCounts {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages } = await getLayoutData()
+  const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages, disabledModules } = await getLayoutData()
 
   return (
     <div className="flex h-screen bg-slate-50">
-      <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} />
+      <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} />
       <main className="flex-1 overflow-auto pt-[52px] pb-[60px] md:pt-0 md:pb-0">
         {children}
       </main>

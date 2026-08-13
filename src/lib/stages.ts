@@ -105,25 +105,28 @@ function toStage(r: any): Stage {
   }
 }
 
-// RLS ya acota a la organización del usuario: no hace falta filtrar acá.
+// RLS acota a la organización del usuario para un cliente normal. Un
+// platform_owner en cambio ve TODAS las organizaciones sin ese filtro (su
+// policy es "organization_id = current_org_id() OR is_platform_owner()"),
+// así que orgId es obligatorio pasarlo explícitamente al mirar una
+// organización ajena (panel de plataforma) — sin él, un platform_owner
+// vería el embudo de todos los clientes mezclado.
+//
 // Devuelve solo las activas — las inactivas siguen existiendo para que el
 // historial y los reportes puedan resolver su label (ver stageByKey).
-export async function getStages(supabase: any): Promise<Stage[]> {
-  const { data } = await supabase
-    .from('pipeline_stages')
-    .select(SELECT)
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+export async function getStages(supabase: any, orgId?: string): Promise<Stage[]> {
+  let q = supabase.from('pipeline_stages').select(SELECT).eq('is_active', true)
+  if (orgId) q = q.eq('organization_id', orgId)
+  const { data } = await q.order('sort_order', { ascending: true })
   return (data ?? []).map(toStage)
 }
 
 // Incluye las desactivadas. Se usa donde hay que mostrar datos
 // históricos (detalle de un deal, reportes) y en el panel de configuración.
-export async function getAllStages(supabase: any): Promise<Stage[]> {
-  const { data } = await supabase
-    .from('pipeline_stages')
-    .select(SELECT)
-    .order('sort_order', { ascending: true })
+export async function getAllStages(supabase: any, orgId?: string): Promise<Stage[]> {
+  let q = supabase.from('pipeline_stages').select(SELECT)
+  if (orgId) q = q.eq('organization_id', orgId)
+  const { data } = await q.order('sort_order', { ascending: true })
   return (data ?? []).map(toStage)
 }
 

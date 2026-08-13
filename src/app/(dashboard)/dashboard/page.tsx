@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/server'
 import { Users, TrendingUp, CheckSquare, AlertCircle, DollarSign, Target, ArrowRight, Clock } from 'lucide-react'
 import Link from 'next/link'
 import DashboardDonut from '@/components/dashboard/donut-chart'
@@ -7,11 +7,14 @@ import { formatCLP } from '@/lib/format'
 import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf } from '@/lib/stages'
 
 async function getStats() {
-  const supabase = await createClient()
+  const { supabase, organizationId } = await getCurrentProfile()
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const stages = await getStages(supabase)
+  // organizationId explícito: sin esto, un platform_owner vería el embudo
+  // de TODAS las organizaciones mezclado en su propio dashboard (su policy
+  // de SELECT bypasea el filtro de organización).
+  const stages = await getStages(supabase, organizationId ?? undefined)
   // El KPI "leads nuevos" antes consultaba .eq('stage','nuevo_lead').
   // Ahora es la etapa inicial que tenga configurada esta organización.
   const entryStageKey = defaultStage(stages)?.key ?? '__sin_etapa__'

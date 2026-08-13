@@ -22,6 +22,7 @@ interface SidebarProps {
   profile: UserProfile | null
   isPlatformOwner?: boolean
   stages?: Stage[]
+  disabledModules?: Set<string>
 }
 
 interface NavItem {
@@ -84,7 +85,7 @@ function getInitials(name: string | null, email: string | null): string {
   return 'U'
 }
 
-export default function Sidebar({ counts, profile, isPlatformOwner, stages = [] }: SidebarProps) {
+export default function Sidebar({ counts, profile, isPlatformOwner, stages = [], disabledModules }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -132,7 +133,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [] 
 
   // Filtrar items según el checklist de acceso del usuario (y su rol como techo)
   function itemVisible(item: NavItem): boolean {
-    return canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item))
+    return canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item), disabledModules)
   }
 
   const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null)

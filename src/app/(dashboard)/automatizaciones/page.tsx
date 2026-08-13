@@ -6,8 +6,8 @@ import AutomationRuleForm from '@/components/automations/automation-rule-form'
 import { getStages } from '@/lib/stages'
 
 export default async function AutomatizacionesPage() {
-  const { supabase, profile, canEdit } = await requirePermission('automatizaciones')
-  const stages = await getStages(supabase)
+  const { supabase, profile, canEdit, organizationId } = await requirePermission('automatizaciones')
+  const stages = await getStages(supabase, organizationId ?? undefined)
 
   const [{ data: rules }, { data: logs }] = await Promise.all([
     supabase
