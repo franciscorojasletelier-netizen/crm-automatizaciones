@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2 } from 'lucide-react'
@@ -23,13 +24,22 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     .from('organizations').select('id, name, is_active, max_users').eq('id', id).maybeSingle()
   if (!org) notFound()
 
+  // profiles_select no tiene bypass de is_platform_owner() (a diferencia de
+  // pipeline_stages/field_definitions/organization_modules) — con el cliente
+  // RLS-bound este conteo siempre daría 0 para una organización ajena a la
+  // del dueño de la plataforma. Se usa service_role solo para esta lectura.
+  const svc = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
   const [stages, dealFields, companyFields, contactFields, modulesRes, usersRes] = await Promise.all([
     getAllStages(supabase, id),
     getFieldDefinitions(supabase, 'deal', id),
     getFieldDefinitions(supabase, 'company', id),
     getFieldDefinitions(supabase, 'contact', id),
     supabase.from('organization_modules').select('module_key, enabled').eq('organization_id', id),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
+    svc.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
   ])
 
   const enabledByKey: Record<string, boolean> = {}
