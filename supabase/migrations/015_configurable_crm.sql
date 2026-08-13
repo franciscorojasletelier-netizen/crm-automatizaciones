@@ -480,10 +480,9 @@ create trigger trg_guard_stage_delete
 -- ────────────────────────────────────────────────────────────────
 -- 9. CAMBIAR LA ETAPA DEFAULT / DE GANADO
 --
---    Los índices únicos parciales tienen una consecuencia práctica:
---    mover el default de A a B en dos UPDATE separados falla, porque
---    el primero deja dos defaults activos. Una sola sentencia se
---    valida recién al final, así que funciona.
+--    (Corregido en 016_fix_stage_default_swap.sql — ver ese archivo
+--    para la explicación completa de por qué la versión de acá con
+--    un solo UPDATE podía violar el índice único a mitad de camino.)
 --    El panel usa estas funciones; nunca escribe is_default/is_won
 --    directo.
 -- ────────────────────────────────────────────────────────────────

@@ -196,6 +196,22 @@ async function testPipelineInvariants() {
   assert('La organización tiene exactamente una etapa de ganado',
     stages.filter(s => s.is_won).length === 1)
 
+  // Regresión: la primera versión de set_default_stage hacía un solo
+  // UPDATE multi-fila (`is_default = (id = target)`), y Postgres no
+  // garantiza el orden de procesamiento de filas dentro de una sentencia
+  // — podía violar el índice único parcial a mitad de camino aunque el
+  // resultado final fuera válido. El fix (016_fix_stage_default_swap.sql)
+  // usa dos UPDATE secuenciales. Se prueba el patrón directo (admin
+  // bypasea RLS, así que esto no depende de is_platform_owner) ida y
+  // vuelta A->B->A para no dejar el default cambiado al terminar el test.
+  const { error: swap1Err } = await admin.from('pipeline_stages').update({ is_default: false }).eq('organization_id', state.orgA).eq('is_default', true)
+  const { error: swap1bErr } = swap1Err ? {} : await admin.from('pipeline_stages').update({ is_default: true }).eq('id', other.id)
+  assert('El patrón de dos UPDATE no viola el índice único al mover el default (ida)', !swap1Err && !swap1bErr, (swap1Err ?? swap1bErr)?.message)
+
+  const { error: swap2Err } = await admin.from('pipeline_stages').update({ is_default: false }).eq('organization_id', state.orgA).eq('is_default', true)
+  const { error: swap2bErr } = swap2Err ? {} : await admin.from('pipeline_stages').update({ is_default: true }).eq('id', def.id)
+  assert('El patrón de dos UPDATE no viola el índice único al mover el default (vuelta)', !swap2Err && !swap2bErr, (swap2Err ?? swap2bErr)?.message)
+
   // key inmutable
   const { error: keyErr } = await admin.from('pipeline_stages')
     .update({ key: 'clave_nueva' }).eq('id', other.id)
