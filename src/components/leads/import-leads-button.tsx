@@ -132,7 +132,8 @@ export default function ImportLeadsButton() {
           source: lead.source || 'Importación CSV',
           estimated_value: lead.value ? parseFloat(lead.value.replace(/[^0-9.]/g, '')) || null : null,
           next_action: 'Contactar lead importado',
-          score: 0, stage: 'nuevo_lead', status: 'open',
+          // `stage` omitido: lo asigna el trigger según la organización.
+          score: 0, status: 'open',
         })
         if (e3) throw e3
         ok++

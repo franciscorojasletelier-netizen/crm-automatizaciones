@@ -5,20 +5,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Search, Building2, Users, TrendingUp, ArrowRight, Loader2 } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
+import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 
-const stageLabels: Record<string, string> = {
-  nuevo_lead: 'Nuevo Lead', contactado: 'Contactado', calificado: 'Calificado',
-  reunion_agendada: 'Reunión', propuesta_enviada: 'Propuesta', negociacion: 'Negociación',
-  cerrado_ganado: 'Ganado', cerrado_perdido: 'Perdido',
-}
-
-const stageDot: Record<string, string> = {
-  nuevo_lead: 'bg-blue-500', contactado: 'bg-yellow-500', calificado: 'bg-purple-500',
-  reunion_agendada: 'bg-indigo-500', propuesta_enviada: 'bg-orange-500',
-  negociacion: 'bg-pink-500', cerrado_ganado: 'bg-green-500', cerrado_perdido: 'bg-red-500',
-}
-
-export default function GlobalSearch() {
+export default function GlobalSearch({ stages = [] }: { stages?: Stage[] }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<{ deals: any[]; contacts: any[] }>({ deals: [], contacts: [] })
@@ -184,10 +173,10 @@ export default function GlobalSearch() {
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-slate-900 truncate">{deal.companies?.name}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`w-1.5 h-1.5 rounded-full ${stageDot[deal.stage] ?? 'bg-slate-400'}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stageByKey(stages, deal.stage)).dot}`} />
                             <p className="text-xs text-slate-400 truncate">
                               {deal.contacts?.full_name && `${deal.contacts.full_name} · `}
-                              {stageLabels[deal.stage] ?? deal.stage}
+                              {stageByKey(stages, deal.stage)?.label ?? deal.stage}
                               {deal.estimated_value && ` · ${formatCLP(deal.estimated_value)}`}
                             </p>
                           </div>

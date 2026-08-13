@@ -3,9 +3,11 @@ import { requirePermission } from '@/lib/supabase/server'
 import { GitBranch, Zap } from 'lucide-react'
 import AutomationRulesList from '@/components/automations/automation-rules-list'
 import AutomationRuleForm from '@/components/automations/automation-rule-form'
+import { getStages } from '@/lib/stages'
 
 export default async function AutomatizacionesPage() {
   const { supabase, profile, canEdit } = await requirePermission('automatizaciones')
+  const stages = await getStages(supabase)
 
   const [{ data: rules }, { data: logs }] = await Promise.all([
     supabase
@@ -69,7 +71,7 @@ export default async function AutomatizacionesPage() {
         {/* Formulario crear regla */}
         {canEdit && (
           <div className="lg:col-span-1">
-            <AutomationRuleForm createdBy={profile?.id ?? ''} />
+            <AutomationRuleForm createdBy={profile?.id ?? ''} stages={stages} />
           </div>
         )}
 

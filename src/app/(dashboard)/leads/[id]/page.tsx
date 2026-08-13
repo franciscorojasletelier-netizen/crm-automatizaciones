@@ -17,32 +17,14 @@ import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 import DealAiInsights from '@/components/deals/deal-ai-insights'
 import { formatCLP } from '@/lib/format'
-
-const stageColors: Record<string, string> = {
-  nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
-  contactado:        'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200',
-  calificado:        'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
-  reunion_agendada:  'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200',
-  reunion_realizada: 'bg-cyan-100   text-cyan-700   ring-1 ring-cyan-200',
-  propuesta_enviada: 'bg-orange-100 text-orange-700 ring-1 ring-orange-200',
-  negociacion:       'bg-pink-100   text-pink-700   ring-1 ring-pink-200',
-  cerrado_ganado:    'bg-green-100  text-green-700  ring-1 ring-green-200',
-  cerrado_perdido:   'bg-red-100    text-red-700    ring-1 ring-red-200',
-  no_calificado:     'bg-gray-100   text-gray-600   ring-1 ring-gray-200',
-  frio:              'bg-slate-100  text-slate-600  ring-1 ring-slate-200',
-}
-
-const stageLabels: Record<string, string> = {
-  nuevo_lead: 'Nuevo Lead', contactado: 'Contactado', calificado: 'Calificado',
-  reunion_agendada: 'Reunión Agendada', reunion_realizada: 'Reunión Realizada',
-  propuesta_enviada: 'Propuesta Enviada', negociacion: 'Negociación',
-  cerrado_ganado: 'Cerrado Ganado', cerrado_perdido: 'Cerrado Perdido',
-  no_calificado: 'No Calificado', frio: 'Frío',
-}
+import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { user, role, profile, sectionAccess, organizationId, supabase } = await getCurrentProfile()
+  // getAllStages y no getStages: el historial puede referenciar etapas
+  // que ya se desactivaron, y hay que poder mostrar su nombre igual.
+  const stages = await getAllStages(supabase)
   const userId = user.id
   const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
@@ -118,8 +100,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <ArrowLeft className="w-4 h-4" /> Leads
         </Link>
         <div className="flex items-center gap-2">
-          <span className={`text-xs px-3 py-1 rounded-full font-semibold ${stageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>
-            {stageLabels[deal.stage]}
+          <span className={`text-xs px-3 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
+            {stageLabel(stages, deal.stage)}
           </span>
           {canDelete && (
             <DeleteDealButton dealId={deal.id} companyId={deal.company_id} contactId={deal.primary_contact_id} />
@@ -301,9 +283,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-xs text-slate-600 leading-tight">
-                          <span className="font-semibold text-slate-400">{stageLabels[h.from_stage] ?? h.from_stage}</span>
+                          <span className="font-semibold text-slate-400">{stageLabel(stages, h.from_stage)}</span>
                           <span className="mx-1 text-slate-300">→</span>
-                          <span className="font-semibold text-slate-800">{stageLabels[h.to_stage] ?? h.to_stage}</span>
+                          <span className="font-semibold text-slate-800">{stageLabel(stages, h.to_stage)}</span>
                         </p>
                         <p className="text-[10px] text-slate-400 mt-0.5">
                           {new Date(h.changed_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -321,6 +303,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <div className="lg:col-span-2 space-y-4">
             {canEdit && (
             <DealStageSelector
+              stages={stages.filter(s => s.isActive)}
               dealId={deal.id}
               currentStage={deal.stage}
               proposalFilename={deal.proposal_filename ?? null}

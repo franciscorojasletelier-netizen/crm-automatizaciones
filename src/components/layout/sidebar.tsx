@@ -15,11 +15,13 @@ import GlobalSearch from './global-search'
 import { getPermissions, getRoleMeta, canAccessSection } from '@/lib/roles'
 import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
 import type { Role } from '@/lib/roles'
+import type { Stage } from '@/lib/stages'
 
 interface SidebarProps {
   counts: NavCounts
   profile: UserProfile | null
   isPlatformOwner?: boolean
+  stages?: Stage[]
 }
 
 interface NavItem {
@@ -82,7 +84,7 @@ function getInitials(name: string | null, email: string | null): string {
   return 'U'
 }
 
-export default function Sidebar({ counts, profile, isPlatformOwner }: SidebarProps) {
+export default function Sidebar({ counts, profile, isPlatformOwner, stages = [] }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -164,7 +166,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner }: SidebarPro
 
         {/* Búsqueda */}
         <div className="px-3 py-3 relative z-10">
-          <GlobalSearch />
+          <GlobalSearch stages={stages} />
         </div>
 
         {/* Nav */}
@@ -289,7 +291,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner }: SidebarPro
 
         {/* Búsqueda compacta */}
         <div className="flex-1 min-w-0">
-          <GlobalSearch />
+          <GlobalSearch stages={stages} />
         </div>
 
         {/* Avatar + rol */}

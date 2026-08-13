@@ -9,98 +9,11 @@ import {
   AlertTriangle, MinusCircle, PauseCircle, MessageSquare,
 } from 'lucide-react'
 import { runAutomationsForStageChange } from '@/lib/automations'
+import { type Stage, stageByKey, colorOf, statusForStage } from '@/lib/stages'
+import { stageIcon } from '@/lib/stage-icons'
 
-// ── Etapas ────────────────────────────────────────────────────
-const stages = [
-  { key: 'nuevo_lead',        label: 'Nuevo Lead',        active: 'bg-blue-500 text-white ring-blue-600',    inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
-  { key: 'contactado',        label: 'Contactado',        active: 'bg-yellow-400 text-white ring-yellow-500', inactive: 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100' },
-  { key: 'calificado',        label: 'Calificado',        active: 'bg-purple-500 text-white ring-purple-600', inactive: 'bg-purple-50 text-purple-600 hover:bg-purple-100' },
-  { key: 'reunion_agendada',  label: 'Reunión Agendada',  active: 'bg-indigo-500 text-white ring-indigo-600', inactive: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100' },
-  { key: 'reunion_realizada', label: 'Reunión Realizada', active: 'bg-cyan-500 text-white ring-cyan-600',    inactive: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100' },
-  { key: 'propuesta_enviada', label: 'Propuesta Enviada', active: 'bg-orange-500 text-white ring-orange-600', inactive: 'bg-orange-50 text-orange-600 hover:bg-orange-100' },
-  { key: 'negociacion',       label: 'Negociación',       active: 'bg-pink-500 text-white ring-pink-600',    inactive: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
-  { key: 'cerrado_ganado',    label: 'Ganado ✓',          active: 'bg-green-500 text-white ring-green-600',  inactive: 'bg-green-50 text-green-600 hover:bg-green-100' },
-  { key: 'cerrado_perdido',   label: 'Perdido',           active: 'bg-red-500 text-white ring-red-600',      inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
-  { key: 'no_calificado',     label: 'No Calificado',     active: 'bg-gray-500 text-white ring-gray-600',    inactive: 'bg-gray-50 text-gray-600 hover:bg-gray-100' },
-  { key: 'frio',              label: 'Frío',              active: 'bg-slate-500 text-white ring-slate-600',  inactive: 'bg-slate-50 text-slate-600 hover:bg-slate-100' },
-]
-
-// Etapas que requieren razón obligatoria + alerta al gerente
-const REASON_REQUIRED_STAGES = ['cerrado_perdido', 'no_calificado', 'frio']
-const closedStages = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado']
-
-// Config por etapa negativa
-const NEGATIVE_STAGE_CONFIG: Record<string, {
-  icon: React.ComponentType<{ className?: string }>
-  color: string
-  bgColor: string
-  borderColor: string
-  title: string
-  subtitle: string
-  confirmLabel: string
-  confirmColor: string
-  reasons: string[]
-}> = {
-  cerrado_perdido: {
-    icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    title: '¿Por qué se perdió este deal?',
-    subtitle: 'Esta información ayuda al gerente a mejorar la estrategia comercial.',
-    confirmLabel: 'Confirmar pérdida',
-    confirmColor: 'from-red-500 to-red-600',
-    reasons: [
-      'Precio muy alto',
-      'Eligió a la competencia',
-      'Sin presupuesto disponible',
-      'Sin urgencia o prioridad',
-      'Contacto no es el decisor',
-      'Proyecto cancelado por cliente',
-      'Negociación demasiado prolongada',
-      'Propuesta no convenció',
-      'Otro',
-    ],
-  },
-  no_calificado: {
-    icon: MinusCircle,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
-    title: '¿Por qué no está calificado?',
-    subtitle: 'Explica al gerente por qué este lead no cumple los criterios.',
-    confirmLabel: 'Marcar como no calificado',
-    confirmColor: 'from-gray-500 to-gray-600',
-    reasons: [
-      'No tiene presupuesto',
-      'No es el mercado objetivo',
-      'Ya tiene una solución similar',
-      'Empresa demasiado pequeña',
-      'Fuera del área geográfica',
-      'Sector no compatible',
-      'Sin autoridad de compra',
-      'Otro',
-    ],
-  },
-  frio: {
-    icon: PauseCircle,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
-    borderColor: 'border-slate-200',
-    title: '¿Por qué se congela este deal?',
-    subtitle: 'Indica al gerente la razón y si vale la pena retomarlo en el futuro.',
-    confirmLabel: 'Congelar deal',
-    confirmColor: 'from-slate-500 to-slate-600',
-    reasons: [
-      'Cliente pidió pausar',
-      'Esperando decisión interna del cliente',
-      'Presupuesto bloqueado temporalmente',
-      'Reorganización en la empresa del cliente',
-      'Sin respuesta por más de 30 días',
-      'Otro',
-    ],
-  },
-}
+// Las etapas, sus razones y sus semánticas ya no viven acá: las define
+// cada organización en pipeline_stages y llegan por props. Ver src/lib/stages.ts.
 
 const ACCEPTED = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg'
 const MAX_MB = 15
@@ -111,20 +24,31 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// ── Modal razón obligatoria (Perdido / No Calificado / Frío) ───
+// ── Modal razón obligatoria (etapas con requires_reason) ───────
 interface ReasonModalProps {
-  targetStage: string
+  targetStage: Stage
   onConfirm: (reason: string, comment: string) => void
   onCancel: () => void
   loading: boolean
 }
 
 function ReasonModal({ targetStage, onConfirm, onCancel, loading }: ReasonModalProps) {
-  const cfg = NEGATIVE_STAGE_CONFIG[targetStage]
+  // Textos, razones y colores vienen de la configuración de la etapa.
+  const c = colorOf(targetStage)
+  const cfg = {
+    bgColor: c.light,
+    borderColor: 'border-slate-200',
+    color: c.text,
+    title: targetStage.modalTitle ?? `Cambiar a "${targetStage.label}"`,
+    subtitle: targetStage.modalSubtitle ?? 'Indicá el motivo de este cambio.',
+    confirmLabel: targetStage.confirmLabel ?? 'Confirmar',
+    confirmColor: c.solid,
+    reasons: targetStage.reasons,
+  }
   const [reason, setReason] = useState('')
   const [comment, setComment] = useState('')
   const [touched, setTouched] = useState(false)
-  const Icon = cfg.icon
+  const Icon = stageIcon(targetStage)
 
   const commentError = touched && comment.trim().length < 10
   const canSubmit = reason && comment.trim().length >= 10 && !loading
@@ -221,7 +145,7 @@ function ReasonModal({ targetStage, onConfirm, onCancel, loading }: ReasonModalP
           <button
             onClick={() => { if (canSubmit) onConfirm(reason, comment.trim()) }}
             disabled={!canSubmit}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-gradient-to-r ${cfg.confirmColor} hover:shadow-md`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all ${cfg.confirmColor} hover:shadow-md`}
           >
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
@@ -372,15 +296,19 @@ interface Props {
   proposalFilename?: string | null
   proposalUrl?: string | null
   organizationId: string
+  stages: Stage[]
 }
 
-export default function DealStageSelector({ dealId, currentStage, proposalFilename, proposalUrl, organizationId }: Props) {
+export default function DealStageSelector({ dealId, currentStage, proposalFilename, proposalUrl, organizationId, stages }: Props) {
   const [stage, setStage] = useState(currentStage)
   useEffect(() => { setStage(currentStage) }, [currentStage])
 
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [showProposalModal, setShowProposalModal] = useState(false)
+  // Guarda la etapa destino que pidió el adjunto (o la actual, si solo se
+  // está reemplazando el archivo). Antes era un booleano y la etapa estaba
+  // hardcodeada como 'propuesta_enviada' al confirmar.
+  const [showProposalModal, setShowProposalModal] = useState<string | null>(null)
   const [reasonModal, setReasonModal] = useState<string | null>(null) // stage key
   const [error, setError] = useState('')
   const router = useRouter()
@@ -388,8 +316,9 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
 
   async function handleStageChange(newStage: string) {
     if (newStage === stage) return
-    if (newStage === 'propuesta_enviada') { setShowProposalModal(true); return }
-    if (REASON_REQUIRED_STAGES.includes(newStage)) { setReasonModal(newStage); return }
+    const target = stageByKey(stages, newStage)
+    if (target?.requiresAttachment) { setShowProposalModal(newStage); return }
+    if (target?.requiresReason) { setReasonModal(newStage); return }
     await applyStageChange(newStage, null, null)
   }
 
@@ -402,10 +331,13 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
     setLoading(true)
     setError('')
 
+    const target = stageByKey(stages, newStage)
+
     const updates: Record<string, any> = { stage: newStage, ...extraFields }
-    if (closedStages.includes(newStage)) {
-      updates.status = newStage === 'cerrado_ganado' ? 'won' : 'lost'
-    }
+    // Antes esto solo escribía `status` al pasar a una etapa cerrada, así que
+    // un deal reabierto se quedaba con status='lost' estando en "Negociación".
+    // Ahora se recalcula siempre, que es lo que ya hacía el kanban.
+    updates.status = statusForStage(target)
     // Guardar razón en lost_reason (sirve para todas las etapas negativas)
     if (reason) updates.lost_reason = reason
     if (comment) updates.lost_comment = comment
@@ -423,7 +355,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
     }
 
     // Auto-crear proyecto si se ganó
-    if (newStage === 'cerrado_ganado' && updatedDeal) {
+    if (target?.createsProject && updatedDeal) {
       await supabase.from('projects').insert({
         company_id: updatedDeal.company_id, deal_id: dealId, owner_id: updatedDeal.owner_id,
         name: `Proyecto - ${new Date().toLocaleDateString('es-CL')}`,
@@ -433,7 +365,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
     }
 
     // Notificar a TODOS los gerentes si es etapa negativa
-    if (REASON_REQUIRED_STAGES.includes(newStage) && reason) {
+    if (target?.requiresReason && reason) {
       const { data: gerentes } = await supabase
         .from('profiles')
         .select('id')
@@ -441,7 +373,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
         .eq('is_active', true) // ya acotado por RLS a la propia organización
 
       if (gerentes && gerentes.length > 0) {
-        const stageLabel = stages.find(s => s.key === newStage)?.label ?? newStage
+        const stageLabel = target?.label ?? newStage
         const companyName = (updatedDeal as any)?.companies?.name ?? 'deal'
         const notifs = gerentes.map((g: any) => ({
           user_id:     g.id,
@@ -483,13 +415,13 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
       if (storageError) throw storageError
 
       // Guardar el PATH (bucket privado) — se sirve vía /api/propuestas con URL firmada
-      await applyStageChange('propuesta_enviada', null, null, {
+      await applyStageChange(showProposalModal ?? stage, null, null, {
         proposal_url: path,
         proposal_filename: file.name,
         proposal_size: file.size,
         proposal_uploaded_at: new Date().toISOString(),
       })
-      setShowProposalModal(false)
+      setShowProposalModal(null)
     } catch (err: any) {
       setError(`Error subiendo archivo: ${err?.message ?? 'Error desconocido'}`)
     } finally {
@@ -507,12 +439,13 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
 
         <div className="flex flex-wrap gap-1.5">
           {stages.map(s => {
-            const needsReason = REASON_REQUIRED_STAGES.includes(s.key) && s.key !== stage
-            const isProposal  = s.key === 'propuesta_enviada' && s.key !== stage
+            const needsReason = s.requiresReason && s.key !== stage
+            const isProposal  = s.requiresAttachment && s.key !== stage
+            const c = colorOf(s)
             return (
               <button key={s.key} onClick={() => handleStageChange(s.key)} disabled={loading}
                 className={`relative text-xs px-3 py-1.5 rounded-xl font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed ${
-                  stage === s.key ? `${s.active} ring-1` : s.inactive
+                  stage === s.key ? `${c.solid} text-white ring-1 ${c.ring}` : `${c.light} ${c.text} hover:brightness-95`
                 }`}>
                 {s.label}
                 {/* Indicador de adjunto requerido */}
@@ -550,7 +483,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
                     <Eye className="w-3 h-3" /> Ver
                   </a>
                 )}
-                <button onClick={() => setShowProposalModal(true)}
+                <button onClick={() => setShowProposalModal(stage)}
                   className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors">
                   <Upload className="w-3 h-3" /> Reemplazar
                 </button>
@@ -562,10 +495,10 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
         {error && <p className="mt-2 text-xs font-medium text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">{error}</p>}
       </div>
 
-      {/* Modal razón (Perdido / No Calificado / Frío) */}
-      {reasonModal && (
+      {/* Modal razón (etapas con requires_reason) */}
+      {reasonModal && stageByKey(stages, reasonModal) && (
         <ReasonModal
-          targetStage={reasonModal}
+          targetStage={stageByKey(stages, reasonModal)!}
           onConfirm={(reason, comment) => applyStageChange(reasonModal, reason, comment)}
           onCancel={() => setReasonModal(null)}
           loading={loading}
@@ -577,7 +510,7 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
         <ProposalModal
           dealId={dealId}
           onConfirm={handleProposalUpload}
-          onCancel={() => { setShowProposalModal(false) }}
+          onCancel={() => { setShowProposalModal(null) }}
           uploading={uploading}
           existingFilename={proposalFilename}
         />

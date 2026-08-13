@@ -87,7 +87,10 @@ export async function POST(request: NextRequest) {
             .from('deals')
             .select('id')
             .eq('primary_contact_id', contactId)
-            .not('stage', 'in', '("cerrado_ganado","cerrado_perdido","no_calificado")')
+            // Antes esto excluía tres claves de etapa hardcodeadas en SQL
+            // crudo. status='open' es equivalente y no depende del embudo
+            // que tenga configurado cada organización.
+            .eq('status', 'open')
             .order('created_at', { ascending: false })
             .limit(1)
 

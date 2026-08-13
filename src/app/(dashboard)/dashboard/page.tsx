@@ -4,17 +4,23 @@ import { Users, TrendingUp, CheckSquare, AlertCircle, DollarSign, Target, ArrowR
 import Link from 'next/link'
 import DashboardDonut from '@/components/dashboard/donut-chart'
 import { formatCLP } from '@/lib/format'
+import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf } from '@/lib/stages'
 
 async function getStats() {
   const supabase = await createClient()
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
+  const stages = await getStages(supabase)
+  // El KPI "leads nuevos" antes consultaba .eq('stage','nuevo_lead').
+  // Ahora es la etapa inicial que tenga configurada esta organización.
+  const entryStageKey = defaultStage(stages)?.key ?? '__sin_etapa__'
+
   const [dealsOpen, dealsWonMonth, tasksOverdue, leadsNew, wonValue, projects, pipeline, recentDeals, overdueTasks, allDealsForChart] = await Promise.all([
     supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'open'),
     supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'won').gte('updated_at', startOfMonth),
     supabase.from('tasks').select('id', { count: 'exact' }).eq('is_completed', false).lt('due_date', now.toISOString()),
-    supabase.from('deals').select('id', { count: 'exact' }).eq('stage', 'nuevo_lead'),
+    supabase.from('deals').select('id', { count: 'exact' }).eq('stage', entryStageKey),
     supabase.from('deals').select('estimated_value').eq('status', 'won').gte('updated_at', startOfMonth),
     supabase.from('projects').select('id', { count: 'exact' }).eq('status', 'activo'),
     supabase.from('deals').select('stage').eq('status', 'open'),
@@ -41,20 +47,6 @@ async function getStats() {
   const chartDeals = allDealsForChart.data ?? []
 
   // Por etapa
-  const STAGE_COLORS: Record<string, string> = {
-    nuevo_lead: '#3b82f6', contactado: '#eab308', calificado: '#a855f7',
-    reunion_agendada: '#6366f1', reunion_realizada: '#06b6d4',
-    propuesta_enviada: '#f97316', negociacion: '#ec4899',
-    cerrado_ganado: '#22c55e', cerrado_perdido: '#ef4444',
-    no_calificado: '#9ca3af', frio: '#64748b',
-  }
-  const STAGE_LABELS: Record<string, string> = {
-    nuevo_lead: 'Nuevo Lead', contactado: 'Contactado', calificado: 'Calificado',
-    reunion_agendada: 'Reunión Agendada', reunion_realizada: 'Reunión Realizada',
-    propuesta_enviada: 'Propuesta Enviada', negociacion: 'Negociación',
-    cerrado_ganado: 'Ganado', cerrado_perdido: 'Perdido',
-    no_calificado: 'No Calificado', frio: 'Frío',
-  }
   // Helper: agrupar por clave y sumar count + amount
   function groupBy(key: (d: any) => string, colorList: string[]) {
     const map: Record<string, { count: number; amount: number }> = {}
@@ -83,10 +75,14 @@ async function getStats() {
   })
   const byEtapa = Object.entries(stageMap)
     .sort((a, b) => b[1].count - a[1].count)
-    .map(([k, v]) => ({
-      label: STAGE_LABELS[k] ?? k, value: v.count, amount: v.amount,
-      color: STAGE_COLORS[k] ?? '#94a3b8',
-    }))
+    .map(([k, v]) => {
+      const s = stageByKey(stages, k)
+      return {
+        label: s?.label ?? k, value: v.count, amount: v.amount,
+        // hex, no clase de Tailwind: esto va a un SVG.
+        color: colorOf(s).hex,
+      }
+    })
 
   const byFuente      = groupBy(d => d.source,                         FUENTE_COLORS)
   const byIndustria   = groupBy(d => d.companies?.industry,            FUENTE_COLORS)
@@ -103,42 +99,12 @@ async function getStats() {
     recentDeals: recentDeals.data ?? [],
     overdueTasks: overdueTasks.data ?? [],
     byEtapa, byFuente, byIndustria, byResponsable,
+    stages,
   }
 }
 
-const stageLabels: Record<string, string> = {
-  nuevo_lead: 'Nuevo Lead',
-  contactado: 'Contactado',
-  calificado: 'Calificado',
-  reunion_agendada: 'Reunión Agendada',
-  propuesta_enviada: 'Propuesta Enviada',
-  negociacion: 'Negociación',
-  cerrado_ganado: 'Ganado',
-}
-
-const stageColors: Record<string, string> = {
-  nuevo_lead: 'bg-blue-500',
-  contactado: 'bg-yellow-500',
-  calificado: 'bg-purple-500',
-  reunion_agendada: 'bg-indigo-500',
-  propuesta_enviada: 'bg-orange-500',
-  negociacion: 'bg-pink-500',
-  cerrado_ganado: 'bg-green-500',
-}
-
-const dealStageColors: Record<string, string> = {
-  nuevo_lead: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',
-  contactado: 'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200',
-  calificado: 'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
-  reunion_agendada: 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200',
-  reunion_realizada: 'bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200',
-  propuesta_enviada: 'bg-orange-100 text-orange-700 ring-1 ring-orange-200',
-  negociacion: 'bg-pink-100 text-pink-700 ring-1 ring-pink-200',
-  cerrado_ganado: 'bg-green-100 text-green-700 ring-1 ring-green-200',
-  cerrado_perdido: 'bg-red-100 text-red-700 ring-1 ring-red-200',
-  no_calificado: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200',
-  frio: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
-}
+// Acá había TRES mapas de etapas duplicados y desincronizados entre sí
+// (uno con 7 claves, otro con 7, otro con 11). Ahora salen de stages.
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -195,8 +161,9 @@ export default async function DashboardPage() {
     },
   ]
 
-  const funnelStages = ['nuevo_lead', 'contactado', 'calificado', 'reunion_agendada', 'propuesta_enviada', 'negociacion']
-  const maxCount = Math.max(...funnelStages.map(s => stats.stageCounts[s] || 0), 1)
+  const stages = stats.stages
+  const funnelStages = funnelOf(stages)
+  const maxCount = Math.max(...funnelStages.map(s => stats.stageCounts[s.key] || 0), 1)
 
   return (
     <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
@@ -285,7 +252,7 @@ export default async function DashboardPage() {
               Ver Pipeline <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          {funnelStages.every(s => !stats.stageCounts[s]) ? (
+          {funnelStages.every(s => !stats.stageCounts[s.key]) ? (
             <div className="flex flex-col items-center justify-center py-8 gap-2">
               <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-slate-400" />
@@ -295,17 +262,17 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {funnelStages.map(stage => {
-                const count = stats.stageCounts[stage] || 0
+                const count = stats.stageCounts[stage.key] || 0
                 const pct = Math.round((count / maxCount) * 100)
                 return (
-                  <div key={stage}>
+                  <div key={stage.key}>
                     <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="text-slate-600 font-medium">{stageLabels[stage]}</span>
+                      <span className="text-slate-600 font-medium">{stage.label}</span>
                       <span className="font-bold text-slate-900 tabular-nums">{count}</span>
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${stageColors[stage] ?? 'bg-slate-400'}`}
+                        className={`h-full rounded-full transition-all duration-500 ${colorOf(stage).dot}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -393,8 +360,8 @@ export default async function DashboardPage() {
                     {formatCLP(deal.estimated_value)}
                   </span>
                 )}
-                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${dealStageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {stageLabels[deal.stage] ?? deal.stage}
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
+                  {stageByKey(stages, deal.stage)?.label ?? deal.stage}
                 </span>
                 <span className="text-xs text-slate-300 hidden lg:block">{timeAgo(deal.updated_at)}</span>
               </div>

@@ -3,22 +3,9 @@ import { requirePermission } from '@/lib/supabase/server'
 import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Download } from 'lucide-react'
 import Link from 'next/link'
 import { formatCLP } from '@/lib/format'
+import { type Stage, getStages, colorOf, funnelStages as funnelOf, probabilityForStage } from '@/lib/stages'
 
-const stageLabels: Record<string, string> = {
-  nuevo_lead:        'Nuevo Lead',
-  contactado:        'Contactado',
-  calificado:        'Calificado',
-  reunion_agendada:  'Reunión Agendada',
-  reunion_realizada: 'Reunión Realizada',
-  propuesta_enviada: 'Propuesta Enviada',
-  negociacion:       'Negociación',
-  cerrado_ganado:    'Cerrado Ganado',
-  cerrado_perdido:   'Cerrado Perdido',
-  no_calificado:     'No Calificado',
-  frio:              'Frío',
-}
-
-async function getReportData(supabase: any) {
+async function getReportData(supabase: any, stages: Stage[]) {
   const now = new Date()
 
   // Últimos 6 meses
@@ -107,15 +94,11 @@ async function getReportData(supabase: any) {
   const winRate = (totalWon + totalLost) > 0 ? Math.round((totalWon / (totalWon + totalLost)) * 100) : 0
 
   // Forecast ponderado: Σ(valor × probabilidad) de deals abiertos.
-  // Si el deal no tiene probabilidad asignada, se usa una por etapa (estándar CRM).
-  const STAGE_PROBABILITY: Record<string, number> = {
-    nuevo_lead: 10, contactado: 20, calificado: 30,
-    reunion_agendada: 40, reunion_realizada: 50,
-    propuesta_enviada: 60, negociacion: 80,
-  }
+  // Si el deal no tiene probabilidad propia, se usa la de su etapa
+  // (default_probability), configurable por organización.
   const openDealsData = activeDeals.data ?? []
   const forecast = Math.round(openDealsData.reduce((sum: number, d: any) => {
-    const prob = (d.probability && d.probability > 0) ? d.probability : (STAGE_PROBABILITY[d.stage] ?? 10)
+    const prob = probabilityForStage(stages, d.stage, d.probability)
     return sum + (Number(d.estimated_value) || 0) * (prob / 100)
   }, 0))
   const openCount = openDealsData.length
@@ -129,23 +112,15 @@ async function getReportData(supabase: any) {
 
 export default async function ReportesPage() {
   const { supabase } = await requirePermission('reportes')
-  const data = await getReportData(supabase)
+  const stages = await getStages(supabase)
+  const data = await getReportData(supabase, stages)
 
   const maxRevenue = Math.max(...data.monthlyRevenue.map(m => m.revenue), 1)
 
-  const funnelStages = [
-    'nuevo_lead', 'contactado', 'calificado',
-    'reunion_agendada', 'propuesta_enviada', 'negociacion',
-  ]
-  const funnelColors = [
-    'from-blue-500 to-blue-600',
-    'from-yellow-500 to-amber-500',
-    'from-purple-500 to-purple-600',
-    'from-indigo-500 to-indigo-600',
-    'from-orange-500 to-orange-600',
-    'from-pink-500 to-rose-500',
-  ]
-  const maxFunnel = Math.max(...funnelStages.map(s => data.stageCounts[s] || 0), 1)
+  // Antes el color venía de un array posicional acoplado al orden del
+  // embudo; ahora cada etapa trae el suyo.
+  const funnelStages = funnelOf(stages)
+  const maxFunnel = Math.max(...funnelStages.map(s => data.stageCounts[s.key] || 0), 1)
 
   return (
     <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
@@ -277,18 +252,18 @@ export default async function ReportesPage() {
             </Link>
           </div>
           <div className="space-y-3">
-            {funnelStages.map((stage, i) => {
-              const count = data.stageCounts[stage] || 0
+            {funnelStages.map(stage => {
+              const count = data.stageCounts[stage.key] || 0
               const pct = Math.round((count / maxFunnel) * 100)
               return (
-                <div key={stage}>
+                <div key={stage.key}>
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-slate-600 font-medium">{stageLabels[stage]}</span>
+                    <span className="text-slate-600 font-medium">{stage.label}</span>
                     <span className="font-bold text-slate-900 tabular-nums">{count}</span>
                   </div>
                   <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full bg-gradient-to-r ${funnelColors[i]} transition-all duration-700`}
+                      className={`h-full rounded-full ${colorOf(stage).solid} transition-all duration-700`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>

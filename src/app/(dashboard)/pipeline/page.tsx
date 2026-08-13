@@ -5,9 +5,11 @@ import { Plus } from 'lucide-react'
 import { getVisibleDealIds } from '@/lib/visibility'
 import KanbanBoard from '@/components/pipeline/kanban-board'
 import { formatCLP } from '@/lib/format'
+import { getStages, stageByKey } from '@/lib/stages'
 
 export default async function PipelinePage() {
   const { role, supabase, user, canEdit, organizationId } = await requirePermission('pipeline')
+  const stages = await getStages(supabase)
 
   const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 
@@ -34,8 +36,12 @@ export default async function PipelinePage() {
 
   const { data: deals } = await query
 
-  // Stats header
-  const activeDeals = deals?.filter(d => !['cerrado_ganado','cerrado_perdido','no_calificado'].includes((d as any).stage)) ?? []
+  // Stats header — cuentan los deals que siguen abiertos. Una etapa
+  // terminal pero no resuelta (tipo "Frío") sigue sumando, igual que antes.
+  const activeDeals = deals?.filter(d => {
+    const s = stageByKey(stages, (d as any).stage)
+    return !s?.isWon && !s?.isLost
+  }) ?? []
   const totalValue  = activeDeals.reduce((sum, d: any) => sum + (Number(d.estimated_value) || 0), 0)
 
   return (
@@ -70,7 +76,7 @@ export default async function PipelinePage() {
       </div>
 
       {/* Kanban con drag & drop */}
-      <KanbanBoard initialDeals={(deals ?? []) as any} readOnly={!canEdit} organizationId={organizationId ?? ''} />
+      <KanbanBoard initialDeals={(deals ?? []) as any} readOnly={!canEdit} organizationId={organizationId ?? ''} stages={stages} />
     </div>
   )
 }

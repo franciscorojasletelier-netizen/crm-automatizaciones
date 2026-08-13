@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           .insert({
             company_id: company.id,
             primary_contact_id: contact.id,
-            stage: 'nuevo_lead',
+            // `stage` omitido: lo asigna el trigger según la organización destino.
             status: 'open',
             source: 'meta_ads',
             next_action: 'Contactar lead de Facebook Ads',

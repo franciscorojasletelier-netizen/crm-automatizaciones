@@ -128,6 +128,120 @@ async function runTests() {
   // canSeeDeal / whatsapp / propuestas dependen de esto — deal de otra org debe ser invisible.
   const { data: dealDetail } = await clientB.from('deals').select('id').eq('id', state.dealId).maybeSingle()
   assert('Usuario B no puede leer el deal puntual de la org A por ID', dealDetail === null)
+
+  await testConfigIsolation(clientB)
+  await testPipelineInvariants()
+}
+
+// ── Configuración por organización (pipeline_stages, field_definitions,
+//    organization_modules) ──────────────────────────────────────────
+//
+// El riesgo grave en multi-tenant no es solo "puedo VER la config de otro
+// cliente", sino "puedo MODIFICARLA sin querer". Las políticas de escritura
+// son un camino de código distinto al de lectura: pasar el test de lectura
+// no dice absolutamente nada sobre el de escritura. Se prueban por separado.
+async function testConfigIsolation(clientB) {
+  const CONFIG_TABLES = ['pipeline_stages', 'field_definitions', 'organization_modules']
+
+  // Lectura
+  for (const t of CONFIG_TABLES) {
+    const { data } = await clientB.from(t).select('id').eq('organization_id', state.orgA)
+    assert(`Usuario B no LEE ${t} de la org A`, (data?.length ?? 0) === 0, `filas: ${data?.length ?? 0}`)
+  }
+
+  const { data: stageA } = await admin.from('pipeline_stages')
+    .select('id, key').eq('organization_id', state.orgA).eq('key', 'negociacion').single()
+
+  // UPDATE cross-tenant
+  const { data: upd } = await clientB.from('pipeline_stages')
+    .update({ label: 'HACKEADO' }).eq('id', stageA.id).select('id')
+  assert('Usuario B no puede MODIFICAR una etapa de la org A', (upd?.length ?? 0) === 0)
+
+  const { data: check } = await admin.from('pipeline_stages').select('label').eq('id', stageA.id).single()
+  assert('La etapa de la org A conserva su label', check.label !== 'HACKEADO', `label = ${check.label}`)
+
+  // DELETE cross-tenant
+  const { data: del } = await clientB.from('pipeline_stages').delete().eq('id', stageA.id).select('id')
+  assert('Usuario B no puede BORRAR una etapa de la org A', (del?.length ?? 0) === 0)
+
+  const { count } = await admin.from('pipeline_stages')
+    .select('id', { count: 'exact', head: true }).eq('id', stageA.id)
+  assert('La etapa de la org A sigue existiendo', count === 1)
+
+  // INSERT cross-tenant
+  const { error: insErr } = await clientB.from('pipeline_stages').insert({
+    organization_id: state.orgA, key: `hack_${stamp}`, label: 'Hack', sort_order: 99,
+  })
+  assert('Usuario B no puede INSERTAR una etapa en la org A', !!insErr, insErr?.message ?? 'no dio error')
+
+  // Un usuario común tampoco configura SU PROPIA organización:
+  // por diseño, solo el dueño de la plataforma.
+  const { error: ownErr } = await clientB.from('pipeline_stages').insert({
+    organization_id: state.orgB, key: `own_${stamp}`, label: 'Propia', sort_order: 99,
+  })
+  assert('Un super_admin cliente no configura ni su propio embudo', !!ownErr, ownErr?.message ?? 'no dio error')
+}
+
+// ── Invariantes garantizadas por la base ──────────────────────────
+async function testPipelineInvariants() {
+  const { data: stages } = await admin.from('pipeline_stages')
+    .select('id, key, is_default, is_won').eq('organization_id', state.orgA)
+
+  const def = stages.find(s => s.is_default)
+  const won = stages.find(s => s.is_won)
+  const other = stages.find(s => !s.is_default && !s.is_won)
+
+  assert('La organización tiene exactamente una etapa por defecto',
+    stages.filter(s => s.is_default).length === 1)
+  assert('La organización tiene exactamente una etapa de ganado',
+    stages.filter(s => s.is_won).length === 1)
+
+  // key inmutable
+  const { error: keyErr } = await admin.from('pipeline_stages')
+    .update({ key: 'clave_nueva' }).eq('id', other.id)
+  assert('Cambiar la key de una etapa es rechazado', !!keyErr, keyErr?.message ?? 'no dio error')
+
+  // No desactivar la etapa por defecto ni la de ganado
+  const { error: defErr } = await admin.from('pipeline_stages')
+    .update({ is_active: false }).eq('id', def.id)
+  assert('Desactivar la etapa por defecto es rechazado', !!defErr, defErr?.message ?? 'no dio error')
+
+  const { error: wonErr } = await admin.from('pipeline_stages')
+    .update({ is_active: false }).eq('id', won.id)
+  assert('Desactivar la etapa de ganado es rechazado', !!wonErr, wonErr?.message ?? 'no dio error')
+
+  // Segunda etapa marcada como default / ganado
+  const { error: dupDefErr } = await admin.from('pipeline_stages')
+    .update({ is_default: true }).eq('id', other.id)
+  assert('Una segunda etapa por defecto es rechazada', !!dupDefErr, dupDefErr?.message ?? 'no dio error')
+
+  // is_won y is_lost mutuamente excluyentes
+  const { error: xorErr } = await admin.from('pipeline_stages')
+    .update({ is_won: true, is_lost: true, is_terminal: true }).eq('id', other.id)
+  assert('Marcar una etapa como ganada Y perdida es rechazado', !!xorErr, xorErr?.message ?? 'no dio error')
+
+  // FK compuesta: un deal no puede apuntar a una etapa que no exista en SU
+  // organización. (Las dos orgs de prueba comparten las claves sembradas por
+  // defecto, así que se usa una clave inventada para aislar la garantía.)
+  const { error: fkErr } = await admin.from('deals').insert({
+    organization_id: state.orgA, stage: `inexistente_${stamp}`, status: 'open', owner_id: state.userA.id,
+  })
+  assert('Un deal con una etapa inexistente en su organización es rechazado',
+    !!fkErr, fkErr?.message ?? 'no dio error')
+
+  // El trigger asigna la etapa por defecto DE SU PROPIA organización
+  const { data: autoDeal, error: autoErr } = await admin.from('deals')
+    .insert({ organization_id: state.orgB, status: 'open', owner_id: state.userB.id })
+    .select('id, stage').single()
+  if (autoErr) {
+    assert('Un deal sin stage recibe la etapa por defecto de su organización', false, autoErr.message)
+  } else {
+    const { data: defB } = await admin.from('pipeline_stages')
+      .select('key').eq('organization_id', state.orgB).eq('is_default', true).single()
+    assert('Un deal sin stage recibe la etapa por defecto de su organización',
+      autoDeal.stage === defB.key, `quedó en "${autoDeal.stage}", esperaba "${defB.key}"`)
+    await admin.from('deals').delete().eq('id', autoDeal.id)
+  }
 }
 
 async function cleanup() {

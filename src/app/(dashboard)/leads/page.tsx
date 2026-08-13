@@ -6,10 +6,12 @@ import LeadsTable from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { getVisibleDealIds } from '@/lib/visibility'
 import { formatCLP } from '@/lib/format'
+import { getStages } from '@/lib/stages'
 
 export default async function LeadsPage() {
   const { role, perms, profile, supabase, user, canEdit } = await requirePermission('leads')
   const userId = user?.id ?? ''
+  const stages = await getStages(supabase)
 
   // Filtrar por visibilidad según rol
   const visibleIds = await getVisibleDealIds(supabase, userId, role)
@@ -148,7 +150,7 @@ export default async function LeadsPage() {
         </div>
       )}
 
-      <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} />
+      <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} stages={stages} />
     </div>
   )
 }

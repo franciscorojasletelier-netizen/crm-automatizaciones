@@ -8,9 +8,10 @@ import { runAutomationsForStageChange } from '@/lib/automations'
 import { formatCLP } from '@/lib/format'
 import { useRef } from 'react'
 import {
-  X, AlertTriangle, XCircle, MinusCircle, PauseCircle,
-  MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText,
+  X, AlertTriangle, MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText,
 } from 'lucide-react'
+import { type Stage, stageByKey, colorOf, statusForStage, boardStages, terminalStages } from '@/lib/stages'
+import { stageIcon } from '@/lib/stage-icons'
 
 // ── Tipos ──────────────────────────────────────────────────────
 export type KanbanDeal = {
@@ -36,75 +37,41 @@ function isStalled(deal: KanbanDeal): boolean {
   return staleDays(deal) >= 7
 }
 
-// ── Etapas ────────────────────────────────────────────────────
-const ALL_STAGES = [
-  { key: 'nuevo_lead',        label: 'Nuevo Lead',        color: 'bg-blue-500',   light: 'bg-blue-50',    text: 'text-blue-700',   ring: 'ring-blue-300'   },
-  { key: 'contactado',        label: 'Contactado',         color: 'bg-yellow-500', light: 'bg-yellow-50',  text: 'text-yellow-700', ring: 'ring-yellow-300' },
-  { key: 'calificado',        label: 'Calificado',         color: 'bg-purple-500', light: 'bg-purple-50',  text: 'text-purple-700', ring: 'ring-purple-300' },
-  { key: 'reunion_agendada',  label: 'Reunión Agendada',   color: 'bg-indigo-500', light: 'bg-indigo-50',  text: 'text-indigo-700', ring: 'ring-indigo-300' },
-  { key: 'reunion_realizada', label: 'Reunión Realizada',  color: 'bg-cyan-500',   light: 'bg-cyan-50',    text: 'text-cyan-700',   ring: 'ring-cyan-300'   },
-  { key: 'propuesta_enviada', label: 'Propuesta Enviada',  color: 'bg-orange-500', light: 'bg-orange-50',  text: 'text-orange-700', ring: 'ring-orange-300' },
-  { key: 'negociacion',       label: 'Negociación',        color: 'bg-pink-500',   light: 'bg-pink-50',    text: 'text-pink-700',   ring: 'ring-pink-300'   },
-  { key: 'cerrado_ganado',    label: 'Ganado ✓',           color: 'bg-green-500',  light: 'bg-green-50',   text: 'text-green-700',  ring: 'ring-green-300'  },
-  { key: 'cerrado_perdido',   label: 'Perdido',            color: 'bg-red-500',    light: 'bg-red-50',     text: 'text-red-700',    ring: 'ring-red-300'    },
-  { key: 'no_calificado',     label: 'No Calificado',      color: 'bg-gray-400',   light: 'bg-gray-50',    text: 'text-gray-700',   ring: 'ring-gray-300'   },
-  { key: 'frio',              label: 'Frío ❄️',             color: 'bg-slate-400',  light: 'bg-slate-100',  text: 'text-slate-600',  ring: 'ring-slate-300'  },
-]
+// Las etapas ya no viven acá: las define cada organización en
+// pipeline_stages y llegan por props. Ver src/lib/stages.ts.
+//
+// Las columnas del tablero son las etapas NO terminales; las terminales
+// van en la bandeja de cierre (patrón Pipedrive). Antes eso eran los
+// arrays TERMINAL_STAGES / ACTIVE_STAGES / TRAY_ZONES hardcodeados.
 
-const REASON_REQUIRED = ['cerrado_perdido', 'no_calificado', 'frio']
-const CLOSED_STAGES   = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado']
-
-// Etapas terminales: van en la bandeja de cierre (patrón Pipedrive), no como columnas
-const TERMINAL_STAGES = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado', 'frio']
-const ACTIVE_STAGES   = ALL_STAGES.filter(s => !TERMINAL_STAGES.includes(s.key))
-
-// Config visual de la bandeja de cierre
-const TRAY_ZONES = [
-  { key: 'cerrado_ganado',  label: 'GANADO',        emoji: '🏆', base: 'bg-green-50 border-green-300 text-green-700',  hover: 'bg-green-500 border-green-600 text-white scale-105' },
-  { key: 'cerrado_perdido', label: 'PERDIDO',       emoji: '✕',  base: 'bg-red-50 border-red-300 text-red-700',        hover: 'bg-red-500 border-red-600 text-white scale-105' },
-  { key: 'no_calificado',   label: 'NO CALIFICADO', emoji: '⊘',  base: 'bg-gray-50 border-gray-300 text-gray-600',     hover: 'bg-gray-500 border-gray-600 text-white scale-105' },
-  { key: 'frio',            label: 'FRÍO',          emoji: '❄️', base: 'bg-slate-50 border-slate-300 text-slate-600',  hover: 'bg-slate-500 border-slate-600 text-white scale-105' },
-]
-
-// Config para modales de etapas negativas
-const MODAL_CONFIG: Record<string, {
-  icon: React.ComponentType<{ className?: string }>
-  color: string; bg: string; border: string; btnColor: string
-  title: string; subtitle: string; confirmLabel: string
-  reasons: string[]
-}> = {
-  cerrado_perdido: {
-    icon: XCircle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', btnColor: 'from-red-500 to-red-600',
-    title: '¿Por qué se perdió este deal?',
-    subtitle: 'Esta información ayuda al gerente a mejorar la estrategia comercial.',
-    confirmLabel: 'Confirmar pérdida',
-    reasons: ['Precio muy alto','Eligió a la competencia','Sin presupuesto disponible','Sin urgencia o prioridad','Contacto no es el decisor','Proyecto cancelado por cliente','Propuesta no convenció','Otro'],
-  },
-  no_calificado: {
-    icon: MinusCircle, color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', btnColor: 'from-gray-500 to-gray-600',
-    title: '¿Por qué no está calificado?',
-    subtitle: 'Explica al gerente por qué este lead no cumple los criterios.',
-    confirmLabel: 'Marcar como no calificado',
-    reasons: ['No tiene presupuesto','No es el mercado objetivo','Ya tiene una solución similar','Empresa demasiado pequeña','Sin autoridad de compra','Sector no compatible','Otro'],
-  },
-  frio: {
-    icon: PauseCircle, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200', btnColor: 'from-slate-500 to-slate-600',
-    title: '¿Por qué se congela este deal?',
-    subtitle: 'Indica al gerente la razón y si vale la pena retomarlo.',
-    confirmLabel: 'Congelar deal',
-    reasons: ['Cliente pidió pausar','Esperando decisión interna','Presupuesto bloqueado temporalmente','Reorganización en la empresa del cliente','Sin respuesta por más de 30 días','Otro'],
-  },
+// Emoji de la bandeja de cierre, derivado del color como los iconos.
+const TRAY_EMOJI: Record<string, string> = {
+  green: '🏆', emerald: '🏆',
+  red: '✕', rose: '✕',
+  gray: '⊘',
+  slate: '❄️',
 }
 
 // ── Modal razón ───────────────────────────────────────────────
 function ReasonModal({
   targetStage, onConfirm, onCancel, saving,
-}: { targetStage: string; onConfirm: (r: string, c: string) => void; onCancel: () => void; saving: boolean }) {
-  const cfg = MODAL_CONFIG[targetStage]
+}: { targetStage: Stage; onConfirm: (r: string, c: string) => void; onCancel: () => void; saving: boolean }) {
+  // Textos, razones y colores vienen de la configuración de la etapa.
+  const c = colorOf(targetStage)
+  const cfg = {
+    bg: c.light,
+    border: 'border-slate-200',
+    color: c.text,
+    btnColor: c.solid,
+    title: targetStage.modalTitle ?? `Mover a "${targetStage.label}"`,
+    subtitle: targetStage.modalSubtitle ?? 'Indicá el motivo de este cambio.',
+    confirmLabel: targetStage.confirmLabel ?? 'Confirmar',
+    reasons: targetStage.reasons,
+  }
   const [reason, setReason] = useState('')
   const [comment, setComment] = useState('')
   const [touched, setTouched] = useState(false)
-  const Icon = cfg.icon
+  const Icon = stageIcon(targetStage)
   const canSubmit = reason && comment.trim().length >= 10 && !saving
 
   return (
@@ -167,7 +134,7 @@ function ReasonModal({
 
         <div className="px-6 pb-6 flex gap-2">
           <button onClick={() => canSubmit && onConfirm(reason, comment.trim())} disabled={!canSubmit}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 bg-gradient-to-r ${cfg.btnColor}`}>
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 ${cfg.btnColor}`}>
             {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><Icon className="w-4 h-4" /> {cfg.confirmLabel}</>}
           </button>
           {!saving && (
@@ -316,8 +283,8 @@ function GanadoModal({ deal, onConfirm, onCancel, saving }: {
 }
 
 // ── Modal selector de etapa (móvil) ──────────────────────────
-function MobileStagePickerModal({ deal, currentStage, onSelect, onCancel }: {
-  deal: KanbanDeal; currentStage: string; onSelect: (stage: string) => void; onCancel: () => void
+function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel }: {
+  deal: KanbanDeal; currentStage: string; stages: Stage[]; onSelect: (stage: string) => void; onCancel: () => void
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -330,16 +297,17 @@ function MobileStagePickerModal({ deal, currentStage, onSelect, onCancel }: {
         </div>
         <div className="p-3 grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pb-8"
           style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
-          {ACTIVE_STAGES.map(s => {
+          {boardStages(stages).map(s => {
             const isCurrent = s.key === currentStage
+            const c = colorOf(s)
             return (
               <button key={s.key} onClick={() => !isCurrent && onSelect(s.key)} disabled={isCurrent}
                 className={`flex items-center gap-2 px-3 py-3 rounded-2xl text-sm font-semibold border-2 transition-all text-left ${
                   isCurrent
-                    ? `${s.light} ${s.text} border-current opacity-60 cursor-default`
+                    ? `${c.light} ${c.text} border-current opacity-60 cursor-default`
                     : 'border-slate-200 text-slate-700 hover:border-slate-300 active:scale-95'
                 }`}>
-                <span className={`w-2.5 h-2.5 rounded-full ${s.color} shrink-0`} />
+                <span className={`w-2.5 h-2.5 rounded-full ${c.dot} shrink-0`} />
                 <span className="leading-tight">{s.label}</span>
                 {isCurrent && <span className="ml-auto text-[10px]">✓</span>}
               </button>
@@ -352,15 +320,18 @@ function MobileStagePickerModal({ deal, currentStage, onSelect, onCancel }: {
 }
 
 // ── Componente principal ───────────────────────────────────────
-export default function KanbanBoard({ initialDeals, readOnly, organizationId }: { initialDeals: KanbanDeal[]; readOnly?: boolean; organizationId: string }) {
+export default function KanbanBoard({ initialDeals, readOnly, organizationId, stages }: { initialDeals: KanbanDeal[]; readOnly?: boolean; organizationId: string; stages: Stage[] }) {
+  const columnStages = boardStages(stages)   // no terminales → columnas
+  const trayStages   = terminalStages(stages) // terminales → bandeja de cierre
+
   const [deals, setDeals] = useState<KanbanDeal[]>(initialDeals)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
 
   // Modales pendientes
   const [reasonModal,   setReasonModal]   = useState<{ deal: KanbanDeal; stage: string } | null>(null)
-  const [proposalModal, setProposalModal] = useState<{ deal: KanbanDeal } | null>(null)
-  const [ganadoModal,   setGanadoModal]   = useState<{ deal: KanbanDeal } | null>(null)
+  const [proposalModal, setProposalModal] = useState<{ deal: KanbanDeal; stage: string } | null>(null)
+  const [ganadoModal,   setGanadoModal]   = useState<{ deal: KanbanDeal; stage: string } | null>(null)
   const [mobilePicker,  setMobilePicker]  = useState<KanbanDeal | null>(null)
 
   const [saving, setSaving] = useState(false)
@@ -373,11 +344,12 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
 
   // Agrupar por etapa
   const byStage: Record<string, KanbanDeal[]> = {}
-  for (const s of ALL_STAGES) {
+  for (const s of stages) {
     byStage[s.key] = deals.filter(d => d.stage === s.key)
   }
-  const closedDeals = deals.filter(d => TERMINAL_STAGES.includes(d.stage))
-  const activeList  = deals.filter(d => !TERMINAL_STAGES.includes(d.stage))
+  const isTerminal = (key: string) => !!stageByKey(stages, key)?.isTerminal
+  const closedDeals = deals.filter(d => isTerminal(d.stage))
+  const activeList  = deals.filter(d => !isTerminal(d.stage))
   const stalledCount = activeList.filter(isStalled).length
 
   // ── Drag handlers ──────────────────────────────────────────
@@ -430,14 +402,15 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
   }
 
   function handleMoveRequest(deal: KanbanDeal, targetStage: string) {
-    if (targetStage === 'cerrado_ganado') { setGanadoModal({ deal }); return }
-    if (REASON_REQUIRED.includes(targetStage)) { setReasonModal({ deal, stage: targetStage }); return }
-    if (targetStage === 'propuesta_enviada') { setProposalModal({ deal }); return }
+    const target = stageByKey(stages, targetStage)
+    if (target?.isWon)              { setGanadoModal({ deal, stage: targetStage }); return }
+    if (target?.requiresReason)     { setReasonModal({ deal, stage: targetStage }); return }
+    if (target?.requiresAttachment) { setProposalModal({ deal, stage: targetStage }); return }
     applyMove(deal, targetStage, null, null)
   }
 
   // Subir propuesta a Storage y luego mover — el deal NO se mueve si falla la subida
-  async function handleProposalConfirm(deal: KanbanDeal, file: File) {
+  async function handleProposalConfirm(deal: KanbanDeal, targetStage: string, file: File) {
     setSaving(true)
     setError('')
     try {
@@ -446,7 +419,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
         .from('propuestas').upload(path, file, { upsert: true })
       if (storageError) throw storageError
       // Guardar el PATH (bucket privado) — se sirve vía /api/propuestas con URL firmada
-      await applyMove(deal, 'propuesta_enviada', null, null, {
+      await applyMove(deal, targetStage, null, null, {
         proposal_url: path,
         proposal_filename: file.name,
         proposal_size: file.size,
@@ -468,13 +441,11 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
     const prevStage = deal.stage
     setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: targetStage } : d))
 
+    const target = stageByKey(stages, targetStage)
+
     const updates: Record<string, any> = { stage: targetStage, ...(extraUpdates ?? {}) }
-    if (CLOSED_STAGES.includes(targetStage)) {
-      updates.status = targetStage === 'cerrado_ganado' ? 'won' : 'lost'
-    } else {
-      // Mover a etapa activa reabre el deal (permite rescatar desde cerrados)
-      updates.status = 'open'
-    }
+    // Mover a una etapa activa reabre el deal (permite rescatar desde cerrados).
+    updates.status = statusForStage(target)
     if (reason)  updates.lost_reason  = reason
     if (comment) updates.lost_comment = comment
 
@@ -492,8 +463,8 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
       return
     }
 
-    // Auto-crear proyecto si ganado
-    if (targetStage === 'cerrado_ganado' && updatedDeal) {
+    // Auto-crear proyecto si la etapa lo pide
+    if (target?.createsProject && updatedDeal) {
       await supabase.from('projects').insert({
         company_id: updatedDeal.company_id,
         deal_id: deal.id,
@@ -506,13 +477,13 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
     }
 
     // ── Notificaciones de etapa ────────────────────────────────
-    const stageLabel    = ALL_STAGES.find(s => s.key === targetStage)?.label ?? targetStage
+    const stageLabel    = target?.label ?? targetStage
     const companyName   = (updatedDeal as any)?.companies?.name ?? 'deal'
     const ownerId       = (updatedDeal as any)?.owner_id ?? null
     const { data: { user: meUser } } = await supabase.auth.getUser()
 
     // A) Notificar gerentes si etapa negativa
-    if (REASON_REQUIRED.includes(targetStage) && reason) {
+    if (target?.requiresReason && reason) {
       const { data: gerentes } = await supabase
         .from('profiles').select('id')
         .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
@@ -530,8 +501,8 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
 
     // B) Notificar al owner si la etapa cambió (y no es él mismo quien mueve)
     if (ownerId && ownerId !== meUser?.id) {
-      const emoji = targetStage === 'cerrado_ganado' ? '🎉'
-                  : REASON_REQUIRED.includes(targetStage) ? '⚠️'
+      const emoji = target?.isWon ? '🎉'
+                  : target?.requiresReason ? '⚠️'
                   : '🔄'
       await supabase.from('notifications').insert({
         user_id:     ownerId,
@@ -544,7 +515,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
     }
 
     // C) Notificar a todos los gerentes si deal ganado
-    if (targetStage === 'cerrado_ganado') {
+    if (target?.isWon) {
       const { data: gerentes } = await supabase
         .from('profiles').select('id')
         .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
@@ -632,7 +603,10 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
             </thead>
             <tbody className="divide-y divide-slate-50">
               {[...activeList].sort((a, b) => (Number(b.estimated_value) || 0) - (Number(a.estimated_value) || 0)).map(deal => {
-                const st = ALL_STAGES.find(s => s.key === deal.stage)!
+                // Antes era ALL_STAGES.find(...)! y una etapa desconocida
+                // rompía la página entera. colorOf degrada a slate.
+                const st = stageByKey(stages, deal.stage)
+                const c = colorOf(st)
                 const stalled = isStalled(deal)
                 const days = staleDays(deal)
                 return (
@@ -645,9 +619,9 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
                       {deal.contacts?.full_name && <p className="text-[11px] text-slate-400">{deal.contacts.full_name}</p>}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-semibold ${st.light} ${st.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${st.color}`} />
-                        {st.label}
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-semibold ${c.light} ${c.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+                        {st?.label ?? deal.stage}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-bold text-slate-700 tabular-nums">
@@ -683,26 +657,27 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
       {/* Kanban Board — solo etapas activas */}
       {view === 'board' && (
       <div className="flex gap-2.5 overflow-x-auto pb-4 flex-1 items-start select-none scroll-smooth [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-        {ACTIVE_STAGES.map(stage => {
+        {columnStages.map(stage => {
           const stageDeals = byStage[stage.key] ?? []
           const isOver = dragOverStage === stage.key
-          const needsReason = REASON_REQUIRED.includes(stage.key)
-          const isProposal = stage.key === 'propuesta_enviada'
-          const isGanado   = stage.key === 'cerrado_ganado'
+          const needsReason = stage.requiresReason
+          const isProposal = stage.requiresAttachment
+          const isGanado   = stage.isWon
+          const c = colorOf(stage)
 
           return (
             <div key={stage.key} className="flex flex-col flex-shrink-0 w-[170px] sm:w-[190px] md:flex-1 md:min-w-[190px]">
 
               {/* Column header */}
               <div className="flex items-center gap-1.5 mb-2.5 px-1">
-                <div className={`w-2.5 h-2.5 rounded-full ${stage.color} shadow-sm flex-shrink-0`} />
+                <div className={`w-2.5 h-2.5 rounded-full ${c.dot} shadow-sm flex-shrink-0`} />
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide flex-1 truncate">
                   {stage.label}
                   {needsReason && <span className="ml-1 text-amber-500" title="Requiere justificación">✏️</span>}
                   {isProposal  && <span className="ml-1 text-orange-400" title="Requiere propuesta adjunta">📎</span>}
                   {isGanado    && <span className="ml-1">🏆</span>}
                 </span>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${stage.light} ${stage.text}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>
                   {stageDeals.length}
                 </span>
               </div>
@@ -714,15 +689,15 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
                 onDrop={e => onDrop(e, stage.key)}
                 className={`flex flex-col gap-2 min-h-[100px] rounded-xl p-1.5 transition-all duration-150 ${
                   isOver
-                    ? `ring-2 ${stage.ring} bg-white shadow-lg scale-[1.01]`
+                    ? `ring-2 ${c.ring} bg-white shadow-lg scale-[1.01]`
                     : 'ring-1 ring-transparent'
                 }`}
               >
                 {stageDeals.length === 0 ? (
                   <div className={`border-2 border-dashed rounded-xl h-20 flex items-center justify-center transition-colors ${
-                    isOver ? `${stage.light} border-current ${stage.text}` : 'border-slate-200 bg-white/50'
+                    isOver ? `${c.light} border-current ${c.text}` : 'border-slate-200 bg-white/50'
                   }`}>
-                    <p className={`text-xs font-medium ${isOver ? stage.text : 'text-slate-300'}`}>
+                    <p className={`text-xs font-medium ${isOver ? c.text : 'text-slate-300'}`}>
                       {isOver ? 'Soltar aquí' : 'Sin deals'}
                     </p>
                   </div>
@@ -818,7 +793,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
 
                 {/* Indicador "soltar aquí" cuando hay deals */}
                 {isOver && stageDeals.length > 0 && (
-                  <div className={`border-2 border-dashed rounded-xl h-12 flex items-center justify-center ${stage.light} border-current ${stage.text}`}>
+                  <div className={`border-2 border-dashed rounded-xl h-12 flex items-center justify-center ${c.light} border-current ${c.text}`}>
                     <p className="text-xs font-semibold">Soltar aquí</p>
                   </div>
                 )}
@@ -837,8 +812,9 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
       >
         <div className="bg-white/95 backdrop-blur border-t-2 border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 py-3">
           <div className="max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            {TRAY_ZONES.map(zone => {
+            {trayStages.map(zone => {
               const isOver = dragOverStage === zone.key
+              const c = colorOf(zone)
               return (
                 <div
                   key={zone.key}
@@ -846,11 +822,13 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
                   onDragLeave={onDragLeave}
                   onDrop={e => onDrop(e, zone.key)}
                   className={`flex flex-col items-center justify-center gap-0.5 h-16 rounded-2xl border-2 border-dashed font-bold text-xs tracking-wider transition-all duration-150 ${
-                    isOver ? zone.hover : zone.base
+                    isOver
+                      ? `${c.solid} text-white scale-105 border-transparent`
+                      : `${c.light} ${c.text} border-current/40`
                   }`}
                 >
-                  <span className="text-lg leading-none">{zone.emoji}</span>
-                  {zone.label}
+                  <span className="text-lg leading-none">{TRAY_EMOJI[zone.color] ?? '•'}</span>
+                  {zone.label.toUpperCase()}
                 </div>
               )
             })}
@@ -874,7 +852,8 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
           {showClosed && (
             <div className="flex flex-wrap gap-2 mt-3">
               {closedDeals.map(deal => {
-                const st = ALL_STAGES.find(s => s.key === deal.stage)!
+                const st = stageByKey(stages, deal.stage)
+                const c = colorOf(st)
                 return (
                   <div
                     key={deal.id}
@@ -887,14 +866,14 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
                         : `bg-white border-slate-200 hover:border-slate-300`
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${st.color} flex-shrink-0`} />
+                    <span className={`w-2 h-2 rounded-full ${c.dot} flex-shrink-0`} />
                     <span className="text-xs font-bold text-slate-700">{deal.companies?.name ?? 'Deal'}</span>
                     {deal.estimated_value && (
                       <span className="text-[10px] font-semibold text-slate-400">
                         {formatCLP(deal.estimated_value)}
                       </span>
                     )}
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${st.light} ${st.text}`}>{st.label}</span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${c.light} ${c.text}`}>{st?.label ?? deal.stage}</span>
                     <Link
                       href={`/leads/${deal.id}`}
                       onClick={e => e.stopPropagation()}
@@ -912,22 +891,22 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
 
       {/* ── Modales ─────────────────────────────────────────── */}
 
-      {/* Razón (Perdido / No Calificado / Frío) */}
-      {reasonModal && (
+      {/* Razón (etapas con requires_reason) */}
+      {reasonModal && stageByKey(stages, reasonModal.stage) && (
         <ReasonModal
-          targetStage={reasonModal.stage}
+          targetStage={stageByKey(stages, reasonModal.stage)!}
           saving={saving}
           onConfirm={(reason, comment) => applyMove(reasonModal.deal, reasonModal.stage, reason, comment)}
           onCancel={() => setReasonModal(null)}
         />
       )}
 
-      {/* Propuesta enviada — adjunto obligatorio */}
+      {/* Adjunto obligatorio (etapas con requires_attachment) */}
       {proposalModal && (
         <ProposalUploadModal
           deal={proposalModal.deal}
           saving={saving}
-          onConfirm={file => handleProposalConfirm(proposalModal.deal, file)}
+          onConfirm={file => handleProposalConfirm(proposalModal.deal, proposalModal.stage, file)}
           onCancel={() => setProposalModal(null)}
         />
       )}
@@ -937,7 +916,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
         <GanadoModal
           deal={ganadoModal.deal}
           saving={saving}
-          onConfirm={() => applyMove(ganadoModal.deal, 'cerrado_ganado', null, null)}
+          onConfirm={() => applyMove(ganadoModal.deal, ganadoModal.stage, null, null)}
           onCancel={() => setGanadoModal(null)}
         />
       )}
@@ -945,6 +924,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId }: 
       {/* Selector de etapa móvil */}
       {mobilePicker && (
         <MobileStagePickerModal
+          stages={stages}
           deal={mobilePicker}
           currentStage={mobilePicker.stage}
           onSelect={stage => { setMobilePicker(null); handleMoveRequest(mobilePicker, stage) }}

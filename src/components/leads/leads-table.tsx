@@ -7,44 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare } from 'lucide-react'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import { formatCLP } from '@/lib/format'
-
-const stageLabels: Record<string, string> = {
-  nuevo_lead: 'Nuevo Lead',
-  contactado: 'Contactado',
-  calificado: 'Calificado',
-  reunion_agendada: 'Reunión Agendada',
-  reunion_realizada: 'Reunión Realizada',
-  propuesta_enviada: 'Propuesta Enviada',
-  negociacion: 'Negociación',
-  cerrado_ganado: 'Ganado',
-  cerrado_perdido: 'Perdido',
-  no_calificado: 'No Calificado',
-  frio: 'Frío',
-}
-
-const stageColors: Record<string, string> = {
-  nuevo_lead:        'bg-blue-100   text-blue-700   ring-1 ring-blue-200',
-  contactado:        'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200',
-  calificado:        'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
-  reunion_agendada:  'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200',
-  reunion_realizada: 'bg-cyan-100   text-cyan-700   ring-1 ring-cyan-200',
-  propuesta_enviada: 'bg-orange-100 text-orange-700 ring-1 ring-orange-200',
-  negociacion:       'bg-pink-100   text-pink-700   ring-1 ring-pink-200',
-  cerrado_ganado:    'bg-green-100  text-green-700  ring-1 ring-green-200',
-  cerrado_perdido:   'bg-red-100    text-red-700    ring-1 ring-red-200',
-  no_calificado:     'bg-gray-100   text-gray-600   ring-1 ring-gray-200',
-  frio:              'bg-slate-100  text-slate-600  ring-1 ring-slate-200',
-}
-
-const stageDot: Record<string, string> = {
-  nuevo_lead: 'bg-blue-500', contactado: 'bg-yellow-500', calificado: 'bg-purple-500',
-  reunion_agendada: 'bg-indigo-500', reunion_realizada: 'bg-cyan-500',
-  propuesta_enviada: 'bg-orange-500', negociacion: 'bg-pink-500',
-  cerrado_ganado: 'bg-green-500', cerrado_perdido: 'bg-red-500',
-  no_calificado: 'bg-gray-400', frio: 'bg-slate-400',
-}
-
-const CLOSED = ['cerrado_ganado', 'cerrado_perdido', 'no_calificado', 'frio']
+import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 
 // Días desde el último contacto (o desde la creación si nunca se contactó)
 function daysSinceContact(deal: any): number {
@@ -53,8 +16,11 @@ function daysSinceContact(deal: any): number {
   return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000)
 }
 
-function StaleBadge({ deal }: { deal: any }) {
-  if (CLOSED.includes(deal.stage)) return null
+function StaleBadge({ deal, stages }: { deal: any; stages: Stage[] }) {
+  // Antes era un array CLOSED hardcodeado con las 4 etapas terminales.
+  // No tiene nada que ver con ganado/perdido: un deal cerrado o congelado
+  // simplemente no acumula "días sin contacto".
+  if (stageByKey(stages, deal.stage)?.isTerminal) return null
   const days = daysSinceContact(deal)
   if (days < 3) return null
   const isUrgent = days >= 7
@@ -79,7 +45,7 @@ function ScoreBadge({ score }: { score: number | null }) {
   )
 }
 
-export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean }) {
+export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false, stages = [] }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean; stages?: Stage[] }) {
   const [deals, setDeals]   = useState(initialDeals)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
@@ -185,7 +151,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             className="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 cursor-pointer"
           >
             <option value="">Todas las etapas</option>
-            {Object.entries(stageLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
           </select>
 
           {sources.length > 0 && (
@@ -274,7 +240,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                       <p className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">
                         {deal.companies?.name ?? '—'}
                       </p>
-                      <StaleBadge deal={deal} />
+                      <StaleBadge deal={deal} stages={stages} />
                     </div>
                     {deal.companies?.industry && (
                       <p className="text-xs text-slate-400 mt-0.5">{deal.companies.industry}</p>
@@ -288,9 +254,9 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                   )}
                 </td>
                 <td className="px-5 py-3.5">
-                  <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold ${stageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${stageDot[deal.stage] ?? 'bg-gray-400'}`} />
-                    {stageLabels[deal.stage] ?? deal.stage}
+                  <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stageByKey(stages, deal.stage)).dot}`} />
+                    {stageByKey(stages, deal.stage)?.label ?? deal.stage}
                   </span>
                 </td>
                 <td className="px-5 py-3.5">
@@ -345,10 +311,10 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>
                 <p className="font-bold text-slate-900">{deal.companies?.name ?? '—'}</p>
-                <StaleBadge deal={deal} />
+                <StaleBadge deal={deal} stages={stages} />
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${stageColors[deal.stage] ?? 'bg-gray-100 text-gray-600'}`}>
-                {stageLabels[deal.stage] ?? deal.stage}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
+                {stageByKey(stages, deal.stage)?.label ?? deal.stage}
               </span>
             </div>
             <p className="text-sm text-slate-600 font-medium">{deal.contacts?.full_name ?? '—'}</p>

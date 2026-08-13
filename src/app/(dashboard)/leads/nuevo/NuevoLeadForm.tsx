@@ -59,7 +59,9 @@ export default function NuevoLeadForm() {
       const { error: dealError } = await supabase.from('deals').insert({
         company_id: company.id, primary_contact_id: contact.id, source: form.source,
         estimated_value: form.estimated_value ? parseFloat(form.estimated_value) : null,
-        next_action: form.next_action, score, stage: 'nuevo_lead', status: 'open',
+        // `stage` se omite a propósito: el trigger set_default_stage_on_deal
+        // asigna la etapa inicial que tenga configurada esta organización.
+        next_action: form.next_action, score, status: 'open',
         owner_id: user?.id ?? null,
       })
       if (dealError) throw dealError

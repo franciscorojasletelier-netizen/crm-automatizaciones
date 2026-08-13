@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Plus, Loader2, Check } from 'lucide-react'
+import type { Stage } from '@/lib/stages'
 
 const TRIGGER_TYPES = [
   { value: 'stage_change',  label: 'Cambio de etapa',         desc: 'Cuando un deal cambia a una etapa específica' },
@@ -19,29 +20,22 @@ const ACTION_TYPES = [
   { value: 'notify_team',    label: 'Notificar al equipo',     desc: 'Notifica a todo el equipo' },
 ]
 
-const STAGE_OPTIONS = [
-  { value: 'any',               label: 'Cualquier etapa' },
-  { value: 'nuevo_lead',        label: 'Nuevo Lead' },
-  { value: 'contactado',        label: 'Contactado' },
-  { value: 'calificado',        label: 'Calificado' },
-  { value: 'reunion_agendada',  label: 'Reunión Agendada' },
-  { value: 'reunion_realizada', label: 'Reunión Realizada' },
-  { value: 'propuesta_enviada', label: 'Propuesta Enviada' },
-  { value: 'negociacion',       label: 'Negociación' },
-  { value: 'cerrado_ganado',    label: 'Cerrado Ganado' },
-  { value: 'cerrado_perdido',   label: 'Cerrado Perdido' },
-]
-
 interface Props {
   createdBy: string
+  stages: Stage[]
 }
 
-export default function AutomationRuleForm({ createdBy }: Props) {
+export default function AutomationRuleForm({ createdBy, stages }: Props) {
+  // Las opciones salen del embudo de la organización, no de una lista fija.
+  const STAGE_OPTIONS = [
+    { value: 'any', label: 'Cualquier etapa' },
+    ...stages.map(s => ({ value: s.key, label: s.label })),
+  ]
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [triggerType, setTriggerType] = useState('stage_change')
   const [actionType, setActionType] = useState('notify_owner')
-  const [toStage, setToStage] = useState('propuesta_enviada')
+  const [toStage, setToStage] = useState('any')
   const [daysInactive, setDaysInactive] = useState(7)
   const [taskTitle, setTaskTitle] = useState('')
   const [taskDaysAfter, setTaskDaysAfter] = useState(2)

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/supabase/server'
+import { getAllStages, stageLabel } from '@/lib/stages'
 import * as XLSX from 'xlsx-js-style'
 
 // ── Tipos locales ──────────────────────────────────────────────
@@ -87,13 +88,6 @@ function merge(ws: Record<string, any>, s: {r:number,c:number}, e: {r:number,c:n
   ws['!merges'].push({ s, e })
 }
 
-const STAGE_LABELS: Record<string, string> = {
-  nuevo_lead: 'Nuevo Lead', contactado: 'Contactado', calificado: 'Calificado',
-  reunion_agendada: 'Reunión Agendada', reunion_realizada: 'Reunión Realizada',
-  propuesta_enviada: 'Propuesta Enviada', negociacion: 'Negociación',
-  cerrado_ganado: 'Ganado', cerrado_perdido: 'Perdido',
-  no_calificado: 'No Calificado', frio: 'Frío',
-}
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin', admin: 'Super Admin', gerente: 'Gerente',
@@ -103,6 +97,9 @@ const ROLE_LABELS: Record<string, string> = {
 export async function GET() {
   try {
     const { supabase } = await requirePermission('reportes')
+    // getAllStages: un export histórico puede incluir deals en etapas
+    // que ya se desactivaron.
+    const stages = await getAllStages(supabase)
     const now = new Date()
 
     // ── Datos ──────────────────────────────────────────────────
@@ -267,7 +264,7 @@ export async function GET() {
       Object.entries(stageDist).sort((a,b) => b[1]-a[1]).forEach(([stage, count], i) => {
         const bg  = i % 2 === 0 ? WHITE : SLATE100
         const pct = Math.round((count / totalForPct) * 100)
-        sc(ws, r, 0, STAGE_LABELS[stage] ?? stage, dStyle(bg))
+        sc(ws, r, 0, stageLabel(stages, stage), dStyle(bg))
         sc(ws, r, 1, count, dStyle(bg, PURPLE, true, 'center'))
         sc(ws, r, 2, pct / 100, { ...pctStyle(bg), numFmt: '0%' })
         sc(ws, r, 3, '', dStyle(bg))
@@ -313,7 +310,7 @@ export async function GET() {
 
         sc(ws, r, 0, d.companies?.name ?? '',                    dStyle(bg, DARK, true))
         sc(ws, r, 1, d.companies?.industry ?? '',                dStyle(bg))
-        sc(ws, r, 2, STAGE_LABELS[d.stage] ?? d.stage,          dStyle(bg))
+        sc(ws, r, 2, stageLabel(stages, d.stage),               dStyle(bg))
         sc(ws, r, 3, statusLabel,                                statusStyle)
         sc(ws, r, 4, Number(d.estimated_value) || 0,            moneyStyle(bg))
         sc(ws, r, 5, d.profiles?.full_name ?? '',                dStyle(bg))

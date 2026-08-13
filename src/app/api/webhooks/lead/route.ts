@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
         estimated_value: estimated_value ? parseFloat(estimated_value) : null,
         next_action: next_action ?? 'Contactar lead entrante',
         score,
-        stage: 'nuevo_lead',
+        // `stage` omitido: lo asigna el trigger según la organización destino.
         status: 'open',
         organization_id: orgId,
       })

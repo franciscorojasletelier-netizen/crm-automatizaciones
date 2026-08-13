@@ -57,6 +57,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: orgErr?.message ?? 'No se pudo crear la organización' }, { status: 400 })
   }
 
+  // 1b. Sembrar embudo y módulos por defecto. Sin esto la organización
+  // queda inutilizable: no se puede crear ningún deal, porque el trigger
+  // set_default_stage_on_deal no encuentra etapa por defecto.
+  const { error: stagesErr } = await admin.rpc('seed_default_stages', { p_org_id: org.id })
+  const { error: modulesErr } = await admin.rpc('seed_default_modules', { p_org_id: org.id })
+
+  if (stagesErr || modulesErr) {
+    await admin.from('organizations').delete().eq('id', org.id)
+    return NextResponse.json(
+      { error: `No se pudo configurar la organización: ${stagesErr?.message ?? modulesErr?.message}` },
+      { status: 400 }
+    )
+  }
+
   // 2. Crear el usuario en Auth
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email,

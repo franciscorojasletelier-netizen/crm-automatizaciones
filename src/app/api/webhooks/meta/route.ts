@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
             source: 'Meta Ads',
             next_action: apiSuccess ? 'Contactar lead de Meta Ads' : 'Verificar datos en Meta Business Suite',
             score,
-            stage: 'nuevo_lead',
+            // `stage` omitido: lo asigna el trigger según la organización destino.
             status: 'open',
             organization_id: orgId,
           })
