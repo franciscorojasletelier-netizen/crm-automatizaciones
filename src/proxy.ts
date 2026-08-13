@@ -29,7 +29,10 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   const isAuthRoute   = pathname.startsWith('/login')
-  const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp')
+  // /api/auth/login tiene que ser alcanzable SIN sesión — es el propio
+  // endpoint de login. Sin esto, el middleware lo redirige a /login antes
+  // de que el fetch del formulario reciba una respuesta JSON.
+  const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp') || pathname === '/api/auth/login'
   const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida')
 
   // ── Sin sesión → login ──────────────────────

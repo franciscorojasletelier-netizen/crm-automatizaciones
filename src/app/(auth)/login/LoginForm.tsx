@@ -14,21 +14,30 @@ export default function LoginForm() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-    const data = await res.json()
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (!res.ok) {
-      setError(data.error ?? 'Email o contraseña incorrectos')
+      if (!res.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Respuesta inesperada del servidor')
+      }
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error ?? 'Email o contraseña incorrectos')
+        setLoading(false)
+        return
+      }
+
+      // Recarga completa para que el resto de la app lea la cookie de sesión recién seteada
+      window.location.href = '/dashboard'
+    } catch {
+      setError('No se pudo conectar. Probá de nuevo.')
       setLoading(false)
-      return
     }
-
-    // Recarga completa para que el resto de la app lea la cookie de sesión recién seteada
-    window.location.href = '/dashboard'
   }
 
   return (
