@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { Trash2, AlertTriangle, X, Loader2 } from 'lucide-react'
 
 export default function DeleteDealButton({ dealId }: { dealId: string }) {
@@ -19,7 +20,7 @@ export default function DeleteDealButton({ dealId }: { dealId: string }) {
     // son entidades compartidas, no propiedad exclusiva de este deal.
     const { error } = await supabase.rpc('soft_delete_deal', { p_deal_id: dealId })
     if (error) {
-      setError(error.message || 'No se pudo eliminar')
+      setError(friendlyError(error.message, 'No se pudo eliminar'))
       setLoading(false)
       return
     }

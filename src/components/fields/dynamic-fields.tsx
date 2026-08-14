@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { Pencil, Check, X } from 'lucide-react'
 import type { FieldDefinition, FieldEntity } from '@/lib/fields'
 import { formatFieldValue } from '@/lib/fields'
@@ -58,7 +59,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
       .from(TABLE_BY_ENTITY[entity]).update({ custom_fields: nextFields }).eq('id', entityId)
 
     setSaving(false)
-    if (err) { setError(err.message); return }
+    if (err) { setError(friendlyError(err.message)); return }
     onSaved(parsed)
     setEditing(false)
     router.refresh()

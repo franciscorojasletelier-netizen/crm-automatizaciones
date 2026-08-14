@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { friendlyError } from '@/lib/pg-error'
 
 async function requirePlatformOwner() {
   const { user, supabase } = await getCurrentProfile()
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     color: color ?? 'slate', sort_order: sortOrder ?? 0,
   }).select('id').single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true, id: data.id })
 }
 
@@ -47,14 +48,14 @@ export async function PATCH(request: NextRequest) {
   if (action === 'set_default') {
     if (!organizationId) return NextResponse.json({ error: 'organizationId es requerido' }, { status: 400 })
     const { error } = await supabase.rpc('set_default_stage', { p_org_id: organizationId, p_stage_id: stageId })
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
     return NextResponse.json({ ok: true })
   }
 
   if (action === 'set_won') {
     if (!organizationId) return NextResponse.json({ error: 'organizationId es requerido' }, { status: 400 })
     const { error } = await supabase.rpc('set_won_stage', { p_org_id: organizationId, p_stage_id: stageId })
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
     return NextResponse.json({ ok: true })
   }
 
@@ -63,6 +64,6 @@ export async function PATCH(request: NextRequest) {
   delete fields.key
 
   const { error } = await supabase.from('pipeline_stages').update(fields).eq('id', stageId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true })
 }

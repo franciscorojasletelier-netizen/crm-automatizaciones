@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { useRouter } from 'next/navigation'
 import { Plus, Loader2, Check } from 'lucide-react'
 import type { Stage } from '@/lib/stages'
@@ -72,7 +73,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
     })
 
     if (err) {
-      setError(err.message)
+      setError(friendlyError(err.message))
     } else {
       setSaved(true)
       setName(''); setDescription(''); setTaskTitle(''); setNotifMessage('')

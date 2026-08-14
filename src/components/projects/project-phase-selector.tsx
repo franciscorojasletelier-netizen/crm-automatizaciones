@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { Loader2, AlertTriangle, Lock } from 'lucide-react'
 
 const phases = [
@@ -47,7 +48,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
     const updates: Record<string, any> = { phase: newPhase }
     if (newPhase === 'entrega') updates.status = 'entregado'
     const { error: err } = await supabase.from('projects').update(updates).eq('id', projectId)
-    if (err) { setError(err.message); setPhase(currentPhase) }
+    if (err) { setError(friendlyError(err.message)); setPhase(currentPhase) }
     setLoading(false); router.refresh()
   }
 
@@ -62,7 +63,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
     const updates: Record<string, any> = { status: newStatus }
     if (newStatus === 'entregado') updates.delivered_at = new Date().toISOString()
     const { error: err } = await supabase.from('projects').update(updates).eq('id', projectId)
-    if (err) { setError(err.message); setStatus(currentStatus) }
+    if (err) { setError(friendlyError(err.message)); setStatus(currentStatus) }
     setLoading(false); router.refresh()
   }
 

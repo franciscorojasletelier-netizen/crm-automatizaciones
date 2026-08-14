@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { useRouter } from 'next/navigation'
 import {
   AlertTriangle, CheckCircle2, Loader2, ClipboardList,
@@ -46,7 +47,7 @@ export default function DealSpecBanner({
     }).eq('id', projectId)
 
     if (updateErr) {
-      setSaveError(`No se pudo devolver el proyecto (${updateErr.message}). Intentá de nuevo.`)
+      setSaveError(`No se pudo devolver el proyecto: ${friendlyError(updateErr.message)}`)
       setLoading(false)
       return
     }
@@ -60,7 +61,7 @@ export default function DealSpecBanner({
     if (noteErr) {
       // El proyecto ya volvió a producción — esto es secundario, se avisa
       // pero no se bloquea el flujo principal por la nota.
-      setSaveError(`El proyecto se devolvió, pero la nota no se pudo guardar (${noteErr.message}).`)
+      setSaveError(`El proyecto se devolvió, pero la nota no se pudo guardar: ${friendlyError(noteErr.message)}`)
     }
 
     // Notificar a producción y gerentes

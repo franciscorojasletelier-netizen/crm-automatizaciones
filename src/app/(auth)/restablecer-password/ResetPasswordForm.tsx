@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { Zap, Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function ResetPasswordForm() {
@@ -45,7 +46,7 @@ export default function ResetPasswordForm() {
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)
-    if (error) { setError(error.message); return }
+    if (error) { setError(friendlyError(error.message)); return }
     setDone(true)
     setTimeout(() => router.push('/dashboard'), 1800)
   }

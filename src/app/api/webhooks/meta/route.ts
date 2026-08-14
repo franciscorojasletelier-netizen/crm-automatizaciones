@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import { friendlyError } from '@/lib/pg-error'
 
 // Valida la firma HMAC-SHA256 que Meta envía en X-Hub-Signature-256
 function verifyMetaSignature(raw: string, signature: string | null): boolean {
@@ -198,6 +199,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error en webhook Meta:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: friendlyError(error.message) }, { status: 500 })
   }
 }

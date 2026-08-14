@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeftRight, AlertTriangle, Loader2,
@@ -47,7 +48,7 @@ export default function ProjectSpecRequest({
       spec_resolved_at:  null,
     }).eq('id', projectId)
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) { setError(friendlyError(err.message)); setLoading(false); return }
 
     // Notificar al dueño del deal (comercial) + gerentes
     const notifTargets: string[] = []

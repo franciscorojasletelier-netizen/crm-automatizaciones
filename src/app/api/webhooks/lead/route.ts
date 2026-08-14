@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { friendlyError } from '@/lib/pg-error'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -329,7 +330,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Webhook error:', error)
-    return NextResponse.json({ error: error.message ?? 'Error interno' }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json({ error: friendlyError(error.message, 'Error interno') }, { status: 500, headers: CORS_HEADERS })
   }
 }
 

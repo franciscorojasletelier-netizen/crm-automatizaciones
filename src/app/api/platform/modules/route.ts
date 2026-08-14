@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { friendlyError } from '@/lib/pg-error'
 
 // Prender/apagar un módulo para una organización. Upsert: si no existía
 // fila (fail-open = habilitado), la crea; si existía, la actualiza.
@@ -18,6 +19,6 @@ export async function PATCH(request: NextRequest) {
   const { error } = await supabase.from('organization_modules')
     .upsert({ organization_id: organizationId, module_key: moduleKey, enabled }, { onConflict: 'organization_id,module_key' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true })
 }

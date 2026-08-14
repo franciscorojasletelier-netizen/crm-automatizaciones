@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { friendlyError } from '@/lib/pg-error'
 
 async function requirePlatformOwner() {
   const { user, supabase } = await getCurrentProfile()
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     placeholder: placeholder || null, help_text: helpText || null, sort_order: sortOrder ?? 0,
   }).select('id').single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true, id: data.id })
 }
 
@@ -53,6 +54,6 @@ export async function PATCH(request: NextRequest) {
   delete fields.entity
 
   const { error } = await supabase.from('field_definitions').update(fields).eq('id', fieldId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true })
 }

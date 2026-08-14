@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/pg-error'
 import { Plus, X, Calendar, Clock, AlertTriangle } from 'lucide-react'
 import { checkTaskConflict, formatConflictTime, type ConflictTask } from '@/lib/task-conflict'
 
@@ -58,7 +59,7 @@ export default function NewTaskButton() {
       created_by: user?.id ?? null,
     })
     if (err) {
-      setError(err.message)
+      setError(friendlyError(err.message))
       setLoading(false)
       return
     }

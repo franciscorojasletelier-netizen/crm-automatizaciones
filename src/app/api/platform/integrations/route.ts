@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { friendlyError } from '@/lib/pg-error'
 import crypto from 'crypto'
 
 async function requirePlatformOwner() {
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     .select('id, organization_id, provider, external_id, access_token, label, is_active, created_at')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true, integration: data })
 }
 
@@ -56,7 +57,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { error } = await supabase.from('platform_integrations').update({ is_active: isActive }).eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true })
 }
 
@@ -69,6 +70,6 @@ export async function DELETE(request: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id es requerido' }, { status: 400 })
 
   const { error } = await supabase.from('platform_integrations').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })
   return NextResponse.json({ ok: true })
 }
