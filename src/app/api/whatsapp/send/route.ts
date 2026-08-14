@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Obtener el teléfono del contacto del deal
     const { data: deal } = await supabase
       .from('deals')
-      .select('id, contacts:primary_contact_id(phone, full_name)')
+      .select('id, organization_id, contacts:primary_contact_id(phone, full_name)')
       .eq('id', dealId)
       .single()
 
@@ -55,11 +55,20 @@ export async function POST(request: NextRequest) {
     const normalized = phone.replace(/\D/g, '')
     const intlPhone = normalized.startsWith('56') ? normalized : `56${normalized}`
 
-    const waToken   = process.env.WHATSAPP_ACCESS_TOKEN
-    const waPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
+    // Cada organización puede tener su propio número/token de WhatsApp
+    // Business — antes era uno solo (env vars) para toda la instalación.
+    // Si la organización no configuró el suyo, se sostiene el global.
+    const { data: integration } = await supabase
+      .from('platform_integrations')
+      .select('external_id, access_token')
+      .eq('provider', 'whatsapp').eq('organization_id', deal.organization_id).eq('is_active', true)
+      .maybeSingle()
+
+    const waToken   = integration?.access_token || process.env.WHATSAPP_ACCESS_TOKEN
+    const waPhoneId = integration?.external_id  || process.env.WHATSAPP_PHONE_NUMBER_ID
 
     if (!waToken || !waPhoneId) {
-      return NextResponse.json({ error: 'WhatsApp API no configurada. Faltan variables de entorno.' }, { status: 503 })
+      return NextResponse.json({ error: 'WhatsApp API no configurada para esta organización.' }, { status: 503 })
     }
 
     // Enviar mensaje via Meta Cloud API

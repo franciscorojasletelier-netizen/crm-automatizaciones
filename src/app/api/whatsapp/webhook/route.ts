@@ -59,6 +59,23 @@ export async function POST(request: NextRequest) {
         const messages = value?.messages ?? []
         const contacts = value?.contacts ?? []
 
+        // El número de WhatsApp Business que RECIBIÓ el mensaje identifica
+        // a la organización — antes se buscaba el contacto por teléfono a
+        // nivel global, sin filtrar por organización: si dos organizaciones
+        // tenían contactos con el mismo número, un mensaje podía cruzarse.
+        const phoneNumberId = value?.metadata?.phone_number_id as string | undefined
+        let waOrgId: string | null = null
+        if (phoneNumberId) {
+          const { data: integration } = await supabase
+            .from('platform_integrations')
+            .select('organization_id')
+            .eq('provider', 'whatsapp').eq('external_id', phoneNumberId).eq('is_active', true)
+            .maybeSingle()
+          waOrgId = integration?.organization_id ?? null
+        }
+        // Compatibilidad: número todavía no registrado — no se filtra por
+        // organización, mismo comportamiento que antes de este cambio.
+
         for (const msg of messages) {
           // No se descargan ni renderizan adjuntos todavía, pero antes un
           // mensaje no-texto (foto de comprobante, audio, documento — muy
@@ -87,11 +104,9 @@ export async function POST(request: NextRequest) {
           const normalized = fromPhone.startsWith('56') ? fromPhone : `56${fromPhone}`
           const variants   = [normalized, fromPhone, `+${normalized}`, `+${fromPhone}`]
 
-          const { data: contacts_found } = await supabase
-            .from('contacts')
-            .select('id')
-            .in('phone', variants)
-            .limit(1)
+          let contactQuery = supabase.from('contacts').select('id').in('phone', variants)
+          if (waOrgId) contactQuery = contactQuery.eq('organization_id', waOrgId)
+          const { data: contacts_found } = await contactQuery.limit(1)
 
           if (!contacts_found?.length) {
             console.log(`WhatsApp: contacto no encontrado para ${fromPhone}`)

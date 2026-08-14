@@ -47,26 +47,28 @@ export async function POST(request: NextRequest) {
     }
     const body = JSON.parse(raw)
 
-    // service_role evade RLS — sin sesión de usuario, hay que resolver
-    // la organización destino explícitamente.
-    // LIMITACIÓN CONOCIDA (igual que webhooks/lead y webhooks/meta-leads):
-    // resuelve una única organización destino vía WEBHOOK_DEFAULT_ORG_EMAIL.
-    // Este archivo es un duplicado de meta-leads/route.ts — mismo endpoint
-    // de Meta (`leadgen`), lógica ligeramente distinta. Confirmar cuál de
-    // los dos está realmente configurado en Meta Developer Console antes
-    // de considerar borrar el que no se usa.
-    const lookupEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
-    if (!lookupEmail) {
-      return NextResponse.json({ error: 'Webhook sin organización configurada (WEBHOOK_DEFAULT_ORG_EMAIL)' }, { status: 500 })
-    }
-    const { data: ownerProfile } = await supabase
-      .from('profiles')
-      .select('organization_id')
-      .eq('email', lookupEmail)
-      .maybeSingle()
-    const orgId = (ownerProfile as any)?.organization_id ?? null
-    if (!orgId) {
-      return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500 })
+    // La organización se resuelve POR PÁGINA (page_id), no una vez para
+    // todo el batch. Este archivo es un duplicado de meta-leads/route.ts
+    // (mismo evento `leadgen`) — confirmar cuál de los dos está realmente
+    // configurado en Meta Developer Console antes de borrar el que no se usa.
+    async function resolveOrgForPage(pageId: string | undefined) {
+      if (pageId) {
+        const { data: integration } = await supabase
+          .from('platform_integrations')
+          .select('organization_id, access_token')
+          .eq('provider', 'meta_leads').eq('external_id', pageId).eq('is_active', true)
+          .maybeSingle()
+        if (integration?.organization_id) {
+          return { orgId: integration.organization_id as string, pageToken: integration.access_token || process.env.META_PAGE_ACCESS_TOKEN?.trim() }
+        }
+      }
+      // Compatibilidad: página todavía no registrada en platform_integrations.
+      const legacyEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
+      if (!legacyEmail) return null
+      const { data: ownerProfile } = await supabase
+        .from('profiles').select('organization_id').eq('email', legacyEmail).maybeSingle()
+      const orgId = (ownerProfile as any)?.organization_id ?? null
+      return orgId ? { orgId, pageToken: process.env.META_PAGE_ACCESS_TOKEN?.trim() } : null
     }
 
     const entries = body.entry ?? []
@@ -80,14 +82,22 @@ export async function POST(request: NextRequest) {
         const leadgenId = change.value?.leadgen_id
         const formId    = change.value?.form_id
         const adId      = change.value?.ad_id
+        const pageId    = change.value?.page_id ?? entry.id
 
         if (!leadgenId) continue
+
+        const resolved = await resolveOrgForPage(pageId)
+        if (!resolved) {
+          console.error('No se pudo determinar la organización para page_id:', pageId)
+          continue
+        }
+        const orgId = resolved.orgId
 
         // Intentar obtener datos del lead desde Meta Graph API
         let fields: Record<string, string> = {}
         let apiSuccess = false
 
-        const accessToken = process.env.META_PAGE_ACCESS_TOKEN?.trim()
+        const accessToken = resolved.pageToken
         if (accessToken) {
           try {
             const leadRes = await fetch(

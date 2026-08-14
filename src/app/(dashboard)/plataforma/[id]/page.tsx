@@ -11,6 +11,7 @@ import StagesEditor from '@/components/platform/stages-editor'
 import FieldsEditor from '@/components/platform/fields-editor'
 import ModulesEditor from '@/components/platform/modules-editor'
 import UserLimitEditor from '@/components/platform/user-limit-editor'
+import IntegrationsEditor from '@/components/platform/integrations-editor'
 
 export default async function OrganizationConfigPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -33,13 +34,16 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  const [stages, dealFields, companyFields, contactFields, modulesRes, usersRes] = await Promise.all([
+  const [stages, dealFields, companyFields, contactFields, modulesRes, usersRes, integrationsRes] = await Promise.all([
     getAllStages(supabase, id),
     getFieldDefinitions(supabase, 'deal', id),
     getFieldDefinitions(supabase, 'company', id),
     getFieldDefinitions(supabase, 'contact', id),
     supabase.from('organization_modules').select('module_key, enabled').eq('organization_id', id),
     svc.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
+    supabase.from('platform_integrations')
+      .select('id, organization_id, provider, external_id, access_token, label, is_active')
+      .eq('organization_id', id).order('created_at', { ascending: false }),
   ])
 
   const enabledByKey: Record<string, boolean> = {}
@@ -70,6 +74,8 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
         <FieldsEditor orgId={org.id} entity="contact" label="Campos de Contactos" fields={contactFields} />
 
         <ModulesEditor orgId={org.id} sections={NAV_SECTIONS} enabledByKey={enabledByKey} />
+
+        <IntegrationsEditor orgId={org.id} integrations={(integrationsRes.data ?? []) as any} />
       </div>
     </div>
   )

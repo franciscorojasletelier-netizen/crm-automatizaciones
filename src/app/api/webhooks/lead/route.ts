@@ -21,36 +21,43 @@ export async function POST(request: NextRequest) {
   )
 
   try {
-    // Verificar token de autenticación del webhook — SIEMPRE requerido
+    // El token en el header YA identifica a la organización: cada una
+    // tiene el suyo propio en platform_integrations (provider=webhook_form),
+    // configurado por el dueño de la plataforma en /plataforma/[id]. Antes,
+    // un único WEBHOOK_SECRET_TOKEN + WEBHOOK_DEFAULT_ORG_EMAIL mandaban
+    // TODOS los leads de CUALQUIER formulario a una sola organización fija
+    // — no había forma de que un segundo cliente tuviera su propio webhook.
     const authHeader = request.headers.get('authorization')
-    const webhookToken = process.env.WEBHOOK_SECRET_TOKEN?.trim()
-    if (!webhookToken || authHeader !== `Bearer ${webhookToken}`) {
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null
+    if (!bearerToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS })
     }
 
-    // Este webhook crea companies/contacts/deals con service_role (sin
-    // sesión de usuario) — los triggers de auto-relleno de organization_id
-    // no pueden derivarla del usuario actual, así que hay que resolverla
-    // explícitamente aquí.
-    //
-    // LIMITACIÓN CONOCIDA: este endpoint todavía resuelve una única
-    // organización destino vía WEBHOOK_DEFAULT_ORG_EMAIL (variable de
-    // entorno, ya no un email hardcodeado en el código). Un webhook
-    // genuinamente multi-tenant necesitaría un token o slug de
-    // organización por request — no se implementó en esta fase.
-    const lookupEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
-    if (!lookupEmail) {
-      return NextResponse.json({ error: 'Webhook sin organización configurada (WEBHOOK_DEFAULT_ORG_EMAIL)' }, { status: 500, headers: CORS_HEADERS })
-    }
-    const { data: ownerProfile } = await supabase
-      .from('profiles')
+    const { data: integration } = await supabase
+      .from('platform_integrations')
       .select('organization_id')
-      .eq('email', lookupEmail)
+      .eq('provider', 'webhook_form')
+      .eq('access_token', bearerToken)
+      .eq('is_active', true)
       .maybeSingle()
-    const orgId = (ownerProfile as any)?.organization_id ?? null
+
+    // Compatibilidad: si esta organización todavía no migró a un token
+    // propio, se sostiene el mecanismo anterior (variable de entorno
+    // única) para no romper al único cliente que existe hoy.
+    let orgId = integration?.organization_id ?? null
     if (!orgId) {
-      return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500, headers: CORS_HEADERS })
+      const legacyToken = process.env.WEBHOOK_SECRET_TOKEN?.trim()
+      const legacyEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
+      if (legacyToken && legacyEmail && bearerToken === legacyToken) {
+        const { data: ownerProfile } = await supabase
+          .from('profiles').select('organization_id').eq('email', legacyEmail).maybeSingle()
+        orgId = (ownerProfile as any)?.organization_id ?? null
+      }
     }
+    if (!orgId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS })
+    }
+
     const { data: org } = await supabase
       .from('organizations')
       .select('name, display_name, email, notification_email')

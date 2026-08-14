@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import crypto from 'crypto'
 
-const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'meta_verify_autopilot_2026'
+// Sin fallback: un token público en el repo permitiría verificar un
+// endpoint de webhook falso si la env var no está seteada en producción.
+const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim()
 
 function verifyMetaSignature(raw: string, signature: string | null): boolean {
   const appSecret = process.env.META_APP_SECRET?.trim()
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  if (VERIFY_TOKEN && mode === 'subscribe' && token === VERIFY_TOKEN) {
     console.log('[Meta Webhook] Verificacion exitosa')
     return new NextResponse(challenge, { status: 200, headers: CORS_HEADERS })
   }
@@ -79,47 +81,62 @@ export async function POST(request: NextRequest) {
     )
     const resend = new Resend(process.env.RESEND_API_KEY)
 
-    // service_role evade RLS — sin sesión de usuario, hay que resolver
-    // la organización destino explícitamente. Misma limitación conocida
-    // que webhooks/lead: una sola org vía WEBHOOK_DEFAULT_ORG_EMAIL, no
-    // un token de organización por request.
-    const lookupEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
-    if (!lookupEmail) {
-      return NextResponse.json({ error: 'Webhook sin organización configurada (WEBHOOK_DEFAULT_ORG_EMAIL)' }, { status: 500, headers: CORS_HEADERS })
+    // La organización se resuelve POR PÁGINA (page_id), no una vez para
+    // todo el batch — un mismo POST de Meta puede traer leads de páginas
+    // de distintos clientes. Antes, un único WEBHOOK_DEFAULT_ORG_EMAIL
+    // mandaba TODOS los leads, de cualquier página, a una sola organización.
+    async function resolveOrgForPage(pageId: string | undefined) {
+      if (pageId) {
+        const { data: integration } = await supabase
+          .from('platform_integrations')
+          .select('organization_id, access_token')
+          .eq('provider', 'meta_leads').eq('external_id', pageId).eq('is_active', true)
+          .maybeSingle()
+        if (integration?.organization_id) {
+          return { orgId: integration.organization_id as string, pageToken: integration.access_token || process.env.META_PAGE_ACCESS_TOKEN }
+        }
+      }
+      // Compatibilidad: página todavía no registrada en platform_integrations
+      // — se sostiene el mecanismo anterior para no romper al cliente actual.
+      const legacyEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
+      if (!legacyEmail) return null
+      const { data: ownerProfile } = await supabase
+        .from('profiles').select('organization_id').eq('email', legacyEmail).maybeSingle()
+      const orgId = (ownerProfile as any)?.organization_id ?? null
+      return orgId ? { orgId, pageToken: process.env.META_PAGE_ACCESS_TOKEN } : null
     }
-    const { data: ownerProfile } = await supabase
-      .from('profiles')
-      .select('organization_id')
-      .eq('email', lookupEmail)
-      .maybeSingle()
-    const orgId = (ownerProfile as any)?.organization_id ?? null
-    if (!orgId) {
-      return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500, headers: CORS_HEADERS })
-    }
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('name, display_name, notification_email')
-      .eq('id', orgId)
-      .maybeSingle()
-    const orgDisplayName = org?.display_name || org?.name || 'nuestro equipo'
 
     const leadgenChanges = (body.entry ?? [])
-      .flatMap((entry: any) => entry.changes ?? [])
-      .filter((change: any) => change.field === 'leadgen')
+      .flatMap((entry: any) => (entry.changes ?? []).map((change: any) => ({ change, entryId: entry.id })))
+      .filter((c: any) => c.change.field === 'leadgen')
 
-    await mapWithConcurrency(leadgenChanges, CONCURRENCY, async (change: any) => {
+    await mapWithConcurrency(leadgenChanges, CONCURRENCY, async ({ change, entryId }: any) => {
       {
         const leadData = change.value
         const leadId = leadData.leadgen_id
         const formId = leadData.form_id
-        const pageId = leadData.page_id
+        const pageId = leadData.page_id ?? entryId
 
         console.log('[Meta Webhook] Nuevo lead de Facebook:', { leadId, formId, pageId })
 
-        // Obtener datos del lead via Graph API
-        const pageToken = process.env.META_PAGE_ACCESS_TOKEN
+        const resolved = await resolveOrgForPage(pageId)
+        if (!resolved) {
+          console.error('[Meta Webhook] No se pudo determinar la organización para page_id:', pageId)
+          return
+        }
+        const orgId = resolved.orgId
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('name, display_name, notification_email')
+          .eq('id', orgId)
+          .maybeSingle()
+        const orgDisplayName = org?.display_name || org?.name || 'nuestro equipo'
+
+        // Obtener datos del lead via Graph API — con el token de esta
+        // organización si lo configuró, o el global como fallback.
+        const pageToken = resolved.pageToken
         if (!pageToken) {
-          console.error('[Meta Webhook] META_PAGE_ACCESS_TOKEN no configurado')
+          console.error('[Meta Webhook] Sin access token de Meta configurado para esta página')
           return
         }
 
