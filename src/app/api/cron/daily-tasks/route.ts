@@ -5,9 +5,11 @@ import { createClient } from '@supabase/supabase-js'
 // vercel.json: "schedule": "0 11 * * *"
 
 export async function GET(request: NextRequest) {
+  // Falla cerrado: si CRON_SECRET no está seteada, el endpoint queda
+  // público en vez de protegido — antes el chequeo se saltaba entero.
   const authHeader = request.headers.get('authorization')
   const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -36,10 +38,23 @@ export async function GET(request: NextRequest) {
 
     const profiles = profileRows as { id: string; full_name: string; email: string; is_active: boolean; role?: string }[]
 
+    // La marca en el email tiene que ser la de la organización del
+    // destinatario, no una fija — antes todos los emails de este cron decían
+    // "CRM Autopilot" sin importar a qué organización pertenecía el usuario.
+    const { data: orgLinks } = await supabase
+      .from('profiles').select('id, organization_id').in('id', profiles.map(p => p.id))
+    const orgIdByProfile = new Map((orgLinks ?? []).map((p: any) => [p.id, p.organization_id]))
+    const orgIds = Array.from(new Set(Array.from(orgIdByProfile.values()).filter(Boolean)))
+    const { data: orgs } = orgIds.length > 0
+      ? await supabase.from('organizations').select('id, name, display_name').in('id', orgIds)
+      : { data: [] }
+    const orgNameById = new Map((orgs ?? []).map((o: any) => [o.id, o.display_name || o.name || 'CRM']))
+
     let sent = 0
     const errors: string[] = []
 
     for (const profile of profiles) {
+      const orgName = orgNameById.get(orgIdByProfile.get(profile.id)) ?? 'CRM'
       if (!profile.email) continue
 
       // Tareas para hoy/mañana via función SECURITY DEFINER
@@ -64,10 +79,10 @@ export async function GET(request: NextRequest) {
 
       const userName = (profile.full_name ?? '').split(' ')[0] || 'equipo'
       const subject  = overdueList.length > 0
-        ? `⚠️ ${overdueList.length} tarea(s) vencida(s) — CRM Autopilot`
-        : `📋 Tienes ${taskList.length} tarea(s) para hoy — CRM Autopilot`
+        ? `⚠️ ${overdueList.length} tarea(s) vencida(s) — ${orgName}`
+        : `📋 Tienes ${taskList.length} tarea(s) para hoy — ${orgName}`
 
-      const html = buildEmailHtml(userName, taskList, overdueList, appUrl)
+      const html = buildEmailHtml(userName, taskList, overdueList, appUrl, orgName)
 
       if (!resendKey) {
         console.log(`[CRON] Would email ${profile.email}: ${subject}`)
@@ -82,7 +97,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from:    process.env.EMAIL_FROM?.trim() || 'CRM Autopilot <onboarding@resend.dev>',
+          from:    process.env.EMAIL_FROM?.trim() || `${orgName} <onboarding@resend.dev>`,
           to:      [profile.email],
           subject,
           html,
@@ -110,7 +125,8 @@ function buildEmailHtml(
   userName: string,
   tasks: Record<string, unknown>[],
   overdue: Record<string, unknown>[],
-  appUrl: string
+  appUrl: string,
+  orgName: string
 ): string {
   const today = new Date().toLocaleDateString('es-CL', {
     weekday: 'long', day: 'numeric', month: 'long',
@@ -170,6 +186,6 @@ function buildEmailHtml(
       Ver mis tareas en el CRM →
     </a>
   </div>
-  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">CRM Autopilot · Notificación automática diaria</p>
+  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">${orgName} · Notificación automática diaria</p>
 </div></body></html>`
 }

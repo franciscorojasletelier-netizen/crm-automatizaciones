@@ -28,14 +28,16 @@ export default function DealSpecBanner({
   const [response, setResponse] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [responseError, setResponseError] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const supabase = createClient()
   const router = useRouter()
 
   async function handleResolve() {
     if (response.trim().length < 10) { setResponseError(true); return }
     setLoading(true)
+    setSaveError('')
 
-    await supabase.from('projects').update({
+    const { error: updateErr } = await supabase.from('projects').update({
       status:            'activo',
       spec_resolved_at:  new Date().toISOString(),
       spec_notes:        null,
@@ -43,12 +45,23 @@ export default function DealSpecBanner({
       spec_requested_by: null,
     }).eq('id', projectId)
 
+    if (updateErr) {
+      setSaveError(`No se pudo devolver el proyecto (${updateErr.message}). Intentá de nuevo.`)
+      setLoading(false)
+      return
+    }
+
     // Agregar una nota interna al proyecto con la respuesta
-    await supabase.from('project_notes').insert({
+    const { error: noteErr } = await supabase.from('project_notes').insert({
       project_id: projectId,
       user_id:    currentUserId,
       content:    `✅ Especificaciones completadas por comercial:\n${response.trim()}`,
     })
+    if (noteErr) {
+      // El proyecto ya volvió a producción — esto es secundario, se avisa
+      // pero no se bloquea el flujo principal por la nota.
+      setSaveError(`El proyecto se devolvió, pero la nota no se pudo guardar (${noteErr.message}).`)
+    }
 
     // Notificar a producción y gerentes
     const { data: targets } = await supabase
@@ -156,6 +169,7 @@ export default function DealSpecBanner({
                 }`}
               />
               {responseError && <p className="text-xs text-red-500">Mínimo 10 caracteres requeridos</p>}
+              {saveError && <p className="text-xs text-red-500">{saveError}</p>}
               <div className="flex gap-2">
                 <button onClick={handleResolve} disabled={loading}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md disabled:opacity-50 transition-all">

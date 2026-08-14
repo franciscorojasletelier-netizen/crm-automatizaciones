@@ -110,13 +110,15 @@ export async function GET() {
         profiles:owner_id(full_name)
       `).order('updated_at', { ascending: false }).limit(500),
 
+      // Sin límite acá se traía TODO el histórico de ganados/perdidos —
+      // con decenas de miles de deals, agota memoria/tiempo de la función.
       supabase.from('deals')
         .select('id, estimated_value, updated_at, stage, companies(name), profiles:owner_id(full_name)')
-        .eq('status', 'won').order('updated_at', { ascending: false }),
+        .eq('status', 'won').order('updated_at', { ascending: false }).limit(2000),
 
       supabase.from('deals')
         .select('id, estimated_value, lost_reason, updated_at, companies(name)')
-        .eq('status', 'lost'),
+        .eq('status', 'lost').order('updated_at', { ascending: false }).limit(2000),
 
       supabase.from('tasks')
         .select('id, title, is_completed, due_date, deals(companies(name)), profiles:assigned_to(full_name)')

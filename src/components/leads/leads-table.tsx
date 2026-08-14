@@ -4,10 +4,10 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare } from 'lucide-react'
+import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare, Download, GitBranch } from 'lucide-react'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import { formatCLP } from '@/lib/format'
-import { type Stage, stageByKey, colorOf } from '@/lib/stages'
+import { type Stage, stageByKey, colorOf, statusForStage } from '@/lib/stages'
 
 // Días desde el último contacto (o desde la creación si nunca se contactó)
 function daysSinceContact(deal: any): number {
@@ -45,11 +45,22 @@ function ScoreBadge({ score }: { score: number | null }) {
   )
 }
 
+function toCsvValue(v: any): string {
+  const s = String(v ?? '')
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
 export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false, stages = [] }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean; stages?: Stage[] }) {
   const [deals, setDeals]   = useState(initialDeals)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
+  const [ownerFilter, setOwnerFilter] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [minValue, setMinValue] = useState('')
+  const [maxValue, setMaxValue] = useState('')
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   // Cuando el server rerenderiza, sincronizar
   useEffect(() => { setDeals(initialDeals) }, [initialDeals])
@@ -106,7 +117,49 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     setBulkSaving(false)
   }
 
+  async function bulkChangeStage(newStageKey: string) {
+    if (selected.size === 0 || bulkSaving) return
+    const targetStage = stageByKey(stages, newStageKey)
+    if (!targetStage) return
+    setBulkSaving(true)
+    const supabase = createClient()
+    const ids = [...selected]
+    const { error } = await supabase.from('deals')
+      .update({ stage: newStageKey, status: statusForStage(targetStage) })
+      .in('id', ids)
+    if (!error) {
+      setDeals(prev => prev.map(d => selected.has(d.id) ? { ...d, stage: newStageKey } : d))
+      setSelected(new Set())
+      router.refresh()
+    }
+    setBulkSaving(false)
+  }
+
+  function exportSelected() {
+    if (selected.size === 0) return
+    const rows = deals.filter(d => selected.has(d.id))
+    const header = ['Empresa', 'Contacto', 'Email', 'Etapa', 'Valor estimado', 'Fuente', 'Responsable', 'Próxima acción']
+    const lines = rows.map(d => [
+      d.companies?.name ?? '', d.contacts?.full_name ?? '', d.contacts?.email ?? '',
+      stageByKey(stages, d.stage)?.label ?? d.stage ?? '',
+      d.estimated_value ?? '', d.source ?? '', d.profiles?.full_name ?? '', d.next_action ?? '',
+    ].map(toCsvValue).join(','))
+    const csv = [header.join(','), ...lines].join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `leads-seleccionados-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const sources = useMemo(() => Array.from(new Set(deals.map(d => d.source).filter(Boolean))) as string[], [deals])
+  const owners = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const d of deals) if (d.profiles?.id) map.set(d.profiles.id, d.profiles.full_name ?? d.profiles.id)
+    return Array.from(map, ([id, name]) => ({ id, name }))
+  }, [deals])
 
   const filtered = useMemo(() => deals.filter(deal => {
     const q = search.toLowerCase()
@@ -115,17 +168,30 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
       deal.contacts?.full_name?.toLowerCase().includes(q) ||
       deal.contacts?.email?.toLowerCase().includes(q) ||
       deal.next_action?.toLowerCase().includes(q)
+    const createdAt = deal.created_at ? new Date(deal.created_at) : null
+    const matchDateFrom = !dateFrom || (createdAt && createdAt >= new Date(dateFrom))
+    const matchDateTo = !dateTo || (createdAt && createdAt <= new Date(dateTo + 'T23:59:59'))
+    const value = Number(deal.estimated_value) || 0
+    const matchMin = !minValue || value >= Number(minValue)
+    const matchMax = !maxValue || value <= Number(maxValue)
     return matchSearch &&
       (!stageFilter || deal.stage === stageFilter) &&
-      (!sourceFilter || deal.source === sourceFilter)
-  }), [deals, search, stageFilter, sourceFilter])
+      (!sourceFilter || deal.source === sourceFilter) &&
+      (!ownerFilter || deal.profiles?.id === ownerFilter) &&
+      matchDateFrom && matchDateTo && matchMin && matchMax
+  }), [deals, search, stageFilter, sourceFilter, ownerFilter, dateFrom, dateTo, minValue, maxValue])
 
-  const hasFilters = search || stageFilter || sourceFilter
+  const hasFilters = search || stageFilter || sourceFilter || ownerFilter || dateFrom || dateTo || minValue || maxValue
   const PAGE_SIZE = 25
   const [page, setPage] = useState(1)
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  useEffect(() => setPage(1), [search, stageFilter, sourceFilter])
+  useEffect(() => setPage(1), [search, stageFilter, sourceFilter, ownerFilter, dateFrom, dateTo, minValue, maxValue])
+
+  function clearFilters() {
+    setSearch(''); setStageFilter(''); setSourceFilter(''); setOwnerFilter('')
+    setDateFrom(''); setDateTo(''); setMinValue(''); setMaxValue('')
+  }
 
   return (
     <div className="space-y-4">
@@ -165,9 +231,16 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             </select>
           )}
 
+          <button
+            onClick={() => setShowMoreFilters(v => !v)}
+            className={`text-xs font-semibold px-2.5 py-2 rounded-xl transition-colors ${showMoreFilters ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+          >
+            Más filtros
+          </button>
+
           {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setStageFilter(''); setSourceFilter('') }}
+              onClick={clearFilters}
               className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors"
             >
               <X className="w-3 h-3" /> Limpiar
@@ -178,6 +251,41 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
         <span className="text-xs font-semibold text-slate-400 ml-auto bg-slate-100 px-2.5 py-1 rounded-lg">
           {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
         </span>
+
+        {showMoreFilters && (
+          <div className="w-full flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+            {owners.length > 0 && (
+              <select
+                value={ownerFilter}
+                onChange={e => setOwnerFilter(e.target.value)}
+                className="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 cursor-pointer"
+              >
+                <option value="">Todos los responsables</option>
+                {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            )}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-slate-400 font-medium">Desde</label>
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-slate-400 font-medium">Hasta</label>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-slate-400 font-medium">Valor mín.</label>
+              <input type="number" value={minValue} onChange={e => setMinValue(e.target.value)} placeholder="0"
+                className="w-28 text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-slate-400 font-medium">Valor máx.</label>
+              <input type="number" value={maxValue} onChange={e => setMaxValue(e.target.value)} placeholder="∞"
+                className="w-28 text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabla — desktop */}
@@ -373,6 +481,29 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
               </select>
               {bulkSaving && <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />}
             </div>
+            <div className="w-px h-6 bg-slate-700" />
+            <div className="flex items-center gap-2">
+              <GitBranch className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs text-slate-400 font-medium">Mover a:</span>
+              <select
+                disabled={bulkSaving}
+                defaultValue=""
+                onChange={e => { if (e.target.value) bulkChangeStage(e.target.value) }}
+                className="bg-slate-800 text-white text-sm font-semibold rounded-xl px-3 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="" disabled>Elegir...</option>
+                {stages.filter(s => s.isActive).map(s => (
+                  <option key={s.key} value={s.key}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-px h-6 bg-slate-700" />
+            <button
+              onClick={exportSelected}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" /> Exportar
+            </button>
             <button
               onClick={() => setSelected(new Set())}
               className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"

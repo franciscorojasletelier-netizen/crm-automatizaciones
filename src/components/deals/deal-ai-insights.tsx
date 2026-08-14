@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sparkles, Loader2, AlertTriangle, TrendingUp, RefreshCw, Globe, Target } from 'lucide-react'
 
 interface Insights {
@@ -32,7 +32,27 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
   const [createdAt, setCreatedAt] = useState<string | null>(initialCreatedAt ?? null)
   const [createdByName, setCreatedByName] = useState<string | null>(initialCreatedByName ?? null)
 
+  // Cada análisis dispara búsqueda web + un modelo grande — sin freno, un
+  // click repetido descuidado genera costo real sin que nadie lo note.
+  const COOLDOWN_SECONDS = 60
+  const [cooldown, setCooldown] = useState(0)
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => () => { if (cooldownRef.current) clearInterval(cooldownRef.current) }, [])
+
+  function startCooldown() {
+    setCooldown(COOLDOWN_SECONDS)
+    if (cooldownRef.current) clearInterval(cooldownRef.current)
+    cooldownRef.current = setInterval(() => {
+      setCooldown(c => {
+        if (c <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); return 0 }
+        return c - 1
+      })
+    }, 1000)
+  }
+
   async function analyze() {
+    if (loading || cooldown > 0) return
     setLoading(true)
     setError('')
     try {
@@ -46,6 +66,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
       setInsights(data.insights)
       setCreatedAt(data.created_at ?? new Date().toISOString())
       setCreatedByName(data.created_by_name ?? null)
+      startCooldown()
     } catch {
       setError('Error de conexión')
     } finally {
@@ -62,9 +83,11 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
         </div>
         <h2 className="flex-1 text-sm font-semibold text-slate-900">Análisis IA</h2>
         {insights && !loading && (
-          <button onClick={analyze} title="Volver a analizar"
-            className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-violet-600 transition-colors">
+          <button onClick={analyze} disabled={cooldown > 0}
+            title={cooldown > 0 ? `Podés volver a analizar en ${cooldown}s` : 'Volver a analizar'}
+            className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-violet-600 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed flex items-center gap-1">
             <RefreshCw className="w-3.5 h-3.5" />
+            {cooldown > 0 && <span className="text-[10px] font-semibold">{cooldown}s</span>}
           </button>
         )}
       </div>

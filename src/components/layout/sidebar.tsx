@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Users, Building2, TrendingUp,
   CheckSquare, FolderOpen, Activity, Settings,
   LogOut, Zap, UserCog, BarChart3, Bell, GitBranch, CalendarDays, Network,
+  Menu, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -92,6 +93,13 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
 
   // Contador de notificaciones en tiempo real
   const [notifCount, setNotifCount] = useState(counts.notificaciones)
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  useEffect(() => {
+    if (!moreOpen) return
+    setMoreOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   useEffect(() => {
     setNotifCount(counts.notificaciones)
@@ -286,7 +294,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
           </div>
           <div className="leading-tight">
             <p className="text-xs font-bold text-white leading-none">CRM</p>
-            <p className="text-[9px] text-indigo-300/60 leading-none mt-0.5">Autopilot</p>
+            <p className="text-[9px] text-indigo-300/60 leading-none mt-0.5">Automatizaciones</p>
           </div>
         </div>
 
@@ -295,19 +303,19 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
           <GlobalSearch stages={stages} />
         </div>
 
-        {/* Avatar + rol */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Avatar → abre menú completo */}
+        <button onClick={() => setMoreOpen(true)} className="flex items-center gap-1.5 shrink-0" aria-label="Abrir menú">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             {initials}
           </div>
-        </div>
+        </button>
       </div>
 
       {/* ── Bottom nav móvil ────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex safe-area-inset-bottom"
         style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {mobileNavBase.filter(itemVisible).slice(0, 5).map(({ label, href, icon: Icon, countKey, alertKey }) => {
+        {mobileNavBase.filter(itemVisible).slice(0, 4).map(({ label, href, icon: Icon, countKey, alertKey }) => {
           const active = isActive(href)
           const count = countKey ? liveCounts[countKey] : 0
           const alertCount = alertKey ? liveCounts[alertKey] : 0
@@ -337,7 +345,109 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
             </Link>
           )
         })}
+
+        {/* "Más" — abre el menú completo (todas las secciones + Plataforma + logout) */}
+        <button onClick={() => setMoreOpen(true)}
+          className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-slate-500">
+          <Menu className="w-5 h-5" />
+          Más
+        </button>
       </nav>
+
+      {/* ── Drawer móvil: menú completo ─────────── */}
+      {moreOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMoreOpen(false)} />
+          <div className="relative rounded-t-3xl overflow-hidden flex flex-col max-h-[85vh]"
+            style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%)' }}>
+
+            {/* Header del drawer */}
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold text-white"
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">{displayName}</p>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ring-inset ${roleMeta.color}`}>
+                    {roleMeta.label}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => setMoreOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5" aria-label="Cerrar menú">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Secciones */}
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+              {navGroups.map((group) => {
+                const visibleItems = group.items.filter(itemVisible)
+                if (visibleItems.length === 0) return null
+                return (
+                  <div key={group.label}>
+                    <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
+                      {group.label}
+                    </p>
+                    <div className="space-y-0.5">
+                      {visibleItems.map(({ label, href, icon: Icon, countKey, alertKey }) => {
+                        const active = isActive(href)
+                        const count = countKey ? liveCounts[countKey] : null
+                        const alertCount = alertKey ? liveCounts[alertKey] : 0
+                        const hasAlert = alertCount > 0
+                        return (
+                          <Link key={href} href={href}
+                            className={cn(
+                              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all relative',
+                              active ? 'text-white bg-white/10' : 'text-slate-300 hover:text-white hover:bg-white/5'
+                            )}>
+                            <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-indigo-300' : '')} />
+                            <span className="flex-1 font-medium">{label}</span>
+                            {count !== null && count > 0 && (
+                              <span className={cn(
+                                'min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center',
+                                hasAlert ? 'bg-red-500/30 text-red-300 ring-1 ring-red-500/40' : 'bg-white/10 text-slate-300'
+                              )}>
+                                {count > 99 ? '99+' : count}
+                              </span>
+                            )}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {isPlatformOwner && (
+                <div>
+                  <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
+                    Plataforma
+                  </p>
+                  <Link href="/plataforma"
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
+                      isActive('/plataforma') ? 'text-white bg-white/10' : 'text-slate-300 hover:text-white hover:bg-white/5'
+                    )}>
+                    <Building2 className={cn('w-4 h-4 shrink-0', isActive('/plataforma') ? 'text-indigo-300' : '')} />
+                    <span className="flex-1 font-medium">Organizaciones</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Logout */}
+            <div className="px-3 py-3 border-t border-white/5 shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
+              <button onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-all">
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="font-medium">Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

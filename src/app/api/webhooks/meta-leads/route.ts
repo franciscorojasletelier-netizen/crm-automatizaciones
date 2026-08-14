@@ -16,6 +16,22 @@ function verifyMetaSignature(raw: string, signature: string | null): boolean {
   }
 }
 
+// Meta puede mandar un batch grande en un solo POST. Procesarlo 100%
+// secuencial (fetch a Graph API + 3 inserts + email, uno por uno) arriesga
+// el timeout de la función serverless con batches grandes.
+const CONCURRENCY = 5
+
+async function mapWithConcurrency<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
+  let index = 0
+  async function worker() {
+    while (index < items.length) {
+      const item = items[index++]
+      await fn(item)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -64,22 +80,35 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY)
 
     // service_role evade RLS — sin sesión de usuario, hay que resolver
-    // la organización destino explícitamente. Fase 1: una sola
-    // organización real, identificada por el email de contacto interno.
+    // la organización destino explícitamente. Misma limitación conocida
+    // que webhooks/lead: una sola org vía WEBHOOK_DEFAULT_ORG_EMAIL, no
+    // un token de organización por request.
+    const lookupEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
+    if (!lookupEmail) {
+      return NextResponse.json({ error: 'Webhook sin organización configurada (WEBHOOK_DEFAULT_ORG_EMAIL)' }, { status: 500, headers: CORS_HEADERS })
+    }
     const { data: ownerProfile } = await supabase
       .from('profiles')
       .select('organization_id')
-      .eq('email', 'autopilotspa@gmail.com')
+      .eq('email', lookupEmail)
       .maybeSingle()
     const orgId = (ownerProfile as any)?.organization_id ?? null
     if (!orgId) {
       return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500, headers: CORS_HEADERS })
     }
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name, display_name, notification_email')
+      .eq('id', orgId)
+      .maybeSingle()
+    const orgDisplayName = org?.display_name || org?.name || 'nuestro equipo'
 
-    for (const entry of body.entry ?? []) {
-      for (const change of entry.changes ?? []) {
-        if (change.field !== 'leadgen') continue
+    const leadgenChanges = (body.entry ?? [])
+      .flatMap((entry: any) => entry.changes ?? [])
+      .filter((change: any) => change.field === 'leadgen')
 
+    await mapWithConcurrency(leadgenChanges, CONCURRENCY, async (change: any) => {
+      {
         const leadData = change.value
         const leadId = leadData.leadgen_id
         const formId = leadData.form_id
@@ -91,7 +120,7 @@ export async function POST(request: NextRequest) {
         const pageToken = process.env.META_PAGE_ACCESS_TOKEN
         if (!pageToken) {
           console.error('[Meta Webhook] META_PAGE_ACCESS_TOKEN no configurado')
-          continue
+          return
         }
 
         const graphRes = await fetch(
@@ -102,7 +131,7 @@ export async function POST(request: NextRequest) {
 
         if (leadInfo.error) {
           console.error('[Meta Webhook] Error al obtener lead:', leadInfo.error)
-          continue
+          return
         }
 
         // Parsear campos del formulario
@@ -127,7 +156,7 @@ export async function POST(request: NextRequest) {
 
         if (companyError) {
           console.error('[Meta Webhook] Error al crear empresa:', companyError)
-          continue
+          return
         }
 
         // Crear contacto
@@ -145,7 +174,7 @@ export async function POST(request: NextRequest) {
 
         if (contactError) {
           console.error('[Meta Webhook] Error al crear contacto:', contactError)
-          continue
+          return
         }
 
         // Crear deal
@@ -165,15 +194,16 @@ export async function POST(request: NextRequest) {
 
         if (dealError) {
           console.error('[Meta Webhook] Error al crear deal:', dealError)
-          continue
+          return
         }
 
         console.log('[Meta Webhook] Lead creado en CRM:', deal.id)
 
-        // Enviar notificacion por email
+        // Enviar notificacion por email — solo a la organización dueña del lead
+        if (!org?.notification_email) return
         await resend.emails.send({
-          from: process.env.EMAIL_FROM?.trim() || 'Autopilot CRM <onboarding@resend.dev>',
-          to: 'autopilotspa@gmail.com',
+          from: process.env.EMAIL_FROM?.trim() || `CRM ${orgDisplayName} <onboarding@resend.dev>`,
+          to: org.notification_email,
           subject: `Nuevo lead de Facebook Ads: ${contact_name}`,
           html: `
             <h2>Nuevo lead desde Facebook Ads</h2>
@@ -192,7 +222,7 @@ export async function POST(request: NextRequest) {
           `,
         })
       }
-    }
+    })
 
     return NextResponse.json({ status: 'ok' }, { headers: CORS_HEADERS })
   } catch (error) {

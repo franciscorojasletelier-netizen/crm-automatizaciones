@@ -28,12 +28,15 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  const isAuthRoute   = pathname.startsWith('/login')
+  const isAuthRoute   = pathname.startsWith('/login') || pathname.startsWith('/olvide-password')
   // /api/auth/login tiene que ser alcanzable SIN sesión — es el propio
   // endpoint de login. Sin esto, el middleware lo redirige a /login antes
   // de que el fetch del formulario reciba una respuesta JSON.
   const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp') || pathname === '/api/auth/login'
-  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida')
+  // /restablecer-password: el enlace de recuperación pone al usuario en una
+  // sesión temporal — no puede tratarse ni como "sin sesión → login" ni
+  // como "con sesión → dashboard", tiene que resolverse sola.
+  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida') || pathname.startsWith('/restablecer-password')
 
   // ── Sin sesión → login ──────────────────────
   if (!user && !isAuthRoute && !isPublicRoute && !isPublicPage) {

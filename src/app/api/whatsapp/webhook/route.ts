@@ -17,13 +17,15 @@ function verifySignature(raw: string, signature: string | null): boolean {
 
 // GET — verificación del webhook por Meta
 export async function GET(request: NextRequest) {
-  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim() || 'meta_verify_autopilot_2026'
+  // Sin fallback: un token público en el repo permitiría verificar un
+  // endpoint de webhook falso si la env var no está seteada en producción.
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim()
   const { searchParams } = new URL(request.url)
   const mode      = searchParams.get('hub.mode')
   const token     = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  if (VERIFY_TOKEN && mode === 'subscribe' && token === VERIFY_TOKEN) {
     return new NextResponse(challenge, {
       status: 200,
       headers: { 'Content-Type': 'text/plain' },
@@ -58,11 +60,27 @@ export async function POST(request: NextRequest) {
         const contacts = value?.contacts ?? []
 
         for (const msg of messages) {
-          if (msg.type !== 'text') continue  // por ahora solo texto
+          // No se descargan ni renderizan adjuntos todavía, pero antes un
+          // mensaje no-texto (foto de comprobante, audio, documento — muy
+          // común) desaparecía sin dejar rastro: el vendedor nunca se
+          // enteraba de que algo había llegado. Ahora queda un placeholder
+          // visible en el chat/timeline en vez de perderse en silencio.
+          const NON_TEXT_LABELS: Record<string, string> = {
+            image: '📷 Imagen recibida (no se muestra en el CRM todavía — revisar en WhatsApp)',
+            audio: '🎤 Audio recibido (no se reproduce en el CRM todavía — revisar en WhatsApp)',
+            video: '🎬 Video recibido (no se muestra en el CRM todavía — revisar en WhatsApp)',
+            document: `📄 Documento recibido${msg.document?.filename ? `: ${msg.document.filename}` : ''} (revisar en WhatsApp)`,
+            location: '📍 Ubicación compartida (revisar en WhatsApp)',
+            sticker: '💬 Sticker recibido',
+          }
+          if (msg.type !== 'text' && !NON_TEXT_LABELS[msg.type]) {
+            console.log(`WhatsApp: tipo de mensaje no soportado (${msg.type}), se ignora`)
+            continue
+          }
 
           const fromPhone   = msg.from          // número del cliente ej: "56991234567"
           const waMessageId = msg.id
-          const body        = msg.text?.body ?? ''
+          const body        = msg.type === 'text' ? (msg.text?.body ?? '') : NON_TEXT_LABELS[msg.type]
           const timestamp   = new Date(parseInt(msg.timestamp) * 1000).toISOString()
 
           // Buscar el contacto por teléfono → encontrar el deal activo

@@ -12,15 +12,21 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  let userId: string, role: string, supabase
+  let userId: string, role: string, supabase, organizationId: string | null
   try {
     const ctx = await getCurrentProfile()
     userId = ctx.user.id
     role = ctx.role
     supabase = ctx.supabase
+    organizationId = ctx.organizationId
   } catch {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
+
+  const { data: org } = organizationId
+    ? await supabase.from('organizations').select('name, display_name').eq('id', organizationId).maybeSingle()
+    : { data: null }
+  const orgDisplayName = org?.display_name || org?.name || 'la empresa'
 
   const { dealId } = await request.json()
   if (!dealId) return NextResponse.json({ error: 'dealId requerido' }, { status: 400 })
@@ -121,7 +127,7 @@ export async function POST(request: NextRequest) {
   } as const
 
   const systemPrompt =
-    'Eres un analista comercial senior de Autopilot SpA, una agencia chilena de automatización de procesos. ' +
+    `Eres un analista comercial senior de ${orgDisplayName}. ` +
     'Analizas deals del CRM y entregas diagnósticos accionables en español chileno profesional. ' +
     'Todos los valores monetarios están en pesos chilenos (CLP). ' +
     'IMPORTANTE: usa la búsqueda web para investigar a la empresa del deal (busca su nombre, su sitio web si está disponible, ' +

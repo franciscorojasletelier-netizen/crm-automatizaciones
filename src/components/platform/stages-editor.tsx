@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Star, Trophy, Lock, Paperclip, MessageSquareWarning } from 'lucide-react'
+import { Plus, Star, Trophy, Lock, Paperclip, MessageSquareWarning, AlertTriangle } from 'lucide-react'
 import type { Stage } from '@/lib/stages'
 import { STAGE_COLOR_TOKENS, colorOf } from '@/lib/stages'
 
@@ -46,8 +46,21 @@ export default function StagesEditor({ orgId, stages }: { orgId: string; stages:
     setNewLabel('')
   }
 
+  const activeStages = stages.filter(s => s.isActive)
+  const hasWon = activeStages.some(s => s.isWon)
+  const hasDefault = activeStages.some(s => s.isDefault)
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      {(!hasWon || !hasDefault) && (
+        <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-800 space-y-0.5">
+            {!hasDefault && <p>Esta organización no tiene ninguna etapa inicial activa (⭐) — los leads nuevos no van a poder asignarse una etapa por defecto.</p>}
+            {!hasWon && <p>Esta organización no tiene ninguna etapa de ganado activa (🏆) — cerrar un deal como ganado no va a crear el proyecto automáticamente ni contar en el forecast.</p>}
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-sm font-bold text-slate-800">Embudo (etapas)</h2>

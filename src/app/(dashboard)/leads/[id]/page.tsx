@@ -18,6 +18,7 @@ import DealSpecBanner from '@/components/deals/deal-spec-banner'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 import DealAiInsights from '@/components/deals/deal-ai-insights'
+import DealTimeline from '@/components/deals/deal-timeline'
 import { formatCLP } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
 
@@ -27,6 +28,11 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   // getAllStages y no getStages: el historial puede referenciar etapas
   // que ya se desactivaron, y hay que poder mostrar su nombre igual.
   const stages = await getAllStages(supabase, organizationId ?? undefined)
+  const { data: org } = organizationId
+    ? await supabase.from('organizations').select('name, display_name, default_country_code, phone').eq('id', organizationId).maybeSingle()
+    : { data: null }
+  const orgDisplayName = org?.display_name || org?.name || 'nuestra empresa'
+  const orgCountryCode = org?.default_country_code || '56'
   const dealFields = await getFieldDefinitions(supabase, 'deal', organizationId ?? undefined)
   const contactFields = await getFieldDefinitions(supabase, 'contact', organizationId ?? undefined)
   const companyFields = await getFieldDefinitions(supabase, 'company', organizationId ?? undefined)
@@ -109,7 +115,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             {stageLabel(stages, deal.stage)}
           </span>
           {canDelete && (
-            <DeleteDealButton dealId={deal.id} companyId={deal.company_id} contactId={deal.primary_contact_id} />
+            <DeleteDealButton dealId={deal.id} />
           )}
         </div>
       </div>
@@ -132,10 +138,10 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </p>
                 {canSeePhone && deal.contacts?.phone && (() => {
                   const phone = deal.contacts.phone.replace(/\D/g, '')
-                  const intlPhone = phone.startsWith('56') ? phone : `56${phone}`
+                  const intlPhone = phone.startsWith(orgCountryCode) ? phone : `${orgCountryCode}${phone}`
                   const nombre = deal.contacts.full_name?.split(' ')[0] ?? 'te'
                   const empresa = deal.companies?.name ?? 'tu empresa'
-                  const msg = encodeURIComponent(`Hola ${nombre}, te contacto de Autopilot SpA. Vi que ${empresa} puede beneficiarse de automatizar sus procesos. ¿Tienes unos minutos para conversar?`)
+                  const msg = encodeURIComponent(`Hola ${nombre}, te contacto de ${orgDisplayName}. Vi que ${empresa} puede beneficiarse de nuestros servicios. ¿Tienes unos minutos para conversar?`)
                   return (
                     <a href={`https://wa.me/${intlPhone}?text=${msg}`} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl border border-green-200 transition-all">
@@ -299,30 +305,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               canManage={canManage}
             />
 
-            {/* Historial de etapas */}
-            {history && history.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Historial</h2>
-                <div className="space-y-2.5">
-                  {history.map((h: any) => (
-                    <div key={h.id} className="flex items-start gap-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-slate-600 leading-tight">
-                          <span className="font-semibold text-slate-400">{stageLabel(stages, h.from_stage)}</span>
-                          <span className="mx-1 text-slate-300">→</span>
-                          <span className="font-semibold text-slate-800">{stageLabel(stages, h.to_stage)}</span>
-                        </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {new Date(h.changed_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          {h.profiles?.full_name && ` · ${h.profiles.full_name}`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Timeline unificado: etapas + interacciones + tareas + chat en un solo feed */}
+            <DealTimeline
+              stages={stages}
+              history={history ?? []}
+              interactions={interactions ?? []}
+              tasks={tasks ?? []}
+              chatMessages={chatMessages ?? []}
+            />
           </div>
 
           {/* Columna derecha */}
@@ -355,6 +345,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         contactName={(deal.contacts as any)?.full_name ?? 'Cliente'}
         contactPhone={canSeePhone ? ((deal.contacts as any)?.phone ?? null) : null}
         canSend={canEdit}
+        orgPhone={org?.phone ?? null}
       />
     </div>
   )

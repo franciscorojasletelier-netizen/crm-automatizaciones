@@ -81,8 +81,17 @@ export async function POST(request: NextRequest) {
 
     if (!waRes.ok) {
       console.error('WhatsApp API error:', waData)
+      // Meta rechaza mensajes de texto libre fuera de la ventana de 24h desde
+      // el último mensaje del cliente (código 131047) — hace falta una
+      // plantilla aprobada. Sin distinguir este caso, el comercial solo ve
+      // un error genérico de Meta y no entiende por qué "de repente" no puede escribir.
+      const isOutsideWindow = waData?.error?.code === 131047
+        || /24.?hour|re-?engagement/i.test(waData?.error?.message ?? '')
+      const friendlyError = isOutsideWindow
+        ? 'Pasaron más de 24h desde el último mensaje del cliente. WhatsApp solo permite reabrir la conversación con una plantilla aprobada, no con texto libre.'
+        : (waData?.error?.message ?? 'Error al enviar por WhatsApp')
       return NextResponse.json(
-        { error: waData?.error?.message ?? 'Error al enviar por WhatsApp' },
+        { error: friendlyError, outsideWindow: isOutsideWindow },
         { status: 400 }
       )
     }

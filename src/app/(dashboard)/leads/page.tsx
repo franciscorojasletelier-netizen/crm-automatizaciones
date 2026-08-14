@@ -16,6 +16,10 @@ export default async function LeadsPage() {
   // Filtrar por visibilidad según rol
   const visibleIds = await getVisibleDealIds(supabase, userId, role)
 
+  // Con miles de deals abiertos, traer todo sin límite degrada linealmente
+  // y sin techo — mismo tope que ya usa /pipeline.
+  const LEADS_LIMIT = 500
+
   let query = supabase
     .from('deals')
     .select(`
@@ -27,6 +31,9 @@ export default async function LeadsPage() {
     `)
     .eq('status', 'open')
     .order('created_at', { ascending: false })
+    .limit(LEADS_LIMIT)
+
+  let countQuery = supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open')
 
   // Si hay filtro de visibilidad, aplicarlo
   if (visibleIds !== null) {
@@ -47,9 +54,10 @@ export default async function LeadsPage() {
       )
     }
     query = query.in('id', visibleIds)
+    countQuery = countQuery.in('id', visibleIds)
   }
 
-  const { data: deals } = await query
+  const [{ data: deals }, { count: totalCount }] = await Promise.all([query, countQuery])
 
   // Team users para reasignación (solo gerente/admin los ve)
   const canReassign = ['super_admin', 'admin', 'gerente'].includes(role)
@@ -65,20 +73,18 @@ export default async function LeadsPage() {
     .eq('status', 'pendiente_especificaciones' as any)
     .not('deal_id', 'is', null)
 
-  // Obtener nombre de empresa para cada proyecto pendiente
-  const pendingSpecDeals = await Promise.all(
-    (pendingSpecRaw ?? []).map(async (proj: any) => {
-      if (!proj.deal_id) return null
-      const { data: deal } = await supabase
-        .from('deals')
-        .select('id, companies(name)')
-        .eq('id', proj.deal_id)
-        .single()
-      return { ...proj, deal }
-    })
-  ).then(arr => arr.filter(Boolean))
+  // Nombre de empresa para todos los proyectos pendientes en una sola query
+  // (antes: una query por proyecto — con 200 proyectos pendientes eran 200 roundtrips).
+  const pendingDealIds = (pendingSpecRaw ?? []).map((p: any) => p.deal_id).filter(Boolean)
+  const { data: pendingDealsRaw } = pendingDealIds.length > 0
+    ? await supabase.from('deals').select('id, companies(name)').in('id', pendingDealIds)
+    : { data: [] }
+  const dealById = new Map((pendingDealsRaw ?? []).map((d: any) => [d.id, d]))
+  const pendingSpecDeals = (pendingSpecRaw ?? [])
+    .filter((proj: any) => proj.deal_id)
+    .map((proj: any) => ({ ...proj, deal: dealById.get(proj.deal_id) ?? null }))
 
-  const total = deals?.length ?? 0
+  const total = totalCount ?? deals?.length ?? 0
   const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
   const isFiltered = visibleIds !== null // true = ve solo los suyos
   const canCreate = perms.canCreateLeads && canEdit

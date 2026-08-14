@@ -39,46 +39,73 @@ function assert(name, condition, detail = '') {
 const stamp = Date.now()
 const state = { orgA: null, orgB: null, userA: null, userB: null }
 
+// Cada insert de setup es indispensable para el resto del test — si uno
+// falla en silencio (como pasaba antes, destructurando solo `data`), el
+// error real queda oculto y el fallo aparece páginas después como un
+// "Cannot read properties of null" sin pista de la causa. Se corta acá,
+// con el mensaje de Postgres/RLS tal cual.
+function must(label, { data, error }) {
+  if (error || !data) {
+    throw new Error(`setup — ${label}: ${error?.message ?? '(sin datos devueltos)'}`)
+  }
+  return data
+}
+
 async function setup() {
-  const { data: orgA } = await admin.from('organizations').insert({ name: `TEST-A-${stamp}` }).select('id').single()
-  const { data: orgB } = await admin.from('organizations').insert({ name: `TEST-B-${stamp}` }).select('id').single()
+  const orgA = must('crear organización A', await admin.from('organizations').insert({ name: `TEST-A-${stamp}` }).select('id').single())
+  const orgB = must('crear organización B', await admin.from('organizations').insert({ name: `TEST-B-${stamp}` }).select('id').single())
   state.orgA = orgA.id
   state.orgB = orgB.id
 
+  // Crear la organización a mano (insert directo, no vía
+  // /api/platform/create-organization) NO siembra su embudo — eso solo
+  // pasa en esa ruta de la app. Sin esto, cualquier insert de un deal con
+  // `stage` explícito revienta la FK compuesta `deals_stage_fk`, y
+  // testPipelineInvariants() (que asume que ya existen etapas) también falla.
+  const { error: seedAErr } = await admin.rpc('seed_default_stages', { p_org_id: state.orgA })
+  if (seedAErr) throw new Error(`setup — sembrar etapas de la org A: ${seedAErr.message}`)
+  const { error: seedBErr } = await admin.rpc('seed_default_stages', { p_org_id: state.orgB })
+  if (seedBErr) throw new Error(`setup — sembrar etapas de la org B: ${seedBErr.message}`)
+
   const pass = 'TestRLS!2026xk'
 
-  const { data: authA } = await admin.auth.admin.createUser({
+  const { data: authA, error: authAErr } = await admin.auth.admin.createUser({
     email: `rls-test-a-${stamp}@example.invalid`, password: pass, email_confirm: true,
   })
-  const { data: authB } = await admin.auth.admin.createUser({
+  if (authAErr) throw new Error(`setup — crear usuario A: ${authAErr.message}`)
+  const { data: authB, error: authBErr } = await admin.auth.admin.createUser({
     email: `rls-test-b-${stamp}@example.invalid`, password: pass, email_confirm: true,
   })
+  if (authBErr) throw new Error(`setup — crear usuario B: ${authBErr.message}`)
   state.userA = { id: authA.user.id, email: authA.user.email, password: pass }
   state.userB = { id: authB.user.id, email: authB.user.email, password: pass }
 
-  await admin.from('profiles').insert({
+  const { error: profAErr } = await admin.from('profiles').insert({
     id: state.userA.id, full_name: 'RLS Test A', email: state.userA.email,
     role: 'super_admin', is_active: true, organization_id: state.orgA,
   })
-  await admin.from('profiles').insert({
+  if (profAErr) throw new Error(`setup — crear perfil A: ${profAErr.message}`)
+  const { error: profBErr } = await admin.from('profiles').insert({
     id: state.userB.id, full_name: 'RLS Test B', email: state.userB.email,
     role: 'super_admin', is_active: true, organization_id: state.orgB,
   })
+  if (profBErr) throw new Error(`setup — crear perfil B: ${profBErr.message}`)
 
   // Datos "reales" en la organización A, insertados directo con service_role
   // (bypassea RLS a propósito — esto simula datos ya existentes, no es parte del test).
-  const { data: company } = await admin.from('companies')
+  const company = must('crear empresa A', await admin.from('companies')
     .insert({ name: `Empresa Secreta A ${stamp}`, organization_id: state.orgA })
-    .select('id').single()
-  const { data: contact } = await admin.from('contacts')
+    .select('id').single())
+  const contact = must('crear contacto A', await admin.from('contacts')
     .insert({ company_id: company.id, full_name: 'Contacto Secreto A', organization_id: state.orgA })
-    .select('id').single()
-  const { data: deal } = await admin.from('deals')
+    .select('id').single())
+  const deal = must('crear deal A', await admin.from('deals')
     .insert({ company_id: company.id, primary_contact_id: contact.id, owner_id: state.userA.id,
       stage: 'nuevo_lead', status: 'open', organization_id: state.orgA })
-    .select('id').single()
-  await admin.from('tasks')
+    .select('id').single())
+  const { error: taskErr } = await admin.from('tasks')
     .insert({ title: `Tarea secreta A ${stamp}`, organization_id: state.orgA, created_by: state.userA.id })
+  if (taskErr) throw new Error(`setup — crear tarea A: ${taskErr.message}`)
 
   state.companyId = company.id
   state.dealId = deal.id
@@ -111,7 +138,11 @@ async function runTests() {
   const leaked = (allCompaniesVisible ?? []).filter(c => c.organization_id === state.orgA)
   assert('Ningún company de la org A aparece en un SELECT sin filtro', leaked.length === 0, `filas filtradas: ${leaked.length}`)
 
-  // Intento de falsificar organization_id en un INSERT (verifica el fix de los triggers).
+  // Intento de falsificar organization_id en un INSERT. Antes de la migración
+  // 026, companies_insert/contacts_insert/deals_insert solo exigían
+  // `auth.uid() is not null` — sin fix, esto insertaba en la org A de verdad.
+  // Ahora el trigger fuerza siempre la organización de la sesión: el check
+  // es estricto, no "rechazado o corregido".
   const { data: spoofed, error: spoofErr } = await clientB.from('companies')
     .insert({ name: `Spoof ${stamp}`, organization_id: state.orgA })
     .select('id, organization_id')
@@ -119,10 +150,25 @@ async function runTests() {
   if (spoofErr) {
     assert('INSERT falsificando organization_id de la org A es rechazado', true, spoofErr.message)
   } else {
-    assert('INSERT falsificando organization_id de la org A es rechazado o corregido',
-      spoofed.organization_id !== state.orgA,
-      `quedó con organization_id=${spoofed.organization_id}`)
+    assert('INSERT falsificando organization_id queda forzado a la org de la sesión (B), no a la declarada (A)',
+      spoofed.organization_id === state.orgB,
+      `quedó con organization_id=${spoofed.organization_id}, esperaba ${state.orgB}`)
     await admin.from('companies').delete().eq('id', spoofed.id)
+  }
+
+  // Mismo ataque directo sobre `deals` — la tabla más sensible del sistema
+  // (pipeline comercial completo) y la que tenía el mismo hueco.
+  const { data: spoofedDeal, error: spoofDealErr } = await clientB.from('deals')
+    .insert({ organization_id: state.orgA, owner_id: state.userB.id, status: 'open' })
+    .select('id, organization_id')
+    .single()
+  if (spoofDealErr) {
+    assert('INSERT de deal falsificando organization_id de la org A es rechazado', true, spoofDealErr.message)
+  } else {
+    assert('INSERT de deal falsificando organization_id queda forzado a la org de la sesión (B)',
+      spoofedDeal.organization_id === state.orgB,
+      `quedó con organization_id=${spoofedDeal.organization_id}, esperaba ${state.orgB}`)
+    await admin.from('deals').delete().eq('id', spoofedDeal.id)
   }
 
   // canSeeDeal / whatsapp / propuestas dependen de esto — deal de otra org debe ser invisible.
@@ -130,7 +176,63 @@ async function runTests() {
   assert('Usuario B no puede leer el deal puntual de la org A por ID', dealDetail === null)
 
   await testConfigIsolation(clientB)
+  await testBusinessDataIsolation(clientB)
   await testPipelineInvariants()
+}
+
+// ── Datos de negocio: UPDATE/DELETE cross-tenant directo sobre deals,
+//    y aislamiento de las tablas agregadas en las últimas fases
+//    (whatsapp_templates, automation_rules/logs, notifications,
+//    deliverables/notes) ─────────────────────────────────────────
+async function testBusinessDataIsolation(clientB) {
+  // UPDATE cross-tenant directo sobre deals (no solo pipeline_stages)
+  const { data: updDeal } = await clientB.from('deals')
+    .update({ next_action: 'HACKEADO' }).eq('id', state.dealId).select('id')
+  assert('Usuario B no puede MODIFICAR el deal de la org A', (updDeal?.length ?? 0) === 0)
+
+  const { data: checkDeal } = await admin.from('deals').select('next_action').eq('id', state.dealId).single()
+  assert('El deal de la org A conserva su next_action', checkDeal.next_action !== 'HACKEADO', `next_action = ${checkDeal.next_action}`)
+
+  // DELETE cross-tenant directo sobre deals
+  const { data: delDeal } = await clientB.from('deals').delete().eq('id', state.dealId).select('id')
+  assert('Usuario B no puede BORRAR (hard delete) el deal de la org A', (delDeal?.length ?? 0) === 0)
+
+  // soft_delete_deal cross-tenant — la función valida organization_id =
+  // current_org_id() antes de tocar nada (ver migración 020).
+  const { error: softDelErr } = await clientB.rpc('soft_delete_deal', { p_deal_id: state.dealId })
+  assert('soft_delete_deal sobre un deal de otra organización es rechazado', !!softDelErr, softDelErr?.message ?? 'no dio error')
+
+  const { data: stillAlive } = await admin.from('deals').select('deleted_at').eq('id', state.dealId).single()
+  assert('El deal de la org A no quedó soft-eliminado por el intento cross-tenant', stillAlive.deleted_at === null)
+
+  // Tablas agregadas en fases posteriores — lectura cross-tenant
+  const NEW_TABLES = ['whatsapp_templates', 'automation_rules', 'automation_logs', 'notes', 'deliverables']
+  for (const t of NEW_TABLES) {
+    const { data, error } = await clientB.from(t).select('id').eq('organization_id', state.orgA)
+    if (error) {
+      // notes/deliverables no tienen policies (deny-all) — un error de
+      // "permission denied" o 0 filas son ambos resultados seguros.
+      assert(`Usuario B no LEE ${t} de la org A (denegado explícitamente)`, true, error.message)
+    } else {
+      assert(`Usuario B no LEE ${t} de la org A`, (data?.length ?? 0) === 0, `filas: ${data?.length ?? 0}`)
+    }
+  }
+
+  // notifications: aislamiento por usuario, no por organización directamente
+  // — igual de crítico, un mensaje de otro usuario no debe filtrarse.
+  const { data: notifA } = await admin.from('notifications')
+    .insert({ user_id: state.userA.id, type: 'automation', title: `Secreto A ${stamp}`, body: 'x' })
+    .select('id').single()
+  const { data: notifSeen } = await clientB.from('notifications').select('id').eq('id', notifA.id)
+  assert('Usuario B no ve una notificación dirigida al usuario A', (notifSeen?.length ?? 0) === 0)
+  await admin.from('notifications').delete().eq('id', notifA.id)
+
+  // whatsapp_templates: INSERT cross-tenant (spoofing) — incluida por
+  // completitud aunque su policy ya valida organization_id=current_org_id()
+  // en el WITH CHECK (a diferencia del bug de companies/contacts/deals).
+  const { error: waSpoofErr } = await clientB.from('whatsapp_templates')
+    .insert({ organization_id: state.orgA, name: `Spoof ${stamp}`, content: 'x' })
+  assert('Usuario B no puede crear una plantilla de WhatsApp en la org A', !!waSpoofErr, waSpoofErr?.message ?? 'no dio error')
 }
 
 // ── Configuración por organización (pipeline_stages, field_definitions,

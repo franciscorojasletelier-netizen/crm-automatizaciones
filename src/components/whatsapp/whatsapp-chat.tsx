@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, MessageCircle, Loader2, RefreshCw, CheckCheck, Clock, AlertCircle, X } from 'lucide-react'
+import TemplatePicker from './template-picker'
 
 interface WaMessage {
   id: string
@@ -19,6 +20,7 @@ interface Props {
   contactName: string
   contactPhone: string | null
   canSend: boolean
+  orgPhone?: string | null
 }
 
 function timeStr(date: string) {
@@ -34,7 +36,7 @@ function StatusIcon({ status }: { status: string }) {
   return <Clock className="w-3 h-3 text-slate-300" />
 }
 
-export default function WhatsAppChat({ dealId, contactName, contactPhone, canSend }: Props) {
+export default function WhatsAppChat({ dealId, contactName, contactPhone, canSend, orgPhone }: Props) {
   const [open, setOpen]         = useState(false)
   const [messages, setMessages] = useState<WaMessage[]>([])
   const [input, setInput]       = useState('')
@@ -210,6 +212,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
                   style={{ resize: 'none', minHeight: '20px', maxHeight: '80px' }}
                   className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed"
                 />
+                <TemplatePicker contactName={contactName} onPick={text => setInput(text)} />
                 <button
                   onClick={send}
                   disabled={!input.trim() || sending}
@@ -222,7 +225,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
                 </button>
               </div>
               <p className="text-[10px] text-slate-300 mt-1.5 text-center">
-                Se envía desde el número de empresa +56 9 9141 4208
+                {orgPhone ? `Se envía desde el número de empresa ${orgPhone}` : 'Se envía desde el número de WhatsApp Business de tu organización'}
               </p>
             </div>
           ) : (

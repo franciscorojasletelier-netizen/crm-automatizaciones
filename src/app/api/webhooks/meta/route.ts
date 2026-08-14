@@ -17,13 +17,15 @@ function verifyMetaSignature(raw: string, signature: string | null): boolean {
 
 // GET — verificación del webhook por Meta
 export async function GET(request: NextRequest) {
-  const VERIFY_TOKEN = (process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'meta_verify_autopilot_2026').trim()
+  // Sin fallback: un token público en el repo permitiría verificar un
+  // endpoint de webhook falso si la env var no está seteada en producción.
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim()
   const { searchParams } = new URL(request.url)
   const mode      = searchParams.get('hub.mode')
   const token     = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  if (VERIFY_TOKEN && mode === 'subscribe' && token === VERIFY_TOKEN) {
     return new NextResponse(challenge, { status: 200 })
   }
 
@@ -46,12 +48,21 @@ export async function POST(request: NextRequest) {
     const body = JSON.parse(raw)
 
     // service_role evade RLS — sin sesión de usuario, hay que resolver
-    // la organización destino explícitamente. Fase 1: una sola
-    // organización real, identificada por el email de contacto interno.
+    // la organización destino explícitamente.
+    // LIMITACIÓN CONOCIDA (igual que webhooks/lead y webhooks/meta-leads):
+    // resuelve una única organización destino vía WEBHOOK_DEFAULT_ORG_EMAIL.
+    // Este archivo es un duplicado de meta-leads/route.ts — mismo endpoint
+    // de Meta (`leadgen`), lógica ligeramente distinta. Confirmar cuál de
+    // los dos está realmente configurado en Meta Developer Console antes
+    // de considerar borrar el que no se usa.
+    const lookupEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
+    if (!lookupEmail) {
+      return NextResponse.json({ error: 'Webhook sin organización configurada (WEBHOOK_DEFAULT_ORG_EMAIL)' }, { status: 500 })
+    }
     const { data: ownerProfile } = await supabase
       .from('profiles')
       .select('organization_id')
-      .eq('email', 'autopilotspa@gmail.com')
+      .eq('email', lookupEmail)
       .maybeSingle()
     const orgId = (ownerProfile as any)?.organization_id ?? null
     if (!orgId) {

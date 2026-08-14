@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { ROLE_META, getRoleMeta, type Role } from '@/lib/roles'
 import { Users, CheckCircle2, XCircle } from 'lucide-react'
 import UserRoleEditor from '@/components/admin/user-role-editor'
+import ResetPasswordButton from '@/components/admin/reset-password-button'
 import AddUserButton from '@/components/admin/add-user-button'
 import AreasManager from '@/components/admin/areas-manager'
 
@@ -141,6 +142,9 @@ export default async function UsuariosPage() {
                     {u.is_active ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
+
+                {/* Reset de contraseña */}
+                {canEdit && <ResetPasswordButton userId={u.id} />}
 
                 {/* Rol + editor */}
                 <div className="shrink-0">

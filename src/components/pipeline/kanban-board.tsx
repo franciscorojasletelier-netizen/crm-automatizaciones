@@ -463,9 +463,11 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
       return
     }
 
-    // Auto-crear proyecto si la etapa lo pide
+    // Auto-crear proyecto si la etapa lo pide. El deal ya quedó "ganado" —
+    // si esto falla, no puede quedar en silencio: es justo el paso que se
+    // vende como automático en el traspaso comercial → producción.
     if (target?.createsProject && updatedDeal) {
-      await supabase.from('projects').insert({
+      const { error: projectErr } = await supabase.from('projects').insert({
         company_id: updatedDeal.company_id,
         deal_id: deal.id,
         owner_id: updatedDeal.owner_id,
@@ -474,6 +476,22 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
         budget: updatedDeal.estimated_value,
         start_date: new Date().toISOString().split('T')[0],
       })
+      if (projectErr) {
+        setError(`El deal se marcó como ganado pero el proyecto NO se creó automáticamente (${projectErr.message}). Creálo manualmente desde Proyectos.`)
+        const { data: gerentesErr } = await supabase
+          .from('profiles').select('id')
+          .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
+        if (gerentesErr?.length) {
+          await supabase.from('notifications').insert(
+            gerentesErr.map((g: any) => ({
+              user_id: g.id, type: 'automation',
+              title: '⚠️ Falló la creación automática de proyecto',
+              body: `${(updatedDeal as any)?.companies?.name ?? 'Un deal'} se marcó como ganado pero el proyecto no se pudo crear (${projectErr.message}). Creálo manualmente.`,
+              entity_type: 'deal', entity_id: deal.id,
+            }))
+          )
+        }
+      }
     }
 
     // ── Notificaciones de etapa ────────────────────────────────

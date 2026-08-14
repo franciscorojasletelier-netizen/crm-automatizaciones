@@ -34,6 +34,8 @@ export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldD
     source: '', estimated_value: '', next_action: '',
   })
   const [customValues, setCustomValues] = useState<Record<string, any>>({})
+  const [duplicate, setDuplicate] = useState<string | null>(null)
+  const [forceCreate, setForceCreate] = useState(false)
 
   function set(field: string, value: string) { setForm(f => ({ ...f, [field]: value })) }
   function setCustom(key: string, value: any) { setCustomValues(v => ({ ...v, [key]: value })) }
@@ -42,12 +44,33 @@ export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldD
     e.preventDefault()
     setLoading(true)
     setError('')
+    setDuplicate(null)
 
     const missing = dealFields.find(f => f.isRequired && !customValues[f.key])
     if (missing) {
       setError(`El campo "${missing.label}" es obligatorio`)
       setLoading(false)
       return
+    }
+
+    // Aviso de posible duplicado (no bloqueante): misma empresa por nombre
+    // o mismo contacto por email/teléfono, dentro de la propia organización
+    // (RLS ya scopea la búsqueda). El comercial decide si igual quiere crearlo.
+    if (!forceCreate) {
+      let dupLabel: string | null = null
+      if (form.company_name.trim()) {
+        const { data } = await supabase.from('companies').select('name').ilike('name', form.company_name.trim()).limit(1).maybeSingle()
+        if (data) dupLabel = `Ya existe una empresa llamada "${data.name}"`
+      }
+      if (!dupLabel && form.contact_email.trim()) {
+        const { data } = await supabase.from('contacts').select('full_name, email').ilike('email', form.contact_email.trim()).limit(1).maybeSingle()
+        if (data) dupLabel = `Ya existe un contacto con el email ${data.email} (${data.full_name ?? 'sin nombre'})`
+      }
+      if (dupLabel) {
+        setDuplicate(dupLabel)
+        setLoading(false)
+        return
+      }
     }
 
     try {
@@ -234,6 +257,19 @@ export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldD
                     {f.helpText && <p className="text-[10px] text-slate-400 mt-1">{f.helpText}</p>}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {duplicate && (
+            <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-800">{duplicate}</p>
+                <button type="button" onClick={() => { setForceCreate(true); setDuplicate(null) }}
+                  className="text-xs font-semibold text-amber-700 underline mt-1">
+                  Crear de todas formas
+                </button>
               </div>
             </div>
           )}

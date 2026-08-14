@@ -14,7 +14,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  // Cliente creado dentro del handler para que las env vars estÃ©n disponibles
+  // Cliente creado dentro del handler para que las env vars estén disponibles
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
     process.env.SUPABASE_SECRET_KEY!.trim()
@@ -31,17 +31,32 @@ export async function POST(request: NextRequest) {
     // Este webhook crea companies/contacts/deals con service_role (sin
     // sesión de usuario) — los triggers de auto-relleno de organization_id
     // no pueden derivarla del usuario actual, así que hay que resolverla
-    // explícitamente aquí. Fase 1: una sola organización real, identificada
-    // por el email de contacto interno.
+    // explícitamente aquí.
+    //
+    // LIMITACIÓN CONOCIDA: este endpoint todavía resuelve una única
+    // organización destino vía WEBHOOK_DEFAULT_ORG_EMAIL (variable de
+    // entorno, ya no un email hardcodeado en el código). Un webhook
+    // genuinamente multi-tenant necesitaría un token o slug de
+    // organización por request — no se implementó en esta fase.
+    const lookupEmail = process.env.WEBHOOK_DEFAULT_ORG_EMAIL?.trim()
+    if (!lookupEmail) {
+      return NextResponse.json({ error: 'Webhook sin organización configurada (WEBHOOK_DEFAULT_ORG_EMAIL)' }, { status: 500, headers: CORS_HEADERS })
+    }
     const { data: ownerProfile } = await supabase
       .from('profiles')
       .select('organization_id')
-      .eq('email', 'autopilotspa@gmail.com')
+      .eq('email', lookupEmail)
       .maybeSingle()
     const orgId = (ownerProfile as any)?.organization_id ?? null
     if (!orgId) {
       return NextResponse.json({ error: 'No se pudo determinar la organización destino' }, { status: 500, headers: CORS_HEADERS })
     }
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name, display_name, email, notification_email')
+      .eq('id', orgId)
+      .maybeSingle()
+    const orgDisplayName = org?.display_name || org?.name || 'nuestro equipo'
 
     const body = await request.json()
 
@@ -236,7 +251,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Registrar mensaje inicial como interacciÃ³n si viene del formulario
+    // Registrar mensaje inicial como interacción si viene del formulario
     if (message) {
       await supabase.from('interactions').insert({
         deal_id: deal.id,
@@ -247,55 +262,51 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Enviar emails automÃ¡ticos (sin bloquear la respuesta)
+    // Enviar emails automáticos (sin bloquear la respuesta)
     const resendKey = process.env.RESEND_API_KEY?.trim()
     if (resendKey && contact_email) {
       const resend = new Resend(resendKey)
       // Email al cliente
       resend.emails.send({
-        from: process.env.EMAIL_FROM?.trim() || 'Autopilot SpA <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM?.trim() || `${orgDisplayName} <onboarding@resend.dev>`,
         to: contact_email,
-        subject: 'Â¡Recibimos tu mensaje! â€” Autopilot SpA',
+        subject: `¡Recibimos tu mensaje! — ${orgDisplayName}`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
-            <h2 style="color:#111">Â¡Hola${contact_name ? ` ${contact_name.split(' ')[0]}` : ''}! ðŸ‘‹</h2>
+            <h2 style="color:#111">¡Hola${contact_name ? ` ${contact_name.split(' ')[0]}` : ''}! 👋</h2>
             <p style="color:#444;line-height:1.6">
               Gracias por contactarnos. Recibimos tu mensaje y uno de nuestros especialistas
-              te responderÃ¡ en <strong>menos de 2 horas hÃ¡biles</strong>.
+              te responderá en <strong>menos de 2 horas hábiles</strong>.
             </p>
             ${message ? `<div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:24px 0;color:#555;font-style:italic;">"${message}"</div>` : ''}
-            <p style="color:#444;line-height:1.6">
-              Mientras tanto, puedes revisar nuestros servicios en
-              <a href="https://autopilotspa.cl" style="color:#000;font-weight:bold;">autopilotspa.cl</a>
-            </p>
             <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
-            <p style="color:#999;font-size:12px;">Autopilot SpA â€” AutomatizaciÃ³n e Inteligencia Artificial</p>
+            <p style="color:#999;font-size:12px;">${orgDisplayName}</p>
           </div>
         `,
       }).catch(e => console.warn('Error email cliente:', e))
     }
 
-    if (resendKey) {
+    if (resendKey && org?.notification_email) {
       const resend = new Resend(resendKey)
-      // NotificaciÃ³n interna a Autopilot SpA
+      // Notificación interna — solo a la organización dueña del lead
       resend.emails.send({
-        from: process.env.EMAIL_FROM?.trim() || 'CRM Autopilot <onboarding@resend.dev>',
-        to: 'autopilotspa@gmail.com',
-        subject: `ðŸ”” Nuevo lead: ${contact_name ?? company_name} (${source})`,
+        from: process.env.EMAIL_FROM?.trim() || `CRM ${orgDisplayName} <onboarding@resend.dev>`,
+        to: org.notification_email,
+        subject: `🔔 Nuevo lead: ${contact_name ?? company_name} (${source})`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
             <h2 style="color:#111">Nuevo lead recibido</h2>
             <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${contact_name ?? 'â€”'}</td></tr>
-              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${contact_email ?? 'â€”'}</td></tr>
-              <tr><td style="padding:8px;color:#666;">TelÃ©fono</td><td style="padding:8px;">${contact_phone ?? 'â€”'}</td></tr>
-              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${company_name ?? 'â€”'}</td></tr>
+              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${contact_name ?? '—'}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${contact_email ?? '—'}</td></tr>
+              <tr><td style="padding:8px;color:#666;">Teléfono</td><td style="padding:8px;">${contact_phone ?? '—'}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${company_name ?? '—'}</td></tr>
               <tr><td style="padding:8px;color:#666;">Fuente</td><td style="padding:8px;">${source}</td></tr>
               ${message ? `<tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Mensaje</td><td style="padding:8px;">${message}</td></tr>` : ''}
             </table>
             <a href="https://crm-automatizaciones.vercel.app/leads"
                style="display:inline-block;background:#111;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
-              Ver en el CRM â†’
+              Ver en el CRM →
             </a>
           </div>
         `,
