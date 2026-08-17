@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
-
-const WA_API_URL = 'https://graph.facebook.com/v20.0'
+import { sendWhatsAppText } from '@/lib/whatsapp'
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,82 +50,15 @@ export async function POST(request: NextRequest) {
     const phone = (deal.contacts as any)?.phone
     if (!phone) return NextResponse.json({ error: 'El contacto no tiene teléfono registrado' }, { status: 400 })
 
-    // Normalizar número chileno → formato internacional sin +
-    const normalized = phone.replace(/\D/g, '')
-    const intlPhone = normalized.startsWith('56') ? normalized : `56${normalized}`
-
-    // Cada organización puede tener su propio número/token de WhatsApp
-    // Business — antes era uno solo (env vars) para toda la instalación.
-    // Si la organización no configuró el suyo, se sostiene el global.
-    const { data: integration } = await supabase
-      .from('platform_integrations')
-      .select('external_id, access_token')
-      .eq('provider', 'whatsapp').eq('organization_id', deal.organization_id).eq('is_active', true)
-      .maybeSingle()
-
-    const waToken   = integration?.access_token || process.env.WHATSAPP_ACCESS_TOKEN
-    const waPhoneId = integration?.external_id  || process.env.WHATSAPP_PHONE_NUMBER_ID
-
-    if (!waToken || !waPhoneId) {
-      return NextResponse.json({ error: 'WhatsApp API no configurada para esta organización.' }, { status: 503 })
-    }
-
-    // Enviar mensaje via Meta Cloud API
-    const waRes = await fetch(`${WA_API_URL}/${waPhoneId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${waToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: intlPhone,
-        type: 'text',
-        text: { body: message.trim() },
-      }),
+    const result = await sendWhatsAppText(supabase, {
+      organizationId: deal.organization_id, dealId, phone, body: message.trim(), sentBy: user.id,
     })
 
-    const waData = await waRes.json()
-
-    if (!waRes.ok) {
-      console.error('WhatsApp API error:', waData)
-      // Meta rechaza mensajes de texto libre fuera de la ventana de 24h desde
-      // el último mensaje del cliente (código 131047) — hace falta una
-      // plantilla aprobada. Sin distinguir este caso, el comercial solo ve
-      // un error genérico de Meta y no entiende por qué "de repente" no puede escribir.
-      const isOutsideWindow = waData?.error?.code === 131047
-        || /24.?hour|re-?engagement/i.test(waData?.error?.message ?? '')
-      const friendlyError = isOutsideWindow
-        ? 'Pasaron más de 24h desde el último mensaje del cliente. WhatsApp solo permite reabrir la conversación con una plantilla aprobada, no con texto libre.'
-        : (waData?.error?.message ?? 'Error al enviar por WhatsApp')
-      return NextResponse.json(
-        { error: friendlyError, outsideWindow: isOutsideWindow },
-        { status: 400 }
-      )
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error, outsideWindow: result.outsideWindow }, { status: 400 })
     }
 
-    const waMessageId = waData?.messages?.[0]?.id ?? null
-
-    // Guardar en base de datos
-    const { data: saved, error: dbError } = await supabase
-      .from('whatsapp_messages')
-      .insert({
-        deal_id:       dealId,
-        direction:     'outbound',
-        body:          message.trim(),
-        wa_message_id: waMessageId,
-        status:        'sent',
-        sent_by:       user.id,
-      })
-      .select()
-      .single()
-
-    if (dbError) {
-      console.error('Error guardando mensaje:', dbError)
-      return NextResponse.json({ error: 'Mensaje enviado pero no se pudo guardar' }, { status: 500 })
-    }
-
-    return NextResponse.json({ ok: true, message: saved })
+    return NextResponse.json({ ok: true, message: result.message })
 
   } catch (err: any) {
     console.error('Error en /api/whatsapp/send:', err)

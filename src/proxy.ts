@@ -32,11 +32,12 @@ export async function proxy(request: NextRequest) {
   // /api/auth/login tiene que ser alcanzable SIN sesión — es el propio
   // endpoint de login. Sin esto, el middleware lo redirige a /login antes
   // de que el fetch del formulario reciba una respuesta JSON.
-  const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp') || pathname === '/api/auth/login'
+  const isPublicRoute = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/api/whatsapp') || pathname === '/api/auth/login' || pathname.startsWith('/api/public')
   // /restablecer-password: el enlace de recuperación pone al usuario en una
   // sesión temporal — no puede tratarse ni como "sin sesión → login" ni
   // como "con sesión → dashboard", tiene que resolverse sola.
-  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida') || pathname.startsWith('/restablecer-password')
+  // /cotizacion/[token]: el cliente acepta/rechaza sin tener cuenta en el CRM.
+  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida') || pathname.startsWith('/restablecer-password') || pathname.startsWith('/cotizacion')
 
   // ── Sin sesión → login ──────────────────────
   if (!user && !isAuthRoute && !isPublicRoute && !isPublicPage) {

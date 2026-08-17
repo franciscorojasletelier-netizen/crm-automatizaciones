@@ -3,13 +3,14 @@ import { requirePermission } from '@/lib/supabase/server'
 import { GitBranch, Zap } from 'lucide-react'
 import AutomationRulesList from '@/components/automations/automation-rules-list'
 import AutomationRuleForm from '@/components/automations/automation-rule-form'
+import SequencesManager from '@/components/automations/sequences-manager'
 import { getStages } from '@/lib/stages'
 
 export default async function AutomatizacionesPage() {
   const { supabase, profile, canEdit, organizationId } = await requirePermission('automatizaciones')
   const stages = await getStages(supabase, organizationId ?? undefined)
 
-  const [{ data: rules }, { data: logs }] = await Promise.all([
+  const [{ data: rules }, { data: logs }, { data: sequences }, { data: templates }] = await Promise.all([
     supabase
       .from('automation_rules')
       .select('*, profiles:created_by(full_name)')
@@ -19,6 +20,14 @@ export default async function AutomatizacionesPage() {
       .select('*, automation_rules(name)')
       .order('executed_at', { ascending: false })
       .limit(20),
+    supabase
+      .from('automation_sequences')
+      .select('*, automation_sequence_steps(*)')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('whatsapp_templates')
+      .select('id, name')
+      .order('name'),
   ])
 
   return (
@@ -80,6 +89,12 @@ export default async function AutomatizacionesPage() {
           <AutomationRulesList rules={(rules ?? []) as any} logs={(logs ?? []) as any} canEdit={canEdit} />
         </div>
       </div>
+
+      {canEdit && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+          <SequencesManager sequences={(sequences ?? []) as any} stages={stages} templates={(templates ?? []) as any} />
+        </div>
+      )}
     </div>
   )
 }

@@ -19,6 +19,7 @@ import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 import DealAiInsights from '@/components/deals/deal-ai-insights'
 import DealTimeline from '@/components/deals/deal-timeline'
+import QuotesPanel from '@/components/deals/quotes-panel'
 import { formatCLP } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
 
@@ -79,7 +80,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     specRequesterName = (reqProfile as any)?.full_name ?? null
   }
 
-  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }] = await Promise.all([
+  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }, { data: quotes }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
@@ -97,6 +98,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       .eq('deal_id', id)
       .order('created_at', { ascending: false })
       .limit(1),
+    supabase.from('quotes').select('*').eq('deal_id', id).order('created_at', { ascending: false }),
   ])
 
   const lastInsight = (aiInsights as any)?.[0] ?? null
@@ -327,6 +329,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               organizationId={organizationId ?? ''}
             />
           )}
+            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as any} canEdit={canEdit} />
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />
             <DealTasks dealId={deal.id} tasks={tasks ?? []} />
             <DealChat
