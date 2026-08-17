@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2, User, TrendingUp, AlertCircle, CheckCircle2, ListPlus } from 'lucide-react'
 import type { FieldDefinition } from '@/lib/fields'
+import type { Pipeline } from '@/lib/stages'
 
 const sources = ['Formulario web', 'Meta Ads', 'LinkedIn', 'Referido', 'Llamada directa', 'Otro']
 const industries = ['Tecnología', 'Manufactura', 'Retail', 'Salud', 'Educación', 'Logística', 'Finanzas', 'Construcción', 'Otro']
@@ -23,11 +24,14 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const inputCls = "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white placeholder:text-slate-400 text-slate-900 transition-all"
 
-export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldDefinition[] }) {
+export default function NuevoLeadForm({ dealFields = [], pipelines = [], initialPipelineId = '' }: {
+  dealFields?: FieldDefinition[]; pipelines?: Pipeline[]; initialPipelineId?: string
+}) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [pipelineId, setPipelineId] = useState(initialPipelineId)
   const [form, setForm] = useState({
     company_name: '', industry: '', website: '',
     contact_name: '', contact_email: '', contact_phone: '', contact_job_title: '',
@@ -94,7 +98,10 @@ export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldD
         company_id: company.id, primary_contact_id: contact.id, source: form.source,
         estimated_value: form.estimated_value ? parseFloat(form.estimated_value) : null,
         // `stage` se omite a propósito: el trigger set_default_stage_on_deal
-        // asigna la etapa inicial que tenga configurada esta organización.
+        // asigna la etapa inicial que tenga configurada este pipeline.
+        // `pipeline_id` sí se manda explícito cuando hay más de un pipeline
+        // — si se omite, el mismo trigger cae al pipeline default de la org.
+        pipeline_id: pipelineId || undefined,
         next_action: form.next_action, score, status: 'open',
         owner_id: user?.id ?? null,
         custom_fields: customValues,
@@ -182,6 +189,13 @@ export default function NuevoLeadForm({ dealFields = [] }: { dealFields?: FieldD
               <h2 className="text-sm font-bold text-slate-800">Oportunidad</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
+              {pipelines.length > 1 && (
+                <Field label="Pipeline" required>
+                  <select required value={pipelineId} onChange={e => setPipelineId(e.target.value)} className={inputCls}>
+                    {pipelines.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </Field>
+              )}
               <Field label="Fuente" required>
                 <select required value={form.source} onChange={e => set('source', e.target.value)} className={inputCls}>
                   <option value="">Seleccionar</option>

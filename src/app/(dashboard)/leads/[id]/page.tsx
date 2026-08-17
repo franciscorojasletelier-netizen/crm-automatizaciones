@@ -321,7 +321,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <div className="lg:col-span-2 space-y-4">
             {canEdit && (
             <DealStageSelector
-              stages={stages.filter(s => s.isActive)}
+              stages={stages.filter(s => s.isActive && s.pipelineId === deal.pipeline_id)}
               dealId={deal.id}
               currentStage={deal.stage}
               proposalFilename={deal.proposal_filename ?? null}

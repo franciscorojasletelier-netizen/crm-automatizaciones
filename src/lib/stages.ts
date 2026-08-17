@@ -35,6 +35,15 @@ export interface Stage {
   modalSubtitle: string | null
   confirmLabel: string | null
   isActive: boolean
+  pipelineId: string
+}
+
+export interface Pipeline {
+  id: string
+  name: string
+  sortOrder: number
+  isDefault: boolean
+  isActive: boolean
 }
 
 // ── Paleta ────────────────────────────────────────────────────
@@ -78,7 +87,7 @@ const SELECT = `
   is_terminal, is_won, is_lost, is_default, in_funnel,
   requires_reason, requires_attachment, creates_project,
   default_probability, reasons, modal_title, modal_subtitle, confirm_label,
-  is_active
+  is_active, pipeline_id
 `
 
 function toStage(r: any): Stage {
@@ -102,7 +111,27 @@ function toStage(r: any): Stage {
     modalSubtitle: r.modal_subtitle,
     confirmLabel: r.confirm_label,
     isActive: r.is_active,
+    pipelineId: r.pipeline_id,
   }
+}
+
+function toPipeline(r: any): Pipeline {
+  return { id: r.id, name: r.name, sortOrder: r.sort_order, isDefault: r.is_default, isActive: r.is_active }
+}
+
+// Los pipelines de una organización — para la mayoría de las pantallas
+// (dashboard, reportes, tabla de leads, búsqueda) esto NO hace falta:
+// solo lo necesitan el kanban, la creación de leads y el panel de
+// plataforma, que sí tienen que saber "en qué pipeline estoy parado".
+export async function getPipelines(supabase: any, orgId?: string): Promise<Pipeline[]> {
+  let q = supabase.from('pipelines').select('id, name, sort_order, is_default, is_active').eq('is_active', true)
+  if (orgId) q = q.eq('organization_id', orgId)
+  const { data } = await q.order('sort_order', { ascending: true })
+  return (data ?? []).map(toPipeline)
+}
+
+export function defaultPipeline(pipelines: Pipeline[]): Pipeline | null {
+  return pipelines.find(p => p.isDefault) ?? pipelines[0] ?? null
 }
 
 // RLS acota a la organización del usuario para un cliente normal. Un
@@ -114,18 +143,25 @@ function toStage(r: any): Stage {
 //
 // Devuelve solo las activas — las inactivas siguen existiendo para que el
 // historial y los reportes puedan resolver su label (ver stageByKey).
-export async function getStages(supabase: any, orgId?: string): Promise<Stage[]> {
+// `pipelineId` es opcional: la mayoría de las pantallas resuelven
+// etapas por `key` sin importarles de qué pipeline son (las claves son
+// únicas por organización, no por pipeline — ver migración 031). Solo
+// pasalo cuando de verdad importa "las etapas DE ESTE pipeline"
+// (kanban, editor de plataforma).
+export async function getStages(supabase: any, orgId?: string, pipelineId?: string): Promise<Stage[]> {
   let q = supabase.from('pipeline_stages').select(SELECT).eq('is_active', true)
   if (orgId) q = q.eq('organization_id', orgId)
+  if (pipelineId) q = q.eq('pipeline_id', pipelineId)
   const { data } = await q.order('sort_order', { ascending: true })
   return (data ?? []).map(toStage)
 }
 
 // Incluye las desactivadas. Se usa donde hay que mostrar datos
 // históricos (detalle de un deal, reportes) y en el panel de configuración.
-export async function getAllStages(supabase: any, orgId?: string): Promise<Stage[]> {
+export async function getAllStages(supabase: any, orgId?: string, pipelineId?: string): Promise<Stage[]> {
   let q = supabase.from('pipeline_stages').select(SELECT)
   if (orgId) q = q.eq('organization_id', orgId)
+  if (pipelineId) q = q.eq('pipeline_id', pipelineId)
   const { data } = await q.order('sort_order', { ascending: true })
   return (data ?? []).map(toStage)
 }

@@ -13,7 +13,7 @@ async function callApi(method: 'POST' | 'PATCH', body: any) {
   return data
 }
 
-export default function StagesEditor({ orgId, stages }: { orgId: string; stages: Stage[] }) {
+export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: string; pipelineId: string; stages: Stage[] }) {
   const router = useRouter()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -39,7 +39,7 @@ export default function StagesEditor({ orgId, stages }: { orgId: string; stages:
     e.preventDefault()
     if (!newKey || !newLabel) return
     await run('new', () => callApi('POST', {
-      organizationId: orgId, key: newKey, label: newLabel, color: newColor, sortOrder: stages.length,
+      organizationId: orgId, pipelineId, key: newKey, label: newLabel, color: newColor, sortOrder: stages.length,
     }))
     setShowNew(false)
     setNewKey('')

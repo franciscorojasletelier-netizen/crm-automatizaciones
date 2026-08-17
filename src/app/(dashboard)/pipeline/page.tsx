@@ -4,12 +4,18 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { getVisibleDealIds } from '@/lib/visibility'
 import KanbanBoard from '@/components/pipeline/kanban-board'
+import PipelineSwitcher from '@/components/pipeline/pipeline-switcher'
 import { formatCLP } from '@/lib/format'
-import { getStages, stageByKey } from '@/lib/stages'
+import { getStages, getPipelines, defaultPipeline, stageByKey } from '@/lib/stages'
 
-export default async function PipelinePage() {
+export default async function PipelinePage({ searchParams }: { searchParams: Promise<{ pipeline?: string }> }) {
+  const { pipeline: pipelineParam } = await searchParams
   const { role, supabase, user, canEdit, organizationId } = await requirePermission('pipeline')
-  const stages = await getStages(supabase, organizationId ?? undefined)
+
+  const pipelines = await getPipelines(supabase, organizationId ?? undefined)
+  const selectedPipeline = (pipelineParam && pipelines.find(p => p.id === pipelineParam)) || defaultPipeline(pipelines)
+
+  const stages = await getStages(supabase, organizationId ?? undefined, selectedPipeline?.id)
 
   const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 
@@ -27,6 +33,8 @@ export default async function PipelinePage() {
     .or(`status.eq.open,and(status.in.(won,lost),updated_at.gte.${ninetyDaysAgo})`)
     .order('score', { ascending: false })
     .limit(300)
+
+  if (selectedPipeline) query = query.eq('pipeline_id', selectedPipeline.id)
 
   if (visibleIds !== null) {
     query = visibleIds.length > 0
@@ -48,9 +56,12 @@ export default async function PipelinePage() {
     <div className="p-4 md:p-6 h-full flex flex-col gap-4 bg-slate-50">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Pipeline</h1>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-bold text-slate-900">Pipeline</h1>
+            {pipelines.length > 1 && <PipelineSwitcher pipelines={pipelines} selectedId={selectedPipeline?.id ?? ''} />}
+          </div>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-slate-500">
               <span className="font-semibold text-slate-700">{activeDeals.length}</span> deals activos
@@ -66,7 +77,7 @@ export default async function PipelinePage() {
           </div>
         </div>
         {canEdit && (
-          <Link href="/leads/nuevo"
+          <Link href={selectedPipeline ? `/leads/nuevo?pipeline=${selectedPipeline.id}` : '/leads/nuevo'}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             <Plus className="w-4 h-4" />

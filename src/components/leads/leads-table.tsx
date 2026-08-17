@@ -121,6 +121,11 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     if (selected.size === 0 || bulkSaving) return
     const targetStage = stageByKey(stages, newStageKey)
     if (!targetStage) return
+    // Si los seleccionados son de más de un pipeline, no tiene sentido
+    // ofrecer una sola lista de etapas — cada pipeline tiene las suyas.
+    const selectedDeals = deals.filter(d => selected.has(d.id))
+    const pipelineIds = new Set(selectedDeals.map(d => d.pipeline_id))
+    if (pipelineIds.size > 1) return
     setBulkSaving(true)
     const supabase = createClient()
     const ids = [...selected]
@@ -485,17 +490,28 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <div className="flex items-center gap-2">
               <GitBranch className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-xs text-slate-400 font-medium">Mover a:</span>
-              <select
-                disabled={bulkSaving}
-                defaultValue=""
-                onChange={e => { if (e.target.value) bulkChangeStage(e.target.value) }}
-                className="bg-slate-800 text-white text-sm font-semibold rounded-xl px-3 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="" disabled>Elegir...</option>
-                {stages.filter(s => s.isActive).map(s => (
-                  <option key={s.key} value={s.key}>{s.label}</option>
-                ))}
-              </select>
+              {(() => {
+                const selectedPipelineIds = new Set(deals.filter(d => selected.has(d.id)).map((d: any) => d.pipeline_id))
+                const mixedPipelines = selectedPipelineIds.size > 1
+                const stageOptions = mixedPipelines ? [] : stages.filter(s => s.isActive && (selectedPipelineIds.size === 0 || s.pipelineId === [...selectedPipelineIds][0]))
+                return mixedPipelines ? (
+                  <span className="text-xs text-amber-400 font-medium" title="Seleccionaste deals de más de un pipeline — no se puede mover en bloque a una sola etapa">
+                    Pipelines mezclados
+                  </span>
+                ) : (
+                  <select
+                    disabled={bulkSaving}
+                    defaultValue=""
+                    onChange={e => { if (e.target.value) bulkChangeStage(e.target.value) }}
+                    className="bg-slate-800 text-white text-sm font-semibold rounded-xl px-3 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="" disabled>Elegir...</option>
+                    {stageOptions.map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                  </select>
+                )
+              })()}
             </div>
             <div className="w-px h-6 bg-slate-700" />
             <button

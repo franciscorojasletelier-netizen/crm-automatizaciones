@@ -17,16 +17,16 @@ export async function POST(request: NextRequest) {
   const { supabase } = gate
 
   const body = await request.json()
-  const { organizationId, key, label, color, sortOrder } = body
-  if (!organizationId || !key || !label) {
-    return NextResponse.json({ error: 'organizationId, key y label son requeridos' }, { status: 400 })
+  const { organizationId, pipelineId, key, label, color, sortOrder } = body
+  if (!organizationId || !pipelineId || !key || !label) {
+    return NextResponse.json({ error: 'organizationId, pipelineId, key y label son requeridos' }, { status: 400 })
   }
   if (!/^[a-z][a-z0-9_]*$/.test(key)) {
     return NextResponse.json({ error: 'La clave debe ser minúsculas, números y guión bajo, empezando con letra' }, { status: 400 })
   }
 
   const { data, error } = await supabase.from('pipeline_stages').insert({
-    organization_id: organizationId, key, label,
+    organization_id: organizationId, pipeline_id: pipelineId, key, label,
     color: color ?? 'slate', sort_order: sortOrder ?? 0,
   }).select('id').single()
 

@@ -23,7 +23,7 @@ export default async function LeadsPage() {
   let query = supabase
     .from('deals')
     .select(`
-      id, stage, score, estimated_value, next_action, source,
+      id, stage, pipeline_id, score, estimated_value, next_action, source,
       created_at, last_contacted_at,
       companies(name, industry),
       contacts:primary_contact_id(full_name, email),

@@ -4,10 +4,10 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2 } from 'lucide-react'
-import { getAllStages } from '@/lib/stages'
+import { getAllStages, getPipelines } from '@/lib/stages'
 import { getFieldDefinitions, type FieldEntity } from '@/lib/fields'
 import { NAV_SECTIONS } from '@/lib/roles'
-import StagesEditor from '@/components/platform/stages-editor'
+import PipelinesManager from '@/components/platform/pipelines-manager'
 import FieldsEditor from '@/components/platform/fields-editor'
 import ModulesEditor from '@/components/platform/modules-editor'
 import UserLimitEditor from '@/components/platform/user-limit-editor'
@@ -34,8 +34,9 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  const [stages, dealFields, companyFields, contactFields, modulesRes, usersRes, integrationsRes] = await Promise.all([
+  const [stages, pipelines, dealFields, companyFields, contactFields, modulesRes, usersRes, integrationsRes] = await Promise.all([
     getAllStages(supabase, id),
+    getPipelines(supabase, id),
     getFieldDefinitions(supabase, 'deal', id),
     getFieldDefinitions(supabase, 'company', id),
     getFieldDefinitions(supabase, 'contact', id),
@@ -67,7 +68,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
 
         <UserLimitEditor orgId={org.id} currentUsers={usersRes.count ?? 0} maxUsers={org.max_users} />
 
-        <StagesEditor orgId={org.id} stages={stages} />
+        <PipelinesManager orgId={org.id} pipelines={pipelines} allStages={stages} />
 
         <FieldsEditor orgId={org.id} entity="deal" label="Campos de Leads / Deals" fields={dealFields} />
         <FieldsEditor orgId={org.id} entity="company" label="Campos de Empresas" fields={companyFields} />
