@@ -139,7 +139,8 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
             <p className="text-xs text-slate-500">Escaneá este código con tu app de autenticación, o ingresá la clave manualmente.</p>
             {qrCode && (
               <div className="flex justify-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-40 h-40" dangerouslySetInnerHTML={{ __html: qrCode }} />
+                {/* qr_code ya viene como data URI completa (data:image/svg+xml;...) */}
+                <img src={qrCode} alt="Código QR para activar 2FA" className="w-40 h-40" />
               </div>
             )}
             {secret && (
