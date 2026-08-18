@@ -120,6 +120,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// pg_cron llama vía POST (net.http_post) — mismo handler que GET, que
+// se mantiene para poder disparar el cron a mano desde el navegador.
+export const POST = GET
+
 // ── Template HTML ────────────────────────────────────────────────
 function buildEmailHtml(
   userName: string,

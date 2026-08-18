@@ -48,8 +48,12 @@ function buildEmailHtml(orgName: string, now: Date, todayTasks: any[], overdueTa
 }
 
 export async function GET(request: NextRequest) {
+  // Falla cerrado: si CRON_SECRET no está seteada, el endpoint queda
+  // público en vez de protegido — mismo guard que los otros 3 crons
+  // (antes este era el único que no lo tenía).
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET?.trim()}`) {
+  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -107,3 +111,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ status: 'ok', organizationsNotified: sent, organizationsChecked: orgs?.length ?? 0 })
 }
+
+// pg_cron llama vía POST (net.http_post) — mismo handler que GET, que
+// se mantiene para poder disparar el cron a mano desde el navegador.
+export const POST = GET

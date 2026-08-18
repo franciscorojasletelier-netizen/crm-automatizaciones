@@ -1,20 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/daily-tasks",
-      "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/cron/task-reminders",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/automations",
-      "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/cron/sequences",
-      "schedule": "0 14 * * *"
-    }
-  ]
+  "crons": []
 }

@@ -113,3 +113,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+// pg_cron llama vía POST (net.http_post) — mismo handler que GET, que
+// se mantiene para poder disparar el cron a mano desde el navegador.
+export const POST = GET
