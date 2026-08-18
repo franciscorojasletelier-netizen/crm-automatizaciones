@@ -38,26 +38,55 @@ export async function proxy(request: NextRequest) {
   // como "con sesión → dashboard", tiene que resolverse sola.
   // /cotizacion/[token]: el cliente acepta/rechaza sin tener cuenta en el CRM.
   const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida') || pathname.startsWith('/restablecer-password') || pathname.startsWith('/cotizacion')
+  // /verificar-2fa: necesita sesión (AAL1, recién logueado) pero no puede
+  // tratarse como ruta protegida normal — el usuario todavía no llegó a
+  // AAL2, así que ni el chequeo de perfil/rol ni "con sesión → dashboard"
+  // deben aplicarle.
+  const isMfaRoute    = pathname.startsWith('/verificar-2fa')
 
   // ── Sin sesión → login ──────────────────────
-  if (!user && !isAuthRoute && !isPublicRoute && !isPublicPage) {
+  if (!user && !isAuthRoute && !isPublicRoute && !isPublicPage && !isMfaRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
+  // ── Doble factor: ¿el usuario tiene un factor verificado pendiente
+  // de challenge en esta sesión? (aal1 → aal2 y no lo completó todavía).
+  // Se calcula una sola vez y se reutiliza tanto para el gate de acá
+  // como para saber, más abajo, si "no tiene ningún factor enrolado".
+  let mfaPending = false
+  let mfaEnrolled = false
+  if (user && !isPublicRoute) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    mfaPending = !!aal && aal.nextLevel === 'aal2' && aal.currentLevel !== aal.nextLevel
+    mfaEnrolled = !!aal && aal.currentLevel === 'aal2'
+  }
+
+  if (user && mfaPending && !isMfaRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/verificar-2fa'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && !mfaPending && isMfaRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
   // ── Con sesión en login → dashboard ────────
-  if (user && isAuthRoute) {
+  if (user && isAuthRoute && !mfaPending) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
   // ── Verificar permisos por rol ──────────────
-  if (user && !isPublicRoute && !isPublicPage && !isAuthRoute) {
+  if (user && !isPublicRoute && !isPublicPage && !isAuthRoute && !isMfaRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_active, section_access, organization_id')
+      .select('role, is_active, section_access, organization_id, organizations(require_mfa)')
       .eq('id', user.id)
       .single()
 
@@ -66,6 +95,18 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.searchParams.set('error', 'inactive')
+      return NextResponse.redirect(url)
+    }
+
+    // La organización exige 2FA y este usuario no tiene ningún factor
+    // enrolado (no es "pendiente de challenge" — eso ya se resolvió
+    // arriba — es "nunca activó nada"). Se lo manda a activarlo antes
+    // de dejarlo entrar a cualquier otra pantalla.
+    const requiresMfa = !!(profile as any)?.organizations?.require_mfa
+    if (requiresMfa && !mfaEnrolled && !pathname.startsWith('/configuracion')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/configuracion'
+      url.searchParams.set('mfaRequired', '1')
       return NextResponse.redirect(url)
     }
 

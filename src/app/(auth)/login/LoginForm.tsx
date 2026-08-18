@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Zap, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -33,8 +34,15 @@ export default function LoginForm() {
         return
       }
 
+      // Si el usuario tiene un factor de 2FA verificado, la sesión recién
+      // creada queda en AAL1 hasta que complete el challenge — sin este
+      // chequeo lo mandaríamos directo al dashboard saltándose el 2FA.
+      const supabase = createClient()
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      const needsMfaChallenge = !!aal && aal.nextLevel === 'aal2' && aal.currentLevel !== aal.nextLevel
+
       // Recarga completa para que el resto de la app lea la cookie de sesión recién seteada
-      window.location.href = '/dashboard'
+      window.location.href = needsMfaChallenge ? '/verificar-2fa' : '/dashboard'
     } catch {
       setError('No se pudo conectar. Probá de nuevo.')
       setLoading(false)

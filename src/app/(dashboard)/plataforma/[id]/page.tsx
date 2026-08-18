@@ -11,6 +11,7 @@ import PipelinesManager from '@/components/platform/pipelines-manager'
 import FieldsEditor from '@/components/platform/fields-editor'
 import ModulesEditor from '@/components/platform/modules-editor'
 import UserLimitEditor from '@/components/platform/user-limit-editor'
+import RequireMfaToggle from '@/components/platform/require-mfa-toggle'
 import IntegrationsEditor from '@/components/platform/integrations-editor'
 
 export default async function OrganizationConfigPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +23,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   if (!owner) redirect('/dashboard')
 
   const { data: org } = await supabase
-    .from('organizations').select('id, name, is_active, max_users').eq('id', id).maybeSingle()
+    .from('organizations').select('id, name, is_active, max_users, require_mfa').eq('id', id).maybeSingle()
   if (!org) notFound()
 
   // profiles_select no tiene bypass de is_platform_owner() (a diferencia de
@@ -67,6 +68,8 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
         </div>
 
         <UserLimitEditor orgId={org.id} currentUsers={usersRes.count ?? 0} maxUsers={org.max_users} />
+
+        <RequireMfaToggle orgId={org.id} requireMfa={org.require_mfa ?? false} />
 
         <PipelinesManager orgId={org.id} pipelines={pipelines} allStages={stages} />
 

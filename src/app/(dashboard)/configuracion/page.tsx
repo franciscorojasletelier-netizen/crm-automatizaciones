@@ -2,12 +2,14 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { getRoleMeta } from '@/lib/roles'
 import ChangePasswordCard from './ChangePasswordCard'
+import TwoFactorCard from './TwoFactorCard'
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 }
 
-export default async function ConfiguracionPage() {
+export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ mfaRequired?: string }> }) {
+  const { mfaRequired } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user?.id).single()
@@ -64,6 +66,8 @@ export default async function ConfiguracionPage() {
 
         {/* Seguridad — flujo real de cambio de contraseña, no un mensaje muerto */}
         <ChangePasswordCard email={user?.email ?? ''} />
+
+        <TwoFactorCard mfaRequired={mfaRequired === '1'} />
 
       </div>
     </div>

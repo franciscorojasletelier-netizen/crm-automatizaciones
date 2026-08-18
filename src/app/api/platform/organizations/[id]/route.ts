@@ -37,6 +37,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     updates.max_users = body.maxUsers
   }
 
+  if (typeof body.requireMfa === 'boolean') {
+    updates.require_mfa = body.requireMfa
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nada para actualizar' }, { status: 400 })
   }
