@@ -136,7 +136,7 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
 
         {status === 'enrolling' && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-500">Escaneá este código con tu app de autenticación, o ingresá la clave manualmente.</p>
+            <p className="text-xs text-slate-500">Abrí tu app de autenticación (Google Authenticator, Authy, etc.) y usá su opción para escanear un código QR — <span className="font-semibold text-slate-600">no la cámara normal del teléfono</span>, que solo va a mostrar texto. Si preferís, ingresá la clave manualmente.</p>
             {qrCode && (
               <div className="flex justify-center p-3 bg-slate-50 rounded-xl border border-slate-100">
                 {/* qr_code ya viene como data URI completa (data:image/svg+xml;...) */}
