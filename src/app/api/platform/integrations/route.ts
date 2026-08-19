@@ -18,11 +18,12 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { organizationId, provider, label } = body
   let { externalId, accessToken } = body
+  const config = body.config ?? {}
 
   if (!organizationId || !provider) {
     return NextResponse.json({ error: 'organizationId y provider son requeridos' }, { status: 400 })
   }
-  if (!['meta_leads', 'whatsapp', 'webhook_form'].includes(provider)) {
+  if (!['meta_leads', 'whatsapp', 'webhook_form', 'google_workspace', 'microsoft_365'].includes(provider)) {
     return NextResponse.json({ error: 'provider inválido' }, { status: 400 })
   }
 
@@ -36,10 +37,13 @@ export async function POST(request: NextRequest) {
   if (!externalId) {
     return NextResponse.json({ error: 'externalId es requerido para este proveedor' }, { status: 400 })
   }
+  if (provider === 'google_workspace' && !config.pubsub_topic) {
+    return NextResponse.json({ error: 'pubsub_topic es requerido para Google Workspace (proyecto de Pub/Sub del cliente)' }, { status: 400 })
+  }
 
   const { data, error } = await supabase.from('platform_integrations')
-    .insert({ organization_id: organizationId, provider, external_id: externalId, access_token: accessToken || null, label: label || null })
-    .select('id, organization_id, provider, external_id, access_token, label, is_active, created_at')
+    .insert({ organization_id: organizationId, provider, external_id: externalId, access_token: accessToken || null, label: label || null, config })
+    .select('id, organization_id, provider, external_id, access_token, label, is_active, config, created_at')
     .single()
 
   if (error) return NextResponse.json({ error: friendlyError(error.message) }, { status: 400 })

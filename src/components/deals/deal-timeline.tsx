@@ -1,23 +1,24 @@
-import { GitBranch, MessageSquare, CheckSquare, MessagesSquare } from 'lucide-react'
+import { GitBranch, MessageSquare, CheckSquare, MessagesSquare, Mail } from 'lucide-react'
 import { stageLabel } from '@/lib/stages'
 import type { Stage } from '@/lib/stages'
 
 interface TimelineEvent {
   id: string
-  type: 'stage' | 'interaction' | 'task' | 'message'
+  type: 'stage' | 'interaction' | 'task' | 'message' | 'email'
   date: string
   content: string
   authorName: string | null
 }
 
 export default function DealTimeline({
-  stages, history, interactions, tasks, chatMessages,
+  stages, history, interactions, tasks, chatMessages, emails,
 }: {
   stages: Stage[]
   history: any[]
   interactions: any[]
   tasks: any[]
   chatMessages: any[]
+  emails?: any[]
 }) {
   // Un solo feed cronológico en vez de 4 bloques separados — lo primero
   // que se evalúa en una demo de CRM es "¿veo todo lo que pasó de un vistazo?".
@@ -33,7 +34,10 @@ export default function DealTimeline({
       id: `interaction-${i.id}`,
       type: 'interaction' as const,
       date: i.created_at,
-      content: i.notes ?? i.type ?? 'Interacción registrada',
+      // El alta (deal-interactions.tsx) inserta en `content`, no en
+      // `notes` — con `i.notes` acá el texto nunca se mostraba,
+      // siempre caía al nombre del tipo.
+      content: i.content ?? i.type ?? 'Interacción registrada',
       authorName: i.profiles?.full_name ?? null,
     })),
     ...(tasks ?? []).map((t: any) => ({
@@ -49,6 +53,13 @@ export default function DealTimeline({
       date: m.created_at,
       content: m.content,
       authorName: m.profiles?.full_name ?? m.profiles?.email ?? null,
+    })),
+    ...(emails ?? []).map((e: any) => ({
+      id: `email-${e.id}`,
+      type: 'email' as const,
+      date: e.sent_at,
+      content: `${e.direction === 'outbound' ? 'Enviado' : 'Recibido'}: ${e.subject ?? '(sin asunto)'}`,
+      authorName: e.from_address ?? null,
     })),
   ]
     .filter(e => e.date)
@@ -68,6 +79,7 @@ export default function DealTimeline({
     interaction: { icon: MessageSquare,   color: 'text-amber-500 bg-amber-50' },
     task:        { icon: CheckSquare,     color: 'text-emerald-500 bg-emerald-50' },
     message:     { icon: MessagesSquare,  color: 'text-purple-500 bg-purple-50' },
+    email:       { icon: Mail,            color: 'text-sky-500 bg-sky-50' },
   }
 
   return (

@@ -20,6 +20,7 @@ import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 import DealAiInsights from '@/components/deals/deal-ai-insights'
 import DealTimeline from '@/components/deals/deal-timeline'
 import QuotesPanel from '@/components/deals/quotes-panel'
+import EmailThread from '@/components/deals/email-thread'
 import { formatCLP } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
 
@@ -80,7 +81,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     specRequesterName = (reqProfile as any)?.full_name ?? null
   }
 
-  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }, { data: quotes }] = await Promise.all([
+  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }, { data: quotes }, { data: emails }, { data: connectedAccount }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
@@ -99,6 +100,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       .order('created_at', { ascending: false })
       .limit(1),
     supabase.from('quotes').select('*').eq('deal_id', id).order('created_at', { ascending: false }),
+    supabase.from('email_messages').select('*').eq('deal_id', id).order('sent_at', { ascending: false }),
+    supabase.from('email_accounts').select('id').eq('user_id', userId).eq('is_active', true).limit(1).maybeSingle(),
   ])
 
   const lastInsight = (aiInsights as any)?.[0] ?? null
@@ -314,6 +317,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               interactions={interactions ?? []}
               tasks={tasks ?? []}
               chatMessages={chatMessages ?? []}
+              emails={emails ?? []}
             />
           </div>
 
@@ -330,6 +334,13 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             />
           )}
             <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as any} canEdit={canEdit} />
+            <EmailThread
+              dealId={deal.id}
+              contactId={(deal.contacts as any)?.id ?? null}
+              contactEmail={(deal.contacts as any)?.email ?? null}
+              hasConnectedAccount={!!connectedAccount}
+              emails={(emails ?? []) as any}
+            />
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />
             <DealTasks dealId={deal.id} tasks={tasks ?? []} />
             <DealChat

@@ -6,23 +6,28 @@ import { Plus, Trash2, Copy, Check, Eye, EyeOff } from 'lucide-react'
 
 interface Integration {
   id: string
-  provider: 'meta_leads' | 'whatsapp' | 'webhook_form'
+  provider: 'meta_leads' | 'whatsapp' | 'webhook_form' | 'google_workspace' | 'microsoft_365'
   external_id: string
   access_token: string | null
   label: string | null
   is_active: boolean
+  config?: { pubsub_topic?: string } | null
 }
 
 const PROVIDER_LABELS: Record<Integration['provider'], string> = {
   meta_leads: 'Meta Lead Ads',
   whatsapp: 'WhatsApp Business',
   webhook_form: 'Formulario web propio',
+  google_workspace: 'Gmail / Google Workspace',
+  microsoft_365: 'Outlook / Microsoft 365',
 }
 
 const PROVIDER_HELP: Record<Integration['provider'], string> = {
   meta_leads: 'ID de la página de Facebook (Page ID) y, opcional, un Page Access Token propio de esta organización — si se deja vacío, se usa el global.',
   whatsapp: 'Phone Number ID de WhatsApp Cloud API y su Access Token — si se dejan vacíos, se usa el número global de la instalación.',
   webhook_form: 'Se generan solos: un identificador interno y un token secreto que el formulario del cliente manda como Authorization: Bearer.',
+  google_workspace: 'App OAuth interna del Google Cloud del CLIENTE (Client ID / Client Secret) + el tema de Pub/Sub para recibir correo nuevo — evita la auditoría CASA que exige Google para una app propia con scopes de Gmail.',
+  microsoft_365: 'App OAuth registrada en el Entra ID del cliente (Client ID / Client Secret). No necesita infraestructura extra, a diferencia de Gmail.',
 }
 
 function CopyField({ value }: { value: string }) {
@@ -59,19 +64,21 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
   const [label, setLabel] = useState('')
   const [externalId, setExternalId] = useState('')
   const [accessToken, setAccessToken] = useState('')
+  const [pubsubTopic, setPubsubTopic] = useState('')
 
   async function create(e: React.FormEvent) {
     e.preventDefault()
     setBusy('new')
     setError('')
     try {
+      const config = provider === 'google_workspace' ? { pubsub_topic: pubsubTopic } : undefined
       const res = await fetch('/api/platform/integrations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId: orgId, provider, label, externalId, accessToken }),
+        body: JSON.stringify({ organizationId: orgId, provider, label, externalId, accessToken, config }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
-      setShowNew(false); setLabel(''); setExternalId(''); setAccessToken('')
+      setShowNew(false); setLabel(''); setExternalId(''); setAccessToken(''); setPubsubTopic('')
       router.refresh()
     } catch (e: any) {
       setError(e.message)
@@ -150,16 +157,31 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
             <>
               <div>
                 <label className="block text-[10px] font-semibold text-slate-500 mb-1">
-                  {provider === 'meta_leads' ? 'Page ID' : 'Phone Number ID'}
+                  {provider === 'meta_leads' ? 'Page ID'
+                    : provider === 'whatsapp' ? 'Phone Number ID'
+                    : 'Client ID'}
                 </label>
                 <input value={externalId} onChange={e => setExternalId(e.target.value)} required
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 mb-1">Access token (opcional — si se deja vacío, usa el global)</label>
+                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                  {provider === 'google_workspace' || provider === 'microsoft_365'
+                    ? 'Client secret'
+                    : 'Access token (opcional — si se deja vacío, usa el global)'}
+                </label>
                 <input value={accessToken} onChange={e => setAccessToken(e.target.value)} type="password"
+                  required={provider === 'google_workspace' || provider === 'microsoft_365'}
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
+              {provider === 'google_workspace' && (
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Tema de Pub/Sub (projects/…/topics/…)</label>
+                  <input value={pubsubTopic} onChange={e => setPubsubTopic(e.target.value)} required
+                    placeholder="projects/mi-proyecto/topics/gmail-push"
+                    className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
+                </div>
+              )}
             </>
           )}
           <button type="submit" disabled={busy === 'new'}
@@ -179,13 +201,21 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-slate-800">{PROVIDER_LABELS[i.provider]}{i.label ? ` — ${i.label}` : ''}</p>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    {i.provider === 'webhook_form' ? 'URL' : (i.provider === 'meta_leads' ? 'Page ID' : 'Phone Number ID')}:{' '}
+                    {i.provider === 'webhook_form' ? 'URL'
+                      : i.provider === 'meta_leads' ? 'Page ID'
+                      : i.provider === 'whatsapp' ? 'Phone Number ID'
+                      : 'Client ID'}:{' '}
                     <span className="font-mono">{i.provider === 'webhook_form' ? '/api/webhooks/lead' : i.external_id}</span>
                     {i.provider === 'webhook_form' && <CopyField value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/lead`} />}
                   </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    {i.provider === 'webhook_form' ? 'Token (Authorization: Bearer)' : 'Access token'}: <TokenCell value={i.access_token} />
+                    {i.provider === 'webhook_form' ? 'Token (Authorization: Bearer)'
+                      : i.provider === 'google_workspace' || i.provider === 'microsoft_365' ? 'Client secret'
+                      : 'Access token'}: <TokenCell value={i.access_token} />
                   </p>
+                  {i.provider === 'google_workspace' && i.config?.pubsub_topic && (
+                    <p className="text-[11px] text-slate-500 mt-0.5">Tema Pub/Sub: <span className="font-mono">{i.config.pubsub_topic}</span></p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <label className="relative inline-flex items-center cursor-pointer">

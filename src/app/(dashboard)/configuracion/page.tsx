@@ -3,16 +3,19 @@ import { createClient } from '@/lib/supabase/server'
 import { getRoleMeta } from '@/lib/roles'
 import ChangePasswordCard from './ChangePasswordCard'
 import TwoFactorCard from './TwoFactorCard'
+import EmailAccountsCard from './EmailAccountsCard'
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 }
 
-export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ mfaRequired?: string }> }) {
-  const { mfaRequired } = await searchParams
+export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ mfaRequired?: string; emailConnected?: string; emailError?: string }> }) {
+  const { mfaRequired, emailConnected, emailError } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user?.id).single()
+  const { data: emailAccounts } = await supabase
+    .from('email_accounts').select('id, provider, email_address, is_active').eq('user_id', user?.id ?? '')
 
   const displayName = profile?.full_name ?? user?.email ?? '—'
   const initials = getInitials(displayName)
@@ -68,6 +71,8 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
         <ChangePasswordCard email={user?.email ?? ''} />
 
         <TwoFactorCard mfaRequired={mfaRequired === '1'} />
+
+        <EmailAccountsCard accounts={(emailAccounts ?? []) as any} connectedMessage={emailConnected} errorMessage={emailError} />
 
       </div>
     </div>

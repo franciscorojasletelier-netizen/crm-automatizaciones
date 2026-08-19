@@ -44,7 +44,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     supabase.from('organization_modules').select('module_key, enabled').eq('organization_id', id),
     svc.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
     supabase.from('platform_integrations')
-      .select('id, organization_id, provider, external_id, access_token, label, is_active')
+      .select('id, organization_id, provider, external_id, access_token, label, is_active, config')
       .eq('organization_id', id).order('created_at', { ascending: false }),
   ])
 
