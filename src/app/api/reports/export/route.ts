@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/supabase/server'
 import { getAllStages, stageLabel } from '@/lib/stages'
 import * as XLSX from 'xlsx-js-style'
-import { CHILE_TZ } from '@/lib/dates'
+import { CHILE_TZ, chileMonthStart } from '@/lib/dates'
 
 // ── Tipos locales ──────────────────────────────────────────────
 type CellStyle = {
@@ -128,17 +128,18 @@ export async function GET() {
       supabase.from('profiles').select('id, full_name, email, role, is_active'),
     ])
 
+    // Meses calendario de Chile y fecha real de cierre (041), igual que /reportes.
     const months = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+      const start = chileMonthStart(i - 5, now)
       return {
-        label: d.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }),
-        start: d.toISOString(),
-        end:   new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString(),
+        label: start.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, month: 'long', year: 'numeric' }),
+        start: start.toISOString(),
+        end:   chileMonthStart(i - 4, now).toISOString(),
       }
     })
     const monthlyRevenue = await Promise.all(months.map(async m => {
       const { data } = await supabase.from('deals').select('estimated_value')
-        .eq('status', 'won').gte('updated_at', m.start).lte('updated_at', m.end)
+        .eq('status', 'won').gte('closed_at', m.start).lt('closed_at', m.end)
       const rev = data?.reduce((s, d) => s + (Number(d.estimated_value) || 0), 0) ?? 0
       return { label: m.label, revenue: rev }
     }))

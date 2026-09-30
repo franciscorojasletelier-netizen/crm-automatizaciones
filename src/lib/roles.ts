@@ -2,7 +2,7 @@
 //  SISTEMA DE ROLES Y PERMISOS — CRM
 // ─────────────────────────────────────────────
 
-export type Role = 'super_admin' | 'gerente' | 'comercial' | 'produccion' | 'soporte'
+export type Role = 'super_admin' | 'gerente' | 'comercial' | 'finanzas' | 'produccion' | 'soporte'
 
 // ── Definición de roles ────────────────────────
 export const ROLE_META: Record<Role, {
@@ -33,6 +33,13 @@ export const ROLE_META: Record<Role, {
     badge: 'bg-blue-500',
     level: 3,
   },
+  finanzas: {
+    label: 'Finanzas',
+    description: 'Gestiona la cobranza: documentos, pagos y gestiones. Ve clientes en modo lectura',
+    color: 'text-emerald-700 bg-emerald-100 ring-emerald-200',
+    badge: 'bg-emerald-500',
+    level: 3,
+  },
   produccion: {
     label: 'Producción',
     description: 'Gestión de proyectos y tareas. Ve empresas en modo lectura',
@@ -58,6 +65,7 @@ export interface RolePermissions {
   empresas:         'full' | 'read' | 'none'
   tareas:           'full' | 'read' | 'none'
   proyectos:        'full' | 'read' | 'none'
+  cobranza:         'full' | 'read' | 'none' // full = gestiona documentos y pagos
   actividad:        boolean
   usuarios:         boolean
   configuracion:    boolean
@@ -80,7 +88,7 @@ export interface RolePermissions {
 export const PERMISSIONS: Record<Role, RolePermissions> = {
   super_admin: {
     dashboard: true, pipeline: true, leads: true,
-    empresas: 'full', tareas: 'full', proyectos: 'full',
+    empresas: 'full', tareas: 'full', proyectos: 'full', cobranza: 'full',
     actividad: true, usuarios: true, configuracion: true,
     reportes: true, notificaciones: true, automatizaciones: true, calendario: true,
     canDeleteDeals: true, canDeleteProjects: true, canExportData: true,
@@ -89,7 +97,7 @@ export const PERMISSIONS: Record<Role, RolePermissions> = {
   },
   gerente: {
     dashboard: true, pipeline: true, leads: true,
-    empresas: 'full', tareas: 'full', proyectos: 'full',
+    empresas: 'full', tareas: 'full', proyectos: 'full', cobranza: 'full',
     actividad: true, usuarios: true, configuracion: false,
     reportes: true, notificaciones: true, automatizaciones: true, calendario: true,
     canDeleteDeals: false, canDeleteProjects: false, canExportData: true,
@@ -98,7 +106,7 @@ export const PERMISSIONS: Record<Role, RolePermissions> = {
   },
   comercial: {
     dashboard: true, pipeline: true, leads: true,
-    empresas: 'full', tareas: 'full', proyectos: 'none',
+    empresas: 'full', tareas: 'full', proyectos: 'none', cobranza: 'read',
     actividad: false, usuarios: false, configuracion: false,
     reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
     canDeleteDeals: false, canDeleteProjects: false, canExportData: false,
@@ -107,16 +115,27 @@ export const PERMISSIONS: Record<Role, RolePermissions> = {
   },
   produccion: {
     dashboard: true, pipeline: false, leads: false,
-    empresas: 'read', tareas: 'full', proyectos: 'full',
+    empresas: 'read', tareas: 'full', proyectos: 'full', cobranza: 'none',
     actividad: false, usuarios: false, configuracion: false,
     reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
     canDeleteDeals: false, canDeleteProjects: false, canExportData: false,
     canManageUsers: false, canViewFinancials: false, canCreateLeads: false,
     canEditDeals: false, canEditProjects: true,
   },
+  // Ve el negocio desde la caja: cobranza completa, clientes y proyectos
+  // en lectura, sin pipeline comercial (misma regla que la RLS de la 039).
+  finanzas: {
+    dashboard: true, pipeline: false, leads: false,
+    empresas: 'read', tareas: 'full', proyectos: 'read', cobranza: 'full',
+    actividad: false, usuarios: false, configuracion: false,
+    reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
+    canDeleteDeals: false, canDeleteProjects: false, canExportData: true,
+    canManageUsers: false, canViewFinancials: true, canCreateLeads: false,
+    canEditDeals: false, canEditProjects: false,
+  },
   soporte: {
     dashboard: true, pipeline: false, leads: false,
-    empresas: 'none', tareas: 'read', proyectos: 'read',
+    empresas: 'none', tareas: 'read', proyectos: 'read', cobranza: 'none',
     actividad: false, usuarios: false, configuracion: false,
     reportes: false, notificaciones: true, automatizaciones: false, calendario: true,
     canDeleteDeals: false, canDeleteProjects: false, canExportData: false,
@@ -139,6 +158,7 @@ export const NAV_SECTIONS: NavSection[] = [
   { key: 'empresas',         label: 'Empresas',         permission: 'empresas' },
   { key: 'tareas',           label: 'Tareas',           permission: 'tareas' },
   { key: 'proyectos',        label: 'Proyectos',        permission: 'proyectos' },
+  { key: 'cobranza',         label: 'Cobranza',         permission: 'cobranza' },
   { key: 'calendario',       label: 'Calendario',       permission: 'calendario' },
   { key: 'organigrama',      label: 'Organigrama' }, // todos
   { key: 'notificaciones',   label: 'Notificaciones',   permission: 'notificaciones' },
@@ -209,7 +229,6 @@ export function canEditSection(
 const LEGACY_ROLE_MAP: Record<string, Role> = {
   admin:       'super_admin',
   operaciones: 'produccion',
-  finanzas:    'soporte',
 }
 
 export function normalizeRole(role: string): Role {
@@ -232,7 +251,7 @@ export function hasPermission<K extends keyof RolePermissions>(
   return val !== 'none'
 }
 
-export function canEdit(role: string, section: 'empresas' | 'tareas' | 'proyectos'): boolean {
+export function canEdit(role: string, section: 'empresas' | 'tareas' | 'proyectos' | 'cobranza'): boolean {
   return getPermissions(role)[section] === 'full'
 }
 
@@ -271,6 +290,7 @@ export const ROUTE_SECTIONS: Array<{ pattern: RegExp; key: string }> = [
   { pattern: /^\/empresas/,         key: 'empresas' },
   { pattern: /^\/tareas/,           key: 'tareas' },
   { pattern: /^\/proyectos/,        key: 'proyectos' },
+  { pattern: /^\/cobranza/,         key: 'cobranza' },
   { pattern: /^\/calendario/,       key: 'calendario' },
   { pattern: /^\/organigrama/,      key: 'organigrama' },
   { pattern: /^\/notificaciones/,   key: 'notificaciones' },

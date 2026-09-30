@@ -4,109 +4,91 @@ import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Do
 import Link from 'next/link'
 import { formatCLP } from '@/lib/format'
 import { type Stage, getStages, colorOf, funnelStages as funnelOf, probabilityForStage } from '@/lib/stages'
-import { CHILE_TZ } from '@/lib/dates'
+import { CHILE_TZ, chileMonthStart } from '@/lib/dates'
+
+type ReportDeal = {
+  id: string; status: 'open' | 'won' | 'lost'; stage: string; owner_id: string | null
+  estimated_value: number | null; probability: number | null; closed_at: string | null
+}
 
 async function getReportData(supabase: any, stages: Stage[]) {
-  const now = new Date()
-
-  // Últimos 6 meses
+  // Últimos 6 meses calendario de Chile. Antes se armaban con la hora del
+  // servidor (UTC) y se filtraba por updated_at: editar un deal ganado hace
+  // meses lo movía al mes actual. Ahora cuenta la fecha real de cierre.
   const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    const start = chileMonthStart(i - 5)
     return {
-      label: d.toLocaleDateString('es-CL', { month: 'short', year: '2-digit' }),
-      start: d.toISOString(),
-      end:   new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString(),
+      label: start.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, month: 'short', year: '2-digit' }),
+      start: start.getTime(),
+      end: chileMonthStart(i - 4).getTime(),
     }
   })
 
-  const [
-    allDeals,
-    wonDeals,
-    lostDeals,
-    activeDeals,
-    stageAll,
-    executivesRaw,
-    recentWon,
-  ] = await Promise.all([
-    supabase.from('deals').select('id', { count: 'exact', head: true }),
-    supabase.from('deals').select('id, estimated_value, updated_at').eq('status', 'won'),
-    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'lost'),
-    supabase.from('deals').select('estimated_value, probability, stage').eq('status', 'open'),
-    supabase.from('deals').select('stage, status'),
-    // Leaderboard: ejecutivos con sus deals
+  // Tres consultas en total. Antes eran 6 por los meses + 3 por cada
+  // ejecutivo (N+1): con 10 ejecutivos, 40 idas a la base por carga.
+  const [dealsRes, executivesRaw, recentWon] = await Promise.all([
+    supabase.from('deals')
+      .select('id, status, stage, owner_id, estimated_value, probability, closed_at')
+      .limit(20000),
     supabase.from('profiles')
       .select('id, full_name, email')
       .in('role', ['comercial', 'gerente', 'super_admin', 'admin'])
       .eq('is_active', true),
     supabase.from('deals')
-      .select('id, estimated_value, updated_at, stage, companies(name), profiles:owner_id(full_name)')
+      .select('id, estimated_value, closed_at, stage, companies(name), profiles:owner_id(full_name)')
       .eq('status', 'won')
-      .order('updated_at', { ascending: false })
+      .order('closed_at', { ascending: false, nullsFirst: false })
       .limit(5),
   ])
 
-  // Revenue por mes
-  const monthlyRevenue = await Promise.all(
-    months.map(async (m) => {
-      const { data } = await supabase
-        .from('deals')
-        .select('estimated_value')
-        .eq('status', 'won')
-        .gte('updated_at', m.start)
-        .lte('updated_at', m.end)
-      const revenue = data?.reduce((sum: number, d: any) => sum + (Number(d.estimated_value) || 0), 0) ?? 0
-      return { label: m.label, revenue }
-    })
-  )
+  const deals: ReportDeal[] = dealsRes.data ?? []
+  const value = (d: ReportDeal) => Number(d.estimated_value) || 0
+  const won  = deals.filter(d => d.status === 'won')
+  const lost = deals.filter(d => d.status === 'lost')
+  const open = deals.filter(d => d.status === 'open')
 
-  // Performance por ejecutivo
-  const execPerformance = await Promise.all(
-    (executivesRaw.data ?? []).map(async (exec: any) => {
-      const [won, lost, open] = await Promise.all([
-        supabase.from('deals').select('estimated_value').eq('owner_id', exec.id).eq('status', 'won'),
-        supabase.from('deals').select('id', { count: 'exact', head: true }).eq('owner_id', exec.id).eq('status', 'lost'),
-        supabase.from('deals').select('id', { count: 'exact', head: true }).eq('owner_id', exec.id).eq('status', 'open'),
-      ])
-      const revenue = won.data?.reduce((s: number, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
-      const wonCount = won.data?.length ?? 0
-      const lostCount = lost.count ?? 0
-      const openCount = open.count ?? 0
-      const total = wonCount + lostCount
-      const winRate = total > 0 ? Math.round((wonCount / total) * 100) : 0
-      return { ...exec, revenue, wonCount, lostCount, openCount, winRate }
-    })
-  )
+  const monthlyRevenue = months.map(m => ({
+    label: m.label,
+    revenue: won.reduce((sum, d) => {
+      const t = d.closed_at ? Date.parse(d.closed_at) : NaN
+      return t >= m.start && t < m.end ? sum + value(d) : sum
+    }, 0),
+  }))
 
-  // Ordenar leaderboard por revenue
+  type ExecRow = { id: string; full_name: string | null; email: string | null; revenue: number; wonCount: number; lostCount: number; openCount: number; winRate: number }
+  const execPerformance: ExecRow[] = (executivesRaw.data ?? []).map((exec: { id: string; full_name: string | null; email: string | null }) => {
+    const mine = (list: ReportDeal[]) => list.filter(d => d.owner_id === exec.id)
+    const wonMine = mine(won)
+    const wonCount = wonMine.length
+    const lostCount = mine(lost).length
+    const total = wonCount + lostCount
+    return {
+      ...exec,
+      revenue: wonMine.reduce((s, d) => s + value(d), 0),
+      wonCount, lostCount,
+      openCount: mine(open).length,
+      winRate: total > 0 ? Math.round((wonCount / total) * 100) : 0,
+    }
+  })
   execPerformance.sort((a, b) => b.revenue - a.revenue)
 
-  // Embudo de conversión
   const stageCounts: Record<string, number> = {}
-  ;(stageAll.data ?? []).forEach((d: any) => {
-    if (!stageCounts[d.stage]) stageCounts[d.stage] = 0
-    stageCounts[d.stage]++
-  })
+  for (const d of deals) stageCounts[d.stage] = (stageCounts[d.stage] ?? 0) + 1
 
-  const totalDeals = allDeals.count ?? 0
-  const totalWon = wonDeals.data?.length ?? 0
-  const totalLost = lostDeals.count ?? 0
-  const totalRevenue = wonDeals.data?.reduce((s: number, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
-  const avgDealSize = totalWon > 0 ? Math.round(totalRevenue / totalWon) : 0
-  const winRate = (totalWon + totalLost) > 0 ? Math.round((totalWon / (totalWon + totalLost)) * 100) : 0
+  const totalRevenue = won.reduce((s, d) => s + value(d), 0)
+  const totalWon = won.length
+  const totalLost = lost.length
 
-  // Forecast ponderado: Σ(valor × probabilidad) de deals abiertos.
-  // Si el deal no tiene probabilidad propia, se usa la de su etapa
-  // (default_probability), configurable por organización.
-  const openDealsData = activeDeals.data ?? []
-  const forecast = Math.round(openDealsData.reduce((sum: number, d: any) => {
-    const prob = probabilityForStage(stages, d.stage, d.probability)
-    return sum + (Number(d.estimated_value) || 0) * (prob / 100)
-  }, 0))
-  const openCount = openDealsData.length
+  // Forecast ponderado: Σ(valor × probabilidad) de deals abiertos. Sin
+  // probabilidad propia se usa la de su etapa (configurable por organización).
+  const forecast = Math.round(open.reduce((sum, d) =>
+    sum + value(d) * (probabilityForStage(stages, d.stage, d.probability) / 100), 0))
 
   return {
-    totalDeals, totalWon, totalLost, totalRevenue, avgDealSize, winRate,
-    forecast, openCount,
+    totalDeals: deals.length, totalWon, totalLost, totalRevenue,
+    avgDealSize: totalWon > 0 ? Math.round(totalRevenue / totalWon) : 0,
+    winRate: (totalWon + totalLost) > 0 ? Math.round((totalWon / (totalWon + totalLost)) * 100) : 0,
+    forecast, openCount: open.length,
     monthlyRevenue, execPerformance, stageCounts, recentWon: recentWon.data ?? [],
   }
 }
@@ -405,7 +387,7 @@ export default async function ReportesPage() {
                     </span>
                   )}
                   <span className="text-xs text-slate-400">
-                    {new Date(deal.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })}
+                    {deal.closed_at ? new Date(deal.closed_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' }) : '—'}
                   </span>
                 </div>
               </Link>

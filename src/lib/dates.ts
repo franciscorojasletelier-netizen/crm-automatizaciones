@@ -46,3 +46,12 @@ export function chileDayStart(offsetDays = 0, now: Date = new Date()): Date {
   const start = candidates.find(t => chileDateString(new Date(t)) === target) ?? candidates[candidates.length - 1]
   return new Date(start)
 }
+
+// Instante en que empieza el mes de Chile ubicado `offsetMonths` meses
+// después del actual (0 = este mes, -1 = el anterior, 1 = el próximo).
+export function chileMonthStart(offsetMonths = 0, now: Date = new Date()): Date {
+  const [y, m] = chileDateString(now).split('-').map(Number)
+  const first = new Date(Date.UTC(y, m - 1 + offsetMonths, 1))
+  const today = Date.UTC(y, m - 1, Number(chileDateString(now).slice(8, 10)))
+  return chileDayStart(Math.round((first.getTime() - today) / 86_400_000), now)
+}

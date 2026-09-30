@@ -5,12 +5,13 @@ import Link from 'next/link'
 import DashboardDonut from '@/components/dashboard/donut-chart'
 import { formatCLP } from '@/lib/format'
 import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf } from '@/lib/stages'
-import { CHILE_TZ } from '@/lib/dates'
+import { CHILE_TZ, chileMonthStart } from '@/lib/dates'
 
 async function getStats() {
   const { supabase, organizationId } = await getCurrentProfile()
   const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  // Mes calendario de Chile (el servidor corre en UTC).
+  const startOfMonth = chileMonthStart(0, now).toISOString()
 
   // organizationId explícito: sin esto, un platform_owner vería el embudo
   // de TODAS las organizaciones mezclado en su propio dashboard (su policy
@@ -21,12 +22,12 @@ async function getStats() {
   const entryStageKey = defaultStage(stages)?.key ?? '__sin_etapa__'
 
   const [dealsOpen, dealsWonMonth, tasksOverdue, leadsNew, wonValue, projects, pipeline, recentDeals, overdueTasks, allDealsForChart] = await Promise.all([
-    supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'open'),
-    supabase.from('deals').select('id', { count: 'exact' }).eq('status', 'won').gte('updated_at', startOfMonth),
-    supabase.from('tasks').select('id', { count: 'exact' }).eq('is_completed', false).lt('due_date', now.toISOString()),
-    supabase.from('deals').select('id', { count: 'exact' }).eq('stage', entryStageKey),
-    supabase.from('deals').select('estimated_value').eq('status', 'won').gte('updated_at', startOfMonth),
-    supabase.from('projects').select('id', { count: 'exact' }).eq('status', 'activo'),
+    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'won').gte('closed_at', startOfMonth),
+    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false).lt('due_date', now.toISOString()),
+    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', entryStageKey),
+    supabase.from('deals').select('estimated_value').eq('status', 'won').gte('closed_at', startOfMonth),
+    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'activo'),
     supabase.from('deals').select('stage').eq('status', 'open'),
     supabase.from('deals').select(`
       id, stage, estimated_value, next_action, updated_at,

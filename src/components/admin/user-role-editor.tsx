@@ -15,14 +15,16 @@ interface Props {
 }
 
 // Roles que un gerente puede asignar (no puede dar super_admin ni gerente)
-const ASSIGNABLE_BY_GERENTE: Role[] = ['comercial', 'produccion', 'soporte']
-const ASSIGNABLE_BY_SUPER_ADMIN: Role[] = ['gerente', 'comercial', 'produccion', 'soporte']
+// (la base aplica la misma regla: migración 040)
+const ASSIGNABLE_BY_GERENTE: Role[] = ['comercial', 'finanzas', 'produccion', 'soporte']
+const ASSIGNABLE_BY_SUPER_ADMIN: Role[] = ['gerente', 'comercial', 'finanzas', 'produccion', 'soporte']
 
 export default function UserRoleEditor({ userId, currentRole, isActive, editorRole }: Props) {
   const [role, setRole] = useState(currentRole)
   const [active, setActive] = useState(isActive)
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [mounted, setMounted] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0, dropUp: false })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -54,18 +56,22 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
   async function handleRoleChange(newRole: Role) {
     if (newRole === role) { setOpen(false); return }
     setSaving(true)
-    await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
-    setRole(newRole)
+    setError('')
+    const { error: err } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
     setSaving(false)
     setOpen(false)
+    if (err) { setError(err.message); return }
+    setRole(newRole)
     router.refresh()
   }
 
   async function handleToggleActive() {
     setSaving(true)
-    await supabase.from('profiles').update({ is_active: !active }).eq('id', userId)
-    setActive(!active)
+    setError('')
+    const { error: err } = await supabase.from('profiles').update({ is_active: !active }).eq('id', userId)
     setSaving(false)
+    if (err) { setError(err.message); return }
+    setActive(!active)
     router.refresh()
   }
 
@@ -130,6 +136,7 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
           document.body
         )}
       </div>
+      {error && <p role="alert" className="text-[11px] font-medium text-red-600 max-w-[220px]">{error}</p>}
     </div>
   )
 }

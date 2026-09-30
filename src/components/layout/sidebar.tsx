@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Building2, TrendingUp,
   CheckSquare, FolderOpen, Activity, Settings,
   LogOut, Zap, UserCog, BarChart3, Bell, GitBranch, CalendarDays, Network,
-  Menu, X,
+  Menu, X, Wallet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -51,6 +51,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: 'Tareas',          href: '/tareas',          icon: CheckSquare,  countKey: 'tareas',         alertKey: 'tareasVencidas', permission: 'tareas' },
       { label: 'Proyectos',       href: '/proyectos',       icon: FolderOpen,   countKey: 'proyectos',      permission: 'proyectos' },
+      { label: 'Cobranza',        href: '/cobranza',        icon: Wallet,       countKey: 'cobranzaVencida', alertKey: 'cobranzaVencida', permission: 'cobranza' },
       { label: 'Calendario',      href: '/calendario',      icon: CalendarDays,                              permission: 'calendario' },
       { label: 'Organigrama',     href: '/organigrama',     icon: Network },
       { label: 'Notificaciones',  href: '/notificaciones',  icon: Bell,         countKey: 'notificaciones', alertKey: 'notificaciones', permission: 'notificaciones' },

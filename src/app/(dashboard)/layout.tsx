@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { type Role } from '@/lib/roles'
 import { getStages } from '@/lib/stages'
 import { getDisabledModules } from '@/lib/modules'
+import { chileDateString } from '@/lib/dates'
 
 export interface NavCounts {
   leads: number
@@ -13,6 +14,7 @@ export interface NavCounts {
   proyectos: number
   pipeline: number
   notificaciones: number
+  cobranzaVencida: number
 }
 
 export interface UserProfile {
@@ -46,7 +48,7 @@ async function getLayoutData() {
       return q
     }
 
-    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, disabledModules] = await Promise.all([
+    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, disabledModules, cobranzaVencida] = await Promise.all([
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       tasksBase(),
       tasksBase().lt('due_date', now),
@@ -64,6 +66,9 @@ async function getLayoutData() {
       supabase.from('platform_owners').select('user_id').eq('user_id', user.id).maybeSingle(),
       getStages(supabase, orgId),
       getDisabledModules(supabase, orgId),
+      // RLS acota a lo que el usuario puede ver de cobranza (0 si no ve nada).
+      supabase.from('invoices').select('id', { count: 'exact', head: true })
+        .in('status', ['pendiente', 'parcial']).lt('due_date', chileDateString()),
     ])
 
     const profile = profileRes.data as UserProfile | null
@@ -81,6 +86,7 @@ async function getLayoutData() {
         proyectos: proyectos.count ?? 0,
         pipeline: leads.count ?? 0,
         notificaciones: notificaciones.count ?? 0,
+        cobranzaVencida: cobranzaVencida.count ?? 0,
       },
       chatMessages: chatMessages.data ?? [],
       userId: user.id,
@@ -92,7 +98,7 @@ async function getLayoutData() {
 }
 
 function emptyNavCounts(): NavCounts {
-  return { leads: 0, tareas: 0, tareasVencidas: 0, empresas: 0, proyectos: 0, pipeline: 0, notificaciones: 0 }
+  return { leads: 0, tareas: 0, tareasVencidas: 0, empresas: 0, proyectos: 0, pipeline: 0, notificaciones: 0, cobranzaVencida: 0 }
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
