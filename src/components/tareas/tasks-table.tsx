@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Search, AlertTriangle, Clock, CheckCircle2, Circle, CheckSquare, Building2, User, X } from 'lucide-react'
 import TaskCheck from './task-check'
 import TaskDetailPanel from './task-detail-panel'
+import { CHILE_TZ } from '@/lib/dates'
 
 type Task = {
   id: string
@@ -28,14 +29,14 @@ function getStatus(task: Task): 'overdue' | 'soon' | 'pending' | 'completed' {
 
 function formatDate(date: string | null) {
   if (!date) return null
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 }
 
 function formatTime(date: string | null) {
   if (!date) return null
   const d = new Date(date)
   if (d.getHours() === 0 && d.getMinutes() === 0) return null
-  return d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' })
 }
 
 const STATUS_LABELS = {

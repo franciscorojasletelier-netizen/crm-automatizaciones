@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Power, PowerOff, Settings } from 'lucide-react'
+import { CHILE_TZ } from '@/lib/dates'
 
 type Org = {
   id: string
@@ -67,7 +68,7 @@ export default function OrganizationsTable({ organizations }: { organizations: O
             <tr key={org.id} className="hover:bg-slate-50/60">
               <td className="px-4 py-3 font-medium text-slate-900">{org.name}</td>
               <td className="px-4 py-3 text-slate-500">{userCount(org.profiles)}</td>
-              <td className="px-4 py-3 text-slate-500">{new Date(org.created_at).toLocaleDateString('es-CL')}</td>
+              <td className="px-4 py-3 text-slate-500">{new Date(org.created_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ })}</td>
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                   org.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'

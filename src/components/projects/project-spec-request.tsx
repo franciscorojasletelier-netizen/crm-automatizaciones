@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
 import { useRouter } from 'next/navigation'
+import { CHILE_TZ } from '@/lib/dates'
 import {
   ArrowLeftRight, AlertTriangle, Loader2,
   X, ClipboardList, Clock, User,
@@ -118,7 +119,7 @@ export default function ProjectSpecRequest({
               {specRequestedAt && (
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {new Date(specRequestedAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(specRequestedAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
             </div>

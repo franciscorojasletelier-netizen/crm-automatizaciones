@@ -11,6 +11,7 @@ import {
 import { runAutomationsForStageChange } from '@/lib/automations'
 import { type Stage, stageByKey, colorOf, statusForStage } from '@/lib/stages'
 import { stageIcon } from '@/lib/stage-icons'
+import { CHILE_TZ, chileDateString } from '@/lib/dates'
 
 // Las etapas, sus razones y sus semánticas ya no viven acá: las define
 // cada organización en pipeline_stages y llegan por props. Ver src/lib/stages.ts.
@@ -359,9 +360,9 @@ export default function DealStageSelector({ dealId, currentStage, proposalFilena
     if (target?.createsProject && updatedDeal) {
       const { error: projectErr } = await supabase.from('projects').insert({
         company_id: updatedDeal.company_id, deal_id: dealId, owner_id: updatedDeal.owner_id,
-        name: `Proyecto - ${new Date().toLocaleDateString('es-CL')}`,
+        name: `Proyecto - ${new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ })}`,
         phase: 'discovery', status: 'activo', budget: updatedDeal.estimated_value,
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: chileDateString(),
       })
       if (projectErr) {
         setError(`El deal se marcó como ganado pero el proyecto NO se creó automáticamente (${projectErr.message}). Creálo manualmente desde Proyectos.`)

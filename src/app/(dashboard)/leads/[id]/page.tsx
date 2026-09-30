@@ -23,6 +23,7 @@ import QuotesPanel from '@/components/deals/quotes-panel'
 import EmailThread from '@/components/deals/email-thread'
 import { formatCLP } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
+import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -205,7 +206,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 <p className="text-sm font-semibold text-slate-800 truncate">{deal.proposal_filename}</p>
                 {deal.proposal_uploaded_at && (
                   <p className="text-[10px] text-slate-400">
-                    {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>
@@ -271,7 +272,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                   <p className="text-xs text-slate-400 font-medium">Cierre esperado</p>
                   <p className="text-sm font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {new Date(deal.expected_close_date).toLocaleDateString('es-CL')}
+                    {new Date(deal.expected_close_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ })}
                   </p>
                 </div>
               )}

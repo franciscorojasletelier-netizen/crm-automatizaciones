@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Zap, Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle2, XCircle, SkipForward, Activity } from 'lucide-react'
+import { CHILE_TZ } from '@/lib/dates'
 
 interface Rule {
   id: string
@@ -55,7 +56,7 @@ function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
   const hrs = Math.floor(diff / 3600000)
   if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 }
 
 function triggerSummary(rule: Rule): string {

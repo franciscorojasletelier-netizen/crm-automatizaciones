@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
+import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
@@ -42,9 +43,9 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
             </div>
             <div className="text-right">
               <p className="text-sm font-bold text-slate-800">Cotización #{quote.quote_number}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{new Date(quote.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{new Date(quote.created_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' })}</p>
               {quote.valid_until && (
-                <p className="text-xs text-slate-400">Válida hasta {new Date(quote.valid_until).toLocaleDateString('es-CL')}</p>
+                <p className="text-xs text-slate-400">Válida hasta {new Date(quote.valid_until).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ })}</p>
               )}
             </div>
           </div>
@@ -103,13 +104,13 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
 
           {quote.status === 'accepted' && (
             <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800">
-              Aceptada por <b>{quote.accepted_by_name}</b> el {new Date(quote.accepted_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              Aceptada por <b>{quote.accepted_by_name}</b> el {new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               {quote.accepted_ip && <span className="text-emerald-600"> · IP {quote.accepted_ip}</span>}
             </div>
           )}
           {quote.status === 'rejected' && (
             <div className="mt-4 print:mt-6 bg-slate-100 print:bg-transparent border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
-              Rechazada el {new Date(quote.rejected_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+              Rechazada el {new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' })}
             </div>
           )}
         </div>

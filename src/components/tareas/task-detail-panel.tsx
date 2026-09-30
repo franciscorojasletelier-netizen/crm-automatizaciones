@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { CHILE_TZ } from '@/lib/dates'
 import {
   X, Calendar, Clock, MessageSquare, History,
   AlertTriangle, CheckCircle2, User, Building2,
@@ -40,7 +41,7 @@ function formatDt(dt: string | null) {
   if (!dt) return 'Sin fecha'
   const d = new Date(dt)
   const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
-  return d.toLocaleDateString('es-CL', {
+  return d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
     day: '2-digit', month: 'short', year: 'numeric',
     ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
   })
@@ -304,7 +305,7 @@ export default function TaskDetailPanel({
                             {FIELD_LABELS[entry.field_changed] ?? entry.field_changed}
                           </p>
                           <span className="text-[10px] text-slate-400 whitespace-nowrap shrink-0">
-                            {new Date(entry.created_at).toLocaleDateString('es-CL', {
+                            {new Date(entry.created_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
                               day: '2-digit', month: 'short',
                               hour: '2-digit', minute: '2-digit'
                             })}

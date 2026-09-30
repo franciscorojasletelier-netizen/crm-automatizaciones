@@ -5,6 +5,7 @@ import Link from 'next/link'
 import DashboardDonut from '@/components/dashboard/donut-chart'
 import { formatCLP } from '@/lib/format'
 import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf } from '@/lib/stages'
+import { CHILE_TZ } from '@/lib/dates'
 
 async function getStats() {
   const { supabase, organizationId } = await getCurrentProfile()
@@ -179,7 +180,7 @@ export default async function DashboardPage() {
         </div>
         <div className="hidden md:flex items-center gap-2 text-xs text-slate-400 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
           <Clock className="w-3.5 h-3.5" />
-          {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
       </div>
 
@@ -318,7 +319,7 @@ export default async function DashboardPage() {
                   )}
                 </div>
                 <span className="shrink-0 text-[11px] font-semibold bg-red-50 text-red-600 px-2 py-1 rounded-lg border border-red-100">
-                  {new Date(task.due_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                  {new Date(task.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })}
                 </span>
               </div>
             ))}

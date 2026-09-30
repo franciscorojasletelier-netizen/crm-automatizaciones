@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Lock, Send, X, StickyNote } from 'lucide-react'
+import { CHILE_TZ } from '@/lib/dates'
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
@@ -11,7 +12,7 @@ function timeAgo(date: string) {
   if (mins < 60) return `Hace ${mins}m`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 }
 
 export default function ProjectNotes({ projectId, notes, readOnly }: { projectId: string; notes: any[]; readOnly?: boolean }) {

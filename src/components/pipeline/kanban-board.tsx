@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { type Stage, stageByKey, colorOf, statusForStage, boardStages, terminalStages } from '@/lib/stages'
 import { stageIcon } from '@/lib/stage-icons'
+import { CHILE_TZ, chileDateString } from '@/lib/dates'
 
 // ── Tipos ──────────────────────────────────────────────────────
 export type KanbanDeal = {
@@ -471,10 +472,10 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
         company_id: updatedDeal.company_id,
         deal_id: deal.id,
         owner_id: updatedDeal.owner_id,
-        name: `Proyecto - ${new Date().toLocaleDateString('es-CL')}`,
+        name: `Proyecto - ${new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ })}`,
         phase: 'discovery', status: 'activo',
         budget: updatedDeal.estimated_value,
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: chileDateString(),
       })
       if (projectErr) {
         setError(`El deal se marcó como ganado pero el proyecto NO se creó automáticamente (${projectErr.message}). Creálo manualmente desde Proyectos.`)

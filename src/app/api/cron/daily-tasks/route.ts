@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { CHILE_TZ, chileDayStart } from '@/lib/dates'
 
 // Cron: 8:00 AM Chile (UTC-3) = 11:00 UTC
 // vercel.json: "schedule": "0 11 * * *"
@@ -26,8 +27,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const now         = new Date()
-    const todayStart  = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-    const tomorrowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString()
+    // Días calendario de Chile, no de UTC (el servidor corre en UTC)
+    const todayStart  = chileDayStart(0, now).toISOString()
+    const tomorrowEnd = chileDayStart(2, now).toISOString()
 
     // Perfiles via función SECURITY DEFINER (bypass RLS)
     const { data: profileRows, error: profErr } = await supabase
@@ -132,16 +134,16 @@ function buildEmailHtml(
   appUrl: string,
   orgName: string
 ): string {
-  const today = new Date().toLocaleDateString('es-CL', {
+  const today = new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
     weekday: 'long', day: 'numeric', month: 'long',
   })
 
   const row = (t: Record<string, unknown>, isOverdue: boolean) => {
     const title = String(t.title ?? '')
     const d = t.due_date ? new Date(String(t.due_date)) : null
-    const dateStr = d ? d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : ''
+    const dateStr = d ? d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' }) : ''
     const hasTime = d && (d.getHours() !== 0 || d.getMinutes() !== 0)
-    const timeStr = hasTime ? d!.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : null
+    const timeStr = hasTime ? d!.toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' }) : null
 
     const dateDisplay = timeStr
       ? `${dateStr} <span style="background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:600">🕐 ${timeStr}</span>`

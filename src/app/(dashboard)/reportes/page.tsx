@@ -4,6 +4,7 @@ import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Do
 import Link from 'next/link'
 import { formatCLP } from '@/lib/format'
 import { type Stage, getStages, colorOf, funnelStages as funnelOf, probabilityForStage } from '@/lib/stages'
+import { CHILE_TZ } from '@/lib/dates'
 
 async function getReportData(supabase: any, stages: Stage[]) {
   const now = new Date()
@@ -404,7 +405,7 @@ export default async function ReportesPage() {
                     </span>
                   )}
                   <span className="text-xs text-slate-400">
-                    {new Date(deal.updated_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                    {new Date(deal.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })}
                   </span>
                 </div>
               </Link>

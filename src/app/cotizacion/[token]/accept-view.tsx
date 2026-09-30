@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle2, XCircle, Loader2, AlertCircle, Zap } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
+import { DATE_ONLY_TZ } from '@/lib/dates'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
@@ -84,7 +85,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
               <p className="text-xs text-slate-400 mt-0.5">Para {deal?.companies?.name ?? '—'}</p>
             </div>
             {quote.valid_until && (
-              <p className="text-xs text-slate-400">Válida hasta {new Date(quote.valid_until).toLocaleDateString('es-CL')}</p>
+              <p className="text-xs text-slate-400">Válida hasta {new Date(quote.valid_until).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ })}</p>
             )}
           </div>
 

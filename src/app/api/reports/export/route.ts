@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/supabase/server'
 import { getAllStages, stageLabel } from '@/lib/stages'
 import * as XLSX from 'xlsx-js-style'
+import { CHILE_TZ } from '@/lib/dates'
 
 // ── Tipos locales ──────────────────────────────────────────────
 type CellStyle = {
@@ -188,7 +189,7 @@ export async function GET() {
       sc(ws, r, 0, '📊 REPORTE CRM AUTOMATIZACIONES', hStyle(DARK, WHITE, true, 14))
       sc(ws, r, 1, '', hStyle(DARK))
       sc(ws, r, 2, '', hStyle(DARK))
-      sc(ws, r, 3, `Generado: ${now.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}`, hStyle(DARK, 'c7d2fe', false, 10))
+      sc(ws, r, 3, `Generado: ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' })}`, hStyle(DARK, 'c7d2fe', false, 10))
       sc(ws, r, 4, '', hStyle(DARK))
       merge(ws, { r, c: 0 }, { r, c: 2 })
       merge(ws, { r, c: 3 }, { r, c: 4 })
@@ -319,7 +320,7 @@ export async function GET() {
         sc(ws, r, 6, d.source ?? '',                             dStyle(bg, SLATE500))
         sc(ws, r, 7, d.score ?? 0,                              dStyle(bg, PURPLE, true, 'center'))
         sc(ws, r, 8, d.next_action ?? '',                        dStyle(bg, SLATE700))
-        sc(ws, r, 9, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL') : '', dStyle(bg, SLATE500, false, 'center'))
+        sc(ws, r, 9, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ }) : '', dStyle(bg, SLATE500, false, 'center'))
         r++
       })
 
@@ -354,7 +355,7 @@ export async function GET() {
         sc(ws, r, 0, d.companies?.name ?? '', dStyle(bg, DARK, true))
         sc(ws, r, 1, Number(d.estimated_value) || 0, moneyStyle(bg))
         sc(ws, r, 2, d.profiles?.full_name ?? '', dStyle(bg))
-        sc(ws, r, 3, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL') : '', dStyle(bg, SLATE500, false, 'center'))
+        sc(ws, r, 3, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ }) : '', dStyle(bg, SLATE500, false, 'center'))
         sc(ws, r, 4, '', dStyle(bg))
         r++
       })
@@ -387,7 +388,7 @@ export async function GET() {
         sc(ws, r, 0, d.companies?.name ?? '', dStyle(bg, DARK, true))
         sc(ws, r, 1, Number(d.estimated_value) || 0, moneyStyle(bg))
         sc(ws, r, 2, d.lost_reason ?? '', dStyle(bg, RED))
-        sc(ws, r, 3, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL') : '', dStyle(bg, SLATE500, false, 'center'))
+        sc(ws, r, 3, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ }) : '', dStyle(bg, SLATE500, false, 'center'))
         sc(ws, r, 4, '', dStyle(bg))
         r++
       })
@@ -461,7 +462,7 @@ export async function GET() {
         sc(ws, r, 0, t.title,                                            dStyle(bg, DARK))
         sc(ws, r, 1, t.deals?.companies?.name ?? '',                     dStyle(bg, SLATE500))
         sc(ws, r, 2, t.profiles?.full_name ?? '',                        dStyle(bg))
-        sc(ws, r, 3, t.due_date ? new Date(t.due_date).toLocaleDateString('es-CL') : '', dStyle(bg, SLATE500, false, 'center'))
+        sc(ws, r, 3, t.due_date ? new Date(t.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ }) : '', dStyle(bg, SLATE500, false, 'center'))
         sc(ws, r, 4, statusLabel,                                        { ...dStyle(bg, statusColor, true, 'center') })
         r++
       })

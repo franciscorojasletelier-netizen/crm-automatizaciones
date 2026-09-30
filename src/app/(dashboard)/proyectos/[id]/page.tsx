@@ -9,6 +9,7 @@ import ProjectPhaseSelector from '@/components/projects/project-phase-selector'
 import ProjectDeliverables from '@/components/projects/project-deliverables'
 import ProjectNotes from '@/components/projects/project-notes'
 import ProjectSpecRequest from '@/components/projects/project-spec-request'
+import { DATE_ONLY_TZ } from '@/lib/dates'
 
 const phaseLabels: Record<string, string> = {
   discovery: 'Discovery', diseno: 'Diseño de Flujos', desarrollo: 'Desarrollo',
@@ -110,7 +111,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-indigo-600 bg-indigo-50' },
               { label: 'Presupuesto',  value: formatCLP(project.budget), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
               { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-purple-600 bg-purple-50' },
-              { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL') : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
+              { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-2.5">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
@@ -161,7 +162,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 {[
                   { label: 'Horas estimadas', value: project.estimated_hours ? `${project.estimated_hours}h` : null },
                   { label: 'Horas reales',    value: project.actual_hours    ? `${project.actual_hours}h`    : null },
-                  { label: 'Inicio',          value: project.start_date ? new Date(project.start_date).toLocaleDateString('es-CL') : null },
+                  { label: 'Inicio',          value: project.start_date ? new Date(project.start_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : null },
                 ].filter(x => x.value).map(({ label, value }) => (
                   <div key={label} className="pt-2 first:pt-0">
                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>

@@ -2,13 +2,15 @@ export const dynamic = 'force-dynamic'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { Bell } from 'lucide-react'
 import NotificationsList from '@/components/notifications/notifications-list'
+import { CHILE_TZ, chileDayStart } from '@/lib/dates'
 
 export default async function NotificacionesPage() {
   const { user, supabase } = await getCurrentProfile()
 
   const now   = new Date()
-  const today = now.toISOString().split('T')[0]  // "2026-06-09"
-  const todayEnd = today + 'T23:59:59'
+  // Día calendario de Chile, no de UTC (el servidor corre en UTC)
+  const today    = chileDayStart(0, now).toISOString()
+  const todayEnd = chileDayStart(1, now).toISOString()
 
   // ── AUTO-NOTIFICAR tareas vencidas y de hoy (queries en paralelo) ──
   const [{ data: overdueTasks }, { data: todayTasks }, { data: todayNotifs }] = await Promise.all([
@@ -26,7 +28,7 @@ export default async function NotificacionesPage() {
       .eq('assigned_to', user.id)
       .eq('is_completed', false)
       .gte('due_date', today)
-      .lte('due_date', todayEnd)
+      .lt('due_date', todayEnd)
       .limit(10),
     // Notificaciones ya emitidas hoy — una sola query en vez de una por tarea
     supabase
@@ -46,7 +48,7 @@ export default async function NotificacionesPage() {
   for (const task of overdueTasks ?? []) {
     if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
     const company = (task.deals as any)?.companies?.name
-    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
     newNotifs.push({
       user_id:     user.id,
       type:        'task_overdue',
@@ -64,7 +66,7 @@ export default async function NotificacionesPage() {
     if (newNotifs.some(n => n.entity_id === task.id)) continue
     const company = (task.deals as any)?.companies?.name
     const dueStr  = task.due_date
-      ? new Date(task.due_date).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+      ? new Date(task.due_date).toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' })
       : null
     newNotifs.push({
       user_id:     user.id,

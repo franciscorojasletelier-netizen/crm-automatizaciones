@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mail, Plus, X, Send, Loader2, Reply } from 'lucide-react'
+import { CHILE_TZ } from '@/lib/dates'
 
 interface EmailMessage {
   id: string
@@ -22,7 +23,7 @@ function timeAgo(date: string) {
   if (mins < 60) return `Hace ${mins}m`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 }
 
 export default function EmailThread({

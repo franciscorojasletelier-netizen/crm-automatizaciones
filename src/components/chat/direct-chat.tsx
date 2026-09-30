@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Send, Trash2, AlertCircle, MessageCircle } from 'lucide-react'
+import { CHILE_TZ } from '@/lib/dates'
 
 interface DirectMessage {
   id: string
@@ -32,7 +33,7 @@ function timeAgo(date: string) {
   if (mins < 60) return `${mins}m`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 }
 
 function getInitials(name: string, email: string | null) {

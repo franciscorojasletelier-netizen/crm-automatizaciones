@@ -9,6 +9,7 @@ import {
   Clock, User, ExternalLink, ArrowRight,
 } from 'lucide-react'
 import Link from 'next/link'
+import { CHILE_TZ } from '@/lib/dates'
 
 interface Props {
   projectId: string
@@ -132,7 +133,7 @@ export default function DealSpecBanner({
             {specRequestedAt && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {new Date(specRequestedAt).toLocaleDateString('es-CL', {
+                {new Date(specRequestedAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
                   day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
                 })}
               </span>

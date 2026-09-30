@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, Circle, Plus, AlertTriangle, X, Calendar, Clock } from 'lucide-react'
 import { checkTaskConflict, formatConflictTime, type ConflictTask } from '@/lib/task-conflict'
+import { CHILE_TZ } from '@/lib/dates'
 
 function isOverdue(due: string | null) {
   if (!due) return false
@@ -179,7 +180,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
                   <p className={`text-xs mt-0.5 font-medium flex items-center gap-1 ${overdue ? 'text-red-500' : 'text-slate-400'}`}>
                     <Calendar className="w-3 h-3" />
                     {overdue ? 'Vencida · ' : ''}
-                    {new Date(task.due_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(task.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>

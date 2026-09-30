@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Sparkles, Loader2, AlertTriangle, TrendingUp, RefreshCw, Globe, Target } from 'lucide-react'
+import { CHILE_TZ } from '@/lib/dates'
 
 interface Insights {
   resumen: string
@@ -168,7 +169,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
 
             {createdAt && (
               <p className="text-[10px] text-slate-400 pt-1 border-t border-slate-100">
-                Analizado el {new Date(createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                Analizado el {new Date(createdAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 {createdByName ? ` por ${createdByName}` : ''} · queda guardado en el deal
               </p>
             )}

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Bell, CheckCheck, Trash2, TrendingUp, CheckSquare, FolderOpen, Zap, Info } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { CHILE_TZ } from '@/lib/dates'
 
 interface Notification {
   id: string
@@ -29,7 +30,7 @@ function timeAgo(date: string) {
   if (mins < 60) return `Hace ${mins}m`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: '2-digit' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: '2-digit' })
 }
 
 function notifIcon(type: string) {

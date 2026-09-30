@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { CHILE_TZ } from '@/lib/dates'
 
 const CONFLICT_WINDOW_MS = 30 * 60 * 1000  // 30 minutos
 
@@ -42,5 +43,5 @@ export async function checkTaskConflict(
 }
 
 export function formatConflictTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' })
 }
