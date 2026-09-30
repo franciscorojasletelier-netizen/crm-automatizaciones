@@ -44,4 +44,10 @@ next-env.d.ts
 
 scripts/*
 !scripts/test-rls-isolation.mjs
+!scripts/test-cobranza.mjs
 .env*
+
+# Artefactos locales de la skill de diseño (páginas de decisión, capturas)
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
