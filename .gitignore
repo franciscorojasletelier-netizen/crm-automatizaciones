@@ -51,3 +51,4 @@ scripts/*
 .impeccable/review/
 .impeccable/mocks/
 .impeccable/build/
+.impeccable/questions/
