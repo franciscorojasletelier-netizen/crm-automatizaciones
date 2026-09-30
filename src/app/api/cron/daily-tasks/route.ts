@@ -15,7 +15,9 @@ export async function GET(request: NextRequest) {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  // Solo claves de servidor: las funciones *_for_cron no se pueden ejecutar
+  // con la clave publicable (migración 037).
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
   const resendKey   = process.env.RESEND_API_KEY
   const appUrl      = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crm-automatizaciones.vercel.app'
 

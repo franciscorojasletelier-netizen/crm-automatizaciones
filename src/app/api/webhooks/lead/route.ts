@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { friendlyError } from '@/lib/pg-error'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +23,14 @@ export async function POST(request: NextRequest) {
   )
 
   try {
+    // El token de este webhook viaja en el JS público del formulario web,
+    // así que no alcanza como única barrera: sin límite, cualquiera que lo
+    // lea puede llenar el CRM de leads falsos.
+    const { allowed } = await checkRateLimit(supabase, 'webhook_lead', getClientIp(request), { maxHits: 30, windowMinutes: 15 })
+    if (!allowed) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429, headers: { ...CORS_HEADERS, 'Retry-After': '900' } })
+    }
+
     // El token en el header YA identifica a la organización: cada una
     // tiene el suyo propio en platform_integrations (provider=webhook_form),
     // configurado por el dueño de la plataforma en /plataforma/[id]. Antes,

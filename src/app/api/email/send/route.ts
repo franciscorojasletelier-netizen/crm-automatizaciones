@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import { canSeeDeal } from '@/lib/visibility'
 import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { sendGmailMessage } from '@/lib/email/gmail'
 import { sendOutlookMessage } from '@/lib/email/outlook'
@@ -13,12 +14,23 @@ function serviceClient() {
 }
 
 export async function POST(request: NextRequest) {
-  const { user, organizationId, supabase } = await getCurrentProfile()
+  const { user, role, organizationId, supabase } = await getCurrentProfile()
   if (!organizationId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
   const { dealId, contactId, to, subject, body, replyToMessageId, threadId } = await request.json()
   if (!to || !subject || !body) {
     return NextResponse.json({ error: 'to, subject y body son requeridos' }, { status: 400 })
+  }
+
+  // El insert del historial va con service_role (salta RLS): sin esto, un
+  // dealId/contactId arbitrario del body quedaba enganchado a un deal o
+  // contacto de otra organización.
+  if (dealId && !(await canSeeDeal(supabase, user.id, role, dealId))) {
+    return NextResponse.json({ error: 'Sin acceso a este deal' }, { status: 403 })
+  }
+  if (contactId) {
+    const { data: contact } = await supabase.from('contacts').select('id').eq('id', contactId).maybeSingle()
+    if (!contact) return NextResponse.json({ error: 'Contacto no encontrado' }, { status: 404 })
   }
 
   // Confirma, con el cliente de sesión del propio usuario (pasa por
