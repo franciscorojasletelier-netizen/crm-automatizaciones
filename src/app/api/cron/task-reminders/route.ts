@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { CHILE_TZ, chileDayStart } from '@/lib/dates'
 
 const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  new Date(d).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 
 function buildEmailHtml(orgName: string, now: Date, todayTasks: any[], overdueTasks: any[]) {
   const todayHtml = todayTasks.length > 0 ? `
@@ -34,7 +35,7 @@ function buildEmailHtml(orgName: string, now: Date, todayTasks: any[], overdueTa
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
       <h2 style="color:#111;margin:0 0 4px;">Buenos días 👋</h2>
       <p style="color:#666;font-size:14px;margin:0 0 24px;">
-        ${orgName} — ${now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        ${orgName} — ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       </p>
       ${todayHtml}
       ${overdueHtml}
@@ -73,9 +74,9 @@ export async function GET(request: NextRequest) {
     .not('notification_email', 'is', null)
 
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-  const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
-  const yesterday  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString()
+  // Días calendario de Chile, no de UTC (el servidor corre en UTC)
+  const todayStart = chileDayStart(0, now).toISOString()
+  const todayEnd   = chileDayStart(1, now).toISOString()
 
   let sent = 0
   for (const org of orgs ?? []) {
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
       .select('id, title, due_date, deals(companies(name))')
       .eq('organization_id', org.id)
       .eq('is_completed', false)
-      .lt('due_date', yesterday)
+      .lt('due_date', todayStart)  // vencida = antes de hoy; antes era "antes de ayer" y las de ayer no salían en ninguna lista
       .order('due_date', { ascending: false })
       .limit(10)
 
