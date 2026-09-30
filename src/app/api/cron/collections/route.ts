@@ -75,3 +75,6 @@ export async function GET(request: NextRequest) {
     status: 'ok', newlyOverdue: newlyOverdue?.length ?? 0, promisesToday: promisesToday?.length ?? 0, notified: notifications.length,
   })
 }
+
+// pg_cron (cron_call) invoca con POST; GET queda para pruebas manuales.
+export const POST = GET
