@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronDown, Check, Loader2 } from 'lucide-react'
+import { getInitials } from '@/lib/format'
 
 interface Profile {
   id: string
@@ -26,11 +27,6 @@ const ROLE_LABELS: Record<string, string> = {
   comercial: 'Ejecutivo', produccion: 'Producción', soporte: 'Soporte',
 }
 
-function getInitials(name: string | null, email: string | null) {
-  if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-  if (email) return email.slice(0, 2).toUpperCase()
-  return '?'
-}
 
 function getAvatarColor(id: string) {
   const colors = [
@@ -106,7 +102,7 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
     setSaving(false)
   }
 
-  const initials    = getInitials(owner?.full_name ?? null, null)
+  const initials    = getInitials(owner?.full_name ?? null, null, '?')
   const avatarColor = owner ? getAvatarColor(owner.id) : 'from-slate-400 to-slate-500'
 
   if (!canReassign) {
@@ -173,7 +169,7 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
                 }`}
               >
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getAvatarColor(u.id)} flex items-center justify-center shrink-0`}>
-                  <span className="text-[11px] font-bold text-white">{getInitials(u.full_name, u.email)}</span>
+                  <span className="text-[11px] font-bold text-white">{getInitials(u.full_name, u.email, '?')}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name ?? u.email}</p>

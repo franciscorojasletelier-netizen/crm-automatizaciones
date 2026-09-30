@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, MessageCircle, Trash2, AlertCircle } from 'lucide-react'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo, getInitials } from '@/lib/format'
 
 interface Message {
   id: string
@@ -20,21 +20,7 @@ interface Props {
   initialMessages: Message[]
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Ahora'
-  if (mins < 60) return `${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-}
 
-function getInitials(name: string | null, email: string | null) {
-  if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-  if (email) return email.slice(0, 2).toUpperCase()
-  return '?'
-}
 
 const COLORS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-indigo-600',
@@ -163,7 +149,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
         )}
         {grouped.map((msg) => {
           const isMe = msg.user_id === currentUserId
-          const initials = getInitials(msg.profiles.full_name, msg.profiles.email)
+          const initials = getInitials(msg.profiles.full_name, msg.profiles.email, '?')
           const name = msg.profiles.full_name ?? 'Usuario'
           const color = userColor(msg.user_id)
           const isTemp = msg.id.startsWith('temp-')
@@ -198,7 +184,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
                   </div>
                 </div>
                 {msg.isLast && (
-                  <p className="text-[9px] text-slate-400 mt-0.5 px-1">{isTemp ? 'Enviando...' : timeAgo(msg.created_at)}</p>
+                  <p className="text-[9px] text-slate-400 mt-0.5 px-1">{isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}</p>
                 )}
               </div>
             </div>

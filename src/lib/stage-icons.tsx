@@ -27,3 +27,12 @@ export function stageIcon(stage: Stage | null | undefined): IconComponent {
   if (stage.isWon) return CheckCircle2
   return BY_COLOR[stage.color] ?? AlertTriangle
 }
+
+// Para JSX: <StageIcon stage={s} className="w-4 h-4" />. Evita guardar el
+// componente en una variable durante el render (regla react-hooks).
+export function StageIcon({ stage, className }: { stage: Stage | null | undefined; className?: string }) {
+  if (!stage) return <AlertTriangle className={className} />
+  if (stage.isWon) return <CheckCircle2 className={className} />
+  const Icon = BY_COLOR[stage.color]
+  return Icon ? <Icon className={className} /> : <AlertTriangle className={className} />
+}

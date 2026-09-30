@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Phone, Mail, Users, FileText, Plus, X, Send } from 'lucide-react'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo } from '@/lib/format'
 
 const typeConfig: Record<string, { icon: any; label: string; color: string; bg: string }> = {
   email:   { icon: Mail,     label: 'Email',    color: 'text-blue-600',   bg: 'bg-blue-50'   },
@@ -13,14 +13,6 @@ const typeConfig: Record<string, { icon: any; label: string; color: string; bg: 
   note:    { icon: FileText, label: 'Nota',     color: 'text-amber-600',  bg: 'bg-amber-50'  },
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `Hace ${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-}
 
 export default function DealInteractions({ dealId, interactions }: { dealId: string; interactions: any[] }) {
   const [list, setList] = useState(interactions)
@@ -125,7 +117,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
                 </div>
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{i.content}</p>
               </div>
-              <span className="text-[11px] text-slate-400 shrink-0 font-medium mt-1">{timeAgo(i.created_at)}</span>
+              <span className="text-[11px] text-slate-400 shrink-0 font-medium mt-1">{timeAgo(i.created_at, 'long')}</span>
             </div>
           )
         })}

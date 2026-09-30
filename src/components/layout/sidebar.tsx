@@ -17,6 +17,7 @@ import { getPermissions, getRoleMeta, canAccessSection } from '@/lib/roles'
 import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
 import type { Role } from '@/lib/roles'
 import type { Stage } from '@/lib/stages'
+import { getInitials } from '@/lib/format'
 
 interface SidebarProps {
   counts: NavCounts
@@ -80,11 +81,6 @@ const mobileNavBase: NavItem[] = [
   { label: 'Notifs',    href: '/notificaciones', icon: Bell,        permission: 'notificaciones', countKey: 'notificaciones', alertKey: 'notificaciones' },
 ]
 
-function getInitials(name: string | null, email: string | null): string {
-  if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-  if (email) return email.slice(0, 2).toUpperCase()
-  return 'U'
-}
 
 export default function Sidebar({ counts, profile, isPlatformOwner, stages = [], disabledModules }: SidebarProps) {
   const pathname = usePathname()
@@ -144,7 +140,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
     return canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item), disabledModules)
   }
 
-  const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null)
+  const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null, 'U')
   const displayName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
   return (

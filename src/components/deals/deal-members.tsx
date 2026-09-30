@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Users, UserPlus, X, Crown, Loader2, Check } from 'lucide-react'
+import { getInitials } from '@/lib/format'
 
 interface Member {
   id: string
@@ -35,11 +36,6 @@ const roleLabel: Record<string, string> = {
   super_admin: 'Super Admin',
 }
 
-function getInitials(name: string | null, email: string | null) {
-  if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-  if (email) return email.slice(0, 2).toUpperCase()
-  return 'U'
-}
 
 export default function DealMembers({ dealId, ownerId, members, teamUsers, currentUserId, canManage }: Props) {
   const [list, setList] = useState<Member[]>(members)
@@ -112,7 +108,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
             return owner ? (
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 shrink-0">
-                  {getInitials(owner.full_name, owner.email)}
+                  {getInitials(owner.full_name, owner.email, 'U')}
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-800">{owner.full_name ?? owner.email}</p>
@@ -125,7 +121,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
           {list.map(m => (
             <div key={m.id} className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
-                {getInitials(m.profiles.full_name, m.profiles.email)}
+                {getInitials(m.profiles.full_name, m.profiles.email, 'U')}
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-800">{m.profiles.full_name ?? m.profiles.email}</p>
@@ -172,7 +168,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
             <button key={user.id} onClick={() => addMember(user)} disabled={adding === user.id}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 transition-all text-left group">
               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0 group-hover:bg-indigo-100 group-hover:text-indigo-700 transition-colors">
-                {getInitials(user.full_name, user.email)}
+                {getInitials(user.full_name, user.email, 'U')}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800 truncate">{user.full_name ?? user.email}</p>
@@ -195,7 +191,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
             <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
                 style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-                {getInitials(owner.full_name, owner.email)}
+                {getInitials(owner.full_name, owner.email, 'U')}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">{owner.full_name ?? owner.email}</p>
@@ -215,7 +211,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
         {list.map(m => (
           <div key={m.id} className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group">
             <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-700 transition-colors">
-              {getInitials(m.profiles.full_name, m.profiles.email)}
+              {getInitials(m.profiles.full_name, m.profiles.email, 'U')}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-800 truncate">{m.profiles.full_name ?? m.profiles.email}</p>

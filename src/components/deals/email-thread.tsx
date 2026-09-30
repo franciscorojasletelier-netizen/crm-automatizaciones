@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mail, Plus, X, Send, Loader2, Reply } from 'lucide-react'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo } from '@/lib/format'
 
 interface EmailMessage {
   id: string
@@ -17,14 +17,6 @@ interface EmailMessage {
   sent_at: string
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `Hace ${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-}
 
 export default function EmailThread({
   dealId, contactId, contactEmail, hasConnectedAccount, emails: initialEmails,
@@ -143,7 +135,7 @@ export default function EmailThread({
               {e.body_text && <p className="text-sm text-slate-600 mt-0.5 line-clamp-2 whitespace-pre-wrap">{e.body_text}</p>}
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
-              <span className="text-[11px] text-slate-400 font-medium mt-1">{timeAgo(e.sent_at)}</span>
+              <span className="text-[11px] text-slate-400 font-medium mt-1">{timeAgo(e.sent_at, 'long')}</span>
               {hasConnectedAccount && e.direction === 'inbound' && (
                 <button onClick={() => openCompose(e)} title="Responder"
                   className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 transition-all">

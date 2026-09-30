@@ -4,16 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Lock, Send, X, StickyNote } from 'lucide-react'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo } from '@/lib/format'
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `Hace ${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-}
 
 export default function ProjectNotes({ projectId, notes, readOnly }: { projectId: string; notes: any[]; readOnly?: boolean }) {
   const [list, setList] = useState(notes)
@@ -84,7 +76,7 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
                 {note.profiles?.full_name && (
                   <span className="text-xs font-bold text-slate-700">{note.profiles.full_name}</span>
                 )}
-                <span className="text-[11px] text-slate-400 font-medium">{timeAgo(note.created_at)}</span>
+                <span className="text-[11px] text-slate-400 font-medium">{timeAgo(note.created_at, 'long')}</span>
               </div>
               <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{note.content}</p>
             </div>

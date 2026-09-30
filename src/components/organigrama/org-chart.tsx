@@ -8,6 +8,7 @@ import { getRoleMeta, NAV_SECTIONS, type SectionMode } from '@/lib/roles'
 import { MessageCircle, Loader2, Pencil, X, Shield } from 'lucide-react'
 import DirectChat from '@/components/chat/direct-chat'
 import SectionChecklist from '@/components/admin/section-checklist'
+import { getInitials } from '@/lib/format'
 
 export interface OrgPerson {
   id: string
@@ -41,11 +42,6 @@ interface Props {
   editorRole: string
 }
 
-function getInitials(name: string | null, email: string | null) {
-  if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-  if (email) return email.slice(0, 2).toUpperCase()
-  return '?'
-}
 
 function buildTree(people: OrgPerson[]): TreeNode[] {
   const byId = new Map<string, TreeNode>()
@@ -96,7 +92,7 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
 
   function Card({ node }: { node: TreeNode }) {
     const meta = getRoleMeta(node.role)
-    const initials = getInitials(node.full_name, node.email)
+    const initials = getInitials(node.full_name, node.email, '?')
     const isSelf = node.id === currentUserId
     const name = node.full_name ?? node.email ?? 'Usuario'
     const cargo = node.job_title || meta.label

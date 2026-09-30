@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Send, Trash2, AlertCircle, MessageCircle } from 'lucide-react'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo, getInitials } from '@/lib/format'
 
 interface DirectMessage {
   id: string
@@ -26,21 +26,7 @@ interface Props {
   onClose: () => void
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Ahora'
-  if (mins < 60) return `${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-}
 
-function getInitials(name: string, email: string | null) {
-  if (name && name !== '—') return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-  if (email) return email.slice(0, 2).toUpperCase()
-  return '?'
-}
 
 export default function DirectChat({ currentUserId, recipient, onClose }: Props) {
   const [messages, setMessages] = useState<DirectMessage[]>([])
@@ -140,7 +126,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  const initials = getInitials(recipient.name, recipient.email)
+  const initials = getInitials(recipient.name, recipient.email, '?')
 
   return (
     <div className="fixed bottom-20 md:bottom-6 right-3 md:right-6 z-[60] flex flex-col items-end">
@@ -204,7 +190,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
                     </div>
                   </div>
                   <p className="text-[9px] text-slate-400 mt-0.5 px-1">
-                    {isTemp ? 'Enviando...' : timeAgo(msg.created_at)}
+                    {isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}
                   </p>
                 </div>
               </div>

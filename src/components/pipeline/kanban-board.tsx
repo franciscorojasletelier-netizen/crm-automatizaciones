@@ -4,15 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { runAutomationsForStageChange } from '@/lib/automations'
 import { formatCLP } from '@/lib/format'
-import { useRef } from 'react'
-import {
-  X, AlertTriangle, MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText,
-} from 'lucide-react'
-import { type Stage, stageByKey, colorOf, statusForStage, boardStages, terminalStages } from '@/lib/stages'
-import { stageIcon } from '@/lib/stage-icons'
-import { CHILE_TZ, chileDateString } from '@/lib/dates'
+import { X } from 'lucide-react'
+import { type Stage, stageByKey, colorOf, boardStages, terminalStages } from '@/lib/stages'
+import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
+import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
 
 // ── Tipos ──────────────────────────────────────────────────────
 export type KanbanDeal = {
@@ -53,236 +49,6 @@ const TRAY_EMOJI: Record<string, string> = {
   slate: '❄️',
 }
 
-// ── Modal razón ───────────────────────────────────────────────
-function ReasonModal({
-  targetStage, onConfirm, onCancel, saving,
-}: { targetStage: Stage; onConfirm: (r: string, c: string) => void; onCancel: () => void; saving: boolean }) {
-  // Textos, razones y colores vienen de la configuración de la etapa.
-  const c = colorOf(targetStage)
-  const cfg = {
-    bg: c.light,
-    border: 'border-slate-200',
-    color: c.text,
-    btnColor: c.solid,
-    title: targetStage.modalTitle ?? `Mover a "${targetStage.label}"`,
-    subtitle: targetStage.modalSubtitle ?? 'Indicá el motivo de este cambio.',
-    confirmLabel: targetStage.confirmLabel ?? 'Confirmar',
-    reasons: targetStage.reasons,
-  }
-  const [reason, setReason] = useState('')
-  const [comment, setComment] = useState('')
-  const [touched, setTouched] = useState(false)
-  const Icon = stageIcon(targetStage)
-  const canSubmit = reason && comment.trim().length >= 10 && !saving
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={saving ? undefined : onCancel} />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className={`px-6 py-5 ${cfg.bg} border-b ${cfg.border}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-xl bg-white border ${cfg.border} flex items-center justify-center shadow-sm`}>
-                <Icon className={`w-5 h-5 ${cfg.color}`} />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-slate-900">{cfg.title}</h2>
-                <p className="text-xs text-slate-500 mt-0.5">{cfg.subtitle}</p>
-              </div>
-            </div>
-            {!saving && (
-              <button onClick={onCancel} className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400">
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          <div className="mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <p className="text-xs font-semibold text-amber-800">El gerente será notificado automáticamente</p>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">Motivo principal *</p>
-            <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
-              {cfg.reasons.map(r => (
-                <button key={r} type="button" onClick={() => setReason(r)}
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
-                    reason === r ? `${cfg.bg} ${cfg.border} ${cfg.color} font-semibold` : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}>
-                  {reason === r && <span className="mr-1">✓</span>}{r}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1 uppercase tracking-wide">
-              <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-              Comentario adicional * <span className="font-normal normal-case text-slate-400">(mín. 10 caracteres)</span>
-            </label>
-            <textarea value={comment} onChange={e => setComment(e.target.value)} onBlur={() => setTouched(true)}
-              placeholder="Describe en detalle qué ocurrió..."
-              rows={3}
-              className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 resize-none placeholder:text-slate-400 ${
-                touched && comment.trim().length < 10 ? 'border-red-300 bg-red-50/30 focus:ring-red-200' : 'border-slate-200 bg-slate-50 focus:ring-indigo-200'
-              }`} />
-            <p className={`text-[10px] mt-1 text-right ${comment.length >= 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
-              {comment.length} / 10 mín.
-            </p>
-          </div>
-        </div>
-
-        <div className="px-6 pb-6 flex gap-2">
-          <button onClick={() => canSubmit && onConfirm(reason, comment.trim())} disabled={!canSubmit}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 ${cfg.btnColor}`}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><Icon className="w-4 h-4" /> {cfg.confirmLabel}</>}
-          </button>
-          {!saving && (
-            <button onClick={onCancel} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50">
-              Cancelar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Modal para Propuesta Enviada — ADJUNTO OBLIGATORIO ─────────
-// Si el usuario cancela o no adjunta, el deal se queda en su etapa anterior.
-const MAX_PROPOSAL_MB = 10
-const PROPOSAL_ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx'
-
-function ProposalUploadModal({ deal, onConfirm, onCancel, saving }: {
-  deal: KanbanDeal; onConfirm: (file: File) => void; onCancel: () => void; saving: boolean
-}) {
-  const [file, setFile] = useState<File | null>(null)
-  const [dragOver, setDragOver] = useState(false)
-  const [fileError, setFileError] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  function handleFile(f: File) {
-    setFileError('')
-    if (f.size > MAX_PROPOSAL_MB * 1024 * 1024) {
-      setFileError(`El archivo supera el límite de ${MAX_PROPOSAL_MB} MB`)
-      return
-    }
-    setFile(f)
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={saving ? undefined : onCancel} />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="px-6 py-5 bg-orange-50 border-b border-orange-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white border border-orange-200 flex items-center justify-center shadow-sm">
-              <Paperclip className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Mover a Propuesta Enviada</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{deal.companies?.name ?? 'Deal'}</p>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-2 bg-white border border-orange-200 rounded-xl px-3 py-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-            <p className="text-xs font-semibold text-orange-700">El documento de propuesta es obligatorio para esta etapa</p>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-3">
-          {!file ? (
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
-              onClick={() => inputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all ${
-                dragOver ? 'border-orange-400 bg-orange-50' : 'border-slate-300 hover:border-orange-300 hover:bg-orange-50/50'
-              }`}
-            >
-              <input ref={inputRef} type="file" accept={PROPOSAL_ACCEPT} className="hidden"
-                onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-              <Upload className={`w-6 h-6 mx-auto mb-2 ${dragOver ? 'text-orange-500' : 'text-slate-300'}`} />
-              <p className="text-sm font-semibold text-slate-700">{dragOver ? '¡Suelta aquí!' : 'Arrastra la propuesta aquí'}</p>
-              <p className="text-xs text-slate-400 mt-1">o haz clic para seleccionar · PDF, Word, PowerPoint · Máx. {MAX_PROPOSAL_MB} MB</p>
-            </div>
-          ) : (
-            <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-3.5 flex items-center gap-3">
-              <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-emerald-900 truncate">{file.name}</p>
-                <p className="text-xs text-emerald-600">{(file.size / 1024 / 1024).toFixed(1)} MB · listo para subir</p>
-              </div>
-              {!saving && (
-                <button onClick={() => setFile(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-emerald-200 text-emerald-500">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          )}
-
-          {fileError && (
-            <p className="text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{fileError}</p>
-          )}
-        </div>
-
-        <div className="px-6 pb-6 flex gap-2">
-          <button onClick={() => file && onConfirm(file)} disabled={!file || saving}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-            style={{ background: (!file || saving) ? '#94a3b8' : 'linear-gradient(135deg, #f97316, #ea580c)' }}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <><CheckCircle2 className="w-4 h-4" /> Adjuntar y mover</>}
-          </button>
-          {!saving && (
-            <button onClick={onCancel} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50">
-              Cancelar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Modal para Ganado ─────────────────────────────────────────
-function GanadoModal({ deal, onConfirm, onCancel, saving }: {
-  deal: KanbanDeal; onConfirm: () => void; onCancel: () => void; saving: boolean
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={saving ? undefined : onCancel} />
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="px-6 py-5 bg-green-50 border-b border-green-200 text-center">
-          <p className="text-4xl mb-2">🎉</p>
-          <h2 className="text-base font-bold text-slate-900">¡Deal ganado!</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{deal.companies?.name ?? 'Deal'}</p>
-          {deal.estimated_value && (
-            <p className="text-lg font-bold text-green-700 mt-2">{formatCLP(deal.estimated_value)}</p>
-          )}
-        </div>
-        <div className="p-6">
-          <p className="text-sm text-slate-600 text-center leading-relaxed">
-            Se creará un proyecto automáticamente y se notificará al equipo. ¿Confirmar?
-          </p>
-        </div>
-        <div className="px-6 pb-6 flex gap-2">
-          <button onClick={onConfirm} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar ganado</>}
-          </button>
-          {!saving && (
-            <button onClick={onCancel} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50">
-              Cancelar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Modal selector de etapa (móvil) ──────────────────────────
 function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel }: {
   deal: KanbanDeal; currentStage: string; stages: Stage[]; onSelect: (stage: string) => void; onCancel: () => void
@@ -298,7 +64,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
         </div>
         <div className="p-3 grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pb-8"
           style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
-          {boardStages(stages).map(s => {
+          {stages.map(s => {
             const isCurrent = s.key === currentStage
             const c = colorOf(s)
             return (
@@ -310,6 +76,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
                 }`}>
                 <span className={`w-2.5 h-2.5 rounded-full ${c.dot} shrink-0`} />
                 <span className="leading-tight">{s.label}</span>
+                {s.isTerminal && !isCurrent && <span className="ml-auto text-[10px] text-slate-400">cierre</span>}
                 {isCurrent && <span className="ml-auto text-[10px]">✓</span>}
               </button>
             )
@@ -410,31 +177,23 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
     applyMove(deal, targetStage, null, null)
   }
 
-  // Subir propuesta a Storage y luego mover — el deal NO se mueve si falla la subida
+  // Sube la propuesta y recién entonces mueve: si falla la subida, el deal no se mueve.
   async function handleProposalConfirm(deal: KanbanDeal, targetStage: string, file: File) {
     setSaving(true)
     setError('')
     try {
-      const path = `${organizationId}/${deal.id}/${Date.now()}_${file.name}`
-      const { error: storageError } = await supabase.storage
-        .from('propuestas').upload(path, file, { upsert: true })
-      if (storageError) throw storageError
-      // Guardar el PATH (bucket privado) — se sirve vía /api/propuestas con URL firmada
-      await applyMove(deal, targetStage, null, null, {
-        proposal_url: path,
-        proposal_filename: file.name,
-        proposal_size: file.size,
-        proposal_uploaded_at: new Date().toISOString(),
-      })
-    } catch (err: any) {
-      setError(`Error subiendo propuesta: ${err?.message ?? 'desconocido'} — el deal no se movió`)
+      const extraUpdates = await uploadProposal(supabase, { organizationId, dealId: deal.id, file })
+      await applyMove(deal, targetStage, null, null, extraUpdates)
+    } catch (err) {
+      setError(`Error subiendo propuesta: ${err instanceof Error ? err.message : 'desconocido'} — el deal no se movió`)
       setSaving(false)
       setProposalModal(null)
     }
   }
 
-  // ── Apply move ─────────────────────────────────────────────
-  async function applyMove(deal: KanbanDeal, targetStage: string, reason: string | null, comment: string | null, extraUpdates?: Record<string, any>) {
+  // La lógica del cambio (status, proyecto al ganar, avisos, automatizaciones)
+  // vive en src/lib/deal-stage-change.ts, compartida con el detalle del lead.
+  async function applyMove(deal: KanbanDeal, targetStage: string, reason: string | null, comment: string | null, extraUpdates?: Record<string, unknown>) {
     setSaving(true)
     setError('')
 
@@ -442,134 +201,21 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
     const prevStage = deal.stage
     setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: targetStage } : d))
 
-    const target = stageByKey(stages, targetStage)
-
-    const updates: Record<string, any> = { stage: targetStage, ...(extraUpdates ?? {}) }
-    // Mover a una etapa activa reabre el deal (permite rescatar desde cerrados).
-    updates.status = statusForStage(target)
-    if (reason)  updates.lost_reason  = reason
-    if (comment) updates.lost_comment = comment
-
-    const { data: updatedDeal, error: err } = await supabase
-      .from('deals').update(updates).eq('id', deal.id)
-      .select('company_id, estimated_value, owner_id, companies(name)')
-      .single()
-
-    if (err) {
-      // Revert
-      setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: prevStage } : d))
-      setError('Error al actualizar: ' + err.message)
-      setSaving(false)
-      setReasonModal(null); setProposalModal(null); setGanadoModal(null)
-      return
-    }
-
-    // Auto-crear proyecto si la etapa lo pide. El deal ya quedó "ganado" —
-    // si esto falla, no puede quedar en silencio: es justo el paso que se
-    // vende como automático en el traspaso comercial → producción.
-    if (target?.createsProject && updatedDeal) {
-      const { error: projectErr } = await supabase.from('projects').insert({
-        company_id: updatedDeal.company_id,
-        deal_id: deal.id,
-        owner_id: updatedDeal.owner_id,
-        name: `Proyecto - ${new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ })}`,
-        phase: 'discovery', status: 'activo',
-        budget: updatedDeal.estimated_value,
-        start_date: chileDateString(),
-      })
-      if (projectErr) {
-        setError(`El deal se marcó como ganado pero el proyecto NO se creó automáticamente (${projectErr.message}). Creálo manualmente desde Proyectos.`)
-        const { data: gerentesErr } = await supabase
-          .from('profiles').select('id')
-          .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
-        if (gerentesErr?.length) {
-          await supabase.from('notifications').insert(
-            gerentesErr.map((g: any) => ({
-              user_id: g.id, type: 'automation',
-              title: '⚠️ Falló la creación automática de proyecto',
-              body: `${(updatedDeal as any)?.companies?.name ?? 'Un deal'} se marcó como ganado pero el proyecto no se pudo crear (${projectErr.message}). Creálo manualmente.`,
-              entity_type: 'deal', entity_id: deal.id,
-            }))
-          )
-        }
-      }
-    }
-
-    // ── Notificaciones de etapa ────────────────────────────────
-    const stageLabel    = target?.label ?? targetStage
-    const companyName   = (updatedDeal as any)?.companies?.name ?? 'deal'
-    const ownerId       = (updatedDeal as any)?.owner_id ?? null
-    const { data: { user: meUser } } = await supabase.auth.getUser()
-
-    // A) Notificar gerentes si etapa negativa
-    if (target?.requiresReason && reason) {
-      const { data: gerentes } = await supabase
-        .from('profiles').select('id')
-        .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
-      if (gerentes?.length) {
-        await supabase.from('notifications').insert(
-          gerentes.map((g: any) => ({
-            user_id: g.id, type: 'stage_changed',
-            title: `⚠️ Deal marcado como "${stageLabel}"`,
-            body: `${companyName} — Motivo: ${reason}${comment ? `. ${comment}` : ''}`,
-            entity_type: 'deal', entity_id: deal.id,
-          }))
-        )
-      }
-    }
-
-    // B) Notificar al owner si la etapa cambió (y no es él mismo quien mueve)
-    if (ownerId && ownerId !== meUser?.id) {
-      const emoji = target?.isWon ? '🎉'
-                  : target?.requiresReason ? '⚠️'
-                  : '🔄'
-      await supabase.from('notifications').insert({
-        user_id:     ownerId,
-        type:        'stage_changed',
-        title:       `${emoji} ${companyName} movido a "${stageLabel}"`,
-        body:        reason ? `Motivo: ${reason}` : `Tu deal cambió de etapa`,
-        entity_type: 'deal',
-        entity_id:   deal.id,
-      })
-    }
-
-    // C) Notificar a todos los gerentes si deal ganado
-    if (target?.isWon) {
-      const { data: gerentes } = await supabase
-        .from('profiles').select('id')
-        .in('role', ['gerente', 'super_admin', 'admin']).eq('is_active', true)
-      if (gerentes?.length) {
-        const valueStr = updatedDeal?.estimated_value
-          ? ` · ${formatCLP(updatedDeal.estimated_value)}`
-          : ''
-        await supabase.from('notifications').insert(
-          gerentes.filter((g: any) => g.id !== meUser?.id && g.id !== ownerId)
-            .map((g: any) => ({
-              user_id: g.id, type: 'stage_changed',
-              title: `🎉 Deal GANADO: ${companyName}${valueStr}`,
-              body: `Cerrado exitosamente`,
-              entity_type: 'deal', entity_id: deal.id,
-            }))
-        )
-      }
-    }
-
-    // Ejecutar automatizaciones en segundo plano (no bloquea UI)
-    runAutomationsForStageChange({
-      supabase,
-      dealId:  deal.id,
-      toStage: targetStage,
-      status:  updates.status as 'won' | 'lost' | 'open' | undefined,
-      ownerId: ownerId ?? undefined,
-      userId:  meUser?.id ?? '',
+    const result = await changeDealStage(supabase, {
+      dealId: deal.id, fromStage: prevStage, toStage: targetStage, stages, reason, comment, extraUpdates,
     })
+
+    if (!result.ok) {
+      setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: prevStage } : d))
+      setError('Error al actualizar: ' + result.error)
+    } else if (result.warning) {
+      setError(result.warning)
+    }
 
     setSaving(false)
     setReasonModal(null); setProposalModal(null); setGanadoModal(null)
-    router.refresh()
+    if (result.ok) router.refresh()
   }
-
-  const draggingDeal = draggingId ? deals.find(d => d.id === draggingId) : null
 
   return (
     <>
@@ -734,7 +380,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                       }`}
                     >
                       {/* Barra color top — roja si está estancado */}
-                      <div className={`absolute top-0 left-0 right-0 h-0.5 ${isStalled(deal) ? 'bg-red-400' : stage.color}`} />
+                      <div className={`absolute top-0 left-0 right-0 h-0.5 ${isStalled(deal) ? 'bg-red-400' : c.solid}`} />
 
                       {/* Empresa */}
                       <div className="flex items-center gap-1.5">
@@ -914,7 +560,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
       {reasonModal && stageByKey(stages, reasonModal.stage) && (
         <ReasonModal
           targetStage={stageByKey(stages, reasonModal.stage)!}
-          saving={saving}
+          busy={saving}
           onConfirm={(reason, comment) => applyMove(reasonModal.deal, reasonModal.stage, reason, comment)}
           onCancel={() => setReasonModal(null)}
         />
@@ -922,9 +568,10 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
 
       {/* Adjunto obligatorio (etapas con requires_attachment) */}
       {proposalModal && (
-        <ProposalUploadModal
-          deal={proposalModal.deal}
-          saving={saving}
+        <ProposalModal
+          stageLabel={stageByKey(stages, proposalModal.stage)?.label ?? proposalModal.stage}
+          companyName={proposalModal.deal.companies?.name ?? 'Deal'}
+          busy={saving}
           onConfirm={file => handleProposalConfirm(proposalModal.deal, proposalModal.stage, file)}
           onCancel={() => setProposalModal(null)}
         />
@@ -932,9 +579,11 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
 
       {/* Ganado */}
       {ganadoModal && (
-        <GanadoModal
-          deal={ganadoModal.deal}
-          saving={saving}
+        <WonModal
+          companyName={ganadoModal.deal.companies?.name}
+          value={ganadoModal.deal.estimated_value}
+          createsProject={!!stageByKey(stages, ganadoModal.stage)?.createsProject}
+          busy={saving}
           onConfirm={() => applyMove(ganadoModal.deal, ganadoModal.stage, null, null)}
           onCancel={() => setGanadoModal(null)}
         />

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Zap, Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle2, XCircle, SkipForward, Activity } from 'lucide-react'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo } from '@/lib/format'
 
 interface Rule {
   id: string
@@ -52,12 +52,6 @@ const actionLabels: Record<string, string> = {
   notify_team:  'Notificar equipo',
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const hrs = Math.floor(diff / 3600000)
-  if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-}
 
 function triggerSummary(rule: Rule): string {
   const cfg = rule.trigger_config
@@ -169,7 +163,7 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
                       </span>
                       {rule.last_run_at && (
                         <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Última: {timeAgo(rule.last_run_at)}
+                          <Clock className="w-3 h-3" /> Última: {timeAgo(rule.last_run_at, 'long')}
                         </span>
                       )}
                       {rule.profiles?.full_name && (
@@ -230,7 +224,7 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
                       log.status === 'failed'  ? 'bg-red-100 text-red-600' :
                       'bg-slate-100 text-slate-500'
                     }`}>{log.status}</span>
-                    <span className="text-[10px] text-slate-400 shrink-0">{timeAgo(log.executed_at)}</span>
+                    <span className="text-[10px] text-slate-400 shrink-0">{timeAgo(log.executed_at, 'long')}</span>
                   </div>
                 )
               })}

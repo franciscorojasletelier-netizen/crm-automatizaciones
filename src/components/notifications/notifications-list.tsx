@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Bell, CheckCheck, Trash2, TrendingUp, CheckSquare, FolderOpen, Zap, Info } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CHILE_TZ } from '@/lib/dates'
+import { timeAgo } from '@/lib/format'
 
 interface Notification {
   id: string
@@ -23,15 +23,6 @@ interface Props {
   userId: string
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Ahora'
-  if (mins < 60) return `Hace ${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `Hace ${hrs}h`
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: '2-digit' })
-}
 
 function notifIcon(type: string) {
   switch (type) {
@@ -149,7 +140,7 @@ export default function NotificationsList({ initialNotifications, userId }: Prop
                           <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 align-middle" />
                         )}
                       </p>
-                      <span className="text-[10px] text-slate-400 shrink-0 font-medium mt-0.5">{timeAgo(n.created_at)}</span>
+                      <span className="text-[10px] text-slate-400 shrink-0 font-medium mt-0.5">{timeAgo(n.created_at, 'long', true)}</span>
                     </div>
                     {n.body && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{n.body}</p>}
                   </div>

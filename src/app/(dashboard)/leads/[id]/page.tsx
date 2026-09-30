@@ -332,6 +332,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               proposalFilename={deal.proposal_filename ?? null}
               proposalUrl={deal.proposal_url ?? null}
               organizationId={organizationId ?? ''}
+              companyName={(deal as any).companies?.name ?? null}
+              estimatedValue={deal.estimated_value ?? null}
             />
           )}
             <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as any} canEdit={canEdit} />
