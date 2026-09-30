@@ -147,8 +147,39 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
         </div>
       </div>
 
+      {/* Celular: lista compacta. La tabla de 7 columnas no cabe en 375 px. */}
+      <ul className="md:hidden divide-y divide-slate-100">
+        {tasks.length === 0 && (
+          <li className="px-4 py-12 text-center text-sm text-slate-500">
+            {search ? 'Sin resultados para esa búsqueda' : 'No hay tareas en esta categoría'}
+          </li>
+        )}
+        {tasks.map(task => {
+          const s = STATUS_LABELS[task.status]
+          const dateStr = formatDate(task.due_date)
+          const timeStr = formatTime(task.due_date)
+          const isOv = task.status === 'overdue'
+          const isDone = task.status === 'completed'
+          return (
+            <li key={task.id} className={`flex items-start gap-3 px-4 py-3 ${isDone ? 'opacity-60' : ''}`}>
+              <div className="pt-0.5">
+                <TaskCheck taskId={task.id} isCompleted={isDone} isOverdue={isOv} readOnly={readOnly} />
+              </div>
+              <button onClick={() => setSelectedTask(task)} className="min-w-0 flex-1 text-left">
+                <p className={`text-sm font-medium leading-snug ${isDone ? 'line-through text-slate-500' : 'text-slate-900'}`}>{task.title}</p>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                  <span className={`inline-flex items-center gap-1 font-medium ${s.bg} px-1.5 py-0.5 rounded`}>{s.icon}{s.label}</span>
+                  {dateStr && <span className={isOv ? 'text-red-700 font-medium' : ''}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</span>}
+                  {task.deals?.companies?.name && <span className="truncate max-w-[160px]">{task.deals.companies.name}</span>}
+                </p>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70">

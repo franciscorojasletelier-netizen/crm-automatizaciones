@@ -109,7 +109,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex h-screen bg-background">
       <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} organizationName={organizationName} />
-      <main className="flex-1 overflow-auto pt-[52px] pb-[60px] md:pt-0 md:pb-0">
+      <main className="flex-1 overflow-auto pt-[52px] pb-[132px] md:pt-0 md:pb-16">
         {children}
       </main>
 

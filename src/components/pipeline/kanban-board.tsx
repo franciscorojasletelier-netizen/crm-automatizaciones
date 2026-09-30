@@ -223,7 +223,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
       <div className="flex items-center gap-3 mb-3 flex-wrap">
         <p className="text-xs text-slate-400 font-medium flex-1 min-w-[200px]">
           {view === 'board'
-            ? <>Arrastra las tarjetas entre columnas. Para cerrar un deal, suéltalo en la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo.</>
+            ? <><span className="md:hidden">Toca <span className="font-bold text-slate-500">Mover</span> en una tarjeta para cambiarla de etapa o cerrarla.</span><span className="hidden md:inline">Arrastra las tarjetas entre columnas. Para cerrar un deal, suéltalo en la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo.</span></>
             : <>Vista de lista — los mismos deals del tablero, ordenados por valor.</>
           }
         </p>

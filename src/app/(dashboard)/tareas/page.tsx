@@ -1,8 +1,8 @@
 export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
-import { AlertTriangle, Clock, CheckCircle2 } from 'lucide-react'
 import NewTaskButton from '@/components/tareas/new-task-button'
 import TasksTable from '@/components/tareas/tasks-table'
+import { Stat, StatStrip } from '@/components/ui/page'
 
 function isOverdue(due: string | null) {
   if (!due) return false
@@ -60,35 +60,11 @@ export default async function TareasPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
-          </div>
-          <div>
-            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{overdue.length}</p>
-            <p className="text-xs text-slate-500 font-medium">Vencidas</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-            <Clock className="w-4 h-4 text-amber-600" />
-          </div>
-          <div>
-            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{dueSoon.length}</p>
-            <p className="text-xs text-slate-500 font-medium">Por vencer</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{completed.length}</p>
-            <p className="text-xs text-slate-500 font-medium">Completadas</p>
-          </div>
-        </div>
-      </div>
+      <StatStrip className="grid-cols-3 lg:grid-cols-3">
+        <Stat label="Vencidas" value={overdue.length} tone={overdue.length > 0 ? 'danger' : 'neutral'} />
+        <Stat label="Por vencer" value={dueSoon.length} tone={dueSoon.length > 0 ? 'warning' : 'neutral'} />
+        <Stat label="Completadas" value={completed.length} />
+      </StatStrip>
 
       {/* Tabla con búsqueda y filtros */}
       <TasksTable tasks={all as any} readOnly={!canEdit} />

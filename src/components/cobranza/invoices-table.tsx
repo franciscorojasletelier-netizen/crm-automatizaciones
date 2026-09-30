@@ -62,7 +62,7 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-xs">
       <div className="flex flex-col gap-3 px-4 py-3 border-b border-slate-200 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-1 overflow-x-auto -mx-1 px-1" role="tablist" aria-label="Filtrar documentos">
+        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filtrar documentos">
           {FILTERS.map(f => (
             <button key={f.key} role="tab" aria-selected={filter === f.key} onClick={() => setFilter(f.key)}
               className={cn('h-7 px-2.5 rounded-md text-[13px] whitespace-nowrap transition-colors',

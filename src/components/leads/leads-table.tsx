@@ -415,7 +415,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
         {filtered.length === 0 && (
           <div className="text-center py-12">
             <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-            <p className="text-sm text-slate-400 font-medium">No hay leads que coincidan</p>
+            <p className="text-sm text-slate-500 font-medium">{deals.length === 0 ? 'Aún no hay leads. Crea el primero o conecta el formulario web.' : 'No hay leads que coincidan'}</p>
           </div>
         )}
         {paginated.map((deal: any) => (

@@ -133,7 +133,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   }))
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-3 md:right-6 z-40 flex flex-col items-end gap-3">
+    <div className="fixed bottom-[76px] md:bottom-6 right-3 md:right-6 z-40 flex flex-col items-end gap-3">
       {open && (
         <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
           style={{ height: 'min(500px, calc(100dvh - 10rem))' }}>
@@ -236,7 +236,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
       )}
 
       <button onClick={() => { setOpen(!open); setUnread(0) }}
-        className="w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center relative hover:scale-105 transition-all"
+        className="w-12 h-12 md:w-14 md:h-14 rounded-full shadow-lg flex items-center justify-center relative transition-colors"
         style={{ background: open ? 'var(--color-slate-900)' : 'var(--color-accent-600)' }}>
         {open ? <X className="w-6 h-6 text-white" /> : <MessageCircle className="w-6 h-6 text-white" />}
         {!open && unread > 0 && (
