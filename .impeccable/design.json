@@ -1,0 +1,19 @@
+{
+  "source": "src/app/globals.css",
+  "world": "canon — estándar SaaS sobrio (seed b47175f0)",
+  "shadows": {
+    "xs": "0 1px 1px 0 oklch(0.2 0.01 255 / 0.04)",
+    "sm": "0 1px 2px 0 oklch(0.2 0.01 255 / 0.06)",
+    "md": "0 4px 8px -2px oklch(0.2 0.01 255 / 0.08), 0 2px 4px -2px oklch(0.2 0.01 255 / 0.05)",
+    "lg": "0 12px 24px -8px oklch(0.2 0.01 255 / 0.12), 0 4px 8px -4px oklch(0.2 0.01 255 / 0.06)",
+    "2xl": "0 28px 56px -16px oklch(0.2 0.01 255 / 0.22)"
+  },
+  "focus": "outline 2px solid var(--color-accent-500), offset 2px",
+  "selection": { "background": "var(--color-accent-100)", "color": "var(--color-accent-900)" },
+  "motion": {
+    "ease": "cubic-bezier(0.16, 1, 0.3, 1)",
+    "sheetEnter": "slide-in-from-right-8, 200ms",
+    "reducedMotion": "global: duraciones a 0.01ms"
+  },
+  "remappedScales": ["indigo", "violet", "purple → accent", "slate → neutro bajo croma (400/500 oscurecidos)"]
+}

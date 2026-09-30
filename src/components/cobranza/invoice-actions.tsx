@@ -172,7 +172,7 @@ export function DeletePaymentButton({ paymentId, label }: { paymentId: string; l
   }
   return (
     <button onClick={() => setConfirming(true)} aria-label={`Eliminar pago ${label}`} title="Eliminar pago"
-      className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
+      className="w-7 h-7 rounded-md flex items-center justify-center text-slate-500 hover:text-red-700 hover:bg-red-100 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
       <Trash2 className="w-3.5 h-3.5" />
     </button>
   )
