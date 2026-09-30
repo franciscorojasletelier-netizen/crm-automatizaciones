@@ -87,10 +87,9 @@ export default function NewTaskButton() {
 
   return (
     <>
-      <button
+      <button 
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
-        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+        className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
       >
         <Plus className="w-4 h-4" />
         Nueva tarea
@@ -232,9 +231,9 @@ export default function NewTaskButton() {
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:shadow-md ${
                       hasConflict ? 'bg-amber-500 hover:bg-amber-600' : ''
                     }`}
-                    style={hasConflict ? {} : { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                    style={hasConflict ? {} : { background: 'var(--color-accent-600)' }}
                   >
-                    {loading ? 'Guardando...' : hasConflict ? '⚠️ Crear con conflicto' : 'Crear tarea'}
+                    {loading ? 'Guardando...' : hasConflict ? 'Crear con conflicto' : 'Crear tarea'}
                   </button>
                 </div>
               </>

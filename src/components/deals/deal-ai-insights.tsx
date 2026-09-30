@@ -77,15 +77,15 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100"
-        style={{ background: 'linear-gradient(135deg, #f5f3ff, #eef2ff)' }}>
+      <div className="bg-accent-50 px-4 py-3 flex items-center gap-2 border-b border-slate-100"
+         >
         <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-violet-600" />
         </div>
         <h2 className="flex-1 text-sm font-semibold text-slate-900">Análisis IA</h2>
         {insights && !loading && (
           <button onClick={analyze} disabled={cooldown > 0}
-            title={cooldown > 0 ? `Podés volver a analizar en ${cooldown}s` : 'Volver a analizar'}
+            title={cooldown > 0 ? `Puedes volver a analizar en ${cooldown}s` : 'Volver a analizar'}
             className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-violet-600 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed flex items-center gap-1">
             <RefreshCw className="w-3.5 h-3.5" />
             {cooldown > 0 && <span className="text-[10px] font-semibold">{cooldown}s</span>}
@@ -100,8 +100,8 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
               Investiga la empresa en la web, resume el historial del deal, sugiere el enfoque de venta y evalúa el riesgo.
             </p>
             <button onClick={analyze}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)' }}>
+              className="bg-accent-600 inline-flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
+               >
               <Sparkles className="w-3.5 h-3.5" />
               Analizar deal
             </button>

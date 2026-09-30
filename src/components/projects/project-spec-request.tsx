@@ -219,7 +219,7 @@ Ejemplo:
 
           <div className="flex gap-2">
             <button onClick={handleRequest} disabled={loading || notes.trim().length < 15}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
               {loading ? 'Enviando...' : 'Enviar a Comercial'}
             </button>

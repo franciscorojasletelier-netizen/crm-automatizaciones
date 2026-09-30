@@ -1,379 +1,277 @@
 export const dynamic = 'force-dynamic'
-import { getCurrentProfile } from '@/lib/supabase/server'
-import { Users, TrendingUp, CheckSquare, AlertCircle, DollarSign, Target, ArrowRight, Clock } from 'lucide-react'
+
 import Link from 'next/link'
+import { AlertTriangle, Clock, Wallet, ArrowRight, TrendingUp } from 'lucide-react'
+import { getCurrentProfile } from '@/lib/supabase/server'
 import DashboardDonut from '@/components/dashboard/donut-chart'
-import { formatCLP } from '@/lib/format'
-import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf } from '@/lib/stages'
-import { CHILE_TZ, chileMonthStart } from '@/lib/dates'
+import { clp, timeAgo } from '@/lib/format'
+import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf, probabilityForStage } from '@/lib/stages'
+import { CHILE_TZ, chileDateString, chileMonthStart } from '@/lib/dates'
+import { canAccessSection } from '@/lib/roles'
+import { getDisabledModules } from '@/lib/modules'
+import { balanceOf, daysOverdue, invoiceCode, type Invoice } from '@/lib/cobranza'
+import { PageContainer, PageHeader, Panel, Stat, StatStrip, EmptyState, Delta } from '@/components/ui/page'
+import { cn } from '@/lib/utils'
 
-async function getStats() {
-  const { supabase, organizationId } = await getCurrentProfile()
-  const now = new Date()
-  // Mes calendario de Chile (el servidor corre en UTC).
-  const startOfMonth = chileMonthStart(0, now).toISOString()
+const STALLED_DAYS = 7
+const DAY_MS = 86_400_000
 
-  // organizationId explícito: sin esto, un platform_owner vería el embudo
-  // de TODAS las organizaciones mezclado en su propio dashboard (su policy
-  // de SELECT bypasea el filtro de organización).
-  const stages = await getStages(supabase, organizationId ?? undefined)
-  // El KPI "leads nuevos" antes consultaba .eq('stage','nuevo_lead').
-  // Ahora es la etapa inicial que tenga configurada esta organización.
-  const entryStageKey = defaultStage(stages)?.key ?? '__sin_etapa__'
-
-  const [dealsOpen, dealsWonMonth, tasksOverdue, leadsNew, wonValue, projects, pipeline, recentDeals, overdueTasks, allDealsForChart] = await Promise.all([
-    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'won').gte('closed_at', startOfMonth),
-    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false).lt('due_date', now.toISOString()),
-    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', entryStageKey),
-    supabase.from('deals').select('estimated_value').eq('status', 'won').gte('closed_at', startOfMonth),
-    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'activo'),
-    supabase.from('deals').select('stage').eq('status', 'open'),
-    supabase.from('deals').select(`
-      id, stage, estimated_value, next_action, updated_at,
-      companies(name), profiles(full_name)
-    `).eq('status', 'open').order('updated_at', { ascending: false }).limit(6),
-    supabase.from('tasks').select(`
-      id, title, due_date,
-      deals(companies(name))
-    `).eq('is_completed', false).lt('due_date', now.toISOString()).order('due_date', { ascending: true }).limit(5),
-    // Para gráfico donut
-    supabase.from('deals').select(`stage, source, estimated_value, profiles:owner_id(full_name), companies(industry)`),
-  ])
-
-  const valorGanado = wonValue.data?.reduce((sum, d) => sum + (Number(d.estimated_value) || 0), 0) ?? 0
-
-  const stageCounts: Record<string, number> = {}
-  pipeline.data?.forEach(d => {
-    stageCounts[d.stage] = (stageCounts[d.stage] || 0) + 1
-  })
-
-  // Chart data
-  const chartDeals = allDealsForChart.data ?? []
-
-  // Por etapa
-  // Helper: agrupar por clave y sumar count + amount
-  function groupBy(key: (d: any) => string, colorList: string[]) {
-    const map: Record<string, { count: number; amount: number }> = {}
-    chartDeals.forEach((d: any) => {
-      const k = key(d) || 'Sin datos'
-      if (!map[k]) map[k] = { count: 0, amount: 0 }
-      map[k].count++
-      map[k].amount += Number(d.estimated_value) || 0
-    })
-    return Object.entries(map)
-      .sort((a, b) => b[1].count - a[1].count)
-      .map(([k, v], i) => ({
-        label: k, value: v.count, amount: v.amount,
-        color: colorList[i % colorList.length],
-      }))
-  }
-
-  const FUENTE_COLORS = ['#6366f1','#f97316','#22c55e','#eab308','#ec4899','#06b6d4','#a855f7','#94a3b8']
-
-  // Por etapa (con colores propios)
-  const stageMap: Record<string, { count: number; amount: number }> = {}
-  chartDeals.forEach((d: any) => {
-    if (!stageMap[d.stage]) stageMap[d.stage] = { count: 0, amount: 0 }
-    stageMap[d.stage].count++
-    stageMap[d.stage].amount += Number(d.estimated_value) || 0
-  })
-  const byEtapa = Object.entries(stageMap)
-    .sort((a, b) => b[1].count - a[1].count)
-    .map(([k, v]) => {
-      const s = stageByKey(stages, k)
-      return {
-        label: s?.label ?? k, value: v.count, amount: v.amount,
-        // hex, no clase de Tailwind: esto va a un SVG.
-        color: colorOf(s).hex,
-      }
-    })
-
-  const byFuente      = groupBy(d => d.source,                         FUENTE_COLORS)
-  const byIndustria   = groupBy(d => d.companies?.industry,            FUENTE_COLORS)
-  const byResponsable = groupBy(d => d.profiles?.full_name,            FUENTE_COLORS)
-
-  return {
-    dealsOpen: dealsOpen.count ?? 0,
-    dealsWonMonth: dealsWonMonth.count ?? 0,
-    tasksOverdue: tasksOverdue.count ?? 0,
-    leadsNew: leadsNew.count ?? 0,
-    valorGanado,
-    proyectosActivos: projects.count ?? 0,
-    stageCounts,
-    recentDeals: recentDeals.data ?? [],
-    overdueTasks: overdueTasks.data ?? [],
-    byEtapa, byFuente, byIndustria, byResponsable,
-    stages,
-  }
-}
-
-// Acá había TRES mapas de etapas duplicados y desincronizados entre sí
-// (uno con 7 claves, otro con 7, otro con 11). Ahora salen de stages.
-
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const hours = Math.floor(diff / 3600000)
-  if (hours < 24) return `Hace ${hours}h`
-  const days = Math.floor(hours / 24)
-  return `Hace ${days}d`
+type OpenDeal = {
+  id: string; stage: string; estimated_value: number | null; probability: number | null
+  next_action: string | null; updated_at: string; last_contacted_at: string | null; created_at: string
+  companies: { name: string } | null; profiles: { full_name: string | null } | null
 }
 
 export default async function DashboardPage() {
-  const stats = await getStats()
+  const { supabase, organizationId, role, sectionAccess, profile } = await getCurrentProfile()
+  const now = new Date()
+  const today = chileDateString(now)
+  const monthStart = chileMonthStart(0, now).toISOString()
+  const prevMonthStart = chileMonthStart(-1, now).toISOString()
 
-  const cards = [
-    {
-      label: 'Deals abiertos',
-      value: stats.dealsOpen,
-      icon: TrendingUp,
-      href: '/leads',
-      gradient: 'from-blue-500 to-blue-600',
-      bg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      border: 'border-blue-100',
-    },
-    {
-      label: 'Ganados este mes',
-      value: stats.dealsWonMonth,
-      icon: Target,
-      href: '/pipeline',
-      gradient: 'from-emerald-500 to-green-600',
-      bg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-      border: 'border-emerald-100',
-    },
-    {
-      label: 'Proyectos activos',
-      value: stats.proyectosActivos,
-      icon: CheckSquare,
-      href: '/proyectos',
-      gradient: 'from-violet-500 to-purple-600',
-      bg: 'bg-violet-50',
-      iconColor: 'text-violet-600',
-      border: 'border-violet-100',
-    },
-    {
-      label: 'Tareas vencidas',
-      value: stats.tasksOverdue,
-      icon: AlertCircle,
-      href: '/tareas',
-      gradient: 'from-red-500 to-rose-600',
-      bg: 'bg-red-50',
-      iconColor: 'text-red-600',
-      border: 'border-red-100',
-      alert: stats.tasksOverdue > 0,
-    },
-  ]
+  const [stages, disabledModules] = await Promise.all([
+    getStages(supabase, organizationId ?? undefined),
+    getDisabledModules(supabase, organizationId ?? undefined),
+  ])
+  const sees = (key: string) => canAccessSection(role, sectionAccess, key, disabledModules)
+  const seesPipeline = sees('pipeline')
+  const seesCobranza = sees('cobranza')
+  const entryStageKey = defaultStage(stages)?.key ?? '__sin_etapa__'
 
-  const stages = stats.stages
-  const funnelStages = funnelOf(stages)
-  const maxCount = Math.max(...funnelStages.map(s => stats.stageCounts[s.key] || 0), 1)
+  const [openRes, wonMonthRes, wonPrevRes, tasksOverdueRes, overdueTasksRes, chartRes, newLeadsRes, invoicesRes] = await Promise.all([
+    supabase.from('deals')
+      .select('id, stage, estimated_value, probability, next_action, updated_at, last_contacted_at, created_at, companies(name), profiles:owner_id(full_name)')
+      .eq('status', 'open').order('updated_at', { ascending: false }).limit(2000),
+    // Por fecha real de cierre (041), no por la última edición.
+    supabase.from('deals').select('estimated_value').eq('status', 'won').gte('closed_at', monthStart),
+    supabase.from('deals').select('estimated_value').eq('status', 'won').gte('closed_at', prevMonthStart).lt('closed_at', monthStart),
+    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false).lt('due_date', now.toISOString()),
+    supabase.from('tasks').select('id, title, due_date, deals(companies(name))')
+      .eq('is_completed', false).lt('due_date', now.toISOString()).order('due_date', { ascending: true }).limit(5),
+    supabase.from('deals').select('stage, source, estimated_value, profiles:owner_id(full_name), companies(industry)').limit(5000),
+    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', entryStageKey).eq('status', 'open'),
+    seesCobranza
+      ? supabase.from('invoices').select('id, invoice_number, amount, paid_amount, status, due_date, companies(name)').in('status', ['pendiente', 'parcial']).limit(2000)
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const open = (openRes.data ?? []) as unknown as OpenDeal[]
+  const value = (v: number | null) => Number(v) || 0
+  const pipelineValue = open.reduce((s, d) => s + value(d.estimated_value), 0)
+  const forecast = Math.round(open.reduce((s, d) => s + value(d.estimated_value) * probabilityForStage(stages, d.stage, d.probability) / 100, 0))
+  const wonMonth = (wonMonthRes.data ?? []).reduce((s, d) => s + value(d.estimated_value), 0)
+  const wonMonthCount = wonMonthRes.data?.length ?? 0
+  const wonPrev = (wonPrevRes.data ?? []).reduce((s, d) => s + value(d.estimated_value), 0)
+  const wonDelta = wonPrev > 0 ? Math.round(((wonMonth - wonPrev) / wonPrev) * 100) : null
+
+  const staleDays = (d: OpenDeal) => Math.floor((now.getTime() - Date.parse(d.last_contacted_at ?? d.created_at)) / DAY_MS)
+  const stalled = open.filter(d => staleDays(d) >= STALLED_DAYS).sort((a, b) => staleDays(b) - staleDays(a))
+
+  const invoices = (invoicesRes.data ?? []) as unknown as Invoice[]
+  const overdueInvoices = invoices.filter(i => daysOverdue(i, today) > 0).sort((a, b) => daysOverdue(b, today) - daysOverdue(a, today))
+  const overdueAmount = overdueInvoices.reduce((s, i) => s + balanceOf(i), 0)
+  const receivable = invoices.reduce((s, i) => s + balanceOf(i), 0)
+
+  const tasksOverdue = tasksOverdueRes.count ?? 0
+  const overdueTasks = (overdueTasksRes.data ?? []) as unknown as { id: string; title: string; due_date: string; deals: { companies: { name: string } | null } | null }[]
+
+  // Embudo: conteo y valor por etapa (solo deals abiertos).
+  const byStage: Record<string, { count: number; amount: number }> = {}
+  for (const d of open) {
+    byStage[d.stage] ??= { count: 0, amount: 0 }
+    byStage[d.stage].count++
+    byStage[d.stage].amount += value(d.estimated_value)
+  }
+  const funnel = funnelOf(stages)
+  const maxFunnel = Math.max(...funnel.map(s => byStage[s.key]?.amount || byStage[s.key]?.count || 0), 1)
+
+  // Distribución (donut)
+  const chartDeals = (chartRes.data ?? []) as unknown as { stage: string; source: string | null; estimated_value: number | null; profiles: { full_name: string | null } | null; companies: { industry: string | null } | null }[]
+  const PALETTE = ['#3b63d9', '#0f9f8f', '#d9922b', '#c2415c', '#7a5cc9', '#4b8fd6', '#8a9a3a', '#94a3b8']
+  function groupBy(key: (d: (typeof chartDeals)[number]) => string | null | undefined) {
+    const map: Record<string, { count: number; amount: number }> = {}
+    for (const d of chartDeals) {
+      const k = key(d) || 'Sin datos'
+      map[k] ??= { count: 0, amount: 0 }
+      map[k].count++
+      map[k].amount += value(d.estimated_value)
+    }
+    return Object.entries(map).sort((a, b) => b[1].count - a[1].count)
+      .map(([label, v], i) => ({ label, value: v.count, amount: v.amount, color: PALETTE[i % PALETTE.length] }))
+  }
+  const byEtapa = groupBy(d => d.stage).map(s => {
+    const st = stageByKey(stages, s.label)
+    return { ...s, label: st?.label ?? s.label, color: colorOf(st).hex }
+  })
+
+  const firstName = profile?.full_name?.split(' ')[0]
+  const attentionCount = stalled.length + tasksOverdue + overdueInvoices.length
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
-
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Resumen del área comercial</p>
-        </div>
-        <div className="hidden md:flex items-center gap-2 text-xs text-slate-400 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
-          <Clock className="w-3.5 h-3.5" />
-          {new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long' })}
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {cards.map(({ label, value, icon: Icon, gradient, bg, iconColor, border, href, alert }) => (
-          <Link key={label} href={href}
-            className={`group relative bg-white rounded-2xl border ${border} p-4 md:p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden`}>
-            {/* Barra superior de color */}
-            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient}`} />
-
-            <div className="flex items-start justify-between mb-3">
-              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-4 h-4 ${iconColor}`} />
-              </div>
-              {alert && (
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              )}
-            </div>
-
-            <p className="text-3xl font-bold text-slate-900 leading-none">{value}</p>
-            <p className="text-xs text-slate-500 mt-1.5 font-medium">{label}</p>
-
-            <div className="mt-3 flex items-center gap-1 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span>Ver detalle</span>
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Valor ganado — destacado */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 md:p-6 overflow-hidden">
-        <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
-        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #8b5cf6, transparent)' }} />
-        <div className="relative z-10 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-green-400/20 flex items-center justify-center shrink-0">
-                <DollarSign className="w-4 h-4 text-green-400" />
-              </div>
-              <p className="text-sm text-slate-400 font-medium">Valor ganado este mes</p>
-            </div>
-            <p className="text-3xl md:text-4xl font-bold text-white tracking-tight truncate">
-              {formatCLP(stats.valorGanado)}
-            </p>
-          </div>
-          <Link href="/pipeline"
-            className="flex items-center gap-2 text-xs md:text-sm text-indigo-300 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 md:px-4 py-2 rounded-xl shrink-0">
-            <span className="hidden sm:inline">Ver pipeline</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-
-      {/* Gráfico Donut */}
-      <DashboardDonut
-        byEtapa={stats.byEtapa}
-        byFuente={stats.byFuente}
-        byIndustria={stats.byIndustria}
-        byResponsable={stats.byResponsable}
+    <PageContainer>
+      <PageHeader
+        title={firstName ? `Hola, ${firstName}` : 'Dashboard'}
+        description={now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long' })}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      <StatStrip>
+        {seesPipeline ? (
+          <Stat label="Pipeline abierto" value={clp(pipelineValue)} href="/pipeline"
+            context={`${open.length} ${open.length === 1 ? 'deal' : 'deals'} · ${newLeadsRes.count ?? 0} nuevos`} />
+        ) : (
+          <Stat label="Tareas vencidas" value={tasksOverdue} tone={tasksOverdue > 0 ? 'danger' : 'neutral'} href="/tareas" context="Asignadas a ti" />
+        )}
+        <Stat label="Ganado este mes" value={clp(wonMonth)} tone={wonMonth > 0 ? 'success' : 'neutral'} href={seesPipeline ? '/reportes' : undefined}
+          context={<span>{wonMonthCount} {wonMonthCount === 1 ? 'cierre' : 'cierres'} · <Delta value={wonDelta} suffix="%" /> vs. mes anterior</span>} />
+        <Stat label="Forecast ponderado" value={clp(forecast)} href={seesPipeline ? '/reportes' : undefined}
+          context="Valor × probabilidad de cada etapa" />
+        {seesCobranza ? (
+          <Stat label="Cobranza vencida" value={clp(overdueAmount)} tone={overdueAmount > 0 ? 'danger' : 'neutral'} href="/cobranza?filtro=vencidos"
+            context={`De ${clp(receivable)} por cobrar`} />
+        ) : (
+          <Stat label="Tareas vencidas" value={tasksOverdue} tone={tasksOverdue > 0 ? 'danger' : 'neutral'} href="/tareas"
+            context={tasksOverdue > 0 ? 'Requieren acción' : 'Al día'} />
+        )}
+      </StatStrip>
 
-        {/* Embudo de ventas */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-semibold text-slate-900">Embudo de ventas</h2>
-            <Link href="/pipeline" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-              Ver Pipeline <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          {funnelStages.every(s => !stats.stageCounts[s.key]) ? (
-            <div className="flex flex-col items-center justify-center py-8 gap-2">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-slate-400" />
-              </div>
-              <p className="text-sm text-slate-400">Sin datos aún</p>
-            </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Panel title="Requiere atención" padded={false}
+          description={attentionCount > 0 ? 'Lo que conviene resolver hoy' : undefined}>
+          {attentionCount === 0 ? (
+            <EmptyState title="Todo al día" description="No hay deals estancados, tareas vencidas ni cobros vencidos." />
           ) : (
-            <div className="space-y-3">
-              {funnelStages.map(stage => {
-                const count = stats.stageCounts[stage.key] || 0
-                const pct = Math.round((count / maxCount) * 100)
-                return (
-                  <div key={stage.key}>
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="text-slate-600 font-medium">{stage.label}</span>
-                      <span className="font-bold text-slate-900 tabular-nums">{count}</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${colorOf(stage).dot}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Tareas vencidas */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-slate-900">Tareas vencidas</h2>
-              {stats.overdueTasks.length > 0 && (
-                <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  {stats.overdueTasks.length}
-                </span>
+            <ul className="divide-y divide-slate-100">
+              {overdueInvoices.slice(0, 4).map(inv => (
+                <li key={inv.id}>
+                  <Link href={`/cobranza/${inv.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                    <Wallet className="w-4 h-4 text-red-600 shrink-0" />
+                    <span className="min-w-0 flex-1 text-[13px] text-slate-800 truncate">
+                      Cobro vencido · <span className="font-medium">{inv.companies?.name}</span> <span className="text-slate-500">{invoiceCode(inv)}</span>
+                    </span>
+                    <span className="text-xs font-medium text-red-700 tabular-nums whitespace-nowrap">{daysOverdue(inv, today)} días · {clp(balanceOf(inv))}</span>
+                  </Link>
+                </li>
+              ))}
+              {overdueTasks.map(t => (
+                <li key={t.id}>
+                  <Link href="/tareas" className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="min-w-0 flex-1 text-[13px] text-slate-800 truncate">
+                      Tarea vencida · <span className="font-medium">{t.title}</span>
+                      {t.deals?.companies?.name && <span className="text-slate-500"> · {t.deals.companies.name}</span>}
+                    </span>
+                    <span className="text-xs text-amber-700 tabular-nums whitespace-nowrap">
+                      {new Date(t.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' })}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+              {seesPipeline && stalled.slice(0, 5).map(d => (
+                <li key={d.id}>
+                  <Link href={`/leads/${d.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                    <AlertTriangle className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="min-w-0 flex-1 text-[13px] text-slate-800 truncate">
+                      Deal sin contacto · <span className="font-medium">{d.companies?.name ?? 'Sin empresa'}</span>
+                      {d.profiles?.full_name && <span className="text-slate-500"> · {d.profiles.full_name}</span>}
+                    </span>
+                    <span className="text-xs text-slate-600 tabular-nums whitespace-nowrap">{staleDays(d)} días</span>
+                  </Link>
+                </li>
+              ))}
+              {(tasksOverdue > overdueTasks.length || stalled.length > 5) && (
+                <li className="px-4 py-2 text-xs text-slate-500">
+                  {tasksOverdue > overdueTasks.length && <Link href="/tareas" className="hover:underline mr-3">+{tasksOverdue - overdueTasks.length} tareas vencidas</Link>}
+                  {seesPipeline && stalled.length > 5 && <Link href="/pipeline" className="hover:underline">+{stalled.length - 5} deals estancados</Link>}
+                </li>
               )}
-            </div>
-            <Link href="/tareas" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-              Ver todas <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="divide-y divide-slate-50">
-            {stats.overdueTasks.length === 0 ? (
-              <div className="px-5 py-8 flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckSquare className="w-5 h-5 text-green-500" />
-                </div>
-                <p className="text-sm text-slate-400 font-medium">Sin tareas vencidas</p>
-              </div>
-            ) : stats.overdueTasks.map((task: any) => (
-              <div key={task.id} className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{task.title}</p>
-                  {task.deals?.companies?.name && (
-                    <p className="text-xs text-slate-400 mt-0.5">{task.deals.companies.name}</p>
-                  )}
-                </div>
-                <span className="shrink-0 text-[11px] font-semibold bg-red-50 text-red-600 px-2 py-1 rounded-lg border border-red-100">
-                  {new Date(task.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+            </ul>
+          )}
+        </Panel>
+
+        {seesPipeline && (
+          <Panel title="Embudo" description="Deals abiertos por etapa"
+            actions={<Link href="/pipeline" className="text-[13px] text-accent-700 hover:underline inline-flex items-center gap-1">Pipeline <ArrowRight className="w-3.5 h-3.5" /></Link>}>
+            {funnel.every(s => !byStage[s.key]) ? (
+              <EmptyState icon={TrendingUp} title="Sin deals abiertos" />
+            ) : (
+              <ul className="space-y-3">
+                {funnel.map(stage => {
+                  const row = byStage[stage.key] ?? { count: 0, amount: 0 }
+                  const pct = Math.max(row.amount || row.count ? 2 : 0, Math.round(((row.amount || row.count) / maxFunnel) * 100))
+                  return (
+                    <li key={stage.key}>
+                      <div className="flex items-baseline justify-between gap-2 text-[13px] mb-1">
+                        <span className="text-slate-700 truncate">{stage.label}</span>
+                        <span className="tabular-nums text-slate-500 whitespace-nowrap">
+                          <span className="text-slate-900 font-medium">{row.count}</span>{row.amount > 0 && ` · ${clp(row.amount)}`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={cn('h-full rounded-full', colorOf(stage).dot)} style={{ width: `${pct}%` }} />
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </Panel>
+        )}
       </div>
 
-      {/* Deals recientes */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-slate-400" />
-            <h2 className="text-sm font-semibold text-slate-900">Deals activos recientes</h2>
+      {seesPipeline && (
+        <>
+          <div className="mt-4">
+            <DashboardDonut
+              byEtapa={byEtapa}
+              byFuente={groupBy(d => d.source)}
+              byIndustria={groupBy(d => d.companies?.industry)}
+              byResponsable={groupBy(d => d.profiles?.full_name)}
+            />
           </div>
-          <Link href="/leads" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-            Ver todos <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-        <div className="divide-y divide-slate-50">
-          {stats.recentDeals.length === 0 && (
-            <div className="px-5 py-10 flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <Users className="w-5 h-5 text-slate-400" />
+
+          <Panel className="mt-4" title="Deals con movimiento reciente" padded={false}
+            actions={<Link href="/leads" className="text-[13px] text-accent-700 hover:underline inline-flex items-center gap-1">Todos los leads <ArrowRight className="w-3.5 h-3.5" /></Link>}>
+            {open.length === 0 ? (
+              <EmptyState title="No hay deals abiertos" description="Los leads del formulario web, Meta y WhatsApp aparecerán aquí." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px] min-w-[640px]">
+                  <thead>
+                    <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
+                      <th scope="col" className="font-medium px-4 py-2">Empresa</th>
+                      <th scope="col" className="font-medium px-3 py-2">Etapa</th>
+                      <th scope="col" className="font-medium px-3 py-2">Próxima acción</th>
+                      <th scope="col" className="font-medium px-3 py-2 text-right">Valor</th>
+                      <th scope="col" className="font-medium px-4 py-2 text-right">Actualizado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {open.slice(0, 8).map(d => {
+                      const st = stageByKey(stages, d.stage)
+                      return (
+                        <tr key={d.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-2.5">
+                            <Link href={`/leads/${d.id}`} className="font-medium text-slate-900 hover:text-accent-700">{d.companies?.name ?? 'Sin empresa'}</Link>
+                            {d.profiles?.full_name && <span className="block text-xs text-slate-500">{d.profiles.full_name}</span>}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="inline-flex items-center gap-1.5 text-slate-700">
+                              <span className={cn('w-1.5 h-1.5 rounded-full', colorOf(st).dot)} aria-hidden />{st?.label ?? d.stage}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-slate-600 max-w-[260px] truncate">{d.next_action ?? '—'}</td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">{d.estimated_value ? clp(d.estimated_value) : '—'}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500 whitespace-nowrap">{timeAgo(d.updated_at)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <p className="text-sm text-slate-400">No hay deals activos aún</p>
-            </div>
-          )}
-          {stats.recentDeals.map((deal: any) => (
-            <Link key={deal.id} href={`/leads/${deal.id}`}
-              className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors group">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-indigo-700 transition-colors">
-                  {deal.companies?.name ?? 'Sin empresa'}
-                </p>
-                {deal.next_action && (
-                  <p className="text-xs text-slate-400 mt-0.5 truncate">→ {deal.next_action}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {deal.estimated_value && (
-                  <span className="text-sm font-semibold text-slate-700">
-                    {formatCLP(deal.estimated_value)}
-                  </span>
-                )}
-                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
-                  {stageByKey(stages, deal.stage)?.label ?? deal.stage}
-                </span>
-                <span className="text-xs text-slate-300 hidden lg:block">{timeAgo(deal.updated_at)}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
+            )}
+          </Panel>
+        </>
+      )}
+    </PageContainer>
   )
 }

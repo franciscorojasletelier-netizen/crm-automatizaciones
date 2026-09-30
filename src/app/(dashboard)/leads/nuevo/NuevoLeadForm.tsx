@@ -297,8 +297,8 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
 
           <div className="flex gap-3 pt-1">
             <button type="submit" disabled={loading}
-              className="flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              className="bg-accent-600 flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
+               >
               {loading ? (
                 <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/></svg>Guardando...</>
               ) : (

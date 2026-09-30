@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, FileText, Eye, Upload } from 'lucide-react'
+import { Loader2, FileText, Eye, Upload, Paperclip, PenLine } from 'lucide-react'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
@@ -106,7 +106,7 @@ export default function DealStageSelector({
                   <span aria-hidden className={`absolute -top-1.5 -right-1.5 w-4 h-4 text-white rounded-full text-[8px] flex items-center justify-center ${
                     s.requiresAttachment ? 'bg-orange-500' : 'bg-amber-500'
                   }`}>
-                    {s.requiresAttachment ? '📎' : '✏️'}
+                    {s.requiresAttachment ? <Paperclip className="w-2.5 h-2.5" /> : <PenLine className="w-2.5 h-2.5" />}
                   </span>
                 )}
               </button>

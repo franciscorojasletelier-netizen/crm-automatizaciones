@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     checkRateLimit(admin, 'admin_reset_password_ip', ip, { maxHits: 20, windowMinutes: 15 }),
   ])
   if (!byActor.allowed || !byIp.allowed) {
-    return NextResponse.json({ error: 'Demasiados intentos. Probá de nuevo en unos minutos.' }, { status: 429 })
+    return NextResponse.json({ error: 'Demasiados intentos. Prueba de nuevo en unos minutos.' }, { status: 429 })
   }
 
   // El objetivo tiene que pertenecer a la MISMA organización que quien
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
              style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
             Restablecer contraseña
           </a>
-          <p style="color:#999;font-size:12px;">Si no lo esperabas, podés ignorar este correo.</p>
+          <p style="color:#999;font-size:12px;">Si no lo esperabas, puedes ignorar este correo.</p>
         </div>
       `,
     }).catch(e => console.warn('Error enviando email de reset:', e))

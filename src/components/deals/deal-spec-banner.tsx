@@ -101,7 +101,7 @@ export default function DealSpecBanner({
           </div>
           <div>
             <p className="text-sm font-bold text-amber-900">
-              ⚠️ El proyecto necesita especificaciones de tu parte
+              El proyecto necesita especificaciones de tu parte
             </p>
             <p className="text-xs text-amber-700 mt-0.5">
               El equipo de producción devolvió este deal a comercial. Lee las notas y cuando estés listo, devuelve el proyecto a producción.
@@ -148,7 +148,7 @@ export default function DealSpecBanner({
           {!showForm ? (
             <div className="flex items-center gap-3 flex-wrap">
               <button onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:shadow-md transition-all">
                 <CheckCircle2 className="w-4 h-4" /> Responder a Producción
               </button>
               <Link href={`/proyectos/${projectId}`}
@@ -174,7 +174,7 @@ export default function DealSpecBanner({
               {saveError && <p className="text-xs text-red-500">{saveError}</p>}
               <div className="flex gap-2">
                 <button onClick={handleResolve} disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-md disabled:opacity-50 transition-all">
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:shadow-md disabled:opacity-50 transition-all">
                   {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar y devolver</>}
                 </button>
                 <button onClick={() => { setShowForm(false); setResponse(''); setResponseError(false) }}

@@ -189,8 +189,8 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
           const owner = teamUsers.find(u => u.id === localOwnerId)
           return owner ? (
             <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <div className="bg-accent-600 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+                 >
                 {getInitials(owner.full_name, owner.email, 'U')}
               </div>
               <div className="flex-1 min-w-0">

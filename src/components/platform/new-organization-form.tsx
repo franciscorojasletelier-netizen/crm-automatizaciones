@@ -105,8 +105,8 @@ export default function NewOrganizationForm() {
       )}
 
       <button onClick={submit} disabled={saving}
-        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2.5 disabled:opacity-50 transition-all"
-        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+        className="bg-accent-600 w-full flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2.5 disabled:opacity-50 transition-all"
+         >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
         Crear organización
       </button>

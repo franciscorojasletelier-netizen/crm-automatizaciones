@@ -27,7 +27,7 @@ export default function OrganizationsTable({ organizations }: { organizations: O
   async function toggle(org: Org) {
     const nextActive = !org.is_active
     const action = nextActive ? 'reactivar' : 'suspender'
-    if (!confirm(`¿Seguro que querés ${action} "${org.name}"?${!nextActive ? ' Sus usuarios no podrán ingresar hasta que la reactives.' : ''}`)) return
+    if (!confirm(`¿Seguro que quieres ${action} "${org.name}"?${!nextActive ? ' Sus usuarios no podrán ingresar hasta que la reactives.' : ''}`)) return
 
     setBusyId(org.id)
     setError('')

@@ -255,7 +255,7 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
           </div>
           {actionType === 'send_whatsapp_template' && (
             templates.length === 0 ? (
-              <p className="text-[11px] text-amber-600">No hay plantillas de WhatsApp creadas todavía — creá una primero desde el chat de un deal.</p>
+              <p className="text-[11px] text-amber-600">No hay plantillas de WhatsApp creadas todavía — crea una primero desde el chat de un deal.</p>
             ) : (
               <select value={templateId} onChange={e => setTemplateId(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">

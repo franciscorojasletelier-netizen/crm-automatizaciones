@@ -134,10 +134,10 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
         style={{ height: 'min(500px, calc(100dvh - 10rem))' }}>
 
         {/* Header */}
-        <div className="px-4 py-3 flex items-center gap-2.5 shrink-0"
-          style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+        <div className="bg-slate-900 px-4 py-3 flex items-center gap-2.5 shrink-0"
+           >
+          <div className="bg-accent-600 w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+             >
             {initials}
           </div>
           <div className="flex-1 min-w-0">
@@ -164,7 +164,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
             <div className="flex flex-col items-center justify-center h-32 gap-2">
               <MessageCircle className="w-8 h-8 text-slate-200" />
               <p className="text-sm text-slate-400 font-medium">Sin mensajes aún</p>
-              <p className="text-xs text-slate-300">Escribe el primero 👋</p>
+              <p className="text-xs text-slate-300">Escribe el primer mensaje</p>
             </div>
           )}
           {messages.map((msg) => {
@@ -183,7 +183,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
                     <div className={`px-3 py-1.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
                       isTemp ? 'opacity-60' : 'opacity-100'
                     } ${isMe
-                      ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm'
+                      ? 'bg-accent-600 text-white rounded-br-sm'
                       : 'bg-white text-slate-800 shadow-sm border border-slate-100 rounded-bl-sm'
                     }`}>
                       {msg.content}
@@ -203,7 +203,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
           <div className="mx-3 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
             <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
             <p className="text-xs text-red-700 flex-1">{error}</p>
-            <button onClick={() => setError('')} className="text-red-400 text-xs">✕</button>
+            <button onClick={() => setError('')} className="text-red-400 text-xs" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
           </div>
         )}
 
@@ -217,7 +217,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
               className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
             <button onClick={sendMessage} disabled={!input.trim() || sending}
               className="w-7 h-7 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
-              style={{ background: input.trim() ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#e2e8f0' }}>
+              style={{ background: input.trim() ? 'var(--color-accent-600)' : 'var(--color-slate-200)' }}>
               <Send className={`w-3.5 h-3.5 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />
             </button>
           </div>

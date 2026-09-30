@@ -116,8 +116,8 @@ export default async function UsuariosPage() {
             return (
               <div key={u.id} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                 {/* Avatar */}
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                <div className="bg-accent-600 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+                   >
                   {initials}
                 </div>
 

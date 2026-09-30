@@ -70,8 +70,8 @@ export default function CompanyRow({ company, dealId, canEdit = true, fields = [
             <div className="flex items-center gap-3">
               <div className="flex gap-2 ml-auto">
                 <button onClick={save} disabled={saving}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl hover:shadow-md disabled:opacity-50 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                  className="bg-accent-600 flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl hover:shadow-md disabled:opacity-50 transition-all"
+                   >
                   <Check className="w-3 h-3" />{saving ? 'Guardando...' : 'Guardar'}
                 </button>
                 <button onClick={() => setEditing(false)}

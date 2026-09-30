@@ -60,8 +60,8 @@ export default function AreasManager({ areas }: Props) {
           onClick={() => setOpen(false)}>
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
             onClick={e => e.stopPropagation()}>
-            <div className="px-5 py-4 flex items-center gap-2.5"
-              style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
+            <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5"
+               >
               <div className="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center">
                 <Tags className="w-4 h-4 text-indigo-300" />
               </div>
@@ -106,8 +106,8 @@ export default function AreasManager({ areas }: Props) {
                 </div>
                 {error && <p className="text-xs text-red-600">{error}</p>}
                 <button onClick={addArea} disabled={saving || !name.trim()}
-                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2 disabled:opacity-50 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                  className="bg-accent-600 w-full flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2 disabled:opacity-50 transition-all"
+                   >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   Agregar área
                 </button>

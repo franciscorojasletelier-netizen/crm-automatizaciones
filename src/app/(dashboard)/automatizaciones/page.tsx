@@ -39,16 +39,16 @@ export default async function AutomatizacionesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Automatizaciones</h1>
           <p className="text-sm text-slate-500 mt-0.5">Reglas automáticas para el equipo comercial</p>
         </div>
-        <div className="flex items-center gap-2 text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-xl font-semibold shadow-sm">
+        <div className="flex items-center gap-2 text-xs bg-accent-600 text-white px-3 py-1.5 rounded-xl font-semibold shadow-sm">
           <Zap className="w-3.5 h-3.5" />
           {(rules ?? []).filter((r: any) => r.is_active).length} activas
         </div>
       </div>
 
       {/* Cómo funciona */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
+      <div className="bg-slate-900 rounded-2xl p-5 text-white relative overflow-hidden">
+        <div className="hidden absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
+            />
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 rounded-lg bg-indigo-500/30 flex items-center justify-center">

@@ -5,9 +5,7 @@
 // y textos distintos).
 
 import { useRef, useState } from 'react'
-import {
-  X, AlertTriangle, MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText, AlertCircle,
-} from 'lucide-react'
+import { X, AlertTriangle, MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText, AlertCircle, Check, Trophy } from 'lucide-react'
 import { type Stage, colorOf } from '@/lib/stages'
 import { StageIcon } from '@/lib/stage-icons'
 import { formatBytes, formatCLP } from '@/lib/format'
@@ -93,7 +91,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
                 className={`text-left px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
                   reason === r ? `${c.light} border-slate-300 ${c.text} font-semibold` : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}>
-                {reason === r && <span className="mr-1.5">✓</span>}{r}
+                {reason === r && <Check className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />}{r}
               </button>
             ))}
           </div>
@@ -244,7 +242,7 @@ export function WonModal({ companyName, value, createsProject, onConfirm, onCanc
   return (
     <ModalShell onClose={onCancel} busy={busy} size="sm">
       <div className="px-6 py-5 bg-emerald-50 border-b border-emerald-200 text-center">
-        <p className="text-4xl mb-2" aria-hidden>🎉</p>
+        <Trophy className="w-8 h-8 text-emerald-600 mx-auto mb-2" aria-hidden />
         <h2 className="text-base font-bold text-slate-900">¡Deal ganado!</h2>
         <p className="text-xs text-slate-500 mt-0.5">{companyName ?? 'Deal'}</p>
         {!!value && <p className="text-lg font-bold text-emerald-700 mt-2 tabular-nums">{formatCLP(value)}</p>}

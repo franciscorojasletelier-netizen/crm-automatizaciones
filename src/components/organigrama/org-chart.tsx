@@ -107,8 +107,8 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
         )}
 
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <div className="bg-accent-600 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+             >
             {initials}
           </div>
           <div className="flex-1 min-w-0 text-left">
@@ -267,7 +267,7 @@ function EditModal({
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="px-5 py-4 flex items-center gap-2.5" style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
+        <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5" >
           <div className="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center">
             <Pencil className="w-4 h-4 text-indigo-300" />
           </div>
@@ -332,8 +332,8 @@ function EditModal({
               Cancelar
             </button>
             <button onClick={save} disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2 disabled:opacity-50 transition-all"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              className="bg-accent-600 flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2 disabled:opacity-50 transition-all"
+               >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Guardar
             </button>

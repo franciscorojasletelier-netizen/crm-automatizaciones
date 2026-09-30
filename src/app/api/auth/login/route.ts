@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   if ((emailAttempts ?? 0) >= MAX_ATTEMPTS_PER_EMAIL || (ipAttempts ?? 0) >= MAX_ATTEMPTS_PER_IP) {
     return NextResponse.json(
-      { error: 'Demasiados intentos fallidos. Probá de nuevo en unos minutos.' },
+      { error: 'Demasiados intentos fallidos. Prueba de nuevo en unos minutos.' },
       { status: 429, headers: { 'Retry-After': String(WINDOW_MINUTES * 60) } }
     )
   }

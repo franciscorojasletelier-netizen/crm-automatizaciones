@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
 import { formatCLP } from '@/lib/format'
 import { FileText, Plus, Trash2, Loader2, ExternalLink, Copy, Check } from 'lucide-react'
+import { quoteTotals } from '@/lib/quotes'
 
 interface Item { description: string; quantity: number; unit_price: number }
 interface Quote {
@@ -41,10 +42,7 @@ function CopyLinkButton({ token }: { token: string }) {
   )
 }
 
-function total(items: Item[], taxRate: number) {
-  const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0)
-  return { subtotal, tax: subtotal * (taxRate / 100), total: subtotal * (1 + taxRate / 100) }
-}
+const total = quoteTotals
 
 export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: {
   dealId: string; quotes: Quote[]; canEdit: boolean
@@ -68,7 +66,7 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
 
   async function save(status: 'draft' | 'sent') {
     const cleanItems = items.filter(i => i.description.trim())
-    if (cleanItems.length === 0) { setError('Agregá al menos un ítem con descripción'); return }
+    if (cleanItems.length === 0) { setError('Agrega al menos un ítem con descripción'); return }
     setSaving(true)
     setError('')
     const { data, error: err } = await supabase.from('quotes').insert({

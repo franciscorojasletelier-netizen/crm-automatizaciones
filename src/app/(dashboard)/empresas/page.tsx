@@ -45,8 +45,8 @@ export default async function EmpresasPage() {
         </div>
         {canEdit && (
           <Link href="/leads/nuevo"
-            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            className="bg-accent-600 shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+             >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nueva empresa</span>
             <span className="sm:hidden">Nueva</span>

@@ -40,6 +40,7 @@ Un CRM hecho para el flujo real de una empresa de servicios chilena, no un CRM g
 
 - Nombre de la empresa: Autopilot SpA. La marca de cada organización cliente (nombre visible, datos de contacto) aparece en correos, cotizaciones y documentos que ven sus clientes.
 - El usuario pidió un **rediseño completo** de la interfaz hacia un nivel ejecutivo: la estética actual (índigo/violeta, degradés, sidebar oscuro) es evidencia, no compromiso.
+- **Preferencia confirmada (2026-09-30):** el estándar de la categoría ejecutado con máximo oficio — un CRM SaaS neutro y sobrio a la altura de Linear, Attio y HubSpot. Se eligió explícitamente sobre direcciones más expresivas.
 
 ## Evidence on Hand
 

@@ -190,7 +190,7 @@ function buildEmailHtml(
   </div>`}
 
   <div style="text-align:center;margin-bottom:24px">
-    <a href="${appUrl}/tareas" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;text-decoration:none;padding:12px 28px;border-radius:12px;font-weight:700;font-size:14px">
+    <a href="${appUrl}/tareas" style="display:inline-block;background:#2f55d4;color:white;text-decoration:none;padding:11px 24px;border-radius:8px;font-weight:700;font-size:14px">
       Ver mis tareas en el CRM →
     </a>
   </div>

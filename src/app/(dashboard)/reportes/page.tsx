@@ -122,8 +122,8 @@ export default async function ReportesPage() {
           <a
             href="/api/reports/export"
             download
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
+            className="bg-emerald-600 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+
           >
             <Download className="w-3.5 h-3.5" />
             Exportar Excel
@@ -208,7 +208,7 @@ export default async function ReportesPage() {
                         height: `${pct}%`,
                         minHeight: m.revenue > 0 ? '4px' : '0',
                         background: m.revenue > 0
-                          ? 'linear-gradient(to top, #6366f1, #8b5cf6)'
+                          ? 'var(--color-accent-600)'
                           : '#f1f5f9',
                       }}
                     />
@@ -256,12 +256,12 @@ export default async function ReportesPage() {
             {/* Ganados */}
             <div className="pt-2 border-t border-dashed border-slate-200">
               <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-emerald-700 font-semibold">✓ Cerrado Ganado</span>
+                <span className="text-emerald-700 font-semibold">Cerrado ganado</span>
                 <span className="font-bold text-emerald-700 tabular-nums">{data.totalWon}</span>
               </div>
               <div className="h-2 bg-emerald-50 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-700"
+                  className="h-full rounded-full bg-emerald-600 transition-all duration-700"
                   style={{ width: `${Math.round((data.totalWon / maxFunnel) * 100)}%` }}
                 />
               </div>
@@ -303,16 +303,15 @@ export default async function ReportesPage() {
               {data.execPerformance.map((exec, i) => {
                 const initials = (exec.full_name ?? exec.email ?? 'U')
                   .split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase()
-                const medals = ['🥇', '🥈', '🥉']
                 return (
                   <tr key={exec.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-3.5 font-bold text-slate-400 text-center w-12">
-                      {i < 3 ? <span className="text-base">{medals[i]}</span> : <span className="text-xs">{i + 1}</span>}
+                      <span className={`text-xs tabular-nums ${i === 0 ? 'text-slate-900' : 'text-slate-400'}`}>{i + 1}</span>
                     </td>
                     <td className="px-3 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                        <div className="bg-accent-600 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                           >
                           {initials}
                         </div>
                         <span className="font-semibold text-slate-800">{exec.full_name ?? exec.email}</span>
@@ -344,7 +343,7 @@ export default async function ReportesPage() {
                       <div className="flex items-center justify-end gap-2">
                         <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                            className="h-full rounded-full bg-accent-600"
                             style={{ width: `${exec.winRate}%` }}
                           />
                         </div>

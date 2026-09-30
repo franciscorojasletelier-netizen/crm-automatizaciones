@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
 import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
+import { quoteTotals } from '@/lib/quotes'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
@@ -11,9 +12,7 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
   quote: any; deal: any; org: any; dealId: string
 }) {
   const items: Item[] = quote.items ?? []
-  const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0)
-  const tax = subtotal * (quote.tax_rate / 100)
-  const total = subtotal + tax
+  const { subtotal, tax, total } = quoteTotals(items, quote.tax_rate)
   const orgName = org?.display_name || org?.name || 'Nuestra empresa'
 
   return (
@@ -24,8 +23,7 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
           <ArrowLeft className="w-4 h-4" /> Volver al deal
         </Link>
         <button onClick={() => window.print()}
-          className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          className="bg-accent-600 flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all">
           <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
         </button>
       </div>

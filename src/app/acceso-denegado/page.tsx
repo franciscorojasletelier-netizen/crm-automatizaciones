@@ -32,8 +32,8 @@ export default async function AccesoDenegadoPage({
 
         {/* Ícono */}
         <div className="relative inline-flex">
-          <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
+          <div className="bg-slate-900 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-lg"
+             >
             <ShieldX className="w-10 h-10 text-red-400" />
           </div>
           <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 border-2 border-white flex items-center justify-center">
@@ -63,8 +63,8 @@ export default async function AccesoDenegadoPage({
         {/* Acciones */}
         <div className="flex flex-col gap-2">
           <Link href="/dashboard"
-            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            className="bg-accent-600 flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all"
+             >
             <Zap className="w-4 h-4" />
             Ir a mi Dashboard
           </Link>

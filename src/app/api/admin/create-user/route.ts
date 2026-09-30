@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     const { count } = await admin.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId)
     if ((count ?? 0) >= org.max_users) {
       return NextResponse.json(
-        { error: `Se alcanzó el límite de ${org.max_users} usuarios de tu plan. Contactá a tu proveedor para ampliarlo.` },
+        { error: `Se alcanzó el límite de ${org.max_users} usuarios de tu plan. Contacta a tu proveedor para ampliarlo.` },
         { status: 403 }
       )
     }

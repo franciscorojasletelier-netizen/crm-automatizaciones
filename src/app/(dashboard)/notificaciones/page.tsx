@@ -115,15 +115,16 @@ export default async function NotificacionesPage() {
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">¿Cuándo recibes notificaciones?</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
-            { icon: '⏰', text: 'Tareas vencidas asignadas a ti' },
-            { icon: '📋', text: 'Tareas que vencen hoy' },
-            { icon: '🔄', text: 'Deals que cambian de etapa (tus deals)' },
-            { icon: '⚠️', text: 'Deals marcados como Perdido/Frío/No Calificado (gerentes)' },
-            { icon: '⚡', text: 'Automatizaciones configuradas con "Notificar"' },
-            { icon: '🎉', text: 'Deals cerrados como Ganados' },
-          ].map(({ icon, text }) => (
+            'Tareas vencidas asignadas a ti',
+            'Tareas que vencen hoy',
+            'Deals tuyos que cambian de etapa',
+            'Deals marcados como perdidos, fríos o no calificados (gerencia)',
+            'Automatizaciones configuradas con "Notificar"',
+            'Deals ganados',
+            'Documentos de cobranza que vencen y compromisos de pago del día',
+          ].map(text => (
             <div key={text} className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="text-base leading-none">{icon}</span>
+              <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0" aria-hidden />
               <span>{text}</span>
             </div>
           ))}

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   if (providerError) return NextResponse.redirect(configUrl('Conexión cancelada', false))
   if (!code || !state || !cookieState || state !== cookieState) {
-    return NextResponse.redirect(configUrl('No se pudo validar la solicitud. Probá de nuevo.', false))
+    return NextResponse.redirect(configUrl('No se pudo validar la solicitud. Prueba de nuevo.', false))
   }
 
   const { user, organizationId, supabase } = await getCurrentProfile()

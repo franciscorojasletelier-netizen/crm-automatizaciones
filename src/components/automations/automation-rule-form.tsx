@@ -218,8 +218,8 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
         <button
           type="submit"
           disabled={saving || !name.trim()}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+          className="bg-accent-600 w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+           
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {saving ? 'Guardando...' : saved ? '¡Guardado!' : 'Crear regla'}

@@ -4,6 +4,89 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================
+   Sistema visual — estándar SaaS sobrio (ver .impeccable/surfaces).
+   Un solo acento azul para acción y selección; neutros limpios;
+   verde/ámbar/rojo solo para estado.
+
+   Las escalas indigo/violet/purple se redefinen al acento y slate a
+   un neutro de bajo croma: así toda la app (que usaba esas clases a
+   mano) cambia de identidad desde un solo lugar, sin degradés
+   índigo-violeta ni grises azulados.
+   ============================================================ */
+@theme {
+  --color-accent-50:  oklch(0.97 0.014 258);
+  --color-accent-100: oklch(0.94 0.03 258);
+  --color-accent-200: oklch(0.885 0.058 258);
+  --color-accent-300: oklch(0.8 0.1 258);
+  --color-accent-400: oklch(0.69 0.15 258);
+  --color-accent-500: oklch(0.585 0.19 258);
+  --color-accent-600: oklch(0.515 0.2 258);
+  --color-accent-700: oklch(0.45 0.18 258);
+  --color-accent-800: oklch(0.385 0.145 258);
+  --color-accent-900: oklch(0.33 0.11 258);
+  --color-accent-950: oklch(0.24 0.08 258);
+
+  --color-indigo-50:  var(--color-accent-50);
+  --color-indigo-100: var(--color-accent-100);
+  --color-indigo-200: var(--color-accent-200);
+  --color-indigo-300: var(--color-accent-300);
+  --color-indigo-400: var(--color-accent-400);
+  --color-indigo-500: var(--color-accent-500);
+  --color-indigo-600: var(--color-accent-600);
+  --color-indigo-700: var(--color-accent-700);
+  --color-indigo-800: var(--color-accent-800);
+  --color-indigo-900: var(--color-accent-900);
+  --color-indigo-950: var(--color-accent-950);
+
+  --color-violet-50:  var(--color-accent-50);
+  --color-violet-100: var(--color-accent-100);
+  --color-violet-200: var(--color-accent-200);
+  --color-violet-300: var(--color-accent-300);
+  --color-violet-400: var(--color-accent-400);
+  --color-violet-500: var(--color-accent-500);
+  --color-violet-600: var(--color-accent-600);
+  --color-violet-700: var(--color-accent-700);
+  --color-violet-800: var(--color-accent-800);
+  --color-violet-900: var(--color-accent-900);
+
+  --color-purple-50:  var(--color-accent-50);
+  --color-purple-100: var(--color-accent-100);
+  --color-purple-200: var(--color-accent-200);
+  --color-purple-300: var(--color-accent-300);
+  --color-purple-400: var(--color-accent-400);
+  --color-purple-500: var(--color-accent-500);
+  --color-purple-600: var(--color-accent-600);
+  --color-purple-700: var(--color-accent-700);
+  --color-purple-800: var(--color-accent-800);
+  --color-purple-900: var(--color-accent-900);
+
+  /* Neutro de trabajo. 400 y 500 más oscuros que el default: se usan como
+     texto secundario en toda la app y el default no llegaba a 4.5:1. */
+  --color-slate-50:  oklch(0.985 0.002 255);
+  --color-slate-100: oklch(0.967 0.003 255);
+  --color-slate-200: oklch(0.925 0.005 255);
+  --color-slate-300: oklch(0.87 0.008 255);
+  --color-slate-400: oklch(0.6 0.013 255);
+  --color-slate-500: oklch(0.52 0.014 255);
+  --color-slate-600: oklch(0.44 0.014 255);
+  --color-slate-700: oklch(0.37 0.013 255);
+  --color-slate-800: oklch(0.275 0.011 255);
+  --color-slate-900: oklch(0.2 0.01 255);
+  --color-slate-950: oklch(0.145 0.008 255);
+
+  /* Profundidad: desplazamiento + desenfoque suave, tinte neutro. */
+  --shadow-xs:  0 1px 1px 0 oklch(0.2 0.01 255 / 0.04);
+  --shadow-sm:  0 1px 2px 0 oklch(0.2 0.01 255 / 0.06);
+  --shadow:     0 1px 3px 0 oklch(0.2 0.01 255 / 0.08), 0 1px 2px -1px oklch(0.2 0.01 255 / 0.06);
+  --shadow-md:  0 4px 8px -2px oklch(0.2 0.01 255 / 0.08), 0 2px 4px -2px oklch(0.2 0.01 255 / 0.05);
+  --shadow-lg:  0 12px 24px -8px oklch(0.2 0.01 255 / 0.12), 0 4px 8px -4px oklch(0.2 0.01 255 / 0.06);
+  --shadow-xl:  0 20px 36px -12px oklch(0.2 0.01 255 / 0.16), 0 6px 12px -6px oklch(0.2 0.01 255 / 0.08);
+  --shadow-2xl: 0 28px 56px -16px oklch(0.2 0.01 255 / 0.22);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -39,116 +122,116 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* Radios contenidos: rounded-2xl (el más usado en la app) queda en ~11px. */
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.4);
+  --radius-3xl: calc(var(--radius) * 1.75);
+  --radius-4xl: calc(var(--radius) * 2);
 }
 
 :root {
-  /* Brand: Indigo como color primario */
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.15 0.01 264);
+  --background: oklch(0.985 0.002 255);
+  --foreground: oklch(0.2 0.01 255);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 264);
+  --card-foreground: oklch(0.2 0.01 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 264);
+  --popover-foreground: oklch(0.2 0.01 255);
 
-  /* Indigo como primario */
-  --primary: oklch(0.51 0.24 264);
+  --primary: oklch(0.515 0.2 258);
   --primary-foreground: oklch(1 0 0);
 
-  --secondary: oklch(0.96 0.01 264);
-  --secondary-foreground: oklch(0.35 0.08 264);
-  --muted: oklch(0.97 0.005 264);
-  --muted-foreground: oklch(0.52 0.02 264);
-  --accent: oklch(0.95 0.02 264);
-  --accent-foreground: oklch(0.35 0.1 264);
-  --destructive: oklch(0.577 0.245 27.325);
+  --secondary: oklch(0.967 0.003 255);
+  --secondary-foreground: oklch(0.275 0.011 255);
+  --muted: oklch(0.967 0.003 255);
+  --muted-foreground: oklch(0.52 0.014 255);
+  --accent: oklch(0.97 0.014 258);
+  --accent-foreground: oklch(0.45 0.18 258);
+  --destructive: oklch(0.577 0.215 27);
 
-  --border: oklch(0.91 0.01 264);
-  --input: oklch(0.91 0.01 264);
-  --ring: oklch(0.51 0.24 264);
+  --border: oklch(0.925 0.005 255);
+  --input: oklch(0.87 0.008 255);
+  --ring: oklch(0.585 0.19 258);
 
-  --chart-1: oklch(0.51 0.24 264);
-  --chart-2: oklch(0.62 0.19 180);
-  --chart-3: oklch(0.72 0.18 85);
-  --chart-4: oklch(0.65 0.22 310);
-  --chart-5: oklch(0.58 0.22 30);
+  --chart-1: oklch(0.515 0.2 258);
+  --chart-2: oklch(0.62 0.13 180);
+  --chart-3: oklch(0.75 0.15 80);
+  --chart-4: oklch(0.6 0.16 300);
+  --chart-5: oklch(0.6 0.19 30);
 
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 
-  --sidebar: oklch(0.985 0.002 264);
-  --sidebar-foreground: oklch(0.15 0.01 264);
-  --sidebar-primary: oklch(0.51 0.24 264);
+  --sidebar: oklch(0.975 0.003 255);
+  --sidebar-foreground: oklch(0.275 0.011 255);
+  --sidebar-primary: oklch(0.515 0.2 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.015 264);
-  --sidebar-accent-foreground: oklch(0.35 0.08 264);
-  --sidebar-border: oklch(0.91 0.01 264);
-  --sidebar-ring: oklch(0.51 0.24 264);
-}
-
-.dark {
-  --background: oklch(0.13 0.01 264);
-  --foreground: oklch(0.97 0.005 264);
-  --card: oklch(0.18 0.015 264);
-  --card-foreground: oklch(0.97 0.005 264);
-  --popover: oklch(0.18 0.015 264);
-  --popover-foreground: oklch(0.97 0.005 264);
-  --primary: oklch(0.65 0.22 264);
-  --primary-foreground: oklch(0.13 0.01 264);
-  --secondary: oklch(0.22 0.02 264);
-  --secondary-foreground: oklch(0.97 0.005 264);
-  --muted: oklch(0.22 0.02 264);
-  --muted-foreground: oklch(0.62 0.03 264);
-  --accent: oklch(0.22 0.02 264);
-  --accent-foreground: oklch(0.97 0.005 264);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.65 0.22 264);
-  --sidebar: oklch(0.18 0.015 264);
-  --sidebar-foreground: oklch(0.97 0.005 264);
-  --sidebar-primary: oklch(0.65 0.22 264);
-  --sidebar-primary-foreground: oklch(0.13 0.01 264);
-  --sidebar-accent: oklch(0.22 0.02 264);
-  --sidebar-accent-foreground: oklch(0.97 0.005 264);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.65 0.22 264);
+  --sidebar-accent: oklch(0.935 0.005 255);
+  --sidebar-accent-foreground: oklch(0.2 0.01 255);
+  --sidebar-border: oklch(0.925 0.005 255);
+  --sidebar-ring: oklch(0.585 0.19 258);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "cv11", "ss01";
-    font-variation-settings: "opsz" 32;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
   html {
     @apply font-sans;
     scroll-behavior: smooth;
   }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    caret-color: var(--color-accent-600);
+  }
+  /* Cifras que se comparan en columnas (montos, fechas, conteos). */
+  table, .tabular-nums, [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: var(--color-accent-100);
+    color: var(--color-accent-900);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 2px;
+  }
+  a {
+    text-underline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-/* Scrollbar custom */
+/* Barras de desplazamiento del sistema, no las del navegador. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.85 0.01 264);
+  background: var(--color-slate-300);
   border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.70 0.05 264);
+  background: var(--color-slate-400);
+  background-clip: padding-box;
 }

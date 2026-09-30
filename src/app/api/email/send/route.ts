@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   // no puede ver ni de su propia fila.
   const { data: owned } = await supabase.from('email_accounts')
     .select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle()
-  if (!owned) return NextResponse.json({ error: 'No tenés una cuenta de correo conectada' }, { status: 400 })
+  if (!owned) return NextResponse.json({ error: 'No tienes una cuenta de correo conectada' }, { status: 400 })
 
   const svc = serviceClient()
   const { data: account } = await svc.from('email_accounts')
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   if (!account) return NextResponse.json({ error: 'Cuenta de correo no encontrada' }, { status: 404 })
 
   const accessToken = await ensureFreshAccessToken(svc, account as any)
-  if (!accessToken) return NextResponse.json({ error: 'No se pudo renovar el acceso a tu correo — reconectalo desde Configuración' }, { status: 400 })
+  if (!accessToken) return NextResponse.json({ error: 'No se pudo renovar el acceso a tu correo — reconéctalo desde Configuración' }, { status: 400 })
 
   const result = account.provider === 'google_workspace'
     ? await sendGmailMessage(accessToken, { to, subject, bodyText: body, threadId, inReplyTo: replyToMessageId })

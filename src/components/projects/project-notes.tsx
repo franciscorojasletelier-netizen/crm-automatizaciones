@@ -52,8 +52,8 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
             placeholder="Nota interna del equipo (no visible para el cliente)..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
           <button onClick={handleAdd} disabled={loading || !content.trim()}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
+             >
             <Send className="w-3.5 h-3.5" />{loading ? 'Guardando...' : 'Guardar nota'}
           </button>
         </div>

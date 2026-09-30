@@ -11,16 +11,16 @@ const RAW_PATTERNS: Array<{ test: RegExp; message: string }> = [
   { test: /violates foreign key constraint/i, message: 'La acción hace referencia a un dato que no existe o ya se eliminó.' },
   { test: /null value in column .* violates not-null constraint/i, message: 'Falta completar un campo obligatorio.' },
   { test: /violates check constraint/i, message: 'Ese valor no es válido para este campo.' },
-  { test: /new row violates row-level security policy|permission denied for (table|relation)/i, message: 'No tenés permiso para hacer esta acción.' },
-  { test: /relation ".*" does not exist|could not find the table/i, message: 'Error de configuración interna. Contactá a soporte.' },
-  { test: /JWT|invalid claim|invalid signature/i, message: 'Tu sesión expiró. Volvé a iniciar sesión.' },
+  { test: /new row violates row-level security policy|permission denied for (table|relation)/i, message: 'No tienes permiso para hacer esta acción.' },
+  { test: /relation ".*" does not exist|could not find the table/i, message: 'Error de configuración interna. Contacta a soporte.' },
+  { test: /JWT|invalid claim|invalid signature/i, message: 'Tu sesión expiró. Vuelve a iniciar sesión.' },
 ]
 
 // Si el mensaje trae jerga técnica de Postgres que ninguno de los patrones
 // de arriba reconoció puntualmente, igual no lo mostramos crudo.
 const LOOKS_TECHNICAL = /\brelation ".*"|\bcolumn ".*"|\bconstraint ".*"|PGRST\d|invalid input syntax|syntax error at or near/i
 
-export function friendlyError(rawMessage: string | null | undefined, fallback = 'Ocurrió un error. Intentá de nuevo.'): string {
+export function friendlyError(rawMessage: string | null | undefined, fallback = 'Ocurrió un error. Intenta de nuevo.'): string {
   if (!rawMessage) return fallback
   for (const { test, message } of RAW_PATTERNS) {
     if (test.test(rawMessage)) return message

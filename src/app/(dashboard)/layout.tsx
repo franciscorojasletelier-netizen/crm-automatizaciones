@@ -30,7 +30,7 @@ async function getLayoutData() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>() }
+    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null }
 
     const now = new Date().toISOString()
 
@@ -48,7 +48,7 @@ async function getLayoutData() {
       return q
     }
 
-    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, disabledModules, cobranzaVencida] = await Promise.all([
+    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, org, disabledModules, cobranzaVencida] = await Promise.all([
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       tasksBase(),
       tasksBase().lt('due_date', now),
@@ -65,6 +65,7 @@ async function getLayoutData() {
         .eq('is_read', false),
       supabase.from('platform_owners').select('user_id').eq('user_id', user.id).maybeSingle(),
       getStages(supabase, orgId),
+      orgId ? supabase.from('organizations').select('name, display_name').eq('id', orgId).maybeSingle() : Promise.resolve({ data: null }),
       getDisabledModules(supabase, orgId),
       // RLS acota a lo que el usuario puede ver de cobranza (0 si no ve nada).
       supabase.from('invoices').select('id', { count: 'exact', head: true })
@@ -76,6 +77,7 @@ async function getLayoutData() {
     return {
       profile,
       isPlatformOwner: !!platformOwner.data,
+      organizationName: (org.data as { display_name?: string | null; name?: string } | null)?.display_name || (org.data as { name?: string } | null)?.name || null,
       stages,
       disabledModules,
       counts: {
@@ -93,7 +95,7 @@ async function getLayoutData() {
       userName: profile?.full_name ?? profile?.email ?? 'Usuario',
     }
   } catch {
-    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>() }
+    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null }
   }
 }
 
@@ -102,11 +104,11 @@ function emptyNavCounts(): NavCounts {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages, disabledModules } = await getLayoutData()
+  const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages, disabledModules, organizationName } = await getLayoutData()
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} />
+    <div className="flex h-screen bg-background">
+      <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} organizationName={organizationName} />
       <main className="flex-1 overflow-auto pt-[52px] pb-[60px] md:pt-0 md:pb-0">
         {children}
       </main>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Send, MessageCircle, Trash2, AlertCircle } from 'lucide-react'
+import { Send, MessageCircle, Trash2, AlertCircle, X } from 'lucide-react'
 import { timeAgo, getInitials } from '@/lib/format'
 
 interface Message {
@@ -177,7 +177,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
                   <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
                     isTemp ? 'opacity-60' : 'opacity-100'
                   } ${isMe
-                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm'
+                    ? 'bg-accent-600 text-white rounded-br-sm'
                     : 'bg-slate-100 text-slate-800 rounded-bl-sm'
                   }`}>
                     {msg.content}
@@ -197,7 +197,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
         <div className="mx-4 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
           <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
           <p className="text-xs text-red-700 flex-1">{error}</p>
-          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-xs" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
 
@@ -209,8 +209,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
             rows={1} style={{ resize: 'none', minHeight: '24px', maxHeight: '96px' }}
             className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
           <button onClick={sendMessage} disabled={!input.trim() || sending}
-            className="w-8 h-8 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
-            style={{ background: input.trim() ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#e2e8f0' }}>
+            className={`w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 transition-colors shrink-0 ${input.trim() ? 'bg-accent-600 hover:bg-accent-700' : 'bg-slate-200'}`}>
             <Send className={`w-4 h-4 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />
           </button>
         </div>

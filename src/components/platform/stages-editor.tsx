@@ -57,7 +57,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="text-xs text-amber-800 space-y-0.5">
             {!hasDefault && <p>Esta organización no tiene ninguna etapa inicial activa (⭐) — los leads nuevos no van a poder asignarse una etapa por defecto.</p>}
-            {!hasWon && <p>Esta organización no tiene ninguna etapa de ganado activa (🏆) — cerrar un deal como ganado no va a crear el proyecto automáticamente ni contar en el forecast.</p>}
+            {!hasWon && <p>Esta organización no tiene ninguna etapa de ganado activa — cerrar un deal como ganado no va a crear el proyecto automáticamente ni contar en el forecast.</p>}
           </div>
         </div>
       )}

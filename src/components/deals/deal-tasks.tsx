@@ -148,9 +148,9 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
               className={`flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 transition-all hover:shadow-md ${
                 conflicts.length > 0 ? 'bg-amber-500 hover:bg-amber-600' : ''
               }`}
-              style={conflicts.length > 0 ? {} : { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              style={conflicts.length > 0 ? {} : { background: 'var(--color-accent-600)' }}>
               <Plus className="w-3.5 h-3.5" />
-              {loading ? 'Guardando...' : conflicts.length > 0 ? '⚠️ Crear con conflicto' : 'Crear tarea'}
+              {loading ? 'Guardando...' : conflicts.length > 0 ? 'Crear con conflicto' : 'Crear tarea'}
             </button>
           )}
         </div>

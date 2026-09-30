@@ -195,7 +195,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
             <div className="mx-3 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
               <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
               <p className="text-xs text-red-700 flex-1">{error}</p>
-              <button onClick={() => setError('')} className="text-red-400 text-xs">✕</button>
+              <button onClick={() => setError('')} className="text-red-400 text-xs" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
             </div>
           )}
 
@@ -217,7 +217,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
                   onClick={send}
                   disabled={!input.trim() || sending}
                   className="w-8 h-8 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
-                  style={{ background: input.trim() ? 'linear-gradient(135deg, #25d366, #128c7e)' : '#e2e8f0' }}>
+                  style={{ background: input.trim() ? 'linear-gradient(135deg, #25d366, #128c7e)' : 'var(--color-slate-200)' }}>
                   {sending
                     ? <Loader2 className="w-4 h-4 text-white animate-spin" />
                     : <Send className={`w-4 h-4 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />

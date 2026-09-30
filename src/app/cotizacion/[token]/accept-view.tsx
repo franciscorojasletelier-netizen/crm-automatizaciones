@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { CheckCircle2, XCircle, Loader2, AlertCircle, Zap } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
 import { DATE_ONLY_TZ } from '@/lib/dates'
+import { quoteTotals } from '@/lib/quotes'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
@@ -28,7 +29,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
   }, [token])
 
   async function decide(decision: 'accepted' | 'rejected') {
-    if (decision === 'accepted' && !name.trim()) { setDecisionError('Ingresá tu nombre'); return }
+    if (decision === 'accepted' && !name.trim()) { setDecisionError('Ingresa tu nombre'); return }
     setDeciding(decision)
     setDecisionError('')
     try {
@@ -63,16 +64,14 @@ export default function QuoteAcceptView({ token }: { token: string }) {
   const { quote, deal, org } = data
   const orgName = org?.display_name || org?.name || 'Nuestra empresa'
   const items: Item[] = quote.items ?? []
-  const subtotal = items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
-  const tax = subtotal * (quote.tax_rate / 100)
-  const total = subtotal + tax
+  const { subtotal, tax, total } = quoteTotals(items, quote.tax_rate)
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <div className="bg-accent-600 w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+             >
             <Zap className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-slate-900">{orgName}</span>

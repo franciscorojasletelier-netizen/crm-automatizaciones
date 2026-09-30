@@ -88,7 +88,7 @@ export default function EmailThread({
             {composing ? 'Cancelar' : 'Nuevo'}
           </button>
         ) : (
-          <span className="text-[11px] text-slate-400">Conectá tu correo en Configuración para enviar</span>
+          <span className="text-[11px] text-slate-400">Conecta tu correo en Configuración para enviar</span>
         )}
       </div>
 
@@ -102,8 +102,8 @@ export default function EmailThread({
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button onClick={send} disabled={loading || !to.trim() || !subject.trim() || !body.trim()}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 transition-all hover:shadow-md"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 transition-all hover:shadow-md"
+             >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             {loading ? 'Enviando...' : 'Enviar'}
           </button>

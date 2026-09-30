@@ -75,21 +75,36 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
     const orgDisplayName = org?.display_name || org?.name || 'nuestro equipo'
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'JSON inválido' }, { status: 400, headers: CORS_HEADERS })
+    }
+
+    // Endpoint público: todo campo se normaliza a texto acotado. Antes un
+    // email numérico reventaba en .trim() (500) y no había límite de largo.
+    const str = (v: unknown, max: number): string | null => {
+      if (v === null || v === undefined) return null
+      const s = String(v).trim().slice(0, max)
+      return s.length ? s : null
+    }
 
     // Campos esperados (todos opcionales excepto company_name o contact_name)
     // Acepta tanto el formato CRM (contact_name, company_name) como el del formulario web (name, company, email, phone)
-    const company_name    = body.company_name  ?? body.company ?? null
-    const contact_name    = body.contact_name  ?? body.name    ?? null
-    const contact_email   = body.contact_email ?? body.email   ?? null
-    const contact_phone   = body.contact_phone ?? body.phone   ?? null
-    const contact_job_title = body.contact_job_title ?? null
-    const industry        = body.industry  ?? null
-    const website         = body.website   ?? null
-    const source          = body.source    ?? 'Formulario web'
-    const estimated_value = body.estimated_value ?? null
-    const next_action     = body.next_action ?? null
-    const message         = body.message   ?? body.details ?? null
+    const company_name    = str(body.company_name  ?? body.company, 200)
+    const contact_name    = str(body.contact_name  ?? body.name, 200)
+    const contact_email   = str(body.contact_email ?? body.email, 254)?.toLowerCase() ?? null
+    const contact_phone   = str(body.contact_phone ?? body.phone, 40)
+    const contact_job_title = str(body.contact_job_title, 120)
+    const industry        = str(body.industry, 120)
+    const website         = str(body.website, 300)
+    const source          = str(body.source, 80) ?? 'Formulario web'
+    const estimated_value = str(body.estimated_value, 20)
+    const next_action     = str(body.next_action, 300)
+    const message         = str(body.message ?? body.details, 5000)
+
+    // ilike trata % y _ como comodines: un email "%" coincidía con
+    // cualquier contacto y enganchaba el lead a un deal ajeno.
+    const likeExact = (s: string) => s.replace(/[\\%_]/g, m => `\\${m}`)
 
     if (!company_name && !contact_name) {
       return NextResponse.json({ error: 'Se requiere company_name, contact_name, name o company' }, { status: 400 })
@@ -105,7 +120,7 @@ export async function POST(request: NextRequest) {
         .from('contacts')
         .select('id, company_id')
         .eq('organization_id', orgId)
-        .ilike('email', contact_email.trim())
+        .ilike('email', likeExact(contact_email))
         .limit(1)
         .maybeSingle()
 
@@ -147,7 +162,7 @@ export async function POST(request: NextRequest) {
         .from('companies')
         .select('id')
         .eq('organization_id', orgId)
-        .ilike('name', company_name.trim())
+        .ilike('name', likeExact(company_name))
         .limit(1)
         .maybeSingle()
       if (existingCompany) company = { id: existingCompany.id }
@@ -217,7 +232,7 @@ export async function POST(request: NextRequest) {
         primary_contact_id: contact!.id,
         owner_id: assignedOwnerId,
         source,
-        estimated_value: estimated_value ? parseFloat(estimated_value) : null,
+        estimated_value: Number.isFinite(parseFloat(estimated_value ?? "")) ? Math.max(0, Math.round(parseFloat(estimated_value!))) : null,
         next_action: next_action ?? 'Contactar lead entrante',
         score,
         // `stage` omitido: lo asigna el trigger según la organización destino.

@@ -2,16 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, Users, Building2, TrendingUp,
-  CheckSquare, FolderOpen, Activity, Settings,
-  LogOut, Zap, UserCog, BarChart3, Bell, GitBranch, CalendarDays, Network,
-  Menu, X, Wallet,
+  LayoutDashboard, Users, Building2, TrendingUp, CheckSquare, FolderOpen, Activity, Settings,
+  LogOut, UserCog, BarChart3, Bell, GitBranch, CalendarDays, Network, Menu, X, Wallet, Globe2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import GlobalSearch from './global-search'
 import { getPermissions, getRoleMeta, canAccessSection } from '@/lib/roles'
 import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
@@ -25,6 +22,7 @@ interface SidebarProps {
   isPlatformOwner?: boolean
   stages?: Stage[]
   disabledModules?: Set<string>
+  organizationName?: string | null
 }
 
 interface NavItem {
@@ -36,71 +34,90 @@ interface NavItem {
   permission?: keyof ReturnType<typeof getPermissions>
 }
 
-const navGroups: { label: string; items: NavItem[] }[] = [
+const navGroups: { label: string | null; items: NavItem[] }[] = [
   {
-    label: 'Principal',
+    label: null,
     items: [
-      { label: 'Dashboard',       href: '/dashboard',       icon: LayoutDashboard },
-      { label: 'Pipeline',        href: '/pipeline',        icon: TrendingUp,   countKey: 'pipeline',       permission: 'pipeline' },
-      { label: 'Leads',           href: '/leads',           icon: Users,        countKey: 'leads',          permission: 'leads' },
-      { label: 'Empresas',        href: '/empresas',        icon: Building2,    countKey: 'empresas',       permission: 'empresas' },
+      { label: 'Dashboard',  href: '/dashboard', icon: LayoutDashboard },
+      { label: 'Pipeline',   href: '/pipeline',  icon: TrendingUp, countKey: 'pipeline', permission: 'pipeline' },
+      { label: 'Leads',      href: '/leads',     icon: Users,      countKey: 'leads',    permission: 'leads' },
+      { label: 'Empresas',   href: '/empresas',  icon: Building2,                         permission: 'empresas' },
     ],
   },
   {
-    label: 'Gestión',
+    label: 'Operación',
     items: [
-      { label: 'Tareas',          href: '/tareas',          icon: CheckSquare,  countKey: 'tareas',         alertKey: 'tareasVencidas', permission: 'tareas' },
-      { label: 'Proyectos',       href: '/proyectos',       icon: FolderOpen,   countKey: 'proyectos',      permission: 'proyectos' },
-      { label: 'Cobranza',        href: '/cobranza',        icon: Wallet,       countKey: 'cobranzaVencida', alertKey: 'cobranzaVencida', permission: 'cobranza' },
-      { label: 'Calendario',      href: '/calendario',      icon: CalendarDays,                              permission: 'calendario' },
-      { label: 'Organigrama',     href: '/organigrama',     icon: Network },
-      { label: 'Notificaciones',  href: '/notificaciones',  icon: Bell,         countKey: 'notificaciones', alertKey: 'notificaciones', permission: 'notificaciones' },
+      { label: 'Tareas',     href: '/tareas',     icon: CheckSquare,  countKey: 'tareasVencidas', alertKey: 'tareasVencidas', permission: 'tareas' },
+      { label: 'Proyectos',  href: '/proyectos',  icon: FolderOpen,   countKey: 'proyectos',      permission: 'proyectos' },
+      { label: 'Cobranza',   href: '/cobranza',   icon: Wallet,       countKey: 'cobranzaVencida', alertKey: 'cobranzaVencida', permission: 'cobranza' },
+      { label: 'Calendario', href: '/calendario', icon: CalendarDays, permission: 'calendario' },
+      { label: 'Notificaciones', href: '/notificaciones', icon: Bell, countKey: 'notificaciones', permission: 'notificaciones' },
     ],
   },
   {
-    label: 'Inteligencia',
+    label: 'Análisis',
     items: [
-      { label: 'Reportes',        href: '/reportes',        icon: BarChart3,                                permission: 'reportes' },
-      { label: 'Automatizaciones',href: '/automatizaciones',icon: GitBranch,                                permission: 'automatizaciones' },
+      { label: 'Reportes',         href: '/reportes',         icon: BarChart3, permission: 'reportes' },
+      { label: 'Automatizaciones', href: '/automatizaciones', icon: GitBranch, permission: 'automatizaciones' },
     ],
   },
   {
-    label: 'Administración',
+    label: 'Organización',
     items: [
-      { label: 'Equipo',          href: '/admin/usuarios',  icon: UserCog,                                  permission: 'usuarios' },
-      { label: 'Actividad',       href: '/admin/actividad', icon: Activity,                                 permission: 'actividad' },
-      { label: 'Configuración',   href: '/configuracion',   icon: Settings,                                 permission: 'configuracion' },
+      { label: 'Equipo',        href: '/admin/usuarios',  icon: UserCog,  permission: 'usuarios' },
+      { label: 'Organigrama',   href: '/organigrama',     icon: Network },
+      { label: 'Actividad',     href: '/admin/actividad', icon: Activity, permission: 'actividad' },
+      { label: 'Configuración', href: '/configuracion',   icon: Settings, permission: 'configuracion' },
     ],
   },
 ]
 
 const mobileNavBase: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard',      icon: LayoutDashboard },
-  { label: 'Pipeline',  href: '/pipeline',       icon: TrendingUp,  permission: 'pipeline' },
-  { label: 'Leads',     href: '/leads',          icon: Users,       permission: 'leads' },
-  { label: 'Tareas',    href: '/tareas',         icon: CheckSquare, permission: 'tareas',         countKey: 'tareas',        alertKey: 'tareasVencidas' },
-  { label: 'Notifs',    href: '/notificaciones', icon: Bell,        permission: 'notificaciones', countKey: 'notificaciones', alertKey: 'notificaciones' },
+  { label: 'Inicio',   href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Pipeline', href: '/pipeline',  icon: TrendingUp, permission: 'pipeline' },
+  { label: 'Tareas',   href: '/tareas',    icon: CheckSquare, permission: 'tareas', countKey: 'tareasVencidas', alertKey: 'tareasVencidas' },
+  { label: 'Cobranza', href: '/cobranza',  icon: Wallet, permission: 'cobranza', countKey: 'cobranzaVencida', alertKey: 'cobranzaVencida' },
+  { label: 'Avisos',   href: '/notificaciones', icon: Bell, permission: 'notificaciones', countKey: 'notificaciones' },
 ]
 
+function CountBadge({ count, alert, active }: { count: number; alert: boolean; active?: boolean }) {
+  if (count <= 0) return null
+  return (
+    <span className={cn(
+      'ml-auto min-w-[20px] h-[18px] px-1.5 rounded-full text-[11px] font-medium tabular-nums flex items-center justify-center',
+      alert ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-200' : active ? 'bg-white text-slate-700' : 'text-slate-500'
+    )}>
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
 
-export default function Sidebar({ counts, profile, isPlatformOwner, stages = [], disabledModules }: SidebarProps) {
+function Brand({ organizationName }: { organizationName?: string | null }) {
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] font-semibold tracking-tight shrink-0" aria-hidden>
+        {getInitials(organizationName ?? 'CRM', null, 'C')}
+      </div>
+      <div className="min-w-0 leading-tight">
+        <p className="text-sm font-semibold text-slate-900 truncate">{organizationName || 'CRM'}</p>
+        <p className="text-[11px] text-slate-500">CRM comercial</p>
+      </div>
+    </div>
+  )
+}
+
+export default function Sidebar({ counts, profile, isPlatformOwner, stages = [], disabledModules, organizationName }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
 
-  // Contador de notificaciones en tiempo real
   const [notifCount, setNotifCount] = useState(counts.notificaciones)
   const [moreOpen, setMoreOpen] = useState(false)
-
-  useEffect(() => {
-    if (!moreOpen) return
-    setMoreOpen(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
-
-  useEffect(() => {
-    setNotifCount(counts.notificaciones)
-  }, [counts.notificaciones])
+  // Cerrar el menú móvil al navegar, y adoptar el conteo que trae el servidor.
+  const [lastPath, setLastPath] = useState(pathname)
+  if (pathname !== lastPath) { setLastPath(pathname); setMoreOpen(false) }
+  const [lastServerCount, setLastServerCount] = useState(counts.notificaciones)
+  if (counts.notificaciones !== lastServerCount) { setLastServerCount(counts.notificaciones); setNotifCount(counts.notificaciones) }
 
   useEffect(() => {
     if (!profile?.id) return
@@ -110,16 +127,12 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
         .eq('user_id', profile.id)
         .eq('is_read', false)
         .then(({ count }) => { if (count !== null) setNotifCount(count) })
-
-    // Poll cada 30 s — evita WebSocket errors en plan gratuito de Supabase
-    fetchCount()
+    // Poll cada 30 s — evita errores de WebSocket en el plan gratuito de Supabase
     const interval = setInterval(fetchCount, 30_000)
     return () => clearInterval(interval)
   }, [profile?.id, supabase])
 
-  // Merge el conteo realtime con los counts del servidor
   const liveCounts = { ...counts, notificaciones: notifCount }
-
   const role = (profile?.role ?? 'soporte') as Role
   const roleMeta = getRoleMeta(role)
 
@@ -129,318 +142,147 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const sectionKeyOf = (item: NavItem) => item.permission ? String(item.permission) : item.href.replace(/^\//, '').split('/')[0]
+  const itemVisible = (item: NavItem) => canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item), disabledModules)
 
-  // Clave de sección de un item (para el checklist de acceso)
-  function sectionKeyOf(item: NavItem): string {
-    if (item.permission) return item.permission as string
-    return item.href.replace(/^\//, '').split('/')[0]
-  }
-
-  // Filtrar items según el checklist de acceso del usuario (y su rol como techo)
-  function itemVisible(item: NavItem): boolean {
-    return canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item), disabledModules)
-  }
+  const visibleGroups = navGroups.map(g => ({ ...g, items: g.items.filter(itemVisible) })).filter(g => g.items.length > 0)
+  const canCreateLeads = canAccessSection(role, profile?.section_access ?? null, 'leads', disabledModules)
+  const allowedHrefs = [...visibleGroups.flatMap(g => g.items.map(i => i.href)), ...(canCreateLeads ? ['/leads/nuevo'] : [])]
 
   const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null, 'U')
   const displayName = profile?.full_name ?? profile?.email ?? 'Usuario'
 
+  const renderLink = (item: NavItem, onNavigate?: () => void, dense = true) => {
+    const active = isActive(item.href)
+    const Icon = item.icon
+    const count = item.countKey ? liveCounts[item.countKey] : 0
+    const alert = item.alertKey ? liveCounts[item.alertKey] > 0 : false
+    return (
+      <Link key={item.href} href={item.href} onClick={onNavigate} aria-current={active ? 'page' : undefined}
+        className={cn(
+          'group flex items-center gap-2.5 px-2.5 rounded-md transition-colors',
+          dense ? 'h-8 text-[13px]' : 'h-10 text-sm',
+          active ? 'bg-slate-200/70 text-slate-900 font-medium' : 'text-slate-600 hover:bg-slate-200/40 hover:text-slate-900'
+        )}>
+        <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-accent-600' : 'text-slate-400 group-hover:text-slate-600')} />
+        <span className="truncate">{item.label}</span>
+        <CountBadge count={count} alert={alert} active={active} />
+      </Link>
+    )
+  }
+
+  const renderSections = (onNavigate?: () => void, dense = true) => (
+    <>
+      {visibleGroups.map((group, gi) => (
+        <div key={group.label ?? gi} className={gi > 0 ? 'mt-5' : ''}>
+          {group.label && <p className="px-2.5 mb-1 text-[11px] font-medium text-slate-400">{group.label}</p>}
+          <div className="space-y-px">
+            {group.items.map(item => renderLink(item, onNavigate, dense))}
+          </div>
+        </div>
+      ))}
+      {isPlatformOwner && (
+        <div className="mt-5">
+          <p className="px-2.5 mb-1 text-[11px] font-medium text-slate-400">Plataforma</p>
+          {renderLink({ label: 'Organizaciones', href: '/plataforma', icon: Globe2 }, onNavigate, dense)}
+        </div>
+      )}
+    </>
+  )
+
+  const account = (
+    <div className="flex items-center gap-2.5 px-2.5 py-2">
+      <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[11px] font-semibold shrink-0" aria-hidden>
+        {initials}
+      </div>
+      <div className="flex-1 min-w-0 leading-tight">
+        <p className="text-[13px] font-medium text-slate-900 truncate">{displayName}</p>
+        <p className="text-[11px] text-slate-500 truncate">{roleMeta.label}</p>
+      </div>
+      <button onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión"
+        className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors">
+        <LogOut className="w-4 h-4" />
+      </button>
+    </div>
+  )
+
   return (
     <>
-      {/* ── Sidebar desktop ─────────────────────── */}
-      <aside className="hidden md:flex w-60 flex-col h-full relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' }}>
-
-        {/* Glow decorativo */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
-
-        {/* Logo */}
-        <div className="px-5 py-5 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold text-white tracking-tight">CRM</h1>
-              <p className="text-[10px] text-indigo-300/70 leading-none mt-0.5">Automatizaciones</p>
-            </div>
-          </div>
+      {/* ── Escritorio ─────────────────────────────── */}
+      <aside className="hidden md:flex w-60 shrink-0 flex-col h-full bg-sidebar border-r border-slate-200">
+        <div className="px-4 h-14 flex items-center">
+          <Brand organizationName={organizationName} />
         </div>
-
-        <div className="mx-4 h-px bg-white/5" />
-
-        {/* Búsqueda */}
-        <div className="px-3 py-3 relative z-10">
-          <GlobalSearch stages={stages} />
+        <div className="px-3 pb-3">
+          <GlobalSearch stages={stages} allowedHrefs={allowedHrefs} />
         </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 pb-3 overflow-y-auto space-y-4 relative z-10">
-          {navGroups.map((group) => {
-            const visibleItems = group.items.filter(itemVisible)
-            if (visibleItems.length === 0) return null
-
-            return (
-              <div key={group.label}>
-                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
-                  {group.label}
-                </p>
-                <div className="space-y-0.5">
-                  {visibleItems.map(({ label, href, icon: Icon, countKey, alertKey }) => {
-                    const active = isActive(href)
-                    const count = countKey ? liveCounts[countKey] : null
-                    const alertCount = alertKey ? liveCounts[alertKey] : 0
-                    const hasAlert = alertCount > 0
-
-                    return (
-                      <Link key={href} href={href}
-                        className={cn(
-                          'group flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative',
-                          active ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                        )}>
-                        {active && (
-                          <span className="absolute inset-0 rounded-xl"
-                            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.2))' }} />
-                        )}
-                        {active && (
-                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
-                            style={{ background: 'linear-gradient(to bottom, #818cf8, #a78bfa)' }} />
-                        )}
-                        <Icon className={cn('w-4 h-4 shrink-0 relative z-10 transition-transform duration-200',
-                          active ? 'text-indigo-300' : 'group-hover:scale-110')} />
-                        <span className="flex-1 relative z-10 font-medium">{label}</span>
-                        {count !== null && count > 0 && (
-                          <span className={cn(
-                            'relative z-10 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center transition-all',
-                            hasAlert
-                              ? 'bg-red-500/30 text-red-300 ring-1 ring-red-500/40'
-                              : active
-                                ? 'bg-indigo-400/30 text-indigo-200'
-                                : 'bg-white/10 text-slate-300 group-hover:bg-white/15'
-                          )}>
-                            {count > 99 ? '99+' : count}
-                          </span>
-                        )}
-                        {hasAlert && !active && (
-                          <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                        )}
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-
-          {isPlatformOwner && (
-            <div>
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
-                Plataforma
-              </p>
-              <div className="space-y-0.5">
-                <Link href="/plataforma"
-                  className={cn(
-                    'group flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative',
-                    isActive('/plataforma') ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  )}>
-                  {isActive('/plataforma') && (
-                    <span className="absolute inset-0 rounded-xl"
-                      style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.2))' }} />
-                  )}
-                  <Building2 className={cn('w-4 h-4 shrink-0 relative z-10', isActive('/plataforma') ? 'text-indigo-300' : '')} />
-                  <span className="flex-1 relative z-10 font-medium">Organizaciones</span>
-                </Link>
-              </div>
-            </div>
-          )}
+        <nav className="flex-1 px-2 pb-4 overflow-y-auto" aria-label="Navegación principal">
+          {renderSections()}
         </nav>
-
-        {/* Footer — perfil + logout */}
-        <div className="px-3 py-4 border-t border-white/5 relative z-10 space-y-2">
-          {/* Info de usuario */}
-          <div className="flex items-center gap-2.5 px-3 py-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ring-inset ${roleMeta.color}`}>
-                {roleMeta.label}
-              </span>
-            </div>
-          </div>
-
-          <button onClick={handleLogout}
-            className="group flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-            <LogOut className="w-4 h-4 shrink-0 group-hover:rotate-12 transition-transform duration-200" />
-            <span className="font-medium">Cerrar sesión</span>
-          </button>
-        </div>
+        <div className="border-t border-slate-200 px-1.5 py-1.5">{account}</div>
       </aside>
 
-      {/* ── Header móvil ────────────────────────── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 px-4 py-2.5 flex items-center justify-between gap-3"
-        style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        {/* Logo + nombre */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            <Zap className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="leading-tight">
-            <p className="text-xs font-bold text-white leading-none">CRM</p>
-            <p className="text-[9px] text-indigo-300/60 leading-none mt-0.5">Automatizaciones</p>
-          </div>
+      {/* ── Encabezado móvil ───────────────────────── */}
+      <header className="md:hidden fixed top-0 inset-x-0 z-40 h-[52px] px-3 flex items-center gap-3 bg-white/95 backdrop-blur border-b border-slate-200">
+        <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] font-semibold shrink-0" aria-hidden>
+          {getInitials(organizationName ?? 'CRM', null, 'C')}
         </div>
-
-        {/* Búsqueda compacta */}
         <div className="flex-1 min-w-0">
-          <GlobalSearch stages={stages} />
+          <GlobalSearch stages={stages} allowedHrefs={allowedHrefs} variant="compact" />
         </div>
-
-        {/* Avatar → abre menú completo */}
-        <button onClick={() => setMoreOpen(true)} className="flex items-center gap-1.5 shrink-0" aria-label="Abrir menú">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            {initials}
-          </div>
+        <button onClick={() => setMoreOpen(true)} aria-label="Abrir menú"
+          className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[11px] font-semibold shrink-0">
+          {initials}
         </button>
-      </div>
+      </header>
 
-      {/* ── Bottom nav móvil ────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex safe-area-inset-bottom"
-        style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {mobileNavBase.filter(itemVisible).slice(0, 4).map(({ label, href, icon: Icon, countKey, alertKey }) => {
-          const active = isActive(href)
-          const count = countKey ? liveCounts[countKey] : 0
-          const alertCount = alertKey ? liveCounts[alertKey] : 0
-          const hasAlert = alertCount > 0
+      {/* ── Navegación inferior móvil ──────────────── */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 flex bg-white border-t border-slate-200"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label="Navegación rápida">
+        {mobileNavBase.filter(itemVisible).slice(0, 4).map(item => {
+          const active = isActive(item.href)
+          const Icon = item.icon
+          const count = item.countKey ? liveCounts[item.countKey] : 0
+          const alert = item.alertKey ? liveCounts[item.alertKey] > 0 : false
           return (
-            <Link key={href} href={href}
-              className={cn(
-                'flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors relative',
-                active ? 'text-indigo-300' : 'text-slate-500'
-              )}>
-              {/* Indicador activo */}
-              {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-indigo-400" />
-              )}
-              <div className="relative">
-                <Icon className={cn('w-5 h-5', active ? 'text-indigo-300' : 'text-slate-500')} />
+            <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined}
+              className={cn('flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] font-medium', active ? 'text-accent-600' : 'text-slate-500')}>
+              <span className="relative">
+                <Icon className="w-5 h-5" />
                 {count > 0 && (
-                  <span className={cn(
-                    'absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center',
-                    hasAlert ? 'bg-red-500 text-white' : 'bg-indigo-500 text-white'
-                  )}>
+                  <span className={cn('absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-semibold tabular-nums flex items-center justify-center text-white',
+                    alert ? 'bg-red-600' : 'bg-slate-700')}>
                     {count > 99 ? '99+' : count}
                   </span>
                 )}
-              </div>
-              {label}
+              </span>
+              {item.label}
             </Link>
           )
         })}
-
-        {/* "Más" — abre el menú completo (todas las secciones + Plataforma + logout) */}
-        <button onClick={() => setMoreOpen(true)}
-          className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-slate-500">
+        <button onClick={() => setMoreOpen(true)} className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] font-medium text-slate-500">
           <Menu className="w-5 h-5" />
           Más
         </button>
       </nav>
 
-      {/* ── Drawer móvil: menú completo ─────────── */}
+      {/* ── Menú completo móvil ────────────────────── */}
       {moreOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMoreOpen(false)} />
-          <div className="relative rounded-t-3xl overflow-hidden flex flex-col max-h-[85vh]"
-            style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%)' }}>
-
-            {/* Header del drawer */}
-            <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-white/5 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ring-inset ${roleMeta.color}`}>
-                    {roleMeta.label}
-                  </span>
-                </div>
-              </div>
-              <button onClick={() => setMoreOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5" aria-label="Cerrar menú">
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="Menú">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setMoreOpen(false)} />
+          <div className="relative bg-white rounded-t-2xl flex flex-col max-h-[85vh] shadow-2xl">
+            <div className="px-4 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
+              <Brand organizationName={organizationName} />
+              <button onClick={() => setMoreOpen(false)} aria-label="Cerrar menú"
+                className="w-8 h-8 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100">
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            {/* Secciones */}
-            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-              {navGroups.map((group) => {
-                const visibleItems = group.items.filter(itemVisible)
-                if (visibleItems.length === 0) return null
-                return (
-                  <div key={group.label}>
-                    <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
-                      {group.label}
-                    </p>
-                    <div className="space-y-0.5">
-                      {visibleItems.map(({ label, href, icon: Icon, countKey, alertKey }) => {
-                        const active = isActive(href)
-                        const count = countKey ? liveCounts[countKey] : null
-                        const alertCount = alertKey ? liveCounts[alertKey] : 0
-                        const hasAlert = alertCount > 0
-                        return (
-                          <Link key={href} href={href}
-                            className={cn(
-                              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all relative',
-                              active ? 'text-white bg-white/10' : 'text-slate-300 hover:text-white hover:bg-white/5'
-                            )}>
-                            <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-indigo-300' : '')} />
-                            <span className="flex-1 font-medium">{label}</span>
-                            {count !== null && count > 0 && (
-                              <span className={cn(
-                                'min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center',
-                                hasAlert ? 'bg-red-500/30 text-red-300 ring-1 ring-red-500/40' : 'bg-white/10 text-slate-300'
-                              )}>
-                                {count > 99 ? '99+' : count}
-                              </span>
-                            )}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-
-              {isPlatformOwner && (
-                <div>
-                  <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/25 select-none">
-                    Plataforma
-                  </p>
-                  <Link href="/plataforma"
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
-                      isActive('/plataforma') ? 'text-white bg-white/10' : 'text-slate-300 hover:text-white hover:bg-white/5'
-                    )}>
-                    <Building2 className={cn('w-4 h-4 shrink-0', isActive('/plataforma') ? 'text-indigo-300' : '')} />
-                    <span className="flex-1 font-medium">Organizaciones</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Logout */}
-            <div className="px-3 py-3 border-t border-white/5 shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
-              <button onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-all">
-                <LogOut className="w-4 h-4 shrink-0" />
-                <span className="font-medium">Cerrar sesión</span>
-              </button>
+            <nav className="flex-1 overflow-y-auto px-2 py-3">
+              {renderSections(() => setMoreOpen(false), false)}
+            </nav>
+            <div className="border-t border-slate-200 px-1.5 py-1.5 shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.375rem)' }}>
+              {account}
             </div>
           </div>
         </div>

@@ -208,10 +208,9 @@ export default function ImportLeadsButton() {
                       {result.fail > 0 && <span className="text-red-500 font-semibold">{result.fail} con error</span>}
                     </div>
                   </div>
-                  <button
+                  <button 
                     onClick={() => { setOpen(false); reset() }}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                    className="bg-accent-600 w-full py-2.5 rounded-xl text-sm font-semibold text-white"
                   >
                     Listo
                   </button>
@@ -289,8 +288,7 @@ export default function ImportLeadsButton() {
 
                   <button
                     onClick={runImport} disabled={importing}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                    className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
                   >
                     {importing
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Importando {leads.length} leads...</>

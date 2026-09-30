@@ -62,8 +62,8 @@ export default async function ActividadPage() {
           )}
           {users?.map((user: any) => (
             <div key={user.id} className="px-5 py-3.5 flex items-center gap-3.5 hover:bg-slate-50/50 transition-colors">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <div className="bg-accent-600 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0"
+                 >
                 {getInitials(user.full_name ?? 'U')}
               </div>
               <div className="flex-1 min-w-0">
@@ -128,7 +128,7 @@ export default async function ActividadPage() {
                     </div>
                     {/* Comentario */}
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 leading-relaxed">
-                      💬 {h.comment}
+                      «{h.comment}»
                     </p>
                   </div>
                   <span className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 mt-0.5">

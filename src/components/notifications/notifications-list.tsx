@@ -116,7 +116,7 @@ export default function NotificationsList({ initialNotifications, userId }: Prop
               {filter === 'unread' ? 'No hay notificaciones sin leer' : 'Sin notificaciones'}
             </p>
             <p className="text-xs text-slate-300">
-              {filter === 'unread' ? '¡Todo al día! 🎉' : 'Las notificaciones aparecerán aquí'}
+              {filter === 'unread' ? 'Todo al día' : 'Las notificaciones aparecerán aquí'}
             </p>
           </div>
         ) : (

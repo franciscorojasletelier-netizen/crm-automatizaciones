@@ -23,7 +23,10 @@ import QuotesPanel from '@/components/deals/quotes-panel'
 import EmailThread from '@/components/deals/email-thread'
 import { formatCLP } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
-import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
+import { CHILE_TZ, DATE_ONLY_TZ, chileDateString } from '@/lib/dates'
+import DealInvoicesPanel from '@/components/cobranza/deal-invoices-panel'
+import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
+import { canAccessSection } from '@/lib/roles'
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -82,7 +85,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     specRequesterName = (reqProfile as any)?.full_name ?? null
   }
 
-  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }, { data: quotes }, { data: emails }, { data: connectedAccount }] = await Promise.all([
+  const seesCobranza = canAccessSection(role, sectionAccess, 'cobranza')
+  const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }, { data: quotes }, { data: emails }, { data: connectedAccount }, { data: dealInvoices }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
@@ -103,7 +107,12 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     supabase.from('quotes').select('*').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase.from('email_messages').select('*').eq('deal_id', id).order('sent_at', { ascending: false }),
     supabase.from('email_accounts').select('id').eq('user_id', userId).eq('is_active', true).limit(1).maybeSingle(),
+    seesCobranza
+      ? supabase.from('invoices').select(INVOICE_SELECT).eq('deal_id', id).order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
   ])
+  const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number }[])
+    .find(q => q.status === 'accepted') ?? null
 
   const lastInsight = (aiInsights as any)?.[0] ?? null
 
@@ -131,8 +140,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <div className="bg-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                 >
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -337,6 +346,18 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             />
           )}
             <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as any} canEdit={canEdit} />
+            {seesCobranza && (
+              <DealInvoicesPanel
+                invoices={(dealInvoices ?? []) as unknown as Invoice[]}
+                today={chileDateString()}
+                canCreate={canManage && (deal.status === 'won' || !!acceptedQuote)}
+                companyId={deal.company_id ?? null}
+                companyName={deal.companies?.name ?? null}
+                dealId={deal.id}
+                estimatedValue={deal.estimated_value ?? null}
+                acceptedQuote={acceptedQuote}
+              />
+            )}
             <EmailThread
               dealId={deal.id}
               contactId={(deal.contacts as any)?.id ?? null}

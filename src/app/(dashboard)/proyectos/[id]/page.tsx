@@ -21,7 +21,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   pausado:                    { label: 'Pausado',                    color: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200' },
   entregado:                  { label: 'Entregado',                  color: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200' },
   cancelado:                  { label: 'Cancelado',                  color: 'bg-red-100 text-red-700 ring-1 ring-red-200' },
-  pendiente_especificaciones: { label: '⚠️ Pend. Especificaciones', color: 'bg-amber-100 text-amber-800 ring-1 ring-amber-300' },
+  pendiente_especificaciones: { label: 'Pend. especificaciones', color: 'bg-amber-100 text-amber-800 ring-1 ring-amber-300' },
 }
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -92,8 +92,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         {/* Hero */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <div className="bg-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+               >
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -134,7 +134,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%`, background: 'linear-gradient(to right, #6366f1, #8b5cf6)' }} />
+                  style={{ width: `${progress}%`, background: 'var(--color-accent-600)' }} />
               </div>
             </div>
           )}

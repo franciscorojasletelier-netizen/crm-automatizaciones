@@ -56,8 +56,8 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Editando datos</h2>
           <div className="flex gap-1.5">
             <button onClick={save} disabled={saving}
-              className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl disabled:opacity-50 transition-all"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              className="bg-accent-600 flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl disabled:opacity-50 transition-all"
+               >
               <Check className="w-3 h-3" />{saving ? 'Guardando...' : 'Guardar'}
             </button>
             <button onClick={() => setEditing(false)}

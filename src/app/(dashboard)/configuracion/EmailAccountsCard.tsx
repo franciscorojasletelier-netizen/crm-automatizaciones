@@ -59,7 +59,7 @@ export default function EmailAccountsCard({
         )}
 
         {accounts.length === 0 ? (
-          <p className="text-xs text-slate-500">Conectá tu casilla para ver y responder correos directo desde cada deal.</p>
+          <p className="text-xs text-slate-500">Conecta tu casilla para ver y responder correos directo desde cada deal.</p>
         ) : (
           <div className="space-y-2">
             {accounts.map(a => (

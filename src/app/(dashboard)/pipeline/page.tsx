@@ -78,8 +78,8 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
         </div>
         {canEdit && (
           <Link href={selectedPipeline ? `/leads/nuevo?pipeline=${selectedPipeline.id}` : '/leads/nuevo'}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            className="bg-accent-600 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+             >
             <Plus className="w-4 h-4" />
             Nuevo lead
           </Link>

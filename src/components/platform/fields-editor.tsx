@@ -49,7 +49,7 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
     const options = needsOptions
       ? newOptions.split(',').map(s => s.trim()).filter(Boolean).map(l => ({ value: l.toLowerCase().replace(/\s+/g, '_'), label: l }))
       : []
-    if (needsOptions && options.length === 0) { setError('Agregá al menos una opción, separadas por coma'); return }
+    if (needsOptions && options.length === 0) { setError('Agrega al menos una opción, separadas por coma'); return }
 
     await run('new', () => callApi('POST', {
       organizationId: orgId, entity, key: newKey, label: newLabel, fieldType: newType,

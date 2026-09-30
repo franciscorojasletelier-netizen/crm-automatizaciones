@@ -1,16 +1,52 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Search, Building2, Users, TrendingUp, ArrowRight, Loader2 } from 'lucide-react'
-import { formatCLP } from '@/lib/format'
+import {
+  Search, Building2, Users, TrendingUp, ArrowRight, Loader2, Plus, LayoutDashboard, CheckSquare,
+  CalendarDays, Bell, BarChart3, GitBranch, FolderOpen, UserCog, Wallet,
+} from 'lucide-react'
+import { formatCLP, getInitials } from '@/lib/format'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 
-export default function GlobalSearch({ stages = [] }: { stages?: Stage[] }) {
+type Command = { icon: React.ComponentType<{ className?: string }>; label: string; keywords: string; href: string }
+
+// Paleta de comandos (patrón Attio/Linear): navegar y crear, no solo buscar.
+const COMMANDS: Command[] = [
+  { icon: Plus,            label: 'Crear nuevo lead',      keywords: 'nuevo crear lead deal',            href: '/leads/nuevo' },
+  { icon: LayoutDashboard, label: 'Ir a Dashboard',        keywords: 'dashboard inicio resumen',         href: '/dashboard' },
+  { icon: TrendingUp,      label: 'Ir a Pipeline',         keywords: 'pipeline kanban tablero embudo',   href: '/pipeline' },
+  { icon: Users,           label: 'Ir a Leads',            keywords: 'leads lista prospectos',           href: '/leads' },
+  { icon: Building2,       label: 'Ir a Empresas',         keywords: 'empresas companias clientes',      href: '/empresas' },
+  { icon: CheckSquare,     label: 'Ir a Tareas',           keywords: 'tareas pendientes todo',           href: '/tareas' },
+  { icon: Wallet,          label: 'Ir a Cobranza',         keywords: 'cobranza facturas pagos cobrar',   href: '/cobranza' },
+  { icon: CalendarDays,    label: 'Ir a Calendario',       keywords: 'calendario agenda fechas',         href: '/calendario' },
+  { icon: Bell,            label: 'Ir a Notificaciones',   keywords: 'notificaciones avisos alertas',    href: '/notificaciones' },
+  { icon: BarChart3,       label: 'Ir a Reportes',         keywords: 'reportes informes analisis kpi',   href: '/reportes' },
+  { icon: GitBranch,       label: 'Ir a Automatizaciones', keywords: 'automatizaciones reglas flujos',   href: '/automatizaciones' },
+  { icon: FolderOpen,      label: 'Ir a Proyectos',        keywords: 'proyectos entregables',            href: '/proyectos' },
+  { icon: UserCog,         label: 'Ir a Equipo',           keywords: 'equipo usuarios roles admin',      href: '/admin/usuarios' },
+]
+
+// Texto seguro para filtros de PostgREST: sin los caracteres que arman la
+// sintaxis de .or() (coma, paréntesis) y con los comodines de ilike escapados.
+function safeTerm(q: string): string {
+  return q.replace(/[,()*:"\\]/g, ' ').replace(/[%_]/g, m => `\\${m}`).trim()
+}
+
+type DealHit = { id: string; stage: string; estimated_value: number | null; companies: { name: string } | null; contacts: { full_name: string } | null }
+type ContactHit = { id: string; full_name: string | null; email: string | null; companies: { name: string } | null }
+
+export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sidebar' }: {
+  stages?: Stage[]
+  /** Secciones visibles para el usuario; los comandos a otras no se ofrecen. */
+  allowedHrefs?: string[]
+  variant?: 'sidebar' | 'compact'
+}) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<{ deals: any[]; contacts: any[] }>({ deals: [], contacts: [] })
+  const [results, setResults] = useState<{ deals: DealHit[]; contacts: ContactHit[] }>({ deals: [], contacts: [] })
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -18,197 +54,159 @@ export default function GlobalSearch({ stages = [] }: { stages?: Stage[] }) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setOpen(true) }
-      if (e.key === 'Escape') { setOpen(false); setQuery('') }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setOpen(true) }
+      if (e.key === 'Escape') setOpen(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  function openPalette() { setQuery(''); setResults({ deals: [], contacts: [] }); setSelected(0); setOpen(true) }
+
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50)
-    else { setQuery(''); setResults({ deals: [], contacts: [] }); setSelected(0) }
+    if (open) setTimeout(() => inputRef.current?.focus(), 30)
   }, [open])
 
   useEffect(() => {
-    if (!query.trim()) { setResults({ deals: [], contacts: [] }); return }
+    const term = safeTerm(query)
+    if (term.length < 2) return
     const timer = setTimeout(async () => {
       setLoading(true)
       const supabase = createClient()
-      const q = query.trim()
       const [dealsRes, contactsRes] = await Promise.all([
-        supabase.from('deals').select('id, stage, estimated_value, companies(name), contacts:primary_contact_id(full_name)').eq('status', 'open').ilike('companies.name', `%${q}%`).limit(4),
-        supabase.from('contacts').select('id, full_name, email, companies(name)').or(`full_name.ilike.%${q}%,email.ilike.%${q}%`).limit(4),
+        // !inner: el filtro sobre la empresa filtra los DEALS. Sin él,
+        // PostgREST devolvía cualquier deal abierto con la empresa en null.
+        supabase.from('deals')
+          .select('id, stage, estimated_value, companies!inner(name), contacts:primary_contact_id(full_name)')
+          .eq('status', 'open').ilike('companies.name', `%${term}%`).limit(5),
+        supabase.from('contacts')
+          .select('id, full_name, email, companies(name)')
+          .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`).limit(5),
       ])
-      setResults({ deals: dealsRes.data ?? [], contacts: contactsRes.data ?? [] })
+      setResults({ deals: (dealsRes.data ?? []) as unknown as DealHit[], contacts: (contactsRes.data ?? []) as unknown as ContactHit[] })
       setLoading(false)
       setSelected(0)
-    }, 250)
+    }, 220)
     return () => clearTimeout(timer)
   }, [query])
 
-  // ── Comandos rápidos (patrón Attio: command palette, no solo búsqueda) ──
-  const COMMANDS = [
-    { icon: '➕', label: 'Crear nuevo lead',        keywords: 'nuevo crear lead deal',          href: '/leads/nuevo' },
-    { icon: '📊', label: 'Ir a Dashboard',          keywords: 'dashboard inicio resumen',       href: '/dashboard' },
-    { icon: '📈', label: 'Ir a Pipeline',           keywords: 'pipeline kanban tablero embudo', href: '/pipeline' },
-    { icon: '👥', label: 'Ir a Leads',              keywords: 'leads lista prospectos',         href: '/leads' },
-    { icon: '🏢', label: 'Ir a Empresas',           keywords: 'empresas companias clientes',    href: '/empresas' },
-    { icon: '✅', label: 'Ir a Tareas',             keywords: 'tareas pendientes todo',         href: '/tareas' },
-    { icon: '📅', label: 'Ir a Calendario',         keywords: 'calendario agenda fechas',       href: '/calendario' },
-    { icon: '🔔', label: 'Ir a Notificaciones',     keywords: 'notificaciones avisos alertas',  href: '/notificaciones' },
-    { icon: '📉', label: 'Ir a Reportes',           keywords: 'reportes informes analisis kpi', href: '/reportes' },
-    { icon: '⚡', label: 'Ir a Automatizaciones',   keywords: 'automatizaciones reglas flujos', href: '/automatizaciones' },
-    { icon: '🗂️', label: 'Ir a Proyectos',          keywords: 'proyectos entregables',          href: '/proyectos' },
-    { icon: '🧑‍💼', label: 'Ir a Equipo',           keywords: 'equipo usuarios roles admin',    href: '/admin/usuarios' },
-  ]
   const q = query.trim().toLowerCase()
+  const available = allowedHrefs ? COMMANDS.filter(c => allowedHrefs.some(h => c.href === h || c.href.startsWith(h + '/'))) : COMMANDS
   const matchedCommands = q
-    ? COMMANDS.filter(c => c.label.toLowerCase().includes(q) || c.keywords.includes(q)).slice(0, 5)
-    : COMMANDS.slice(0, 6)
+    ? available.filter(c => c.label.toLowerCase().includes(q) || c.keywords.includes(q)).slice(0, 5)
+    : available.slice(0, 6)
+  const showResults = safeTerm(query).length >= 2
 
   const allItems = [
-    ...matchedCommands.map(c => ({ type: 'command', data: c, href: c.href })),
-    ...results.deals.map(d => ({ type: 'deal', data: d, href: `/leads/${d.id}` })),
-    ...results.contacts.map(c => ({ type: 'contact', data: c, href: `/empresas` })),
+    ...matchedCommands.map(c => c.href),
+    ...(showResults ? results.deals.map(d => `/leads/${d.id}`) : []),
+    ...(showResults ? results.contacts.map(() => '/empresas') : []),
   ]
 
   function go(href: string) { router.push(href); setOpen(false) }
 
-  useEffect(() => {
-    function onArrow(e: KeyboardEvent) {
-      if (!open || !allItems.length) return
-      if (e.key === 'ArrowDown') { e.preventDefault(); setSelected(s => Math.min(s + 1, allItems.length - 1)) }
-      if (e.key === 'ArrowUp') { e.preventDefault(); setSelected(s => Math.max(s - 1, 0)) }
-      if (e.key === 'Enter' && allItems[selected]) go(allItems[selected].href)
-    }
-    window.addEventListener('keydown', onArrow)
-    return () => window.removeEventListener('keydown', onArrow)
-  }, [open, allItems, selected])
+  function onInputKey(e: React.KeyboardEvent) {
+    if (!allItems.length) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setSelected(s => Math.min(s + 1, allItems.length - 1)) }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setSelected(s => Math.max(s - 1, 0)) }
+    if (e.key === 'Enter' && allItems[selected]) go(allItems[selected])
+  }
 
-  const hasResults = allItems.length > 0
+  const itemClass = (isSelected: boolean) =>
+    `w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${isSelected ? 'bg-slate-100' : 'hover:bg-slate-50'}`
 
   return (
     <>
-      {/* Trigger en sidebar */}
-      <button onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2.5 w-full px-3 py-2.5 text-sm rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-all duration-150 group mb-1">
-        <Search className="w-3.5 h-3.5 shrink-0" />
-        <span className="flex-1 text-left text-xs">Buscar...</span>
-        <kbd className="text-[9px] bg-white/10 text-slate-500 group-hover:text-slate-300 px-1.5 py-0.5 rounded-md font-mono transition-colors">⌘K</kbd>
-      </button>
+      {variant === 'sidebar' ? (
+        <button onClick={openPalette}
+          className="flex items-center gap-2 w-full h-8 px-2.5 text-sm rounded-md border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-colors">
+          <Search className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1 text-left text-[13px]">Buscar…</span>
+          <kbd className="text-[10px] text-slate-400 font-sans">Ctrl K</kbd>
+        </button>
+      ) : (
+        <button onClick={openPalette} aria-label="Buscar"
+          className="flex items-center gap-2 w-full h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-slate-500 text-[13px]">
+          <Search className="w-3.5 h-3.5 shrink-0" /> Buscar…
+        </button>
+      )}
 
-      {/* Modal */}
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" role="dialog" aria-modal="true" aria-label="Búsqueda y comandos">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setOpen(false)} />
 
-          {/* Panel */}
-          <div className="relative w-full max-w-xl overflow-hidden rounded-2xl shadow-2xl border border-slate-200/80"
-            style={{ background: 'rgba(255,255,255,0.98)' }}>
-
-            {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-100">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200">
+            <div className="flex items-center gap-3 px-4 h-12 border-b border-slate-200">
               {loading
-                ? <Loader2 className="w-4 h-4 text-indigo-500 shrink-0 animate-spin" />
-                : <Search className="w-4 h-4 text-slate-400 shrink-0" />
-              }
-              <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)}
-                placeholder="Buscar empresa, contacto, email..."
-                className="flex-1 text-sm font-medium outline-none text-slate-900 placeholder:text-slate-400 bg-transparent" />
-              {query && (
-                <button onClick={() => setQuery('')}
-                  className="text-xs text-slate-400 hover:text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md font-medium transition-colors">
-                  Esc
-                </button>
-              )}
+                ? <Loader2 className="w-4 h-4 text-slate-400 shrink-0 animate-spin" />
+                : <Search className="w-4 h-4 text-slate-400 shrink-0" />}
+              <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={onInputKey}
+                placeholder="Buscar empresa, contacto o email, o escribir un comando"
+                className="flex-1 text-sm outline-none text-slate-900 placeholder:text-slate-400 bg-transparent" />
+              <kbd className="text-[10px] text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">Esc</kbd>
             </div>
 
-            {/* Resultados */}
-            <div className="max-h-[380px] overflow-y-auto">
-              {/* Comandos rápidos (patrón Attio) */}
+            <div className="max-h-[400px] overflow-y-auto p-2">
               {matchedCommands.length > 0 && (
-                <div className="py-2">
-                  <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    ⌘ Acciones rápidas
-                  </p>
+                <div>
+                  <p className="px-3 pt-1 pb-1.5 text-xs font-medium text-slate-500">Acciones</p>
                   {matchedCommands.map((cmd, i) => {
-                    const isSelected = selected === i
+                    const Icon = cmd.icon
                     return (
-                      <button key={cmd.href + cmd.label} onClick={() => go(cmd.href)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}>
-                        <span className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-sm">
-                          {cmd.icon}
-                        </span>
-                        <span className="text-sm font-semibold text-slate-700 flex-1">{cmd.label}</span>
-                        <ArrowRight className={`w-4 h-4 shrink-0 transition-colors ${isSelected ? 'text-indigo-500' : 'text-slate-200'}`} />
+                      <button key={cmd.href} onClick={() => go(cmd.href)} onMouseEnter={() => setSelected(i)} className={itemClass(selected === i)}>
+                        <Icon className="w-4 h-4 text-slate-500 shrink-0" />
+                        <span className="text-sm text-slate-800 flex-1">{cmd.label}</span>
+                        {selected === i && <ArrowRight className="w-3.5 h-3.5 text-slate-400" />}
                       </button>
                     )
                   })}
                 </div>
               )}
 
-              {!loading && query && !hasResults && (
-                <div className="py-10 text-center">
-                  <p className="text-sm text-slate-400 font-medium">Sin resultados para</p>
-                  <p className="text-sm font-bold text-slate-700 mt-0.5">"{query}"</p>
-                </div>
+              {showResults && !loading && results.deals.length === 0 && results.contacts.length === 0 && (
+                <p className="px-3 py-8 text-center text-sm text-slate-500">
+                  Sin resultados para <span className="font-medium text-slate-800">«{query.trim()}»</span>
+                </p>
               )}
 
-              {results.deals.length > 0 && (
-                <div className="py-2">
-                  <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <TrendingUp className="w-3 h-3" /> Leads
-                  </p>
-                  {results.deals.map((deal: any, i: number) => {
+              {showResults && results.deals.length > 0 && (
+                <div className="mt-1">
+                  <p className="px-3 pt-2 pb-1.5 text-xs font-medium text-slate-500">Deals abiertos</p>
+                  {results.deals.map((deal, i) => {
                     const idx = matchedCommands.length + i
-                    const isSelected = selected === idx
+                    const stage = stageByKey(stages, deal.stage)
                     return (
-                      <button key={deal.id} onClick={() => go(`/leads/${deal.id}`)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}>
-                        <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
-                          <Building2 className="w-4 h-4 text-indigo-600" />
-                        </div>
+                      <button key={deal.id} onClick={() => go(`/leads/${deal.id}`)} onMouseEnter={() => setSelected(idx)} className={itemClass(selected === idx)}>
+                        <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{deal.companies?.name}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stageByKey(stages, deal.stage)).dot}`} />
-                            <p className="text-xs text-slate-400 truncate">
-                              {deal.contacts?.full_name && `${deal.contacts.full_name} · `}
-                              {stageByKey(stages, deal.stage)?.label ?? deal.stage}
-                              {deal.estimated_value && ` · ${formatCLP(deal.estimated_value)}`}
-                            </p>
-                          </div>
+                          <p className="text-sm text-slate-900 truncate">{deal.companies?.name}</p>
+                          <p className="text-xs text-slate-500 truncate flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stage).dot}`} />
+                            {stage?.label ?? deal.stage}
+                            {deal.contacts?.full_name && ` · ${deal.contacts.full_name}`}
+                            {deal.estimated_value ? ` · ${formatCLP(deal.estimated_value)}` : ''}
+                          </p>
                         </div>
-                        <ArrowRight className={`w-4 h-4 shrink-0 transition-colors ${isSelected ? 'text-indigo-500' : 'text-slate-300'}`} />
                       </button>
                     )
                   })}
                 </div>
               )}
 
-              {results.contacts.length > 0 && (
-                <div className="py-2 border-t border-slate-50">
-                  <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Users className="w-3 h-3" /> Contactos
-                  </p>
-                  {results.contacts.map((c: any, i: number) => {
+              {showResults && results.contacts.length > 0 && (
+                <div className="mt-1">
+                  <p className="px-3 pt-2 pb-1.5 text-xs font-medium text-slate-500">Contactos</p>
+                  {results.contacts.map((c, i) => {
                     const idx = matchedCommands.length + results.deals.length + i
-                    const isSelected = selected === idx
                     return (
-                      <button key={c.id} onClick={() => go('/empresas')}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}>
-                        <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-bold text-purple-600">
-                            {(c.full_name ?? '?').charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                      <button key={c.id} onClick={() => go('/empresas')} onMouseEnter={() => setSelected(idx)} className={itemClass(selected === idx)}>
+                        <span className="w-6 h-6 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600 flex items-center justify-center shrink-0">
+                          {getInitials(c.full_name, c.email)}
+                        </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{c.full_name}</p>
-                          <p className="text-xs text-slate-400 truncate">{c.email}{c.companies?.name && ` · ${c.companies.name}`}</p>
+                          <p className="text-sm text-slate-900 truncate">{c.full_name}</p>
+                          <p className="text-xs text-slate-500 truncate">{c.email}{c.companies?.name && ` · ${c.companies.name}`}</p>
                         </div>
-                        <ArrowRight className={`w-4 h-4 shrink-0 transition-colors ${isSelected ? 'text-indigo-500' : 'text-slate-300'}`} />
                       </button>
                     )
                   })}
@@ -216,11 +214,10 @@ export default function GlobalSearch({ stages = [] }: { stages?: Stage[] }) {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="px-4 py-2.5 border-t border-slate-100 flex items-center gap-4 bg-slate-50/80">
-              {[['↑↓', 'navegar'], ['↵', 'abrir'], ['Esc', 'cerrar']].map(([key, label]) => (
-                <span key={key} className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <kbd className="bg-white border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded-md font-mono text-[10px] shadow-sm">{key}</kbd>
+            <div className="px-4 h-9 border-t border-slate-200 flex items-center gap-4 bg-slate-50">
+              {[['↑↓', 'navegar'], ['Enter', 'abrir'], ['Esc', 'cerrar']].map(([key, label]) => (
+                <span key={key} className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                  <kbd className="bg-white border border-slate-200 text-slate-600 px-1.5 rounded text-[10px]">{key}</kbd>
                   {label}
                 </span>
               ))}

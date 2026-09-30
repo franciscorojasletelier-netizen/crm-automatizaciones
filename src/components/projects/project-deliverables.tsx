@@ -67,7 +67,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
           <div className="flex items-center gap-3">
             <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+                style={{ width: `${progress}%`, background: 'var(--color-accent-600)' }} />
             </div>
             <span className="text-xs font-bold text-slate-600 tabular-nums">{progress}%</span>
           </div>
@@ -88,8 +88,8 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
               className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
           </div>
           <button onClick={handleAdd} disabled={loading || !title.trim()}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
+             >
             <Plus className="w-3.5 h-3.5" />{loading ? 'Guardando...' : 'Agregar entregable'}
           </button>
         </div>

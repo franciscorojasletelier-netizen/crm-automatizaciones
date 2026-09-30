@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { formatCLP } from '@/lib/format'
-import { X } from 'lucide-react'
+import { X, Check, Flame, PenLine, Paperclip, Trophy } from 'lucide-react'
+import { StageIcon } from '@/lib/stage-icons'
 import { type Stage, stageByKey, colorOf, boardStages, terminalStages } from '@/lib/stages'
 import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
@@ -41,14 +42,6 @@ function isStalled(deal: KanbanDeal): boolean {
 // van en la bandeja de cierre (patrón Pipedrive). Antes eso eran los
 // arrays TERMINAL_STAGES / ACTIVE_STAGES / TRAY_ZONES hardcodeados.
 
-// Emoji de la bandeja de cierre, derivado del color como los iconos.
-const TRAY_EMOJI: Record<string, string> = {
-  green: '🏆', emerald: '🏆',
-  red: '✕', rose: '✕',
-  gray: '⊘',
-  slate: '❄️',
-}
-
 // ── Modal selector de etapa (móvil) ──────────────────────────
 function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel }: {
   deal: KanbanDeal; currentStage: string; stages: Stage[]; onSelect: (stage: string) => void; onCancel: () => void
@@ -77,7 +70,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
                 <span className={`w-2.5 h-2.5 rounded-full ${c.dot} shrink-0`} />
                 <span className="leading-tight">{s.label}</span>
                 {s.isTerminal && !isCurrent && <span className="ml-auto text-[10px] text-slate-400">cierre</span>}
-                {isCurrent && <span className="ml-auto text-[10px]">✓</span>}
+                {isCurrent && <Check className="ml-auto w-3.5 h-3.5" />}
               </button>
             )
           })}
@@ -130,13 +123,13 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
     const ghost = document.createElement('div')
     ghost.style.cssText = [
       'position:fixed', 'top:-200px', 'left:-200px',
-      'background:linear-gradient(135deg,#6366f1,#8b5cf6)',
+      'background:var(--color-slate-900)',
       'color:white', 'padding:8px 14px', 'border-radius:12px',
       'font-size:13px', 'font-weight:700', 'white-space:nowrap',
       'box-shadow:0 8px 24px rgba(99,102,241,0.4)',
       'pointer-events:none', 'z-index:9999',
     ].join(';')
-    ghost.textContent = `✦ ${deal.companies?.name ?? 'Deal'}`
+    ghost.textContent = deal.companies?.name ?? 'Deal'
     document.body.appendChild(ghost)
     e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, 20)
     // Limpiar el elemento ghost después de un tick
@@ -230,14 +223,14 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
       <div className="flex items-center gap-3 mb-3 flex-wrap">
         <p className="text-xs text-slate-400 font-medium flex-1 min-w-[200px]">
           {view === 'board'
-            ? <>💡 Arrastra las tarjetas entre columnas. Para cerrar un deal, suéltalo en la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo.</>
-            : <>📋 Vista de lista — los mismos deals del tablero, ordenados por valor.</>
+            ? <>Arrastra las tarjetas entre columnas. Para cerrar un deal, suéltalo en la <span className="font-bold text-slate-500">bandeja de cierre</span> que aparece abajo.</>
+            : <>Vista de lista — los mismos deals del tablero, ordenados por valor.</>
           }
         </p>
 
         {stalledCount > 0 && (
           <span className="flex items-center gap-1.5 text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl">
-            🔥 {stalledCount} estancado{stalledCount > 1 ? 's' : ''} (7d+ sin contacto)
+            <Flame className="w-3.5 h-3.5" /> {stalledCount} estancado{stalledCount > 1 ? 's' : ''} (7d+ sin contacto)
           </span>
         )}
 
@@ -279,7 +272,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900">{deal.companies?.name ?? 'Sin empresa'}</span>
-                        {stalled && <span className="text-[10px]">🔥</span>}
+                        {stalled && <Flame className="w-3 h-3 text-red-500" aria-label="Estancado" />}
                       </div>
                       {deal.contacts?.full_name && <p className="text-[11px] text-slate-400">{deal.contacts.full_name}</p>}
                     </td>
@@ -338,9 +331,9 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                 <div className={`w-2.5 h-2.5 rounded-full ${c.dot} shadow-sm flex-shrink-0`} />
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide flex-1 truncate">
                   {stage.label}
-                  {needsReason && <span className="ml-1 text-amber-500" title="Requiere justificación">✏️</span>}
-                  {isProposal  && <span className="ml-1 text-orange-400" title="Requiere propuesta adjunta">📎</span>}
-                  {isGanado    && <span className="ml-1">🏆</span>}
+                  {needsReason && <PenLine className="inline ml-1 w-3 h-3 text-amber-600" aria-label="Requiere justificación" />}
+                  {isProposal  && <Paperclip className="inline ml-1 w-3 h-3 text-orange-600" aria-label="Requiere propuesta adjunta" />}
+                  {isGanado    && <Trophy className="inline ml-1 w-3 h-3 text-emerald-600" aria-label="Etapa de ganado" />}
                 </span>
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>
                   {stageDeals.length}
@@ -388,7 +381,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                           {deal.companies?.name ?? 'Sin empresa'}
                         </p>
                         {isStalled(deal) && (
-                          <span className="text-[10px] shrink-0" title={`${staleDays(deal)} días sin contacto`}>🔥</span>
+                          <span className="shrink-0" title={`${staleDays(deal)} días sin contacto`}><Flame className="w-3 h-3 text-red-500" /></span>
                         )}
                       </div>
 
@@ -492,7 +485,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                       : `${c.light} ${c.text} border-current/40`
                   }`}
                 >
-                  <span className="text-lg leading-none">{TRAY_EMOJI[zone.color] ?? '•'}</span>
+                  <StageIcon stage={zone} className="w-5 h-5" />
                   {zone.label.toUpperCase()}
                 </div>
               )

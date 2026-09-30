@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
-import { Loader2, AlertTriangle, Lock } from 'lucide-react'
+import { Loader2, AlertTriangle, Lock, X } from 'lucide-react'
 
 const phases = [
   { key: 'discovery',  label: 'Discovery',        active: 'bg-blue-500 text-white ring-blue-600',    inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
@@ -20,7 +20,7 @@ const statuses = [
   { key: 'pausado',                    label: 'Pausado',                   clickable: true,  active: 'bg-amber-500 text-white ring-amber-600',     inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
   { key: 'entregado',                  label: 'Entregado',                 clickable: true,  active: 'bg-blue-500 text-white ring-blue-600',       inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
   { key: 'cancelado',                  label: 'Cancelado',                 clickable: true,  active: 'bg-red-500 text-white ring-red-600',         inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
-  { key: 'pendiente_especificaciones', label: '⚠️ Pend. Especificaciones', clickable: false, active: 'bg-amber-400 text-white ring-amber-500',     inactive: 'bg-amber-50 text-amber-700 cursor-not-allowed opacity-70' },
+  { key: 'pendiente_especificaciones', label: 'Pend. especificaciones', clickable: false, active: 'bg-amber-400 text-white ring-amber-500',     inactive: 'bg-amber-50 text-amber-700 cursor-not-allowed opacity-70' },
 ]
 
 export default function ProjectPhaseSelector({ projectId, currentPhase, currentStatus, readOnly }: {
@@ -136,7 +136,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
         <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
           <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
           <p className="text-xs text-red-700 flex-1">{error}</p>
-          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-xs shrink-0">✕</button>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-xs shrink-0" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
     </div>

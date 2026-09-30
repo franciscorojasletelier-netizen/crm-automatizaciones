@@ -114,7 +114,7 @@ export default async function ProyectosPage() {
                       )}
                     </div>
                     <span className="shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-200 text-amber-800 ring-1 ring-amber-300 whitespace-nowrap">
-                      ⚠️ Pend. Especificaciones
+                      Pend. especificaciones
                     </span>
                   </div>
                   <p className="text-xs text-amber-700 font-medium">
@@ -144,7 +144,7 @@ export default async function ProyectosPage() {
                 <Link key={project.id} href={`/proyectos/${project.id}`}
                   className="group bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-indigo-300 hover:shadow-md transition-all overflow-hidden relative">
                   <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-100">
-                    <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all"
+                    <div className="h-full bg-accent-600 transition-all"
                       style={{ width: `${progress}%` }} />
                   </div>
                   <div className="flex items-start justify-between gap-3 mb-3">

@@ -256,8 +256,8 @@ export default function TaskDetailPanel({
             <button
               onClick={handleSave}
               disabled={!canSave || saving}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-all hover:shadow-md disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+              className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-all hover:shadow-md disabled:cursor-not-allowed"
+               
             >
               <Save className="w-4 h-4" />
               {saving ? 'Guardando...' : 'Guardar cambio'}

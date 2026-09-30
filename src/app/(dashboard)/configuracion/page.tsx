@@ -32,13 +32,13 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
 
         {/* Perfil hero */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-12 relative" style={{ background: 'linear-gradient(135deg, #0f172a, #1e1b4b)' }}>
-            <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 30% 50%, #6366f1, transparent)' }} />
+          <div className="bg-slate-900 h-12 relative" >
+            <div className="hidden absolute inset-0 opacity-20"  />
           </div>
           <div className="px-6 pb-6 pt-4">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-sm shrink-0"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <div className="bg-accent-600 w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-sm shrink-0"
+                 >
                 {initials}
               </div>
               <div className="min-w-0">

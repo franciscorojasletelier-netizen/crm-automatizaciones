@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const ip = getClientIp(request)
   const { allowed } = await checkRateLimit(supabase, 'quote_decision', ip, { maxHits: 20, windowMinutes: 15 })
   if (!allowed) {
-    return NextResponse.json({ error: 'Demasiados intentos. Probá de nuevo en unos minutos.' }, { status: 429 })
+    return NextResponse.json({ error: 'Demasiados intentos. Prueba de nuevo en unos minutos.' }, { status: 429 })
   }
 
   const body = await request.json()
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'decision inválida' }, { status: 400 })
   }
   if (decision === 'accepted' && !name?.trim()) {
-    return NextResponse.json({ error: 'Ingresá tu nombre para aceptar' }, { status: 400 })
+    return NextResponse.json({ error: 'Ingresa tu nombre para aceptar' }, { status: 400 })
   }
 
   const { data: quote } = await supabase
