@@ -45,12 +45,12 @@ export default async function TareasPage() {
   const dueSoon  = pending.filter(t => !isOverdue(t.due_date) && isDueSoon(t.due_date))
 
   return (
-    <div className="p-4 md:p-6 space-y-5 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-5">
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tareas</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Tareas</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             <span className="font-semibold text-slate-700">{pending.length}</span> pendientes ·{' '}
             <span className="font-semibold text-slate-700">{completed.length}</span> completadas
@@ -66,7 +66,7 @@ export default async function TareasPage() {
             <AlertTriangle className="w-4 h-4 text-red-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{overdue.length}</p>
+            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{overdue.length}</p>
             <p className="text-xs text-slate-500 font-medium">Vencidas</p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default async function TareasPage() {
             <Clock className="w-4 h-4 text-amber-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{dueSoon.length}</p>
+            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{dueSoon.length}</p>
             <p className="text-xs text-slate-500 font-medium">Por vencer</p>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default async function TareasPage() {
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{completed.length}</p>
+            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{completed.length}</p>
             <p className="text-xs text-slate-500 font-medium">Completadas</p>
           </div>
         </div>

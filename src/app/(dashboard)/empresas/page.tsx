@@ -33,12 +33,12 @@ export default async function EmpresasPage() {
   ).length ?? 0
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-6">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Empresas</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Empresas</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             <span className="font-semibold text-slate-700">{companies?.length ?? 0}</span> registradas
           </p>
@@ -61,7 +61,7 @@ export default async function EmpresasPage() {
             <Building2 className="w-4 h-4 text-green-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{totalClients}</p>
+            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{totalClients}</p>
             <p className="text-xs text-slate-500 font-medium">Clientes</p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default async function EmpresasPage() {
             <Users className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{totalProspects}</p>
+            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{totalProspects}</p>
             <p className="text-xs text-slate-500 font-medium">Prospectos</p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default async function EmpresasPage() {
             <TrendingUp className="w-4 h-4 text-indigo-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{totalWithDeals}</p>
+            <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{totalWithDeals}</p>
             <p className="text-xs text-slate-500 font-medium">Con deals</p>
           </div>
         </div>

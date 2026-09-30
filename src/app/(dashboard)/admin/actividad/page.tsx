@@ -41,9 +41,9 @@ export default async function ActividadPage() {
   ])
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Actividad</h1>
+        <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Actividad</h1>
         <p className="text-sm text-slate-500 mt-0.5">Supervisión del equipo en tiempo real</p>
       </div>
 

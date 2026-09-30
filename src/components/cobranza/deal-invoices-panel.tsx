@@ -52,7 +52,9 @@ export default function DealInvoicesPanel({ invoices, today, canCreate, companyI
       {invoices.length === 0 ? (
         <p className="flex items-center gap-2 text-[13px] text-slate-500">
           <Wallet className="w-4 h-4 text-slate-400" />
-          {acceptedQuote ? `La cotización N° ${acceptedQuote.quote_number} fue aceptada: crea el cobro por ${clp(amount)}.` : 'Cuando se gane, crea aquí el documento por cobrar.'}
+          {acceptedQuote
+            ? `La cotización N° ${acceptedQuote.quote_number} fue aceptada: crea el cobro por ${clp(amount)}.`
+            : canCreate ? `Deal ganado: crea el documento por cobrar${amount > 0 ? ` por ${clp(amount)}` : ''}.` : 'Aún no hay documentos por cobrar para este deal.'}
         </p>
       ) : (
         <ul className="divide-y divide-slate-100">

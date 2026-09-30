@@ -127,7 +127,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             )}
             {canManage && open && (
               <div className={cn('px-4 py-4', payments.length > 0 && 'border-t border-slate-100 bg-slate-50/50')}>
-                <PaymentForm invoiceId={invoice.id} balance={balance} />
+                <PaymentForm key={`pay-${balance}`} invoiceId={invoice.id} balance={balance} />
               </div>
             )}
             {!canManage && payments.length === 0 && <p className="px-4 py-4 text-sm text-slate-500">Finanzas registrará aquí los pagos.</p>}
@@ -136,7 +136,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <Panel title="Gestiones de cobranza" description="Llamadas, correos y compromisos de pago" padded={false}>
             {open && (
               <div className="px-4 py-4 border-b border-slate-100">
-                <ActivityForm invoiceId={invoice.id} balance={balance} />
+                <ActivityForm key={`act-${balance}`} invoiceId={invoice.id} balance={balance} />
               </div>
             )}
             {activities.length === 0 ? (

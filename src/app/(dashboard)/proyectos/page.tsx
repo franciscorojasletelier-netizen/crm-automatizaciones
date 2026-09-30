@@ -66,11 +66,11 @@ export default async function ProyectosPage() {
   const others  = projects?.filter(p => !['activo', 'pendiente_especificaciones'].includes(p.status)) ?? []
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-6">
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Proyectos</h1>
+        <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Proyectos</h1>
         <p className="text-sm text-slate-500 mt-0.5">
           <span className="font-semibold text-slate-700">{active.length}</span> activos ·{' '}
           <span className="font-semibold text-slate-700">{projects?.length ?? 0}</span> en total

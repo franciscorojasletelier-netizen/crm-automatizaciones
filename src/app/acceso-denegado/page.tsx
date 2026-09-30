@@ -43,7 +43,7 @@ export default async function AccesoDenegadoPage({
 
         {/* Mensaje */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Acceso restringido</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Acceso restringido</h1>
           <p className="text-slate-500 mt-2 leading-relaxed">
             Tu rol de{' '}
             <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ring-1 inline-block mx-1 ${roleMeta.color} ring-current`}>

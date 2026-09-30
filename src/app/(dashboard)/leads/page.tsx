@@ -90,12 +90,12 @@ export default async function LeadsPage() {
   const canCreate = perms.canCreateLeads && canEdit
 
   return (
-    <div className="p-4 md:p-6 space-y-5 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Leads</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Leads</h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
-            <span><span className="font-semibold text-slate-700">{total}</span> deals {isFiltered ? 'asignados a ti' : 'activos'}</span>
+            <span><span className="font-semibold text-slate-700">{total}</span> {total === 1 ? 'deal' : 'deals'} {isFiltered ? (total === 1 ? 'asignado a ti' : 'asignados a ti') : (total === 1 ? 'activo' : 'activos')}</span>
             {totalValue > 0 && (
               <>
                 <span className="text-slate-300">·</span>

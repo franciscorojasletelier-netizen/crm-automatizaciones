@@ -31,7 +31,7 @@ export default async function CalendarioPage() {
   return (
     <div className="p-4 md:p-6 min-h-full bg-slate-50">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-slate-900">Calendario</h1>
+        <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Calendario</h1>
         <p className="text-sm text-slate-500 mt-0.5">Vista mensual de tareas y actividades</p>
       </div>
       <CalendarView tasks={(tasks ?? []) as any} />

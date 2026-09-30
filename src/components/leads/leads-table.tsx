@@ -331,7 +331,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
               <tr>
                 <td colSpan={canReassign ? 10 : 9} className="px-5 py-14 text-center">
                   <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                  <p className="text-slate-400 text-sm font-medium">No hay leads que coincidan con los filtros</p>
+                  <p className="text-slate-500 text-sm font-medium">{deals.length === 0 ? 'Aún no hay leads. Crea el primero o conecta el formulario web.' : 'No hay leads que coincidan con los filtros'}</p>
                 </td>
               </tr>
             )}

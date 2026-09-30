@@ -106,12 +106,12 @@ export default async function ReportesPage() {
   const maxFunnel = Math.max(...funnelStages.map(s => data.stageCounts[s.key] || 0), 1)
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-6">
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reportes</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Reportes</h1>
           <p className="text-sm text-slate-500 mt-0.5">Análisis de rendimiento comercial</p>
         </div>
         <div className="flex items-center gap-2">

@@ -94,10 +94,10 @@ export default async function NotificacionesPage() {
   const unreadCount = (notifications ?? []).filter(n => !n.is_read).length
 
   return (
-    <div className="p-4 md:p-6 space-y-5 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-5">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Notificaciones</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Notificaciones</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todo al día'}
           </p>

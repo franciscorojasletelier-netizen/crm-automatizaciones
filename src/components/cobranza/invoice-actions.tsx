@@ -94,6 +94,8 @@ export function ActivityForm({ invoiceId, balance }: { invoiceId: string; balanc
     e.preventDefault()
     if (!notes.trim()) { setError('Describe qué pasó en la gestión.'); return }
     if (isPromise && promiseDate < today) { setError('La fecha comprometida no puede ser pasada.'); return }
+    const committed = Math.round(Number(promiseAmount.replace(/\D/g, '')))
+    if (isPromise && committed > balance) { setError(`El monto comprometido no puede superar el saldo (${clp(balance)}).`); return }
     setBusy(true); setError('')
     const amount = Math.round(Number(promiseAmount.replace(/\D/g, '')))
     const { error: err } = await createClient().from('invoice_activities').insert({

@@ -59,12 +59,12 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900">Pipeline</h1>
+            <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Pipeline</h1>
             {pipelines.length > 1 && <PipelineSwitcher pipelines={pipelines} selectedId={selectedPipeline?.id ?? ''} />}
           </div>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-slate-500">
-              <span className="font-semibold text-slate-700">{activeDeals.length}</span> deals activos
+              <span className="font-semibold text-slate-700">{activeDeals.length}</span> {activeDeals.length === 1 ? 'deal activo' : 'deals activos'}
             </p>
             {totalValue > 0 && (
               <>

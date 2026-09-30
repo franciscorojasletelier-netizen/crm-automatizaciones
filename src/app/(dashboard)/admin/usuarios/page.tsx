@@ -51,12 +51,12 @@ export default async function UsuariosPage() {
   const totalActive = users?.filter(u => u.is_active).length ?? 0
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-full bg-slate-50">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-6">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Equipo</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Equipo</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             <span className="font-semibold text-slate-700">{users?.length ?? 0}</span> usuarios ·{' '}
             <span className="font-semibold text-emerald-600">{totalActive}</span> activos

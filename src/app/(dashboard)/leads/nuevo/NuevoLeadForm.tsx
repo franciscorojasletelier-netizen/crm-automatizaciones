@@ -121,7 +121,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           <Link href="/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /> Volver a leads
           </Link>
-          <h1 className="text-2xl font-bold text-slate-900">Nuevo lead</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Nuevo lead</h1>
           <p className="text-sm text-slate-500 mt-0.5">Completa la información para crear un nuevo deal</p>
         </div>
 
