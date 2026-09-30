@@ -122,7 +122,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
           className="flex items-center gap-2 w-full h-8 px-2.5 text-sm rounded-md border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-colors">
           <Search className="w-3.5 h-3.5 shrink-0" />
           <span className="flex-1 text-left text-[13px]">Buscar…</span>
-          <kbd className="text-[10px] text-slate-400 font-sans">Ctrl K</kbd>
+          <kbd className="text-[11px] text-slate-400 font-sans">Ctrl K</kbd>
         </button>
       ) : (
         <button onClick={openPalette} aria-label="Buscar"
@@ -143,7 +143,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
               <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={onInputKey}
                 placeholder="Buscar empresa, contacto o email, o escribir un comando"
                 className="flex-1 text-sm outline-none text-slate-900 placeholder:text-slate-400 bg-transparent" />
-              <kbd className="text-[10px] text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">Esc</kbd>
+              <kbd className="text-[11px] text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">Esc</kbd>
             </div>
 
             <div className="max-h-[400px] overflow-y-auto p-2">
@@ -200,7 +200,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
                     const idx = matchedCommands.length + results.deals.length + i
                     return (
                       <button key={c.id} onClick={() => go('/empresas')} onMouseEnter={() => setSelected(idx)} className={itemClass(selected === idx)}>
-                        <span className="w-6 h-6 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600 flex items-center justify-center shrink-0">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 text-[11px] font-semibold text-slate-600 flex items-center justify-center shrink-0">
                           {getInitials(c.full_name, c.email)}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -217,7 +217,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
             <div className="px-4 h-9 border-t border-slate-200 flex items-center gap-4 bg-slate-50">
               {[['↑↓', 'navegar'], ['Enter', 'abrir'], ['Esc', 'cerrar']].map(([key, label]) => (
                 <span key={key} className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <kbd className="bg-white border border-slate-200 text-slate-600 px-1.5 rounded text-[10px]">{key}</kbd>
+                  <kbd className="bg-white border border-slate-200 text-slate-600 px-1.5 rounded text-[11px]">{key}</kbd>
                   {label}
                 </span>
               ))}

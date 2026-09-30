@@ -49,13 +49,13 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
 
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rol</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rol</p>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ring-1 ${role.color}`}>
                   {role.label}
                 </span>
               </div>
               <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</p>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${profile?.is_active ? 'bg-emerald-500' : 'bg-red-400'}`} />
                   <span className="text-xs font-semibold text-slate-700">

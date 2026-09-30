@@ -66,10 +66,10 @@ export default function EmailAccountsCard({
               <div key={a.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-slate-200">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-700 truncate">{a.email_address}</p>
-                  <p className="text-[10px] text-slate-400">{PROVIDER_LABEL[a.provider]}</p>
+                  <p className="text-[11px] text-slate-400">{PROVIDER_LABEL[a.provider]}</p>
                 </div>
                 <button onClick={() => disconnect(a.id)} disabled={busy === a.id}
-                  className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+                  className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
                   {busy === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
               </div>

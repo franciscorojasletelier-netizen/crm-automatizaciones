@@ -100,7 +100,7 @@ export default function NewTaskButton() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">Nueva tarea</h2>
-              <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+              <button aria-label="Cerrar" onClick={handleClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                 <X className="w-4 h-4 text-slate-500" />
               </button>
             </div>
@@ -124,7 +124,7 @@ export default function NewTaskButton() {
                         <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-800 truncate">{c.title}</p>
-                          <p className="text-[10px] text-slate-500">
+                          <p className="text-[11px] text-slate-500">
                             {formatConflictTime(c.due_date)}
                             {c.company ? ` · ${c.company}` : ''}
                           </p>

@@ -11,18 +11,22 @@ import type { Pipeline } from '@/lib/stages'
 const sources = ['Formulario web', 'Meta Ads', 'LinkedIn', 'Referido', 'Llamada directa', 'Otro']
 const industries = ['Tecnología', 'Manufactura', 'Retail', 'Salud', 'Educación', 'Logística', 'Finanzas', 'Construcción', 'Otro']
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
-      </label>
-      {children}
-    </div>
+// La etiqueta envuelve al control: queda asociada sin ids (lector de
+// pantalla y clic en el texto enfocan el campo).
+// Con `group` (varios controles, p. ej. selección múltiple) se usa un grupo
+// con nombre: un <label> activaría el primer botón al hacer clic en el texto.
+function Field({ label, required, group = false, children }: { label: string; required?: boolean; group?: boolean; children: React.ReactNode }) {
+  const caption = (
+    <span className="block text-[13px] font-medium text-slate-700 mb-1.5">
+      {label} {required && <span className="text-red-600" aria-hidden>*</span>}
+    </span>
   )
+  return group
+    ? <div role="group" aria-label={label}>{caption}{children}</div>
+    : <label className="block">{caption}{children}</label>
 }
 
-const inputCls = "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white placeholder:text-slate-400 text-slate-900 transition-all"
+const inputCls = "w-full h-9 px-3 border border-slate-300 rounded-md text-sm shadow-xs focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-100 bg-white placeholder:text-slate-400 text-slate-900"
 
 export default function NuevoLeadForm({ dealFields = [], pipelines = [], initialPipelineId = '' }: {
   dealFields?: FieldDefinition[]; pipelines?: Pipeline[]; initialPipelineId?: string
@@ -225,10 +229,10 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
               <div className="grid grid-cols-2 gap-4">
                 {dealFields.map(f => (
                   <div key={f.id} className={f.fieldType === 'textarea' || f.fieldType === 'multiselect' ? 'col-span-2' : ''}>
-                    <Field label={f.label} required={f.isRequired}>
+                    <Field label={f.label} required={f.isRequired} group={f.fieldType === 'multiselect'}>
                       {f.fieldType === 'textarea' && (
                         <textarea rows={2} placeholder={f.placeholder ?? ''} value={customValues[f.key] ?? ''}
-                          onChange={e => setCustom(f.key, e.target.value)} className={inputCls} />
+                          onChange={e => setCustom(f.key, e.target.value)} className={`${inputCls} h-auto py-2 resize-none`} />
                       )}
                       {(f.fieldType === 'text' || f.fieldType === 'number' || f.fieldType === 'currency' || f.fieldType === 'date') && (
                         <input
@@ -268,7 +272,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                         </button>
                       )}
                     </Field>
-                    {f.helpText && <p className="text-[10px] text-slate-400 mt-1">{f.helpText}</p>}
+                    {f.helpText && <p className="text-[11px] text-slate-400 mt-1">{f.helpText}</p>}
                   </div>
                 ))}
               </div>

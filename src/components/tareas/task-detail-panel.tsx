@@ -167,7 +167,7 @@ export default function TaskDetailPanel({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors shrink-0">
+          <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors shrink-0">
             <X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
@@ -189,7 +189,7 @@ export default function TaskDetailPanel({
               <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <div>
-                  <p className="text-[10px] text-slate-400 font-semibold uppercase">Fecha programada</p>
+                  <p className="text-[11px] text-slate-400 font-semibold uppercase">Fecha programada</p>
                   <p className={`text-sm font-semibold ${isOverdue ? 'text-red-600' : 'text-slate-700'}`}>
                     {formatDt(task.due_date)}
                   </p>
@@ -207,7 +207,7 @@ export default function TaskDetailPanel({
             <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
               <Clock className="w-4 h-4 text-slate-400 shrink-0" />
               <div>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase">Fecha actual</p>
+                <p className="text-[11px] text-slate-400 font-semibold uppercase">Fecha actual</p>
                 <p className={`text-sm font-semibold ${isOverdue ? 'text-red-600' : 'text-slate-700'}`}>
                   {formatDt(task.due_date)}
                 </p>
@@ -304,7 +304,7 @@ export default function TaskDetailPanel({
                           <p className="text-xs font-semibold text-slate-700">
                             {FIELD_LABELS[entry.field_changed] ?? entry.field_changed}
                           </p>
-                          <span className="text-[10px] text-slate-400 whitespace-nowrap shrink-0">
+                          <span className="text-[11px] text-slate-400 whitespace-nowrap shrink-0">
                             {new Date(entry.created_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
                               day: '2-digit', month: 'short',
                               hour: '2-digit', minute: '2-digit'

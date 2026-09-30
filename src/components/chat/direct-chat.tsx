@@ -144,10 +144,10 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
             <p className="text-sm font-bold text-white truncate">{recipient.name}</p>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <p className="text-[10px] text-slate-400">Mensaje directo</p>
+              <p className="text-[11px] text-slate-400">Mensaje directo</p>
             </div>
           </div>
-          <button onClick={onClose}
+          <button aria-label="Cerrar chat" onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -176,7 +176,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
                   <div className="flex items-end gap-1 group/msg">
                     {isMe && !isTemp && (
                       <button onClick={() => deleteMessage(msg.id)}
-                        className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400">
+                        className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-400">
                         <Trash2 className="w-2.5 h-2.5" />
                       </button>
                     )}
@@ -189,7 +189,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
                       {msg.content}
                     </div>
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-0.5 px-1">
+                  <p className="text-[11px] text-slate-400 mt-0.5 px-1">
                     {isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}
                   </p>
                 </div>
@@ -215,7 +215,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
               placeholder={`Mensaje a ${recipient.name.split(' ')[0]}... (Enter)`}
               rows={1} style={{ resize: 'none', minHeight: '20px', maxHeight: '80px' }}
               className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
-            <button onClick={sendMessage} disabled={!input.trim() || sending}
+            <button aria-label="Enviar mensaje" onClick={sendMessage} disabled={!input.trim() || sending}
               className="w-7 h-7 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
               style={{ background: input.trim() ? 'var(--color-accent-600)' : 'var(--color-slate-200)' }}>
               <Send className={`w-3.5 h-3.5 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />

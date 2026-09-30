@@ -107,7 +107,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
             className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 resize-none transition-colors placeholder:text-slate-400 text-slate-800 ${
               touched && commentTooShort ? 'border-red-300 bg-red-50/30 focus:ring-red-200' : 'border-slate-200 bg-slate-50 focus:ring-indigo-200 focus:border-indigo-300'
             }`} />
-          <p className={`text-[10px] mt-1 text-right ${commentTooShort ? 'text-slate-400' : 'text-emerald-600'}`}>
+          <p className={`text-[11px] mt-1 text-right ${commentTooShort ? 'text-slate-400' : 'text-emerald-600'}`}>
             {comment.trim().length} / {MIN_COMMENT} mín.
           </p>
         </div>

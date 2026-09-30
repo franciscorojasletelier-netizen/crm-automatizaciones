@@ -135,22 +135,20 @@ export default async function ReportesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
-            label: 'Revenue total',
+            label: 'Ingresos cerrados',
             value: formatCLP(data.totalRevenue),
             sub: 'Deals cerrados ganados',
             icon: DollarSign,
             color: 'text-emerald-600 bg-emerald-50',
             border: 'border-emerald-100',
-            bar: 'from-emerald-500 to-green-600',
           },
           {
-            label: 'Win Rate',
+            label: 'Tasa de cierre',
             value: `${data.winRate}%`,
             sub: `${data.totalWon} ganados / ${data.totalLost} perdidos`,
             icon: Target,
             color: 'text-indigo-600 bg-indigo-50',
             border: 'border-indigo-100',
-            bar: 'from-indigo-500 to-purple-600',
           },
           {
             label: 'Valor promedio',
@@ -159,7 +157,6 @@ export default async function ReportesPage() {
             icon: TrendingUp,
             color: 'text-amber-600 bg-amber-50',
             border: 'border-amber-100',
-            bar: 'from-amber-500 to-orange-500',
           },
           {
             label: 'Forecast ponderado',
@@ -168,17 +165,15 @@ export default async function ReportesPage() {
             icon: Award,
             color: 'text-violet-600 bg-violet-50',
             border: 'border-violet-100',
-            bar: 'from-violet-500 to-purple-600',
           },
-        ].map(({ label, value, sub, icon: Icon, color, border, bar }) => (
+        ].map(({ label, value, sub, icon: Icon, color, border }) => (
           <div key={label} className={`bg-white rounded-2xl border ${border} p-4 md:p-5 shadow-sm relative overflow-hidden`}>
-            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${bar}`} />
             <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mb-3`}>
               <Icon className="w-4 h-4" />
             </div>
             <p className="text-2xl md:text-3xl font-bold text-slate-900 leading-none">{value}</p>
             <p className="text-xs text-slate-500 mt-1.5 font-medium">{label}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
@@ -189,7 +184,7 @@ export default async function ReportesPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Revenue mensual</h2>
+              <h2 className="text-sm font-semibold text-slate-900">Ingresos por mes</h2>
               <p className="text-[11px] text-slate-400 mt-0.5">Últimos 6 meses (deals ganados)</p>
             </div>
           </div>
@@ -198,7 +193,7 @@ export default async function ReportesPage() {
               const pct = maxRevenue > 0 ? Math.max((m.revenue / maxRevenue) * 100, m.revenue > 0 ? 4 : 0) : 0
               return (
                 <div key={m.label} className="flex-1 flex flex-col items-center gap-1.5">
-                  <p className="text-[9px] font-bold text-slate-500 leading-none">
+                  <p className="text-[11px] font-bold text-slate-500 leading-none">
                     {m.revenue > 0 ? `$${Math.round(m.revenue / 1000).toLocaleString('es-CL')} mil` : ''}
                   </p>
                   <div className="w-full flex items-end" style={{ height: '100px' }}>
@@ -213,13 +208,13 @@ export default async function ReportesPage() {
                       }}
                     />
                   </div>
-                  <p className="text-[9px] text-slate-400 font-medium">{m.label}</p>
+                  <p className="text-[11px] text-slate-400 font-medium">{m.label}</p>
                 </div>
               )
             })}
           </div>
           {data.monthlyRevenue.every(m => m.revenue === 0) && (
-            <p className="text-center text-sm text-slate-400 py-4">Sin revenue registrado aún</p>
+            <p className="text-center text-sm text-slate-400 py-4">Sin ingresos cerrados aún</p>
           )}
         </div>
 
@@ -284,11 +279,11 @@ export default async function ReportesPage() {
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">#</th>
                 <th className="px-3 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ejecutivo</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Revenue</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ingresos</th>
                 <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ganados</th>
                 <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Perdidos</th>
                 <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">En curso</th>
-                <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Win Rate</th>
+                <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Tasa de cierre</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -310,7 +305,7 @@ export default async function ReportesPage() {
                     </td>
                     <td className="px-3 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="bg-accent-600 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                        <div className="bg-accent-600 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0"
                            >
                           {initials}
                         </div>

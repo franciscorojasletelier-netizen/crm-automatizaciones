@@ -246,11 +246,11 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
           const alert = item.alertKey ? liveCounts[item.alertKey] > 0 : false
           return (
             <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined}
-              className={cn('flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] font-medium', active ? 'text-accent-600' : 'text-slate-500')}>
+              className={cn('flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium', active ? 'text-accent-600' : 'text-slate-500')}>
               <span className="relative">
                 <Icon className="w-5 h-5" />
                 {count > 0 && (
-                  <span className={cn('absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-semibold tabular-nums flex items-center justify-center text-white',
+                  <span className={cn('absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full text-[11px] font-semibold tabular-nums flex items-center justify-center text-white',
                     alert ? 'bg-red-600' : 'bg-slate-700')}>
                     {count > 99 ? '99+' : count}
                   </span>
@@ -260,7 +260,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
             </Link>
           )
         })}
-        <button onClick={() => setMoreOpen(true)} className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] font-medium text-slate-500">
+        <button onClick={() => setMoreOpen(true)} className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium text-slate-500">
           <Menu className="w-5 h-5" />
           Más
         </button>

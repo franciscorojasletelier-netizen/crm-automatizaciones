@@ -29,13 +29,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 
 function getAvatarColor(id: string) {
-  const colors = [
-    'from-violet-500 to-indigo-500',
-    'from-blue-500 to-cyan-500',
-    'from-emerald-500 to-teal-500',
-    'from-amber-500 to-orange-500',
-    'from-pink-500 to-rose-500',
-  ]
+  const colors = ['bg-slate-600', 'bg-accent-600', 'bg-emerald-700', 'bg-amber-600', 'bg-rose-600']
   const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
   return colors[hash % colors.length]
 }
@@ -109,11 +103,11 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
     // Solo mostrar, sin dropdown
     return (
       <div className="flex items-center gap-2.5">
-        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
+        <div className={`w-8 h-8 rounded-lg ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
           <span className="text-[11px] font-bold text-white">{initials}</span>
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Responsable</p>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Responsable</p>
           <p className="text-sm font-semibold text-slate-800 truncate">{owner?.full_name ?? '—'}</p>
         </div>
       </div>
@@ -128,14 +122,14 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
           open ? 'ring-2 ring-indigo-300 bg-indigo-50' : 'hover:bg-slate-50'
         }`}
       >
-        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
+        <div className={`w-8 h-8 rounded-lg ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
           {saving
             ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
             : <span className="text-[11px] font-bold text-white">{initials}</span>
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Responsable</p>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Responsable</p>
           <p className="text-sm font-semibold text-slate-800 truncate">{owner?.full_name ?? 'Sin asignar'}</p>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''} group-hover:text-indigo-500`} />
@@ -168,12 +162,12 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
                   u.id === owner?.id ? 'bg-indigo-50' : ''
                 }`}
               >
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getAvatarColor(u.id)} flex items-center justify-center shrink-0`}>
+                <div className={`w-8 h-8 rounded-lg ${getAvatarColor(u.id)} flex items-center justify-center shrink-0`}>
                   <span className="text-[11px] font-bold text-white">{getInitials(u.full_name, u.email, '?')}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name ?? u.email}</p>
-                  <p className="text-[10px] text-slate-400">{ROLE_LABELS[u.role] ?? u.role}</p>
+                  <p className="text-[11px] text-slate-400">{ROLE_LABELS[u.role] ?? u.role}</p>
                 </div>
                 {u.id === owner?.id && (
                   <Check className="w-4 h-4 text-indigo-500 shrink-0" />

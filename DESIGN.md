@@ -50,6 +50,10 @@ typography:
     fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "12px"
     fontWeight: 400
+  micro:
+    fontFamily: "Geist, system-ui, sans-serif"
+    fontSize: "11px"
+    fontWeight: 500
 rounded:
   sm: "4px"
   md: "6px"
@@ -105,6 +109,7 @@ Fuente de verdad de los tokens: `src/app/globals.css`. Primitivas de página: `s
 - **Acento (`accent-*`)**: acción primaria, selección, enlaces, foco. Las escalas `indigo`, `violet` y `purple` de Tailwind están redefinidas al acento, así que el código heredado que las usa ya es coherente; en código nuevo usar `accent-*` directamente.
 - **Neutro (`slate-*`)**: redefinido a bajo croma (matiz 255). `slate-400` y `slate-500` están oscurecidos respecto del default para que el texto secundario alcance contraste AA sobre blanco. Texto principal `slate-900`, secundario `slate-500`, terciario/placeholder `slate-400`.
 - **Semánticos**: rojo = mora, error o destrucción; ámbar = por vencer/advertencia; verde = pagado, ganado, éxito. El rojo nunca es decorativo: si todo es rojo, nada es urgente.
+- **Excepciones documentadas**: el chat de WhatsApp conserva los verdes de la marca WhatsApp (`#075e54`, `#128c7e`, `#25d366`) para que se reconozca el canal; los correos HTML (`src/app/api/**`) llevan colores y radios en línea porque los clientes de correo no leen los tokens CSS.
 - **Etapas del pipeline**: su color es configuración por organización (`src/lib/stages.ts`, paleta `STAGE_COLORS`); se usan como punto de 6 px o chip suave, nunca como fondo de página.
 
 ## Typography
@@ -119,6 +124,7 @@ Geist (via `next/font`) con `font-feature-settings: "cv11", "ss01"`. Tablas y cu
 | Cuerpo | 14 px / 400 |
 | Controles, navegación, celdas | 13 px / 500 |
 | Metadatos, encabezados de tabla | 12 px / 400–500, `slate-500` |
+| Micro: contadores, chips, fechas en tarjetas densas | 11 px / 500 — **mínimo del sistema**, nada por debajo |
 
 Jerarquía por peso y tamaño, no por mayúsculas espaciadas.
 

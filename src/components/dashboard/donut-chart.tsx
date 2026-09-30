@@ -84,7 +84,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
           {hovered !== null ? (
             <>
               <p className="text-lg font-bold text-slate-900 leading-none">{slices[hovered].value}</p>
-              <p className="text-[10px] font-semibold leading-tight mt-0.5"
+              <p className="text-[11px] font-semibold leading-tight mt-0.5"
                 style={{ color: slices[hovered].color }}>
                 {slices[hovered].label.length > 12
                   ? slices[hovered].label.slice(0, 11) + '…'
@@ -99,7 +99,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
           ) : (
             <>
               <p className="text-2xl font-bold text-slate-900 leading-none">{totalDeals}</p>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">deals</p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">deals</p>
               {totalAmount > 0 && (
                 <p className="text-[11px] font-bold text-emerald-600 mt-1 leading-none">
                   {fmt(totalAmount)}
@@ -125,7 +125,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: slice.color }} />
                 <span className="text-xs text-slate-600 font-medium flex-1 truncate">{slice.label}</span>
                 <span className="text-xs font-bold text-slate-900 tabular-nums">{slice.value}</span>
-                <span className="text-[10px] text-slate-400 w-7 text-right tabular-nums">{pct}%</span>
+                <span className="text-[11px] text-slate-400 w-7 text-right tabular-nums">{pct}%</span>
                 {slice.amount > 0 && (
                   <span className="text-[11px] font-bold text-emerald-600 tabular-nums min-w-[44px] text-right">
                     {fmt(slice.amount)}
@@ -139,7 +139,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
         {/* Total row */}
         {totalAmount > 0 && (
           <div className="flex items-center gap-2 px-2 pt-2 mt-2 border-t border-slate-100">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex-1">Total</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide flex-1">Total</span>
             <span className="text-xs font-bold text-slate-700">{totalDeals} deals</span>
             <span className="text-[11px] font-bold text-emerald-700 min-w-[44px] text-right">{fmt(totalAmount)}</span>
           </div>

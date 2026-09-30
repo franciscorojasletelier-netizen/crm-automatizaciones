@@ -121,7 +121,7 @@ export default async function ProyectosPage() {
                     Producción devolvió este proyecto a comercial. Requiere acción.
                   </p>
                   <div className="mt-3 pt-3 border-t border-amber-200 flex items-center justify-between">
-                    <span className="text-[10px] text-amber-600 font-medium">{progress}% completado · Fase: {phaseLabels[project.phase]}</span>
+                    <span className="text-[11px] text-amber-600 font-medium">{progress}% completado · Fase: {phaseLabels[project.phase]}</span>
                     <ChevronRight className="w-4 h-4 text-amber-400 group-hover:text-amber-600 transition-colors" />
                   </div>
                 </Link>
@@ -167,7 +167,7 @@ export default async function ProyectosPage() {
                       {project.profiles?.full_name && (
                         <div className="flex items-center gap-1.5">
                           <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-[9px] font-bold text-indigo-600">
+                            <span className="text-[11px] font-bold text-indigo-600">
                               {project.profiles.full_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -188,8 +188,8 @@ export default async function ProyectosPage() {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 font-medium">{progress}% completado</span>
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                    <span className="text-[11px] text-slate-400 font-medium">{progress}% completado</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                   </div>
                 </Link>
               )
@@ -229,7 +229,7 @@ export default async function ProyectosPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <Link href={`/proyectos/${project.id}`}>
-                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                       </Link>
                     </td>
                   </tr>

@@ -70,7 +70,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
     return (
       <div className="group flex items-start justify-between gap-2 py-1">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{field.label}</p>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{field.label}</p>
           <p className="text-sm font-semibold text-slate-800 mt-0.5">
             {display || <span className="text-slate-300 font-normal italic text-xs">Sin valor</span>}
           </p>
@@ -85,7 +85,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
 
   return (
     <div>
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
         {field.label}{field.isRequired && <span className="text-red-500 ml-0.5">*</span>}
       </p>
       <div className="flex items-start gap-1.5">
@@ -134,10 +134,10 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
               {raw ? 'Sí' : 'No'}
             </button>
           )}
-          {field.helpText && <p className="text-[10px] text-slate-400 mt-1">{field.helpText}</p>}
-          {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+          {field.helpText && <p className="text-[11px] text-slate-400 mt-1">{field.helpText}</p>}
+          {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
         </div>
-        <button onClick={save} disabled={saving} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition-colors shrink-0">
+        <button aria-label="Guardar" onClick={save} disabled={saving} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition-colors shrink-0">
           <Check className="w-3.5 h-3.5" />
         </button>
         <button onClick={() => setEditing(false)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">

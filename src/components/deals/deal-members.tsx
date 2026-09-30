@@ -107,12 +107,12 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
             const owner = teamUsers.find(u => u.id === localOwnerId)
             return owner ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-[11px] font-bold text-indigo-700 shrink-0">
                   {getInitials(owner.full_name, owner.email, 'U')}
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-800">{owner.full_name ?? owner.email}</p>
-                  <p className="text-[10px] text-slate-400">{roleLabel[owner.role] ?? owner.role}</p>
+                  <p className="text-[11px] text-slate-400">{roleLabel[owner.role] ?? owner.role}</p>
                 </div>
                 <Crown className="w-3 h-3 text-amber-500 ml-auto shrink-0" />
               </div>
@@ -120,12 +120,12 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
           })()}
           {list.map(m => (
             <div key={m.id} className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[11px] font-bold text-slate-500 shrink-0">
                 {getInitials(m.profiles.full_name, m.profiles.email, 'U')}
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-800">{m.profiles.full_name ?? m.profiles.email}</p>
-                <p className="text-[10px] text-slate-400">{roleLabel[m.profiles.role] ?? m.profiles.role}</p>
+                <p className="text-[11px] text-slate-400">{roleLabel[m.profiles.role] ?? m.profiles.role}</p>
               </div>
             </div>
           ))}
@@ -161,7 +161,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
       {/* Lista para agregar */}
       {showAdd && (
         <div className="border-b border-slate-100 bg-slate-50 p-3 space-y-1.5">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">
             Selecciona un miembro del equipo
           </p>
           {availableToAdd.map(user => (
@@ -176,7 +176,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
               </div>
               {adding === user.id
                 ? <Loader2 className="w-4 h-4 animate-spin text-indigo-500 shrink-0" />
-                : <Check className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors shrink-0" />
+                : <Check className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors shrink-0" />
               }
             </button>
           ))}
@@ -199,7 +199,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
               </div>
               <div className="flex items-center gap-1.5">
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
                   Responsable
                 </span>
               </div>
@@ -222,7 +222,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
               {m.user_id !== localOwnerId && m.profiles.role === 'comercial' && (
                 <button onClick={() => changeOwner(m.user_id)} disabled={changingOwner}
                   title="Hacer responsable principal"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-full">
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-full">
                   {changingOwner ? '...' : '→ Principal'}
                 </button>
               )}

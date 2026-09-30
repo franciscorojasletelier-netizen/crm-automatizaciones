@@ -69,7 +69,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
                 }`}>
                 <span className={`w-2.5 h-2.5 rounded-full ${c.dot} shrink-0`} />
                 <span className="leading-tight">{s.label}</span>
-                {s.isTerminal && !isCurrent && <span className="ml-auto text-[10px] text-slate-400">cierre</span>}
+                {s.isTerminal && !isCurrent && <span className="ml-auto text-[11px] text-slate-400">cierre</span>}
                 {isCurrent && <Check className="ml-auto w-3.5 h-3.5" />}
               </button>
             )
@@ -126,7 +126,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
       'background:var(--color-slate-900)',
       'color:white', 'padding:8px 14px', 'border-radius:12px',
       'font-size:13px', 'font-weight:700', 'white-space:nowrap',
-      'box-shadow:0 8px 24px rgba(99,102,241,0.4)',
+      'box-shadow:0 8px 24px rgba(15,23,42,0.25)',
       'pointer-events:none', 'z-index:9999',
     ].join(';')
     ghost.textContent = deal.companies?.name ?? 'Deal'
@@ -300,7 +300,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     <td className="px-4 py-2.5">
                       <Link href={`/leads/${deal.id}`}
                         className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-indigo-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
-                        <span className="text-[10px] font-bold">→</span>
+                        <span className="text-[11px] font-bold">→</span>
                       </Link>
                     </td>
                   </tr>
@@ -335,7 +335,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                   {isProposal  && <Paperclip className="inline ml-1 w-3 h-3 text-orange-600" aria-label="Requiere propuesta adjunta" />}
                   {isGanado    && <Trophy className="inline ml-1 w-3 h-3 text-emerald-600" aria-label="Etapa de ganado" />}
                 </span>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>
                   {stageDeals.length}
                 </span>
               </div>
@@ -413,7 +413,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                               (deal.score ?? 0) >= 30 ? 'bg-yellow-500' : 'bg-slate-300'
                             }`} style={{ width: `${Math.min(deal.score ?? 0, 100)}%` }} />
                           </div>
-                          <span className={`text-[9px] font-bold tabular-nums ${
+                          <span className={`text-[11px] font-bold tabular-nums ${
                             (deal.score ?? 0) >= 60 ? 'text-emerald-600' :
                             (deal.score ?? 0) >= 30 ? 'text-yellow-600' : 'text-slate-400'
                           }`}>{deal.score ?? 0}</span>
@@ -421,7 +421,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                         <div className="flex items-center gap-1.5">
                           {deal.profiles?.full_name && (
                             <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
-                              <span className="text-[9px] font-bold text-indigo-600">
+                              <span className="text-[11px] font-bold text-indigo-600">
                                 {deal.profiles.full_name.charAt(0).toUpperCase()}
                               </span>
                             </div>
@@ -429,7 +429,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                           {/* Botón Mover — solo visible en móvil */}
                           <button
                             onClick={e => { e.stopPropagation(); e.preventDefault(); setMobilePicker(deal) }}
-                            className="md:hidden text-[9px] font-bold px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 active:scale-95 transition-all"
+                            className="md:hidden text-[11px] font-bold px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 active:scale-95 transition-all"
                             title="Cambiar etapa"
                           >
                             Mover
@@ -441,7 +441,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                             className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
                             title="Ver detalle"
                           >
-                            <span className="text-[9px] font-bold">→</span>
+                            <span className="text-[11px] font-bold">→</span>
                           </Link>
                         </div>
                       </div>
@@ -527,17 +527,17 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     <span className={`w-2 h-2 rounded-full ${c.dot} flex-shrink-0`} />
                     <span className="text-xs font-bold text-slate-700">{deal.companies?.name ?? 'Deal'}</span>
                     {deal.estimated_value && (
-                      <span className="text-[10px] font-semibold text-slate-400">
+                      <span className="text-[11px] font-semibold text-slate-400">
                         {formatCLP(deal.estimated_value)}
                       </span>
                     )}
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${c.light} ${c.text}`}>{st?.label ?? deal.stage}</span>
+                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${c.light} ${c.text}`}>{st?.label ?? deal.stage}</span>
                     <Link
                       href={`/leads/${deal.id}`}
                       onClick={e => e.stopPropagation()}
                       className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
                     >
-                      <span className="text-[9px] font-bold">→</span>
+                      <span className="text-[11px] font-bold">→</span>
                     </Link>
                   </div>
                 )

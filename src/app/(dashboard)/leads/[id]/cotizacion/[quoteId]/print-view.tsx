@@ -50,7 +50,7 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
 
           {/* Cliente */}
           <div className="mb-6">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Para</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">Para</p>
             <p className="text-sm font-semibold text-slate-800">{deal?.companies?.name ?? '—'}</p>
             {deal?.contacts?.full_name && <p className="text-xs text-slate-500">{deal.contacts.full_name}</p>}
             {deal?.contacts?.email && <p className="text-xs text-slate-500">{deal.contacts.email}</p>}
@@ -59,7 +59,7 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
           {/* Ítems */}
           <table className="w-full text-sm mb-6">
             <thead>
-              <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+              <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wide">
                 <th className="text-left py-2">Descripción</th>
                 <th className="text-right py-2">Cant.</th>
                 <th className="text-right py-2">Precio</th>
@@ -95,7 +95,7 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
 
           {quote.notes && (
             <div className="pt-4 border-t border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Notas</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">Notas</p>
               <p className="text-xs text-slate-600 whitespace-pre-wrap">{quote.notes}</p>
             </div>
           )}

@@ -106,12 +106,12 @@ export default function SequencesManager({ sequences: initialSequences, stages, 
       {showNew && (
         <form onSubmit={createSequence} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Nombre</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre</label>
             <input value={name} onChange={e => setName(e.target.value)} required placeholder="ej. Reactivación de leads fríos"
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Empieza cuando…</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Empieza cuando…</label>
             <select value={triggerType} onChange={e => setTriggerType(e.target.value as any)}
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
               <option value="stage_change">Un deal entra a una etapa</option>
@@ -120,7 +120,7 @@ export default function SequencesManager({ sequences: initialSequences, stages, 
           </div>
           {triggerType === 'stage_change' && (
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Etapa</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Etapa</label>
               <select value={toStage} onChange={e => setToStage(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
                 <option value="any">Cualquier etapa</option>
@@ -209,7 +209,7 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
             <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 transition-colors" />
             <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-3.5" />
           </label>
-          <button onClick={onRemove} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+          <button aria-label="Quitar paso" onClick={onRemove} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -229,7 +229,7 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
                 {label}{tplName ? ` — "${tplName}"` : ''}{step.action_type === 'create_task' ? ` — "${step.action_config?.title}"` : ''}
               </span>
               <span className="text-slate-400 font-medium shrink-0">{formatDelay(step.delay_hours)}</span>
-              <button onClick={() => removeStep(step.id)} className="text-slate-300 hover:text-red-500 shrink-0">
+              <button onClick={() => removeStep(step.id)} className="text-slate-400 hover:text-red-500 shrink-0">
                 <Trash2 className="w-3 h-3" />
               </button>
             </div>
@@ -241,12 +241,12 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
         <form onSubmit={addStep} className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Esperar (horas)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Esperar (horas)</label>
               <input type="number" min={0} value={delayHours} onChange={e => setDelayHours(Number(e.target.value))}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Acción</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Acción</label>
               <select value={actionType} onChange={e => setActionType(e.target.value as any)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
                 {Object.entries(ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}

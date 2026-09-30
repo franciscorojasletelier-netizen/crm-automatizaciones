@@ -97,7 +97,7 @@ export default function ProjectSpecRequest({
               Producción devolvió este proyecto al área comercial para aclarar algunos puntos antes de continuar.
             </p>
           </div>
-          <span className="shrink-0 text-[10px] font-bold bg-amber-200 text-amber-800 px-2.5 py-1 rounded-full">
+          <span className="shrink-0 text-[11px] font-bold bg-amber-200 text-amber-800 px-2.5 py-1 rounded-full">
             EN ESPERA
           </span>
         </div>
@@ -166,7 +166,7 @@ export default function ProjectSpecRequest({
             </p>
             <p className="text-xs text-slate-400">Solicitar aclaraciones o especificaciones adicionales</p>
           </div>
-          <AlertTriangle className="w-4 h-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
+          <AlertTriangle className="w-4 h-4 text-slate-400 group-hover:text-amber-500 transition-colors" />
         </button>
       ) : (
         <div className="p-5 space-y-4">
@@ -208,7 +208,7 @@ Ejemplo:
               rows={6}
               className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-300 bg-slate-50 text-slate-800 placeholder:text-slate-400 resize-none"
             />
-            <p className={`text-[10px] mt-1 text-right ${notes.length >= 15 ? 'text-emerald-600' : 'text-slate-400'}`}>
+            <p className={`text-[11px] mt-1 text-right ${notes.length >= 15 ? 'text-emerald-600' : 'text-slate-400'}`}>
               {notes.length} / 15 mín.
             </p>
           </div>

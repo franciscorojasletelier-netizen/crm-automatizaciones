@@ -125,7 +125,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
-          <p className="text-[10px] text-slate-400 mt-1">
+          <p className="text-[11px] text-slate-400 mt-1">
             {TRIGGER_TYPES.find(t => t.value === triggerType)?.desc}
           </p>
         </div>
@@ -170,7 +170,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
               <option key={a.value} value={a.value}>{a.label}</option>
             ))}
           </select>
-          <p className="text-[10px] text-slate-400 mt-1">
+          <p className="text-[11px] text-slate-400 mt-1">
             {ACTION_TYPES.find(a => a.value === actionType)?.desc}
           </p>
         </div>

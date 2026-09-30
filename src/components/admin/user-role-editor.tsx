@@ -79,7 +79,7 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
     <div className="flex items-center gap-2">
       {/* Toggle activo/inactivo */}
       <button onClick={handleToggleActive} disabled={saving}
-        className={`transition-colors ${active ? 'text-emerald-500 hover:text-emerald-700' : 'text-slate-300 hover:text-slate-500'}`}
+        className={`transition-colors ${active ? 'text-emerald-500 hover:text-emerald-700' : 'text-slate-400 hover:text-slate-500'}`}
         title={active ? 'Desactivar cuenta' : 'Activar cuenta'}>
         {active
           ? <ToggleRight className="w-5 h-5" />
@@ -122,7 +122,7 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
                         <p className={`text-xs font-semibold ${isSelected ? 'text-indigo-700' : 'text-slate-800'}`}>
                           {meta.label}
                         </p>
-                        <p className="text-[10px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
+                        <p className="text-[11px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
                           {meta.description}
                         </p>
                       </div>

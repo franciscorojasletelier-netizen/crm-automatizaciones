@@ -34,7 +34,7 @@ function CopyField({ value }: { value: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <button type="button" onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
-      className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded-md transition-colors">
+      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded-md transition-colors">
       {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
       {copied ? 'Copiado' : 'Copiar'}
     </button>
@@ -139,24 +139,24 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       {showNew && (
         <form onSubmit={create} className="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Tipo</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Tipo</label>
             <select value={provider} onChange={e => setProvider(e.target.value as Integration['provider'])}
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
               {(Object.keys(PROVIDER_LABELS) as Integration['provider'][]).map(p => (
                 <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
               ))}
             </select>
-            <p className="text-[10px] text-slate-400 mt-1">{PROVIDER_HELP[provider]}</p>
+            <p className="text-[11px] text-slate-400 mt-1">{PROVIDER_HELP[provider]}</p>
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Nombre (opcional)</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre (opcional)</label>
             <input value={label} onChange={e => setLabel(e.target.value)} placeholder="ej. Página de Facebook principal"
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
           </div>
           {provider !== 'webhook_form' && (
             <>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
                   {provider === 'meta_leads' ? 'Page ID'
                     : provider === 'whatsapp' ? 'Phone Number ID'
                     : 'Client ID'}
@@ -165,7 +165,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
                   {provider === 'google_workspace' || provider === 'microsoft_365'
                     ? 'Client secret'
                     : 'Access token (opcional — si se deja vacío, usa el global)'}
@@ -176,7 +176,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
               </div>
               {provider === 'google_workspace' && (
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Tema de Pub/Sub (projects/…/topics/…)</label>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">Tema de Pub/Sub (projects/…/topics/…)</label>
                   <input value={pubsubTopic} onChange={e => setPubsubTopic(e.target.value)} required
                     placeholder="projects/mi-proyecto/topics/gmail-push"
                     className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
@@ -225,7 +225,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                     <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-3.5" />
                   </label>
                   <button onClick={() => remove(i.id)} disabled={busy === i.id}
-                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

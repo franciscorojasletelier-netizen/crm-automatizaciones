@@ -88,7 +88,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
             title={cooldown > 0 ? `Puedes volver a analizar en ${cooldown}s` : 'Volver a analizar'}
             className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-violet-600 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed flex items-center gap-1">
             <RefreshCw className="w-3.5 h-3.5" />
-            {cooldown > 0 && <span className="text-[10px] font-semibold">{cooldown}s</span>}
+            {cooldown > 0 && <span className="text-[11px] font-semibold">{cooldown}s</span>}
           </button>
         )}
       </div>
@@ -131,13 +131,13 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
         {insights && !loading && (
           <div className="space-y-3.5">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Resumen</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Resumen</p>
               <p className="text-sm text-slate-700 leading-relaxed">{insights.resumen}</p>
             </div>
 
             {insights.contexto_empresa && (
               <div className="bg-sky-50/60 border border-sky-100 rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-bold text-sky-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider mb-1 flex items-center gap-1">
                   <Globe className="w-3 h-3" /> Sobre la empresa
                 </p>
                 <p className="text-xs text-sky-900 leading-relaxed">{insights.contexto_empresa}</p>
@@ -146,7 +146,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
 
             {insights.enfoque_recomendado && (
               <div className="bg-violet-50/60 border border-violet-100 rounded-xl px-3 py-2.5">
-                <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <p className="text-[11px] font-bold text-violet-600 uppercase tracking-wider mb-1 flex items-center gap-1">
                   <Target className="w-3 h-3" /> Enfoque de venta
                 </p>
                 <p className="text-xs text-violet-900 leading-relaxed">{insights.enfoque_recomendado}</p>
@@ -154,21 +154,21 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
             )}
 
             <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl px-3 py-2.5">
-              <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" /> Próxima acción sugerida
               </p>
               <p className="text-sm font-medium text-indigo-900">{insights.proxima_accion}</p>
             </div>
 
             <div className="flex items-start gap-2.5">
-              <span className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${RIESGO_STYLE[insights.riesgo]?.badge ?? RIESGO_STYLE.medio.badge}`}>
+              <span className={`shrink-0 text-[11px] font-bold px-2 py-1 rounded-full ${RIESGO_STYLE[insights.riesgo]?.badge ?? RIESGO_STYLE.medio.badge}`}>
                 {RIESGO_STYLE[insights.riesgo]?.label ?? insights.riesgo}
               </span>
               <p className="text-xs text-slate-500 leading-relaxed">{insights.razon_riesgo}</p>
             </div>
 
             {createdAt && (
-              <p className="text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+              <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-100">
                 Analizado el {new Date(createdAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 {createdByName ? ` por ${createdByName}` : ''} · queda guardado en el deal
               </p>

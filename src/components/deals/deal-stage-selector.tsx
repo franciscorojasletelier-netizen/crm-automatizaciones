@@ -103,7 +103,7 @@ export default function DealStageSelector({
                 }`}>
                 {s.label}
                 {hint && (
-                  <span aria-hidden className={`absolute -top-1.5 -right-1.5 w-4 h-4 text-white rounded-full text-[8px] flex items-center justify-center ${
+                  <span aria-hidden className={`absolute -top-1.5 -right-1.5 w-4 h-4 text-white rounded-full text-[11px] flex items-center justify-center ${
                     s.requiresAttachment ? 'bg-orange-500' : 'bg-amber-500'
                   }`}>
                     {s.requiresAttachment ? <Paperclip className="w-2.5 h-2.5" /> : <PenLine className="w-2.5 h-2.5" />}
@@ -116,7 +116,7 @@ export default function DealStageSelector({
 
         {proposalFilename && (
           <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Propuesta adjunta</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Propuesta adjunta</p>
             <div className="flex items-center gap-2.5 p-2.5 bg-orange-50 border border-orange-200 rounded-xl">
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-orange-600" />
@@ -125,12 +125,12 @@ export default function DealStageSelector({
               <div className="flex items-center gap-1.5 shrink-0">
                 {proposalUrl && (
                   <a href={`/api/propuestas?deal=${dealId}`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] font-bold text-orange-600 hover:text-orange-800 bg-orange-100 hover:bg-orange-200 px-2 py-1 rounded-lg transition-colors">
+                    className="flex items-center gap-1 text-[11px] font-bold text-orange-600 hover:text-orange-800 bg-orange-100 hover:bg-orange-200 px-2 py-1 rounded-lg transition-colors">
                     <Eye className="w-3 h-3" /> Ver
                   </a>
                 )}
                 <button onClick={() => setPending({ kind: 'proposal', stage, replacing: true })}
-                  className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors">
+                  className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors">
                   <Upload className="w-3 h-3" /> Reemplazar
                 </button>
               </div>

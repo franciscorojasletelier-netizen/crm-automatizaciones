@@ -141,7 +141,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white truncate">{contactName}</p>
-              <p className="text-[10px] text-green-200">WhatsApp · {contactPhone}</p>
+              <p className="text-[11px] text-green-200">WhatsApp · {contactPhone}</p>
             </div>
             <button onClick={fetchMessages} title="Actualizar"
               className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors">
@@ -180,7 +180,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
                   } ${isTemp ? 'opacity-60' : ''}`}>
                     <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.body}</p>
                     <div className={`flex items-center gap-1 mt-1 ${isOut ? 'justify-end' : 'justify-start'}`}>
-                      <span className="text-[10px] text-slate-400">{timeStr(msg.created_at)}</span>
+                      <span className="text-[11px] text-slate-400">{timeStr(msg.created_at)}</span>
                       {isOut && <StatusIcon status={isTemp ? 'sent' : msg.status} />}
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
                   className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed"
                 />
                 <TemplatePicker contactName={contactName} onPick={text => setInput(text)} />
-                <button
+                <button aria-label="Enviar mensaje"
                   onClick={send}
                   disabled={!input.trim() || sending}
                   className="w-8 h-8 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
@@ -224,7 +224,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
                   }
                 </button>
               </div>
-              <p className="text-[10px] text-slate-300 mt-1.5 text-center">
+              <p className="text-[11px] text-slate-300 mt-1.5 text-center">
                 {orgPhone ? `Se envía desde el número de empresa ${orgPhone}` : 'Se envía desde el número de WhatsApp Business de tu organización'}
               </p>
             </div>

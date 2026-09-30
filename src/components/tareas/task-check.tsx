@@ -26,7 +26,7 @@ export default function TaskCheck({ taskId, isCompleted, isOverdue, readOnly }: 
   }
 
   return (
-    <button onClick={toggle} disabled={loading || readOnly} className={`mt-0.5 shrink-0 transition-transform disabled:opacity-50 ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
+    <button aria-label={done ? 'Marcar como pendiente' : 'Marcar como completada'} aria-pressed={done} onClick={toggle} disabled={loading || readOnly} className={`mt-0.5 shrink-0 transition-transform disabled:opacity-50 ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
       {done
         ? <CheckCircle className="w-4 h-4 text-green-500" />
         : isOverdue

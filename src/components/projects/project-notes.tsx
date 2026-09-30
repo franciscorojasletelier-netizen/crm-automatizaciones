@@ -31,7 +31,7 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Notas internas</h2>
-          <span className="flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">
+          <span className="flex items-center gap-1 text-[11px] font-semibold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">
             <Lock className="w-2.5 h-2.5" /> Privado
           </span>
         </div>

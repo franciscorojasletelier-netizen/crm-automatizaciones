@@ -13,7 +13,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
     <div className="flex items-start gap-2.5">
       <Icon className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
         <p className="text-sm font-medium text-slate-800 break-all">{value}</p>
       </div>
     </div>
@@ -23,7 +23,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
 function EditInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
       <input type="text" value={value} onChange={e => onChange(e.target.value)}
         className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
     </div>
@@ -107,7 +107,7 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
               ? <div className="flex items-start gap-2.5">
                   <Phone className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Teléfono</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Teléfono</p>
                     <p className="text-sm font-medium text-slate-400 italic">Solo visible para administradores</p>
                   </div>
                 </div>

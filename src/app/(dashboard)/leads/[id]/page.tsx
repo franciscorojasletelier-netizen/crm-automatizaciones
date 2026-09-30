@@ -175,7 +175,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               }`}>
                 {score}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 font-medium">Score</p>
+              <p className="text-[11px] text-slate-400 mt-1 font-medium">Score</p>
             </div>
           </div>
 
@@ -190,7 +190,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                   <Icon className="w-3.5 h-3.5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
                   <p className="text-sm font-semibold text-slate-800 truncate">{value}</p>
                 </div>
               </div>
@@ -211,10 +211,10 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 <FileText className="w-4 h-4 text-orange-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Propuesta adjunta</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Propuesta adjunta</p>
                 <p className="text-sm font-semibold text-slate-800 truncate">{deal.proposal_filename}</p>
                 {deal.proposal_uploaded_at && (
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[11px] text-slate-400">
                     {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -269,7 +269,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                       { label: 'Fuente',         value: deal.source ?? '—' },
                     ].map(({ label, value }) => (
                       <div key={label} className="py-1">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
                         <p className="text-sm font-semibold text-slate-800 mt-0.5">{value}</p>
                       </div>
                     ))}
@@ -297,7 +297,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                   <div className="divide-y divide-slate-100">
                     {dealFields.map(f => (
                       <div key={f.id} className="py-1">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{f.label}</p>
+                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{f.label}</p>
                         <p className="text-sm font-semibold text-slate-800 mt-0.5">
                           {formatFieldValue(f, (deal.custom_fields ?? {})[f.key]) || '—'}
                         </p>

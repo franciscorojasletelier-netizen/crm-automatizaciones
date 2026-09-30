@@ -115,7 +115,7 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
                   placeholder="Cant." className="w-16 text-sm border border-slate-200 rounded-lg px-2 py-1.5" />
                 <input type="number" min={0} value={item.unit_price} onChange={e => updateItem(i, { unit_price: Number(e.target.value) })}
                   placeholder="Precio" className="w-28 text-sm border border-slate-200 rounded-lg px-2 py-1.5" />
-                <button onClick={() => removeItem(i)} className="text-slate-300 hover:text-red-500 shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => removeItem(i)} className="text-slate-400 hover:text-red-500 shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
             <button onClick={addItem} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">+ Agregar ítem</button>
@@ -123,12 +123,12 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">IVA (%)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">IVA (%)</label>
               <input type="number" min={0} value={taxRate} onChange={e => setTaxRate(Number(e.target.value))}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Válida hasta</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Válida hasta</label>
               <input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
@@ -173,7 +173,7 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${STATUS_STYLE[q.status]}`}>{STATUS_LABEL[q.status]}</span>
+                  <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${STATUS_STYLE[q.status]}`}>{STATUS_LABEL[q.status]}</span>
                   {q.public_token && <CopyLinkButton token={q.public_token} />}
                   <ExternalLink className="w-3.5 h-3.5 text-slate-300" />
                 </div>

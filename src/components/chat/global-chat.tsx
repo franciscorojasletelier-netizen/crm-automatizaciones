@@ -22,9 +22,8 @@ interface Props {
 
 
 const COLORS = [
-  'from-violet-500 to-purple-600', 'from-blue-500 to-indigo-600',
-  'from-emerald-500 to-green-600', 'from-orange-500 to-amber-600',
-  'from-pink-500 to-rose-600',     'from-cyan-500 to-teal-600',
+  'bg-slate-600', 'bg-accent-600', 'bg-emerald-700',
+  'bg-amber-600', 'bg-rose-600', 'bg-teal-700',
 ]
 function userColor(uid: string) {
   let h = 0; for (const c of uid) h = (h * 31 + c.charCodeAt(0)) % COLORS.length; return COLORS[h]
@@ -147,7 +146,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
               <p className="text-sm font-bold text-white">Chat del equipo</p>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-[10px] text-slate-400">En vivo</p>
+                <p className="text-[11px] text-slate-400">En vivo</p>
               </div>
             </div>
             <button onClick={() => setOpen(false)}
@@ -175,19 +174,19 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
                 <div key={msg.id} className={`flex gap-2 group ${isMe ? 'flex-row-reverse' : ''} ${msg.isFirst ? 'mt-3' : 'mt-0.5'}`}>
                   <div className="w-6 h-6 shrink-0 self-end">
                     {msg.isLast && (
-                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-br ${color}`}>
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold text-white ${color}`}>
                         {initials}
                       </div>
                     )}
                   </div>
                   <div className={`flex flex-col max-w-[78%] ${isMe ? 'items-end' : 'items-start'}`}>
                     {msg.isFirst && !isMe && (
-                      <p className="text-[10px] font-bold text-slate-500 mb-0.5 px-1">{name}</p>
+                      <p className="text-[11px] font-bold text-slate-500 mb-0.5 px-1">{name}</p>
                     )}
                     <div className="flex items-end gap-1 group/msg">
                       {isMe && !isTemp && (
                         <button onClick={() => deleteMessage(msg.id)}
-                          className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400">
+                          className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-400">
                           <Trash2 className="w-2.5 h-2.5" />
                         </button>
                       )}
@@ -201,7 +200,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
                       </div>
                     </div>
                     {msg.isLast && (
-                      <p className="text-[9px] text-slate-400 mt-0.5 px-1">{isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 px-1">{isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}</p>
                     )}
                   </div>
                 </div>
@@ -225,7 +224,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
                 placeholder="Mensaje al equipo... (Enter)"
                 rows={1} style={{ resize: 'none', minHeight: '20px', maxHeight: '80px' }}
                 className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
-              <button onClick={sendMessage} disabled={!input.trim() || sending}
+              <button aria-label="Enviar mensaje" onClick={sendMessage} disabled={!input.trim() || sending}
                 className="w-7 h-7 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
                 style={{ background: input.trim() ? 'var(--color-accent-600)' : 'var(--color-slate-200)' }}>
                 <Send className={`w-3.5 h-3.5 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />

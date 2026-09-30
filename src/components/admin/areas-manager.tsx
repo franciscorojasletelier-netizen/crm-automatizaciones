@@ -82,7 +82,7 @@ export default function AreasManager({ areas }: Props) {
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ background: a.color }} />
                     <span className="flex-1 text-sm font-medium text-slate-700">{a.name}</span>
                     <button onClick={() => removeArea(a.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-500"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500"
                       title="Eliminar área">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

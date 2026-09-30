@@ -114,7 +114,7 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
           <div className="flex-1 min-w-0 text-left">
             <div className="flex items-center gap-1.5">
               <p className="text-sm font-semibold text-slate-900 truncate">{name}</p>
-              {isSelf && <span className="text-[8px] font-bold bg-indigo-100 text-indigo-600 px-1 py-0.5 rounded-full shrink-0">Tú</span>}
+              {isSelf && <span className="text-[11px] font-bold bg-indigo-100 text-indigo-600 px-1 py-0.5 rounded-full shrink-0">Tú</span>}
             </div>
             <p className="text-xs font-medium text-slate-600 truncate">{cargo}</p>
           </div>
@@ -123,12 +123,12 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
         {/* Etiquetas: área + nivel de acceso */}
         <div className="mt-2 flex items-center gap-1.5 flex-wrap">
           {node.area_name && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white"
-              style={{ background: node.area_color ?? '#64748b' }}>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full text-white"
+              style={{ background: node.area_color ?? 'var(--color-slate-500)' }}>
               {node.area_name}
             </span>
           )}
-          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ring-1 ${meta.color}`}>
+          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ring-1 ${meta.color}`}>
             {meta.label}
           </span>
         </div>
@@ -175,17 +175,17 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
         }
         .org-tree li::before, .org-tree li::after {
           content: ''; position: absolute; top: 0; right: 50%;
-          width: 50%; height: 22px; border-top: 2px solid #cbd5e1;
+          width: 50%; height: 22px; border-top: 2px solid var(--color-slate-300);
         }
-        .org-tree li::after { right: auto; left: 50%; border-left: 2px solid #cbd5e1; }
+        .org-tree li::after { right: auto; left: 50%; border-left: 2px solid var(--color-slate-300); }
         .org-tree li:only-child::before, .org-tree li:only-child::after { display: none; }
         .org-tree li:only-child { padding-top: 0; }
         .org-tree li:first-child::before, .org-tree li:last-child::after { border: 0 none; }
-        .org-tree li:last-child::before { border-right: 2px solid #cbd5e1; border-radius: 0 8px 0 0; }
+        .org-tree li:last-child::before { border-right: 2px solid var(--color-slate-300); border-radius: 0 8px 0 0; }
         .org-tree li:first-child::after { border-radius: 8px 0 0 0; }
         .org-tree ul::before {
           content: ''; position: absolute; top: 0; left: 50%;
-          border-left: 2px solid #cbd5e1; width: 0; height: 22px;
+          border-left: 2px solid var(--color-slate-300); width: 0; height: 22px;
         }
         .org-tree > li { padding-top: 0; }
         .org-tree > li::before, .org-tree > li::after { display: none; }
@@ -272,7 +272,7 @@ function EditModal({
             <Pencil className="w-4 h-4 text-indigo-300" />
           </div>
           <h2 className="flex-1 text-sm font-bold text-white truncate">Editar: {name}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -307,7 +307,7 @@ function EditModal({
               <Shield className={`w-4 h-4 ${isAdmin ? 'text-indigo-600' : 'text-slate-400'}`} />
               <div className="flex-1 text-left">
                 <p className="text-xs font-semibold text-slate-700">Administrador</p>
-                <p className="text-[10px] text-slate-400">Gestiona usuarios, áreas y datos sensibles</p>
+                <p className="text-[11px] text-slate-400">Gestiona usuarios, áreas y datos sensibles</p>
               </div>
               <span className={`w-9 h-5 rounded-full transition-colors relative ${isAdmin ? 'bg-indigo-500' : 'bg-slate-300'}`}>
                 <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isAdmin ? 'left-[18px]' : 'left-0.5'}`} />

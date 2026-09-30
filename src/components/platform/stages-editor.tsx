@@ -65,7 +65,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
         <div>
           <h2 className="text-sm font-bold text-slate-800">Embudo (etapas)</h2>
           <p className="text-xs text-slate-400 mt-0.5">La clave técnica no se puede editar una vez creada — solo el nombre visible.</p>
-          <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-3 flex-wrap">
+          <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-3 flex-wrap">
             <span className="flex items-center gap-1"><Star className="w-3 h-3" /> etapa inicial</span>
             <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> etapa de ganado</span>
             <span className="flex items-center gap-1"><Paperclip className="w-3 h-3" /> exige adjunto</span>
@@ -83,17 +83,17 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
       {showNew && (
         <form onSubmit={createStage} className="flex flex-wrap items-end gap-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
             <input value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
               placeholder="ej. escrituracion" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-40" />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Nombre visible</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre visible</label>
             <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
               placeholder="ej. Escrituración" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-44" />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Color</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Color</label>
             <select value={newColor} onChange={e => setNewColor(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5">
               {STAGE_COLOR_TOKENS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -117,7 +117,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
                   disabled={busy === s.id}
                   className="text-sm font-semibold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-indigo-300 rounded px-1 -mx-1 w-full"
                 />
-                <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                <p className="text-[11px] text-slate-400 flex items-center gap-1">
                   <Lock className="w-2.5 h-2.5" /> {s.key}
                 </p>
               </div>

@@ -171,7 +171,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
               <button onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0 transition-transform hover:scale-110">
                 {overdue
                   ? <AlertTriangle className="w-4.5 h-4.5 text-red-500" />
-                  : <Circle className="w-4.5 h-4.5 text-slate-300 hover:text-indigo-500 transition-colors" />
+                  : <Circle className="w-4.5 h-4.5 text-slate-400 hover:text-indigo-500 transition-colors" />
                 }
               </button>
               <div className="flex-1 min-w-0">

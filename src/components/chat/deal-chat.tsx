@@ -23,9 +23,8 @@ interface Props {
 
 
 const COLORS = [
-  'from-violet-500 to-purple-600', 'from-blue-500 to-indigo-600',
-  'from-emerald-500 to-green-600', 'from-orange-500 to-amber-600',
-  'from-pink-500 to-rose-600',     'from-cyan-500 to-teal-600',
+  'bg-slate-600', 'bg-accent-600', 'bg-emerald-700',
+  'bg-amber-600', 'bg-rose-600', 'bg-teal-700',
 ]
 function userColor(uid: string) {
   let h = 0; for (const c of uid) h = (h * 31 + c.charCodeAt(0)) % COLORS.length; return COLORS[h]
@@ -134,7 +133,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
         <MessageCircle className="w-4 h-4 text-indigo-500" />
         <h2 className="text-sm font-semibold text-slate-900">Chat del equipo</h2>
         <span className="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">{messages.length}</span>
-        <span className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />En vivo
         </span>
       </div>
@@ -158,19 +157,19 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
             <div key={msg.id} className={`flex gap-2 group ${isMe ? 'flex-row-reverse' : ''} ${msg.isFirst ? 'mt-3' : 'mt-0.5'}`}>
               <div className="w-7 h-7 shrink-0 self-end">
                 {msg.isLast && (
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-bold text-white bg-gradient-to-br ${color}`}>
+                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold text-white ${color}`}>
                     {initials}
                   </div>
                 )}
               </div>
               <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
                 {msg.isFirst && !isMe && (
-                  <p className="text-[10px] font-bold text-slate-500 mb-1 px-1">{name}</p>
+                  <p className="text-[11px] font-bold text-slate-500 mb-1 px-1">{name}</p>
                 )}
                 <div className="flex items-end gap-1.5 group/msg">
                   {isMe && !isTemp && (
                     <button onClick={() => deleteMessage(msg.id)}
-                      className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-1 rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-400">
+                      className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-1 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-400">
                       <Trash2 className="w-3 h-3" />
                     </button>
                   )}
@@ -184,7 +183,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
                   </div>
                 </div>
                 {msg.isLast && (
-                  <p className="text-[9px] text-slate-400 mt-0.5 px-1">{isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5 px-1">{isTemp ? 'Enviando...' : timeAgo(msg.created_at, 'short')}</p>
                 )}
               </div>
             </div>
@@ -208,12 +207,12 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
             placeholder="Escribe un mensaje... (Enter para enviar)"
             rows={1} style={{ resize: 'none', minHeight: '24px', maxHeight: '96px' }}
             className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
-          <button onClick={sendMessage} disabled={!input.trim() || sending}
+          <button aria-label="Enviar mensaje" onClick={sendMessage} disabled={!input.trim() || sending}
             className={`w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 transition-colors shrink-0 ${input.trim() ? 'bg-accent-600 hover:bg-accent-700' : 'bg-slate-200'}`}>
             <Send className={`w-4 h-4 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />
           </button>
         </div>
-        <p className="text-[10px] text-slate-400 mt-1 px-1">Shift+Enter para nueva línea</p>
+        <p className="text-[11px] text-slate-400 mt-1 px-1">Shift+Enter para nueva línea</p>
       </div>
     </div>
   )

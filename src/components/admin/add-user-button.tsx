@@ -95,7 +95,7 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
                 <UserPlus className="w-4 h-4 text-indigo-300" />
               </div>
               <h2 className="flex-1 text-sm font-bold text-white">Nuevo usuario</h2>
-              <button onClick={close} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+              <button aria-label="Cerrar" onClick={close} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -171,7 +171,7 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
                     <Shield className={`w-4 h-4 ${isAdmin ? 'text-indigo-600' : 'text-slate-400'}`} />
                     <div className="flex-1 text-left">
                       <p className="text-xs font-semibold text-slate-700">Administrador</p>
-                      <p className="text-[10px] text-slate-400">Gestiona usuarios, áreas y datos sensibles</p>
+                      <p className="text-[11px] text-slate-400">Gestiona usuarios, áreas y datos sensibles</p>
                     </div>
                     <span className={`w-9 h-5 rounded-full transition-colors relative ${isAdmin ? 'bg-indigo-500' : 'bg-slate-300'}`}>
                       <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isAdmin ? 'left-[18px]' : 'left-0.5'}`} />

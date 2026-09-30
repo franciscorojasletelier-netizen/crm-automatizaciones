@@ -141,13 +141,13 @@ export default function NotificationsList({ initialNotifications, userId }: Prop
                           <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 align-middle" />
                         )}
                       </p>
-                      <span className="text-[10px] text-slate-400 shrink-0 font-medium mt-0.5">{timeAgo(n.created_at, 'long', true)}</span>
+                      <span className="text-[11px] text-slate-400 shrink-0 font-medium mt-0.5">{timeAgo(n.created_at, 'long', true)}</span>
                     </div>
                     {n.body && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{n.body}</p>}
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); deleteNotif(n.id) }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-400 shrink-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-400 shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

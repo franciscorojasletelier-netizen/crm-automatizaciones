@@ -120,7 +120,7 @@ export default function TemplatePicker({
                   <p className="text-[11px] text-slate-400 truncate">{t.content}</p>
                 </button>
                 {t.created_by === userId && (
-                  <button onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all shrink-0">
+                  <button onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all shrink-0">
                     <Trash2 className="w-3 h-3" />
                   </button>
                 )}

@@ -129,7 +129,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
                 </button>
                 <button onClick={() => setShowAcceptForm(false)} className="text-sm font-semibold text-slate-500 px-3">Cancelar</button>
               </div>
-              <p className="text-[10px] text-slate-400 text-center">Al aceptar, queda registrado tu nombre, la fecha y la IP como evidencia de aceptación.</p>
+              <p className="text-[11px] text-slate-400 text-center">Al aceptar, queda registrado tu nombre, la fecha y la IP como evidencia de aceptación.</p>
             </div>
           ) : (
             <div className="flex gap-2">

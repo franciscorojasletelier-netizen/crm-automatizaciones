@@ -82,7 +82,7 @@ export default function CalendarView({ tasks }: Props) {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header con navegación */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <button onClick={prev}
+          <button aria-label="Mes anterior" onClick={prev}
             className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -92,7 +92,7 @@ export default function CalendarView({ tasks }: Props) {
               {Object.values(tasksByDay).reduce((s, t) => s + t.length, 0)} tareas este mes
             </p>
           </div>
-          <button onClick={next}
+          <button aria-label="Mes siguiente" onClick={next}
             className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors">
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -137,7 +137,7 @@ export default function CalendarView({ tasks }: Props) {
                     {day}
                   </span>
                   {dayTasks.length > 0 && (
-                    <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center ${
+                    <span className={`text-[11px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center ${
                       hasOverdue ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'
                     }`}>
                       {dayTasks.length}
@@ -156,7 +156,7 @@ export default function CalendarView({ tasks }: Props) {
                     />
                   ))}
                   {dayTasks.length > 3 && (
-                    <span className="text-[8px] text-slate-400 font-bold">+{dayTasks.length - 3}</span>
+                    <span className="text-[11px] text-slate-400 font-bold">+{dayTasks.length - 3}</span>
                   )}
                 </div>
               </div>
@@ -209,7 +209,7 @@ export default function CalendarView({ tasks }: Props) {
                           <span className="text-xs text-slate-400">→ {task.profiles.full_name}</span>
                         )}
                         {overdue && (
-                          <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">Vencida</span>
+                          <span className="text-[11px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">Vencida</span>
                         )}
                       </div>
                     </div>

@@ -74,24 +74,24 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
       {showNew && (
         <form onSubmit={createField} className="flex flex-wrap items-end gap-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
             <input value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
               placeholder="ej. metros_cuadrados" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-44" />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Nombre visible</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre visible</label>
             <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
               placeholder="ej. Metros cuadrados" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-44" />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Tipo</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Tipo</label>
             <select value={newType} onChange={e => setNewType(e.target.value as FieldType)} className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5">
               {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
           {(newType === 'select' || newType === 'multiselect') && (
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Opciones (separadas por coma)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Opciones (separadas por coma)</label>
               <input value={newOptions} onChange={e => setNewOptions(e.target.value)}
                 placeholder="Casa, Departamento, Oficina" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-56" />
             </div>
@@ -116,7 +116,7 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
                 disabled={busy === f.id}
                 className="text-sm font-semibold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-indigo-300 rounded px-1 -mx-1 w-full"
               />
-              <p className="text-[10px] text-slate-400">{f.key} · {TYPE_LABELS[f.fieldType]}{f.isRequired ? ' · obligatorio' : ''}</p>
+              <p className="text-[11px] text-slate-400">{f.key} · {TYPE_LABELS[f.fieldType]}{f.isRequired ? ' · obligatorio' : ''}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" checked={f.isActive} disabled={busy === f.id}

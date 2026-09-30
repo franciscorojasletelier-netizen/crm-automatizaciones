@@ -79,7 +79,7 @@ export default async function UsuariosPage() {
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.badge}`} />
             <div className="min-w-0">
               <p className="text-xl font-bold text-slate-900">{byRole[role] ?? 0}</p>
-              <p className="text-[10px] font-semibold text-slate-400 truncate">{meta.label}</p>
+              <p className="text-[11px] font-semibold text-slate-400 truncate">{meta.label}</p>
             </div>
           </div>
         ))}
@@ -126,7 +126,7 @@ export default async function UsuariosPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-slate-900">{u.full_name ?? '—'}</p>
                     {isSelf && (
-                      <span className="text-[9px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">Tú</span>
+                      <span className="text-[11px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">Tú</span>
                     )}
                   </div>
                   <p className="text-xs text-slate-400">{u.email}</p>

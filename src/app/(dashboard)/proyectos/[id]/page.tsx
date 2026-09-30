@@ -118,7 +118,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <Icon className="w-3.5 h-3.5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
                   <p className="text-sm font-semibold text-slate-800 truncate">{value}</p>
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   { label: 'Inicio',          value: project.start_date ? new Date(project.start_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : null },
                 ].filter(x => x.value).map(({ label, value }) => (
                   <div key={label} className="pt-2 first:pt-0">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
                     <p className="text-sm font-semibold text-slate-800 mt-0.5">{value}</p>
                   </div>
                 ))}

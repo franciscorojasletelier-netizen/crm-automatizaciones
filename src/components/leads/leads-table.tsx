@@ -25,7 +25,7 @@ function StaleBadge({ deal, stages }: { deal: any; stages: Stage[] }) {
   if (days < 3) return null
   const isUrgent = days >= 7
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-1.5 py-0.5 rounded-md ${
       isUrgent ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
     }`} title={deal.last_contacted_at ? 'Días desde el último contacto' : 'Días desde la creación, sin contacto registrado'}>
       {days}d sin contacto

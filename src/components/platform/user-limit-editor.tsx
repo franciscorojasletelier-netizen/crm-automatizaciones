@@ -54,7 +54,7 @@ export default function UserLimitEditor({ orgId, currentUsers, maxUsers }: {
           className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg disabled:opacity-50 transition-colors">
           Guardar
         </button>
-        <span className="text-[10px] text-slate-400">Vacío = sin límite</span>
+        <span className="text-[11px] text-slate-400">Vacío = sin límite</span>
       </div>
     </div>
   )

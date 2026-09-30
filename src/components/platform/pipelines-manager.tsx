@@ -61,7 +61,7 @@ export default function PipelinesManager({ orgId, pipelines: initialPipelines, a
         {showNew && (
           <form onSubmit={createPipeline} className="flex items-end gap-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
             <div className="flex-1">
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Nombre</label>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre</label>
               <input value={name} onChange={e => setName(e.target.value)} placeholder="ej. Renovación de contratos"
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
