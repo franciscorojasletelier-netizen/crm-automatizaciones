@@ -206,7 +206,7 @@ async function testBusinessDataIsolation(clientB) {
   assert('El deal de la org A no quedó soft-eliminado por el intento cross-tenant', stillAlive.deleted_at === null)
 
   // Tablas agregadas en fases posteriores — lectura cross-tenant
-  const NEW_TABLES = ['whatsapp_templates', 'automation_rules', 'automation_logs', 'notes', 'deliverables']
+  const NEW_TABLES = ['whatsapp_templates', 'automation_rules', 'automation_logs', 'project_notes', 'project_deliverables']
   for (const t of NEW_TABLES) {
     const { data, error } = await clientB.from(t).select('id').eq('organization_id', state.orgA)
     if (error) {
@@ -366,8 +366,18 @@ async function cleanup() {
   try {
     if (state.userA) await admin.auth.admin.deleteUser(state.userA.id)
     if (state.userB) await admin.auth.admin.deleteUser(state.userB.id)
-    if (state.orgA) await admin.from('organizations').delete().eq('id', state.orgA)
-    if (state.orgB) await admin.from('organizations').delete().eq('id', state.orgB)
+
+    // Las FK hacia organizations no son ON DELETE CASCADE (a propósito: no se
+    // borra una organización con datos). Hay que vaciar primero lo que creó el
+    // setup, hijos antes que padres. Antes esto no se hacía y el delete de la
+    // organización fallaba en silencio: quedaban TEST-A-* con datos en producción.
+    const orgIds = [state.orgA, state.orgB].filter(Boolean)
+    for (const table of ['tasks', 'deals', 'contacts', 'companies', 'organizations']) {
+      if (orgIds.length === 0) break
+      const column = table === 'organizations' ? 'id' : 'organization_id'
+      const { error } = await admin.from(table).delete().in(column, orgIds)
+      if (error) throw new Error(`${table}: ${error.message}`)
+    }
   } catch (e) {
     console.error('Aviso: falló la limpieza automática, revisar manualmente organizaciones TEST-A/TEST-B-' + stamp, e.message)
   }
