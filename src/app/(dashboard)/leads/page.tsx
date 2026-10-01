@@ -6,6 +6,7 @@ import LeadsTable from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { formatCLP } from '@/lib/format'
 import { getStages } from '@/lib/stages'
+import { PageContainer, PageHeader, Panel, Badge, buttonClass } from '@/components/ui/page'
 
 export default async function LeadsPage() {
   const { role, perms, supabase, canEdit, organizationId } = await requirePermission('leads')
@@ -33,33 +34,25 @@ export default async function LeadsPage() {
 
   const countQuery = supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open')
 
-
-  const [{ data: deals }, { count: totalCount }] = await Promise.all([query, countQuery])
-
   // Team users para reasignación (solo gerente/admin los ve)
   const canReassign = ['super_admin', 'admin', 'gerente'].includes(role)
-  const { data: teamUsers } = canReassign
-    ? await supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true)
+  const teamQuery = canReassign
+    ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true)
         .in('role', ['super_admin', 'admin', 'gerente', 'comercial', 'produccion', 'soporte'])
-    : { data: [] }
+    : Promise.resolve({ data: [] as any[] })
 
-  // Deals ganados con proyectos pendientes de especificaciones (requieren atención de comercial)
-  const { data: pendingSpecRaw } = await supabase
+  // Deals ganados con proyectos pendientes de especificaciones; la empresa
+  // viene embebida (antes: una segunda consulta con IN).
+  const pendingQuery = supabase
     .from('projects')
-    .select('id, name, deal_id')
+    .select('id, name, deal_id, deal:deal_id(companies(name))')
     .eq('status', 'pendiente_especificaciones' as any)
     .not('deal_id', 'is', null)
 
-  // Nombre de empresa para todos los proyectos pendientes en una sola query
-  // (antes: una query por proyecto — con 200 proyectos pendientes eran 200 roundtrips).
-  const pendingDealIds = (pendingSpecRaw ?? []).map((p: any) => p.deal_id).filter(Boolean)
-  const { data: pendingDealsRaw } = pendingDealIds.length > 0
-    ? await supabase.from('deals').select('id, companies(name)').in('id', pendingDealIds)
-    : { data: [] }
-  const dealById = new Map((pendingDealsRaw ?? []).map((d: any) => [d.id, d]))
-  const pendingSpecDeals = (pendingSpecRaw ?? [])
-    .filter((proj: any) => proj.deal_id)
-    .map((proj: any) => ({ ...proj, deal: dealById.get(proj.deal_id) ?? null }))
+  // Las cuatro consultas son independientes: en paralelo, no en cascada.
+  const [{ data: deals }, { count: totalCount }, { data: teamUsers }, { data: pendingSpecRaw }] =
+    await Promise.all([query, countQuery, teamQuery, pendingQuery])
+  const pendingSpecDeals = (pendingSpecRaw ?? []) as any[]
 
   const total = totalCount ?? deals?.length ?? 0
   const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
@@ -67,73 +60,46 @@ export default async function LeadsPage() {
   const canCreate = perms.canCreateLeads && canEdit
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Leads</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
-            <span><span className="font-semibold text-slate-700">{total}</span> {total === 1 ? 'deal' : 'deals'} {isFiltered ? (total === 1 ? 'asignado a ti' : 'asignados a ti') : (total === 1 ? 'activo' : 'activos')}</span>
-            {totalValue > 0 && (
-              <>
-                <span className="text-slate-300">·</span>
-                <span><span className="font-semibold text-slate-700">{formatCLP(totalValue)}</span> en valor estimado</span>
-              </>
-            )}
-          </div>
-        </div>
-        {canCreate && (
-          <div className="flex items-center gap-2">
+    <PageContainer className="space-y-5">
+      <PageHeader
+        title="Leads"
+        description={<>
+          <span className="font-medium text-slate-700 tabular-nums">{total}</span> {total === 1 ? 'deal' : 'deals'} {isFiltered ? (total === 1 ? 'asignado a ti' : 'asignados a ti') : (total === 1 ? 'activo' : 'activos')}
+          {totalValue > 0 && <> · <span className="font-medium text-slate-700 tabular-nums">{formatCLP(totalValue)}</span> en valor estimado</>}
+        </>}
+        actions={canCreate && <>
           <ImportLeadsButton />
-          <Link href="/leads/nuevo"
-            className="bg-accent-600 shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-xs hover:-translate-y-0.5 transition-all"
-             >
+          <Link href="/leads/nuevo" className={buttonClass.primary}>
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nuevo lead</span>
             <span className="sm:hidden">Nuevo</span>
           </Link>
-          </div>
-        )}
-      </div>
+        </>}
+      />
 
       {/* Deals ganados con especificaciones pendientes — requieren atención */}
-      {pendingSpecDeals && pendingSpecDeals.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h2 className="text-sm font-semibold text-slate-900">
-              Requieren especificaciones de tu parte
-            </h2>
-            <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">
-              {pendingSpecDeals.length}
-            </span>
-          </div>
-          <div className="space-y-2">
+      {pendingSpecDeals.length > 0 && (
+        <Panel padded={false}
+          title={<span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-600" />Requieren especificaciones de tu parte
+            <Badge className="bg-amber-100 text-amber-800 tabular-nums">{pendingSpecDeals.length}</Badge></span>}
+          description="Producción necesita más información para partir estos proyectos.">
+          <ul className="divide-y divide-slate-100">
             {pendingSpecDeals.map((proj: any) => (
-              <Link key={proj.id} href={`/leads/${proj.deal_id}`}
-                className="flex items-center justify-between gap-4 bg-amber-50 border-2 border-amber-300 rounded-lg px-5 py-3.5 hover:border-amber-400 hover:shadow-sm transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-200 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-amber-700" />
+              <li key={proj.id}>
+                <Link href={`/leads/${proj.deal_id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50 transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">{proj.deal?.companies?.name ?? 'Empresa sin nombre'}</p>
+                    <p className="text-xs text-slate-500 truncate">Proyecto: {proj.name}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-amber-900 group-hover:text-amber-800">
-                      {(proj as any).deal?.companies?.name ?? 'Empresa sin nombre'}
-                    </p>
-                    <p className="text-xs text-amber-700">
-                      Proyecto: {proj.name} — Producción necesita más información
-                    </p>
-                  </div>
-                </div>
-                <span className="shrink-0 text-xs font-bold text-amber-700 bg-amber-200 px-3 py-1 rounded-lg border border-amber-300 group-hover:bg-amber-300 transition-colors">
-                  Ver deal →
-                </span>
-              </Link>
+                  <span className="shrink-0 text-[13px] font-medium text-accent-700">Completar →</span>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </Panel>
       )}
 
       <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} stages={stages} />
-    </div>
+    </PageContainer>
   )
 }

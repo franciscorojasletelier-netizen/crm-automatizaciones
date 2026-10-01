@@ -257,7 +257,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 {['Empresa', 'Etapa', 'Valor', 'Score', 'Responsable', 'Próxima acción', 'Últ. contacto', ''].map(h => (
-                  <th key={h} className="text-xs font-medium text-slate-500 text-left px-4 py-3">{h}</th>
+                  <th key={h} className={`text-xs font-medium text-slate-500 px-4 py-3 ${h === 'Valor' ? 'text-right' : 'text-left'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -273,7 +273,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                   <tr key={deal.id} className="hover:bg-accent-50/40 transition-colors">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">{deal.companies?.name ?? 'Sin empresa'}</span>
+                        <Link href={`/leads/${deal.id}`} className="font-medium text-slate-900 hover:text-accent-700 hover:underline">{deal.companies?.name ?? 'Sin empresa'}</Link>
                         {stalled && <Flame className="w-3 h-3 text-red-500" aria-label="Estancado" />}
                       </div>
                       {deal.contacts?.full_name && <p className="text-[11px] text-slate-400">{deal.contacts.full_name}</p>}
@@ -284,7 +284,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                         {st?.label ?? deal.stage}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-bold text-slate-700 tabular-nums">
+                    <td className="px-4 py-2.5 font-medium text-slate-900 tabular-nums text-right">
                       {deal.estimated_value ? formatCLP(deal.estimated_value) : '—'}
                     </td>
                     <td className="px-4 py-2.5">
@@ -324,22 +324,26 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
           const isProposal = stage.requiresAttachment
           const isGanado   = stage.isWon
           const c = colorOf(stage)
+          const stageValue = stageDeals.reduce((sum, d) => sum + (Number(d.estimated_value) || 0), 0)
 
           return (
-            <div key={stage.key} className="flex flex-col flex-shrink-0 w-[170px] sm:w-[190px] md:flex-1 md:min-w-[190px]">
+            <div key={stage.key} className="flex flex-col flex-shrink-0 w-[232px] md:flex-1 md:min-w-[220px] rounded-lg bg-slate-100/70 border border-slate-200/70">
 
               {/* Column header */}
-              <div className="flex items-center gap-1.5 mb-2.5 px-1">
-                <div className={`w-2.5 h-2.5 rounded-full ${c.dot} shadow-sm flex-shrink-0`} />
-                <span className="text-xs font-medium text-slate-500 flex-1 truncate">
+              <div className="px-2.5 pt-2.5 pb-1.5">
+              <div className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${c.dot} flex-shrink-0`} />
+                <span className="text-[13px] font-medium text-slate-800 flex-1 truncate">
                   {stage.label}
                   {needsReason && <PenLine className="inline ml-1 w-3 h-3 text-amber-600" aria-label="Requiere justificación" />}
                   {isProposal  && <Paperclip className="inline ml-1 w-3 h-3 text-orange-600" aria-label="Requiere propuesta adjunta" />}
                   {isGanado    && <Trophy className="inline ml-1 w-3 h-3 text-emerald-600" aria-label="Etapa de ganado" />}
                 </span>
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>
+                <span className="text-xs font-medium tabular-nums text-slate-500">
                   {stageDeals.length}
                 </span>
+              </div>
+              <p className="mt-0.5 pl-3.5 text-xs tabular-nums text-slate-500">{stageValue > 0 ? formatCLP(stageValue) : '—'}</p>
               </div>
 
               {/* Drop zone */}
@@ -347,17 +351,15 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                 onDragOver={e => onDragOver(e, stage.key)}
                 onDragLeave={onDragLeave}
                 onDrop={e => onDrop(e, stage.key)}
-                className={`flex flex-col gap-2 min-h-[100px] rounded-lg p-1.5 transition-all duration-150 ${
-                  isOver
-                    ? `ring-2 ${c.ring} bg-white shadow-lg scale-[1.01]`
-                    : 'ring-1 ring-transparent'
+                className={`flex flex-col gap-2 min-h-[100px] rounded-b-lg p-1.5 transition-colors duration-150 ${
+                  isOver ? 'bg-accent-50 ring-2 ring-inset ring-accent-300' : ''
                 }`}
               >
                 {stageDeals.length === 0 ? (
-                  <div className={`border-2 border-dashed rounded-lg h-20 flex items-center justify-center transition-colors ${
-                    isOver ? `${c.light} border-current ${c.text}` : 'border-slate-200 bg-white/50'
+                  <div className={`border border-dashed rounded-md h-20 flex items-center justify-center transition-colors ${
+                    isOver ? 'border-accent-400' : 'border-slate-300'
                   }`}>
-                    <p className={`text-xs font-medium ${isOver ? c.text : 'text-slate-300'}`}>
+                    <p className={`text-xs ${isOver ? 'text-accent-700 font-medium' : 'text-slate-500'}`}>
                       {isOver ? 'Soltar aquí' : 'Sin deals'}
                     </p>
                   </div>
@@ -426,8 +428,8 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
 
                 {/* Indicador "soltar aquí" cuando hay deals */}
                 {isOver && stageDeals.length > 0 && (
-                  <div className={`border-2 border-dashed rounded-lg h-12 flex items-center justify-center ${c.light} border-current ${c.text}`}>
-                    <p className="text-xs font-semibold">Soltar aquí</p>
+                  <div className="border border-dashed border-accent-400 rounded-md h-12 flex items-center justify-center">
+                    <p className="text-xs font-medium text-accent-700">Soltar aquí</p>
                   </div>
                 )}
               </div>
@@ -443,7 +445,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
           draggingId ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="bg-white/95 backdrop-blur border-t-2 border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 py-3">
+        <div className="bg-card border-t border-slate-200 shadow-2xl px-4 py-3">
           <div className="max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {trayStages.map(zone => {
               const isOver = dragOverStage === zone.key
@@ -454,14 +456,14 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                   onDragOver={e => onDragOver(e, zone.key)}
                   onDragLeave={onDragLeave}
                   onDrop={e => onDrop(e, zone.key)}
-                  className={`flex flex-col items-center justify-center gap-0.5 h-16 rounded-lg border-2 border-dashed font-bold text-xs tracking-wider transition-all duration-150 ${
+                  className={`flex flex-col items-center justify-center gap-1 h-16 rounded-lg border border-dashed text-[13px] font-medium transition-colors duration-150 ${
                     isOver
-                      ? `${c.solid} text-white scale-105 border-transparent`
+                      ? `${c.solid} text-white border-transparent`
                       : `${c.light} ${c.text} border-current/40`
                   }`}
                 >
                   <StageIcon stage={zone} className="w-5 h-5" />
-                  {zone.label.toUpperCase()}
+                  {zone.label}
                 </div>
               )
             })}
@@ -500,13 +502,13 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${c.dot} flex-shrink-0`} />
-                    <span className="text-xs font-bold text-slate-700">{deal.companies?.name ?? 'Deal'}</span>
+                    <span className="text-xs font-medium text-slate-800">{deal.companies?.name ?? 'Deal'}</span>
                     {deal.estimated_value && (
                       <span className="text-[11px] font-semibold text-slate-400">
                         {formatCLP(deal.estimated_value)}
                       </span>
                     )}
-                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${c.light} ${c.text}`}>{st?.label ?? deal.stage}</span>
+                    <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>{st?.label ?? deal.stage}</span>
                     <Link
                       href={`/leads/${deal.id}`}
                       onClick={e => e.stopPropagation()}

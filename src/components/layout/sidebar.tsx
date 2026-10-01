@@ -116,8 +116,11 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
   const [notifCount, setNotifCount] = useState(counts.notificaciones)
   const [moreOpen, setMoreOpen] = useState(false)
   // Cerrar el menú móvil al navegar, y adoptar el conteo que trae el servidor.
+  // pendingHref: destino tocado que aún no termina de cargar. Marca la
+  // pestaña al instante en vez de esperar a que cambie la URL.
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [lastPath, setLastPath] = useState(pathname)
-  if (pathname !== lastPath) { setLastPath(pathname); setMoreOpen(false) }
+  if (pathname !== lastPath) { setLastPath(pathname); setMoreOpen(false); setPendingHref(null) }
   const [lastServerCount, setLastServerCount] = useState(counts.notificaciones)
   if (counts.notificaciones !== lastServerCount) { setLastServerCount(counts.notificaciones); setNotifCount(counts.notificaciones) }
 
@@ -144,7 +147,12 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
     router.push('/login')
   }
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const current = pendingHref ?? pathname
+  const isActive = (href: string) => current === href || current.startsWith(href + '/')
+  const markPending = (href: string) => (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    if (href !== pathname) setPendingHref(href)
+  }
   const sectionKeyOf = (item: NavItem) => item.permission ? String(item.permission) : item.href.replace(/^\//, '').split('/')[0]
   const itemVisible = (item: NavItem) => canAccessSection(role, profile?.section_access ?? null, sectionKeyOf(item), disabledModules)
 
@@ -161,7 +169,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
     const count = item.countKey ? liveCounts[item.countKey] : 0
     const alert = item.alertKey ? liveCounts[item.alertKey] > 0 : false
     return (
-      <Link key={item.href} href={item.href} onClick={onNavigate} aria-current={active ? 'page' : undefined}
+      <Link key={item.href} href={item.href} onClick={e => { markPending(item.href)(e); onNavigate?.() }} aria-current={active ? 'page' : undefined}
         className={cn(
           'group flex items-center gap-2.5 px-2.5 rounded-md transition-colors',
           dense ? 'h-8 text-[13px]' : 'h-10 text-sm',
@@ -249,8 +257,9 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
           const count = item.countKey ? liveCounts[item.countKey] : 0
           const alert = item.alertKey ? liveCounts[item.alertKey] > 0 : false
           return (
-            <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined}
-              className={cn('flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium', active ? 'text-accent-600' : 'text-slate-500')}>
+            <Link key={item.href} href={item.href} onClick={markPending(item.href)} aria-current={active ? 'page' : undefined}
+              className={cn('flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium select-none [-webkit-tap-highlight-color:transparent] active:bg-slate-100',
+                active ? 'text-accent-600' : 'text-slate-500')}>
               <span className="relative">
                 <Icon className="w-5 h-5" />
                 {count > 0 && (
@@ -264,7 +273,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
             </Link>
           )
         })}
-        <button onClick={() => setMoreOpen(true)} className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium text-slate-500">
+        <button onClick={() => setMoreOpen(true)} className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium text-slate-500 select-none [-webkit-tap-highlight-color:transparent] active:bg-slate-100">
           <Menu className="w-5 h-5" />
           Más
         </button>
