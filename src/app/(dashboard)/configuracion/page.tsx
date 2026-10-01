@@ -4,7 +4,7 @@ import { getRoleMeta } from '@/lib/roles'
 import ChangePasswordCard from './ChangePasswordCard'
 import TwoFactorCard from './TwoFactorCard'
 import EmailAccountsCard from './EmailAccountsCard'
-import CompanyProfileCard, { type CompanyProfile } from './CompanyProfileCard'
+import CompanyProfileCard, { type CompanyProfile } from '@/components/org/company-profile-card'
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()

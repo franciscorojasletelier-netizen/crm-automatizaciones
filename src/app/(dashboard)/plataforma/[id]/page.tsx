@@ -15,6 +15,7 @@ import UserLimitEditor from '@/components/platform/user-limit-editor'
 import RequireMfaToggle from '@/components/platform/require-mfa-toggle'
 import IntegrationsEditor from '@/components/platform/integrations-editor'
 import PlanSelector from '@/components/platform/plan-selector'
+import CompanyProfileCard from '@/components/org/company-profile-card'
 import { isPlanKey } from '@/lib/plans'
 
 export default async function OrganizationConfigPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,7 +27,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   if (!owner) redirect('/dashboard')
 
   const { data: org } = await supabase
-    .from('organizations').select('id, name, is_active, max_users, require_mfa, plan').eq('id', id).maybeSingle()
+    .from('organizations').select('id, name, is_active, max_users, require_mfa, plan, display_name, logo_url, email, phone, address, payment_instructions').eq('id', id).maybeSingle()
   if (!org) notFound()
 
   // profiles_select no tiene bypass de is_platform_owner() (a diferencia de
@@ -73,6 +74,8 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
             Configuración de embudo, campos y módulos — solo visible para el dueño de la plataforma.
           </p>
         </div>
+
+        <CompanyProfileCard org={org} description="Logo y datos que ve el cliente en correos de cobranza, estados de cuenta y cotizaciones. El administrador de la organización también los puede editar en Configuración." />
 
         <PlanSelector orgId={org.id} plan={isPlanKey(org.plan) ? org.plan : 'personalizado'} />
 
