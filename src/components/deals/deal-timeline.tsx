@@ -68,8 +68,8 @@ export default function DealTimeline({
 
   if (events.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Actividad</h2>
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+        <h2 className="text-sm font-semibold text-slate-900 mb-2">Actividad</h2>
         <p className="text-xs text-slate-400">Todavía no hay actividad registrada en este deal.</p>
       </div>
     )
@@ -84,8 +84,8 @@ export default function DealTimeline({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-      <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Actividad</h2>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+      <h2 className="text-sm font-semibold text-slate-900 mb-3">Actividad</h2>
       <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
         {events.map(e => {
           const { icon: Icon, color } = ICONS[e.type]

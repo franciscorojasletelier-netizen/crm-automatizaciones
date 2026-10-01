@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { UserPlus, X, Loader2, Check, RefreshCw, Copy, Shield } from 'lucide-react'
 import { type Role, type SectionMode } from '@/lib/roles'
 import SectionChecklist from '@/components/admin/section-checklist'
+import { useDialog } from '@/lib/use-dialog'
 
 interface Person {
   id: string
@@ -57,6 +58,7 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
     setError(''); setDone(false)
   }
   function close() { setOpen(false); reset() }
+  const dialogRef = useDialog(open, close, saving)
 
   async function submit() {
     if (saving) return
@@ -89,7 +91,7 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
 
       {open && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={close}>
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Agregar usuario" className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col outline-none" onClick={e => e.stopPropagation()}>
             <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5 shrink-0" >
               <div className="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center">
                 <UserPlus className="w-4 h-4 text-indigo-300" />
@@ -123,19 +125,19 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
             ) : (
               <div className="p-5 space-y-3.5 overflow-y-auto">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Nombre completo</label>
-                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ej: María González"
+                  <label htmlFor="add-user-button-f1" className="text-xs font-semibold text-slate-600 mb-1 block">Nombre completo</label>
+                  <input id="add-user-button-f1" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ej: María González"
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Email</label>
-                  <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="maria@empresa.com"
+                  <label htmlFor="add-user-button-f2" className="text-xs font-semibold text-slate-600 mb-1 block">Email</label>
+                  <input id="add-user-button-f2" value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="maria@empresa.com"
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 mb-1 block">Contraseña temporal</label>
                   <div className="flex gap-2">
-                    <input value={password} onChange={e => setPassword(e.target.value)}
+                    <input aria-label="Contraseña" value={password} onChange={e => setPassword(e.target.value)}
                       className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 font-mono" />
                     <button onClick={() => setPassword(genPassword())} type="button" className="px-3 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50" title="Generar otra">
                       <RefreshCw className="w-4 h-4" />
@@ -143,21 +145,21 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
-                  <input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Ej: Jefe de Marketing, Contador…"
+                  <label htmlFor="add-user-button-f3" className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
+                  <input id="add-user-button-f3" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Ej: Jefe de Marketing, Contador…"
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
-                  <select value={areaId} onChange={e => setAreaId(e.target.value)}
+                  <label htmlFor="add-user-button-f4" className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
+                  <select id="add-user-button-f4" value={areaId} onChange={e => setAreaId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
                     <option value="">— Sin área —</option>
                     {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Jefe directo (opcional)</label>
-                  <select value={managerId} onChange={e => setManagerId(e.target.value)}
+                  <label htmlFor="add-user-button-f5" className="text-xs font-semibold text-slate-600 mb-1 block">Jefe directo (opcional)</label>
+                  <select id="add-user-button-f5" value={managerId} onChange={e => setManagerId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
                     <option value="">— Sin jefe —</option>
                     {people.map(p => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}

@@ -139,7 +139,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
         {/* Total row */}
         {totalAmount > 0 && (
           <div className="flex items-center gap-2 px-2 pt-2 mt-2 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide flex-1">Total</span>
+            <span className="text-xs font-medium text-slate-500 flex-1">Total</span>
             <span className="text-xs font-bold text-slate-700">{totalDeals} deals</span>
             <span className="text-[11px] font-bold text-emerald-700 min-w-[44px] text-right">{fmt(totalAmount)}</span>
           </div>
@@ -163,7 +163,7 @@ export default function DashboardDonut({ byEtapa, byFuente, byIndustria, byRespo
   const current = dataMap[filter].filter(s => s.value > 0)
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>

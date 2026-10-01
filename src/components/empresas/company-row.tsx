@@ -44,7 +44,7 @@ export default function CompanyRow({ company, dealId, canEdit = true, fields = [
               ].map(({ label, key }) => (
                 <div key={key}>
                   <p className="text-xs font-semibold text-slate-500 mb-1">{label}</p>
-                  <input
+                  <input aria-label={label}
                     type="text"
                     value={(data as any)[key]}
                     onChange={e => setData(p => ({ ...p, [key]: e.target.value }))}

@@ -9,6 +9,7 @@ import { MessageCircle, Loader2, Pencil, X, Shield } from 'lucide-react'
 import DirectChat from '@/components/chat/direct-chat'
 import SectionChecklist from '@/components/admin/section-checklist'
 import { getInitials } from '@/lib/format'
+import { useDialog } from '@/lib/use-dialog'
 
 export interface OrgPerson {
   id: string
@@ -242,6 +243,7 @@ function EditModal({
     return Object.fromEntries(NAV_SECTIONS.map(s => [s.key, 'full' as SectionMode]))
   })
   const [saving, setSaving] = useState(false)
+  const dialogRef = useDialog(true, onClose, saving)
 
   const name = node.full_name ?? node.email ?? 'Usuario'
   const managerOptions = people.filter(p => !excluded.has(p.id))
@@ -266,7 +268,7 @@ function EditModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Editar persona" className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden outline-none" onClick={e => e.stopPropagation()}>
         <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5" >
           <div className="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center">
             <Pencil className="w-4 h-4 text-indigo-300" />
@@ -279,22 +281,22 @@ function EditModal({
 
         <div className="p-5 space-y-3.5">
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
-            <input value={jobTitle} onChange={e => setJobTitle(e.target.value)}
+            <label htmlFor="org-chart-f1" className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
+            <input id="org-chart-f1" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
               placeholder="Ej: Jefe de Marketing"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
-            <select value={areaId} onChange={e => setAreaId(e.target.value)}
+            <label htmlFor="org-chart-f2" className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
+            <select id="org-chart-f2" value={areaId} onChange={e => setAreaId(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
               <option value="">— Sin área —</option>
               {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Jefe directo</label>
-            <select value={managerId} onChange={e => setManagerId(e.target.value)}
+            <label htmlFor="org-chart-f3" className="text-xs font-semibold text-slate-600 mb-1 block">Jefe directo</label>
+            <select id="org-chart-f3" value={managerId} onChange={e => setManagerId(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
               <option value="">— Sin jefe —</option>
               {managerOptions.map(p => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}

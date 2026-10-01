@@ -55,8 +55,8 @@ export default async function AccesoDenegadoPage({
         </div>
 
         {/* Info del rol */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-left">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tu acceso actual</p>
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 text-left">
+          <p className="text-xs font-medium text-slate-500 mb-2">Tu acceso actual</p>
           <p className="text-sm text-slate-600 leading-relaxed">{roleMeta.description}</p>
         </div>
 

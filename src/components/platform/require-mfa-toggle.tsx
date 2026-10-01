@@ -23,7 +23,7 @@ export default function RequireMfaToggle({ orgId, requireMfa }: { orgId: string;
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <label className="flex items-center justify-between gap-3 cursor-pointer">
         <div className="flex items-center gap-2.5 min-w-0">
           <ShieldCheck className="w-4 h-4 text-slate-500 shrink-0" />

@@ -13,7 +13,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
     <div className="flex items-start gap-2.5">
       <Icon className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-medium text-slate-500">{label}</p>
         <p className="text-sm font-medium text-slate-800 break-all">{value}</p>
       </div>
     </div>
@@ -23,8 +23,8 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
 function EditInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
-      <input type="text" value={value} onChange={e => onChange(e.target.value)}
+      <p className="text-xs font-medium text-slate-500 mb-1">{label}</p>
+      <input aria-label={label} type="text" value={value} onChange={e => onChange(e.target.value)}
         className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
     </div>
   )
@@ -53,7 +53,7 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
     return (
       <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Editando datos</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Editando datos</h2>
           <div className="flex gap-1.5">
             <button onClick={save} disabled={saving}
               className="bg-accent-600 flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl disabled:opacity-50 transition-all"
@@ -89,9 +89,9 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" /> Contacto
           </h2>
           <button onClick={() => setEditing(true)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors">
@@ -107,7 +107,7 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
               ? <div className="flex items-start gap-2.5">
                   <Phone className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Teléfono</p>
+                    <p className="text-xs font-medium text-slate-500">Teléfono</p>
                     <p className="text-sm font-medium text-slate-400 italic">Solo visible para administradores</p>
                   </div>
                 </div>
@@ -122,9 +122,9 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5" /> Empresa
           </h2>
           <button onClick={() => setEditing(true)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors">

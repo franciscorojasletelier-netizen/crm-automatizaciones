@@ -128,7 +128,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
   }))
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ maxHeight: '480px' }}>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden flex flex-col" style={{ maxHeight: '480px' }}>
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2 shrink-0">
         <MessageCircle className="w-4 h-4 text-indigo-500" />
         <h2 className="text-sm font-semibold text-slate-900">Chat del equipo</h2>
@@ -202,7 +202,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
 
       <div className="px-4 pb-4 pt-2 border-t border-slate-100 shrink-0">
         <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-          <textarea ref={inputRef} value={input}
+          <textarea aria-label="Escribe un mensaje... (Enter para enviar)" ref={inputRef} value={input}
             onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
             placeholder="Escribe un mensaje... (Enter para enviar)"
             rows={1} style={{ resize: 'none', minHeight: '24px', maxHeight: '96px' }}

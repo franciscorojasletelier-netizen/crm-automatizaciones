@@ -84,9 +84,9 @@ export default function DealStageSelector({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cambiar etapa</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Cambiar etapa</h2>
           {busy && <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />}
         </div>
 
@@ -116,7 +116,7 @@ export default function DealStageSelector({
 
         {proposalFilename && (
           <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Propuesta adjunta</p>
+            <p className="text-xs font-medium text-slate-500 mb-2">Propuesta adjunta</p>
             <div className="flex items-center gap-2.5 p-2.5 bg-orange-50 border border-orange-200 rounded-xl">
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-orange-600" />

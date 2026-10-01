@@ -90,7 +90,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
 
         {/* Hero */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5">
           <div className="flex items-start gap-4">
             <div className="bg-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
                >
@@ -118,7 +118,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <Icon className="w-3.5 h-3.5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                  <p className="text-xs font-medium text-slate-500">{label}</p>
                   <p className="text-sm font-semibold text-slate-800 truncate">{value}</p>
                 </div>
               </div>
@@ -156,8 +156,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="lg:col-span-1 space-y-4">
 
             {/* Detalles */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detalles</h2>
+            <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+              <h2 className="text-sm font-semibold text-slate-900 mb-3">Detalles</h2>
               <div className="space-y-3 divide-y divide-slate-100">
                 {[
                   { label: 'Horas estimadas', value: project.estimated_hours ? `${project.estimated_hours}h` : null },
@@ -165,7 +165,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   { label: 'Inicio',          value: project.start_date ? new Date(project.start_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : null },
                 ].filter(x => x.value).map(({ label, value }) => (
                   <div key={label} className="pt-2 first:pt-0">
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                    <p className="text-xs font-medium text-slate-500">{label}</p>
                     <p className="text-sm font-semibold text-slate-800 mt-0.5">{value}</p>
                   </div>
                 ))}
@@ -174,8 +174,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
             {/* Satisfacción */}
             {project.customer_satisfaction_score && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Satisfacción cliente</h2>
+              <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+                <h2 className="text-sm font-semibold text-slate-900 mb-2">Satisfacción cliente</h2>
                 <p className="text-2xl">
                   {'★'.repeat(project.customer_satisfaction_score)}
                   <span className="text-slate-200">{'★'.repeat(5 - project.customer_satisfaction_score)}</span>

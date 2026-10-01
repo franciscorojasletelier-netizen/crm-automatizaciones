@@ -8,6 +8,7 @@ import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { ACTIVITY_LABEL, PAYMENT_METHOD_LABEL, addDays, type ActivityKind, type PaymentMethod } from '@/lib/cobranza'
 import { chileDateString } from '@/lib/dates'
 import { clp } from '@/lib/format'
+import { useDialog } from '@/lib/use-dialog'
 
 function ErrorLine({ message }: { message: string }) {
   if (!message) return null
@@ -187,6 +188,7 @@ export function CancelInvoiceButton({ invoiceId, hasPayments }: { invoiceId: str
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const dialogRef = useDialog(open, () => setOpen(false), busy)
 
   async function cancel() {
     if (reason.trim().length < 5) { setError('Indica el motivo de la anulación.'); return }
@@ -215,12 +217,12 @@ export function CancelInvoiceButton({ invoiceId, hasPayments }: { invoiceId: str
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
           <div className="absolute inset-0 bg-slate-900/40" onClick={busy ? undefined : () => setOpen(false)} />
-          <div className="relative w-full max-w-sm bg-white rounded-lg shadow-2xl border border-slate-200 p-5 space-y-3">
+          <div ref={dialogRef} tabIndex={-1} className="relative w-full max-w-sm bg-white rounded-lg shadow-2xl border border-slate-200 p-5 space-y-3 outline-none">
             <h2 id="cancel-title" className="text-base font-semibold text-slate-900">Anular documento</h2>
             <p className="text-sm text-slate-600">Deja de contar como deuda y no admite pagos. No se puede deshacer.</p>
             <div>
               <label htmlFor="cancel-reason" className={labelClass}>Motivo</label>
-              <input id="cancel-reason" value={reason} onChange={e => setReason(e.target.value)} maxLength={200} autoFocus
+              <input id="cancel-reason" value={reason} onChange={e => setReason(e.target.value)} maxLength={200}
                 className={inputClass} placeholder="Ej. Emitido por error, reemplazado por nota de crédito" />
             </div>
             <ErrorLine message={error} />

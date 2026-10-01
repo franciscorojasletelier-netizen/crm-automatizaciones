@@ -91,7 +91,7 @@ export default async function AutomatizacionesPage() {
       </div>
 
       {canEdit && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
           <SequencesManager sequences={(sequences ?? []) as any} stages={stages} templates={(templates ?? []) as any} />
         </div>
       )}

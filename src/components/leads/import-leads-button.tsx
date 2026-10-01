@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Upload, X, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2, Download } from 'lucide-react'
+import { useDialog } from '@/lib/use-dialog'
 
 // ── Parser CSV simple (soporta comillas y separador , o ;) ────
 function parseCSV(text: string): string[][] {
@@ -56,6 +57,7 @@ export default function ImportLeadsButton() {
   const [leads, setLeads]       = useState<ParsedLead[]>([])
   const [fileName, setFileName] = useState('')
   const [importing, setImporting] = useState(false)
+  const dialogRef = useDialog(open, () => setOpen(false), importing)
   const [result, setResult]     = useState<{ ok: number; dup: number; fail: number } | null>(null)
   const [error, setError]       = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -176,7 +178,7 @@ export default function ImportLeadsButton() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !importing && setOpen(false)} />
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Importar leads" className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden outline-none">
 
             {/* Header */}
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">

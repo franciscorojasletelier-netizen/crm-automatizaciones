@@ -10,16 +10,18 @@ import { type Stage, colorOf } from '@/lib/stages'
 import { StageIcon } from '@/lib/stage-icons'
 import { formatBytes, formatCLP } from '@/lib/format'
 import { PROPOSAL_ACCEPT, PROPOSAL_MAX_MB } from '@/lib/deal-stage-change'
+import { useDialog } from '@/lib/use-dialog'
 
 const MIN_COMMENT = 10
 
 function ModalShell({ onClose, busy, children, size = 'md' }: {
   onClose: () => void; busy: boolean; children: React.ReactNode; size?: 'sm' | 'md'
 }) {
+  const ref = useDialog(true, onClose, busy)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className={`relative w-full ${size === 'sm' ? 'max-w-sm' : 'max-w-md'} bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden`}>
+      <div className="absolute inset-0 bg-slate-900/50" onClick={busy ? undefined : onClose} />
+      <div ref={ref} tabIndex={-1} className={`relative w-full ${size === 'sm' ? 'max-w-sm' : 'max-w-md'} bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden outline-none`}>
         {children}
       </div>
     </div>
@@ -84,7 +86,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
 
       <div className="p-6 space-y-4">
         <div>
-          <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">Motivo principal *</p>
+          <p className="text-xs font-medium text-slate-500 mb-2">Motivo principal *</p>
           <div className="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto pr-1">
             {targetStage.reasons.map(r => (
               <button key={r} type="button" onClick={() => setReason(r)} aria-pressed={reason === r}
@@ -97,7 +99,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
           </div>
         </div>
         <div>
-          <label htmlFor="stage-comment" className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1 uppercase tracking-wide">
+          <label htmlFor="stage-comment" className="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1">
             <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
             Comentario adicional * <span className="font-normal normal-case text-slate-400">(mín. {MIN_COMMENT} caracteres)</span>
           </label>

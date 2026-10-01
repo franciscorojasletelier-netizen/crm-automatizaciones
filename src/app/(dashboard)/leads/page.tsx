@@ -123,7 +123,7 @@ export default async function LeadsPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h2 className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-slate-900">
               Requieren especificaciones de tu parte
             </h2>
             <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">

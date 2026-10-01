@@ -97,9 +97,9 @@ export default function TemplatePicker({
 
           {creating && (
             <div className="p-3 border-b border-slate-100 space-y-2 bg-slate-50">
-              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre (ej: Primer contacto)"
+              <input aria-label="Nombre (ej: Primer contacto)" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre (ej: Primer contacto)"
                 className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <textarea value={newContent} onChange={e => setNewContent(e.target.value)} rows={3} placeholder="Mensaje... usa {{nombre}} para el nombre del contacto"
+              <textarea aria-label="Mensaje... usa {{nombre}} para el nombre del contacto" value={newContent} onChange={e => setNewContent(e.target.value)} rows={3} placeholder="Mensaje... usa {{nombre}} para el nombre del contacto"
                 className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
               <button onClick={saveNew} disabled={saving || !newName.trim() || !newContent.trim()}
                 className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 py-1.5 rounded-lg transition-colors">

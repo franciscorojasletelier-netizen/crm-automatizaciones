@@ -103,14 +103,14 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
     {selectedTask && (
       <TaskDetailPanel task={selectedTask} onClose={() => setSelectedTask(null)} readOnly={readOnly} />
     )}
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
 
       {/* Search + Filters bar */}
       <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
+          <input aria-label="Buscar por tarea, empresa, responsable"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por tarea, empresa, responsable..."
@@ -184,16 +184,16 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70">
               <th className="w-10 px-4 py-3"></th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Tarea</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Tarea</th>
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">
                 <div className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />Empresa</div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">
                 <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Responsable</div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Hora</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Fecha</th>
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Hora</th>
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Estado</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">

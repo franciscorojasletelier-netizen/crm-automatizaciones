@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CHILE_TZ } from '@/lib/dates'
+import { useDialog } from '@/lib/use-dialog'
 import {
   X, Calendar, Clock, MessageSquare, History,
   AlertTriangle, CheckCircle2, User, Building2,
@@ -137,13 +138,15 @@ export default function TaskDetailPanel({
   }
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.is_completed
+  const dialogRef = useDialog(true, onClose, saving)
 
   return (
     // Backdrop
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
       {/* Slide panel */}
       <div
-        className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
+        ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Tarea: ${task.title}`}
+        className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 outline-none"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -178,7 +181,7 @@ export default function TaskDetailPanel({
           {/* Description */}
           {task.description && (
             <div className="px-5 py-4 border-b border-slate-50">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Descripción</p>
+              <p className="text-xs font-medium text-slate-500 mb-1">Descripción</p>
               <p className="text-sm text-slate-700 leading-relaxed">{task.description}</p>
             </div>
           )}
@@ -199,7 +202,7 @@ export default function TaskDetailPanel({
             </div>
           ) : (
           <div className="px-5 py-5 border-b border-slate-100 space-y-4">
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+            <p className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" /> Reprogramar tarea
             </p>
 
@@ -216,10 +219,10 @@ export default function TaskDetailPanel({
 
             {/* New date input */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
+              <label htmlFor="task-detail-panel-f1" className="text-xs font-semibold text-slate-500 mb-1.5 block">
                 Nueva fecha y hora
               </label>
-              <input
+              <input id="task-detail-panel-f1"
                 type="datetime-local"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
@@ -229,11 +232,11 @@ export default function TaskDetailPanel({
 
             {/* Comment — required */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <label htmlFor="task-detail-panel-f2" className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
                 <MessageSquare className="w-3 h-3" />
                 Motivo del cambio <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <textarea id="task-detail-panel-f2"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 placeholder="Explica brevemente por qué se reprograma esta tarea..."
@@ -267,7 +270,7 @@ export default function TaskDetailPanel({
 
           {/* History timeline */}
           <div className="px-5 py-5">
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5 mb-4">
+            <p className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5 mb-4">
               <History className="w-3.5 h-3.5" /> Historial de cambios
             </p>
 

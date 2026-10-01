@@ -79,7 +79,7 @@ export default function CalendarView({ tasks }: Props) {
   return (
     <div className="space-y-5">
       {/* Grilla del calendario */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         {/* Header con navegación */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <button aria-label="Mes anterior" onClick={prev}
@@ -101,7 +101,7 @@ export default function CalendarView({ tasks }: Props) {
         {/* Días de la semana */}
         <div className="grid grid-cols-7 border-b border-slate-100">
           {DAYS.map(d => (
-            <div key={d} className="py-2 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+            <div key={d} className="text-xs font-medium text-slate-500 py-2 text-center">
               {d}
             </div>
           ))}
@@ -167,7 +167,7 @@ export default function CalendarView({ tasks }: Props) {
 
       {/* Detalle del día seleccionado */}
       {selectedDay && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
               <CalendarDays className="w-3.5 h-3.5 text-indigo-600" />

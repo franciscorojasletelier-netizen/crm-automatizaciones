@@ -72,7 +72,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
   const done = list.filter(t => t.is_completed)
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Tareas</h2>
@@ -93,16 +93,16 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
 
       {showing && (
         <div className="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
-          <input value={title} onChange={e => setTitle(e.target.value)}
+          <input aria-label="Descripción de la tarea" value={title} onChange={e => setTitle(e.target.value)}
             placeholder="Descripción de la tarea..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400"
             onKeyDown={e => { if (e.key === 'Enter' && title.trim()) handleAdd() }}
           />
           <div>
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
+            <label htmlFor="deal-tasks-f1" className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
               <Calendar className="w-3 h-3" /> Fecha límite (opcional)
             </label>
-            <input type="datetime-local" value={dueDate} onChange={e => handleDateChange(e.target.value)}
+            <input id="deal-tasks-f1" type="datetime-local" value={dueDate} onChange={e => handleDateChange(e.target.value)}
               className={`w-full px-3.5 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 bg-white transition-colors ${
                 conflicts.length > 0
                   ? 'border-amber-400 focus:ring-amber-400 bg-amber-50'

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
 import { Plus, X, Calendar, Clock, AlertTriangle } from 'lucide-react'
 import { checkTaskConflict, formatConflictTime, type ConflictTask } from '@/lib/task-conflict'
+import { useDialog } from '@/lib/use-dialog'
 
 export default function NewTaskButton() {
   const [open, setOpen]             = useState(false)
@@ -73,6 +74,8 @@ export default function NewTaskButton() {
     router.refresh()
   }
 
+  const dialogRef = useDialog(open, () => handleClose(), loading)
+
   function handleClose() {
     setOpen(false)
     setTitle('')
@@ -97,7 +100,7 @@ export default function NewTaskButton() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Nueva tarea" className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 outline-none">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">Nueva tarea</h2>
               <button aria-label="Cerrar" onClick={handleClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -157,8 +160,8 @@ export default function NewTaskButton() {
               <>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 mb-1 block">Título *</label>
-                    <input
+                    <label htmlFor="new-task-button-f1" className="text-xs font-semibold text-slate-500 mb-1 block">Título *</label>
+                    <input id="new-task-button-f1"
                       value={title}
                       onChange={e => setTitle(e.target.value)}
                       placeholder="Ej: Llamar a cliente, Preparar propuesta..."
@@ -169,8 +172,8 @@ export default function NewTaskButton() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 mb-1 block">Descripción (opcional)</label>
-                    <textarea
+                    <label htmlFor="new-task-button-f2" className="text-xs font-semibold text-slate-500 mb-1 block">Descripción (opcional)</label>
+                    <textarea id="new-task-button-f2"
                       value={description}
                       onChange={e => setDescription(e.target.value)}
                       placeholder="Notas adicionales..."
@@ -180,10 +183,10 @@ export default function NewTaskButton() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
+                    <label htmlFor="new-task-button-f3" className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
                       <Calendar className="w-3 h-3" /> Fecha y hora (opcional)
                     </label>
-                    <input
+                    <input id="new-task-button-f3"
                       type="datetime-local"
                       value={dueDate}
                       onChange={e => handleDateChange(e.target.value)}

@@ -103,7 +103,7 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
           <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
@@ -146,7 +146,7 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
               <p className="text-[11px] text-slate-400 text-center font-mono break-all">{secret}</p>
             )}
             <form onSubmit={confirmEnroll} className="space-y-2.5">
-              <input
+              <input aria-label="000000"
                 type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                 value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                 autoFocus placeholder="000000"

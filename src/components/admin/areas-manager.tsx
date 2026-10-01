@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { Tags, X, Plus, Trash2, Loader2 } from 'lucide-react'
+import { useDialog } from '@/lib/use-dialog'
 
 export interface Area {
   id: string
@@ -29,6 +30,7 @@ export default function AreasManager({ areas }: Props) {
   const [name, setName] = useState('')
   const [color, setColor] = useState(PALETTE[0])
   const [saving, setSaving] = useState(false)
+  const dialogRef = useDialog(open, () => setOpen(false), saving)
   const [error, setError] = useState('')
 
   async function addArea() {
@@ -58,7 +60,7 @@ export default function AreasManager({ areas }: Props) {
       {open && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
           onClick={() => setOpen(false)}>
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Áreas" className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden outline-none"
             onClick={e => e.stopPropagation()}>
             <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5"
                >
@@ -92,8 +94,8 @@ export default function AreasManager({ areas }: Props) {
 
               {/* Crear área */}
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
-                <label className="text-xs font-semibold text-slate-600 block">Nueva área</label>
-                <input value={name} onChange={e => setName(e.target.value)}
+                <label htmlFor="areas-manager-f1" className="text-xs font-semibold text-slate-600 block">Nueva área</label>
+                <input id="areas-manager-f1" value={name} onChange={e => setName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addArea() }}
                   placeholder="Ej: Recursos Humanos"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />

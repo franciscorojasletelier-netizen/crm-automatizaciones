@@ -72,7 +72,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       isPending ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200'
     }`}>
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fase del proyecto</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Fase del proyecto</h2>
         <div className="flex items-center gap-2">
           {isPending && (
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-200">
@@ -94,7 +94,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       )}
 
       <div>
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Fase actual</p>
+        <p className="text-xs font-medium text-slate-500 mb-2">Fase actual</p>
         <div className="flex flex-wrap gap-1.5">
           {phases.map(p => (
             <button key={p.key}
@@ -111,7 +111,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       </div>
 
       <div>
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Estado</p>
+        <p className="text-xs font-medium text-slate-500 mb-2">Estado</p>
         <div className="flex flex-wrap gap-1.5">
           {statuses.map(s => (
             <button key={s.key}

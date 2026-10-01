@@ -97,10 +97,10 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
   if (!canManage) {
     // Solo lectura: muestra los miembros pero sin controles
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-4 h-4 text-slate-400" />
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equipo en este lead</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Equipo en este lead</h2>
         </div>
         <div className="space-y-2">
           {localOwnerId && (() => {
@@ -138,7 +138,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-slate-400" />
@@ -161,7 +161,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
       {/* Lista para agregar */}
       {showAdd && (
         <div className="border-b border-slate-100 bg-slate-50 p-3 space-y-1.5">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">
+          <p className="text-xs font-medium text-slate-500 px-1 mb-2">
             Selecciona un miembro del equipo
           </p>
           {availableToAdd.map(user => (

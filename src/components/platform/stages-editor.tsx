@@ -51,7 +51,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
   const hasDefault = activeStages.some(s => s.isDefault)
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       {(!hasWon || !hasDefault) && (
         <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -83,18 +83,18 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
       {showNew && (
         <form onSubmit={createStage} className="flex flex-wrap items-end gap-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
-            <input value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+            <label htmlFor="stages-editor-f1" className="block text-[11px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
+            <input id="stages-editor-f1" value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
               placeholder="ej. escrituracion" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-40" />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre visible</label>
-            <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
+            <label htmlFor="stages-editor-f2" className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre visible</label>
+            <input id="stages-editor-f2" value={newLabel} onChange={e => setNewLabel(e.target.value)}
               placeholder="ej. Escrituración" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-44" />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Color</label>
-            <select value={newColor} onChange={e => setNewColor(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5">
+            <label htmlFor="stages-editor-f3" className="block text-[11px] font-semibold text-slate-500 mb-1">Color</label>
+            <select id="stages-editor-f3" value={newColor} onChange={e => setNewColor(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5">
               {STAGE_COLOR_TOKENS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -111,7 +111,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
             <div key={s.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${s.isActive ? 'border-slate-200' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
               <span className={`w-2.5 h-2.5 rounded-full ${c.dot} shrink-0`} />
               <div className="flex-1 min-w-0">
-                <input
+                <input aria-label="Nombre de la etapa"
                   defaultValue={s.label}
                   onBlur={e => e.target.value !== s.label && run(s.id, () => callApi('PATCH', { stageId: s.id, label: e.target.value }))}
                   disabled={busy === s.id}

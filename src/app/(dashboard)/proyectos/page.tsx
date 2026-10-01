@@ -79,7 +79,7 @@ export default async function ProyectosPage() {
 
       {/* Empty state */}
       {(!projects || projects.length === 0) && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm py-16 flex flex-col items-center gap-3">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs py-16 flex flex-col items-center gap-3">
           <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
             <FolderOpen className="w-7 h-7 text-slate-400" />
           </div>
@@ -93,7 +93,7 @@ export default async function ProyectosPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h2 className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pendientes de especificaciones</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Pendientes de especificaciones</h2>
             <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">{pending.length}</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -134,7 +134,7 @@ export default async function ProyectosPage() {
       {/* Proyectos activos */}
       {active.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Activos</h2>
+          <h2 className="text-sm font-semibold text-slate-900 px-1">Activos</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {active.map((project: any) => {
               const overdue = isOverdue(project.due_date)
@@ -142,7 +142,7 @@ export default async function ProyectosPage() {
               const progress = phaseProgress[project.phase] ?? 0
               return (
                 <Link key={project.id} href={`/proyectos/${project.id}`}
-                  className="group bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-indigo-300 hover:shadow-md transition-all overflow-hidden relative">
+                  className="group bg-white rounded-lg border border-slate-200 shadow-xs p-5 hover:border-indigo-300 hover:shadow-md transition-all overflow-hidden relative">
                   <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-100">
                     <div className="h-full bg-accent-600 transition-all"
                       style={{ width: `${progress}%` }} />
@@ -201,14 +201,14 @@ export default async function ProyectosPage() {
       {/* Otros proyectos */}
       {others.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Otros</h2>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <h2 className="text-sm font-semibold text-slate-900 px-1">Otros</h2>
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Proyecto</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Fase</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Fecha límite</th>
+                  <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Proyecto</th>
+                  <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden md:table-cell">Fase</th>
+                  <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden lg:table-cell">Fecha límite</th>
                   <th className="px-5 py-3.5" />
                 </tr>
               </thead>

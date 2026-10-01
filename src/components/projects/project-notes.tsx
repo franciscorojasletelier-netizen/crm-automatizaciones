@@ -27,7 +27,7 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Notas internas</h2>
@@ -48,7 +48,7 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
 
       {showing && !readOnly && (
         <div className="p-4 border-b border-slate-100 bg-amber-50/50 space-y-3">
-          <textarea value={content} onChange={e => setContent(e.target.value)} rows={3}
+          <textarea aria-label="Nota interna del equipo (no visible para el cliente)" value={content} onChange={e => setContent(e.target.value)} rows={3}
             placeholder="Nota interna del equipo (no visible para el cliente)..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
           <button onClick={handleAdd} disabled={loading || !content.trim()}

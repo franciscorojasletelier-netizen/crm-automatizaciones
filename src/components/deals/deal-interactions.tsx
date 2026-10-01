@@ -43,7 +43,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Interacciones</h2>
@@ -79,7 +79,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
               )
             })}
           </div>
-          <textarea value={content} onChange={e => setContent(e.target.value)} rows={3}
+          <textarea aria-label="Escribe los detalles de la interacción" value={content} onChange={e => setContent(e.target.value)} rows={3}
             placeholder="Escribe los detalles de la interacción..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
           <div className="flex gap-2">

@@ -33,7 +33,7 @@ export default function ModulesEditor({ orgId, sections, enabledByKey }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <h2 className="text-sm font-bold text-slate-800 mb-3">Módulos habilitados</h2>
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

@@ -202,10 +202,10 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     <div className="space-y-4">
 
       {/* Barra de filtros */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-wrap items-center gap-2">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-3 flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
+          <input aria-label="Buscar empresa, contacto, email"
             type="text"
             placeholder="Buscar empresa, contacto, email..."
             value={search}
@@ -216,7 +216,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
 
         <div className="flex items-center gap-1.5 flex-wrap">
           <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <select
+          <select aria-label="Filtrar por etapa"
             value={stageFilter}
             onChange={e => setStageFilter(e.target.value)}
             className="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 cursor-pointer"
@@ -226,7 +226,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
           </select>
 
           {sources.length > 0 && (
-            <select
+            <select aria-label="Filtrar por fuente"
               value={sourceFilter}
               onChange={e => setSourceFilter(e.target.value)}
               className="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 cursor-pointer"
@@ -260,7 +260,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
         {showMoreFilters && (
           <div className="w-full flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
             {owners.length > 0 && (
-              <select
+              <select aria-label="Filtrar por responsable"
                 value={ownerFilter}
                 onChange={e => setOwnerFilter(e.target.value)}
                 className="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 cursor-pointer"
@@ -270,23 +270,23 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
               </select>
             )}
             <div className="flex items-center gap-1.5">
-              <label className="text-xs text-slate-400 font-medium">Desde</label>
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              <label htmlFor="leads-table-f1" className="text-xs text-slate-400 font-medium">Desde</label>
+              <input id="leads-table-f1" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                 className="text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-xs text-slate-400 font-medium">Hasta</label>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              <label htmlFor="leads-table-f2" className="text-xs text-slate-400 font-medium">Hasta</label>
+              <input id="leads-table-f2" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
                 className="text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-xs text-slate-400 font-medium">Valor mín.</label>
-              <input type="number" value={minValue} onChange={e => setMinValue(e.target.value)} placeholder="0"
+              <label htmlFor="leads-table-f3" className="text-xs text-slate-400 font-medium">Valor mín.</label>
+              <input id="leads-table-f3" type="number" value={minValue} onChange={e => setMinValue(e.target.value)} placeholder="0"
                 className="w-28 text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-xs text-slate-400 font-medium">Valor máx.</label>
-              <input type="number" value={maxValue} onChange={e => setMaxValue(e.target.value)} placeholder="∞"
+              <label htmlFor="leads-table-f4" className="text-xs text-slate-400 font-medium">Valor máx.</label>
+              <input id="leads-table-f4" type="number" value={maxValue} onChange={e => setMaxValue(e.target.value)} placeholder="∞"
                 className="w-28 text-sm border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" />
             </div>
           </div>
@@ -294,7 +294,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
       </div>
 
       {/* Tabla — desktop */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hidden md:block">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden hidden md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100">
@@ -315,14 +315,14 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                   />
                 </th>
               )}
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Contacto</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Etapa</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Score</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Valor est.</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Fuente</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Responsable</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Próxima acción</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Empresa</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Contacto</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Etapa</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Score</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Valor est.</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Fuente</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Responsable</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Próxima acción</th>
               <th className="px-5 py-3.5" />
             </tr>
           </thead>
@@ -473,7 +473,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <div className="flex items-center gap-2">
               <Users className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-xs text-slate-400 font-medium">Reasignar a:</span>
-              <select
+              <select aria-label="Cambiar etapa de los seleccionados"
                 disabled={bulkSaving}
                 defaultValue=""
                 onChange={e => { if (e.target.value) bulkReassign(e.target.value) }}
@@ -499,7 +499,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                     Pipelines mezclados
                   </span>
                 ) : (
-                  <select
+                  <select aria-label="Asignar responsable a los seleccionados"
                     disabled={bulkSaving}
                     defaultValue=""
                     onChange={e => { if (e.target.value) bulkChangeStage(e.target.value) }}

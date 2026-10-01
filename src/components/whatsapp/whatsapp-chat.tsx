@@ -203,7 +203,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
           {canSend ? (
             <div className="px-3 pb-3 pt-2 border-t border-slate-100 shrink-0">
               <div className="flex items-end gap-2 bg-white border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-100 transition-all">
-                <textarea
+                <textarea aria-label="Escribe un mensaje... (Enter para enviar)"
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKey}

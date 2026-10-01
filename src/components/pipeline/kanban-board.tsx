@@ -10,6 +10,7 @@ import { StageIcon } from '@/lib/stage-icons'
 import { type Stage, stageByKey, colorOf, boardStages, terminalStages } from '@/lib/stages'
 import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
+import { useDialog } from '@/lib/use-dialog'
 
 // ── Tipos ──────────────────────────────────────────────────────
 export type KanbanDeal = {
@@ -46,13 +47,14 @@ function isStalled(deal: KanbanDeal): boolean {
 function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel }: {
   deal: KanbanDeal; currentStage: string; stages: Stage[]; onSelect: (stage: string) => void; onCancel: () => void
 }) {
+  const dialogRef = useDialog(true, onCancel)
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl overflow-hidden">
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Mover deal de etapa" className="relative w-full max-w-lg bg-white rounded-t-2xl shadow-2xl overflow-hidden outline-none">
         <div className="px-5 pt-5 pb-3 border-b border-slate-100">
           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Mover deal</p>
+          <p className="text-xs font-medium text-slate-500 mb-0.5">Mover deal</p>
           <p className="text-sm font-bold text-slate-900 truncate">{deal.companies?.name ?? 'Deal'}</p>
         </div>
         <div className="p-3 grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pb-8"
@@ -249,13 +251,13 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
 
       {/* ── Vista LISTA (patrón HubSpot: tabla sincronizada con el tablero) ── */}
       {view === 'list' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden flex-1">
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[760px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 {['Empresa', 'Etapa', 'Valor', 'Score', 'Responsable', 'Próxima acción', 'Últ. contacto', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="text-xs font-medium text-slate-500 text-left px-4 py-3">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -329,7 +331,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
               {/* Column header */}
               <div className="flex items-center gap-1.5 mb-2.5 px-1">
                 <div className={`w-2.5 h-2.5 rounded-full ${c.dot} shadow-sm flex-shrink-0`} />
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide flex-1 truncate">
+                <span className="text-xs font-medium text-slate-500 flex-1 truncate">
                   {stage.label}
                   {needsReason && <PenLine className="inline ml-1 w-3 h-3 text-amber-600" aria-label="Requiere justificación" />}
                   {isProposal  && <Paperclip className="inline ml-1 w-3 h-3 text-orange-600" aria-label="Requiere propuesta adjunta" />}
@@ -360,93 +362,66 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     </p>
                   </div>
                 ) : (
-                  stageDeals.map(deal => (
+                  stageDeals.map(deal => {
+                    const stalled = isStalled(deal)
+                    const score = deal.score ?? 0
+                    return (
                     <div
                       key={deal.id}
                       draggable={!readOnly}
                       onDragStart={e => onDragStart(e, deal)}
                       onDragEnd={onDragEnd}
-                      className={`rounded-xl p-3 cursor-grab active:cursor-grabbing transition-all duration-150 relative overflow-hidden group ${
+                      className={`rounded-md p-3 cursor-grab active:cursor-grabbing transition-colors group ${
                         draggingId === deal.id
-                          ? 'border-2 border-dashed border-indigo-300 bg-indigo-50/50 shadow-none'
-                          : 'bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-md'
+                          ? 'border border-dashed border-slate-400 bg-slate-50'
+                          : 'bg-white border border-slate-200 shadow-xs hover:border-slate-300'
                       }`}
                     >
-                      {/* Barra color top — roja si está estancado */}
-                      <div className={`absolute top-0 left-0 right-0 h-0.5 ${isStalled(deal) ? 'bg-red-400' : c.solid}`} />
-
-                      {/* Empresa */}
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-bold text-slate-900 leading-tight truncate group-hover:text-indigo-700 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <Link href={`/leads/${deal.id}`} onClick={e => e.stopPropagation()} draggable={false}
+                          className="min-w-0 text-[13px] font-semibold leading-snug text-slate-900 hover:text-accent-700 hover:underline truncate">
                           {deal.companies?.name ?? 'Sin empresa'}
-                        </p>
-                        {isStalled(deal) && (
-                          <span className="shrink-0" title={`${staleDays(deal)} días sin contacto`}><Flame className="w-3 h-3 text-red-500" /></span>
+                        </Link>
+                        {stalled && (
+                          <span className="shrink-0 inline-flex items-center gap-0.5 text-[11px] font-medium text-red-700" title={`${staleDays(deal)} días sin contacto`}>
+                            <Flame className="w-3 h-3" />{staleDays(deal)}d
+                          </span>
                         )}
                       </div>
-
-                      {/* Contacto */}
                       {deal.contacts?.full_name && (
-                        <p className="text-[11px] text-slate-400 mt-0.5 font-medium truncate">{deal.contacts.full_name}</p>
+                        <p className="text-xs text-slate-500 truncate">{deal.contacts.full_name}</p>
                       )}
-
-                      {/* Valor */}
-                      {deal.estimated_value && (
-                        <p className="text-sm font-bold text-slate-700 mt-2">
-                          {formatCLP(deal.estimated_value)}
-                        </p>
-                      )}
-
-                      {/* Próxima acción */}
+                      {deal.estimated_value ? (
+                        <p className="mt-2 text-[13px] font-medium tabular-nums text-slate-900">{formatCLP(deal.estimated_value)}</p>
+                      ) : null}
                       {deal.next_action && (
-                        <p className="text-[11px] text-slate-400 mt-1 leading-tight line-clamp-2">
-                          → {deal.next_action}
-                        </p>
+                        <p className="mt-1 text-xs text-slate-500 leading-snug line-clamp-2">{deal.next_action}</p>
                       )}
-
-                      {/* Score + owner */}
-                      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${
-                              (deal.score ?? 0) >= 60 ? 'bg-emerald-500' :
-                              (deal.score ?? 0) >= 30 ? 'bg-yellow-500' : 'bg-slate-300'
-                            }`} style={{ width: `${Math.min(deal.score ?? 0, 100)}%` }} />
-                          </div>
-                          <span className={`text-[11px] font-bold tabular-nums ${
-                            (deal.score ?? 0) >= 60 ? 'text-emerald-600' :
-                            (deal.score ?? 0) >= 30 ? 'text-yellow-600' : 'text-slate-400'
-                          }`}>{deal.score ?? 0}</span>
-                        </div>
+                      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-slate-100">
+                        <span className={`text-[11px] font-medium tabular-nums ${score >= 60 ? 'text-emerald-700' : score >= 30 ? 'text-amber-700' : 'text-slate-500'}`}
+                          title="Score del lead">
+                          Score {score}
+                        </span>
                         <div className="flex items-center gap-1.5">
                           {deal.profiles?.full_name && (
-                            <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
-                              <span className="text-[11px] font-bold text-indigo-600">
-                                {deal.profiles.full_name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
+                            <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-[11px] font-semibold flex items-center justify-center"
+                              title={deal.profiles.full_name} aria-label={`Responsable: ${deal.profiles.full_name}`}>
+                              {deal.profiles.full_name.charAt(0).toUpperCase()}
+                            </span>
                           )}
-                          {/* Botón Mover — solo visible en móvil */}
+                          {/* Mover — solo en celular, donde no se puede arrastrar */}
                           <button
                             onClick={e => { e.stopPropagation(); e.preventDefault(); setMobilePicker(deal) }}
-                            className="md:hidden text-[11px] font-bold px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 active:scale-95 transition-all"
-                            title="Cambiar etapa"
+                            className="md:hidden h-9 px-3 rounded-md border border-slate-300 bg-white text-[13px] font-medium text-slate-800 active:bg-slate-100"
+                            aria-label={`Mover ${deal.companies?.name ?? 'deal'} de etapa`}
                           >
                             Mover
                           </button>
-                          {/* Link al detalle */}
-                          <Link
-                            href={`/leads/${deal.id}`}
-                            onClick={e => e.stopPropagation()}
-                            className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                            title="Ver detalle"
-                          >
-                            <span className="text-[11px] font-bold">→</span>
-                          </Link>
                         </div>
                       </div>
                     </div>
-                  ))
+                    )
+                  })
                 )}
 
                 {/* Indicador "soltar aquí" cuando hay deals */}
@@ -499,7 +474,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
         <div className="mt-2 border-t border-slate-200 pt-3">
           <button
             onClick={() => setShowClosed(v => !v)}
-            className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors uppercase tracking-wider"
+            className="text-xs font-medium text-slate-500 flex items-center gap-2 hover:text-slate-700 transition-colors"
           >
             <span className={`transition-transform duration-150 ${showClosed ? 'rotate-90' : ''}`}>▸</span>
             Cerrados recientes

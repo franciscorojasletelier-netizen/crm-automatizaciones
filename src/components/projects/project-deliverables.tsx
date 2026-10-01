@@ -40,7 +40,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
   const progress = list.length > 0 ? Math.round((done.length / list.length) * 100) : 0
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Entregables</h2>
@@ -76,15 +76,15 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
 
       {showing && !readOnly && (
         <div className="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
-          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Nombre del entregable"
+          <input aria-label="Nombre del entregable" value={title} onChange={e => setTitle(e.target.value)} placeholder="Nombre del entregable"
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
-          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción (opcional)"
+          <input aria-label="Descripción (opcional)" value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción (opcional)"
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
           <div>
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
+            <label htmlFor="project-deliverables-f1" className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
               <Calendar className="w-3 h-3" /> Fecha límite (opcional)
             </label>
-            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+            <input id="project-deliverables-f1" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
               className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
           </div>
           <button onClick={handleAdd} disabled={loading || !title.trim()}

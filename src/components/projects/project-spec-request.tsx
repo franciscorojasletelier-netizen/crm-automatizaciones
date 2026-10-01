@@ -107,7 +107,7 @@ export default function ProjectSpecRequest({
           <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-2">
             <div className="flex items-center gap-2">
               <ClipboardList className="w-3.5 h-3.5 text-amber-600" />
-              <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">¿Qué falta por definir?</p>
+              <p className="text-[13px] font-semibold text-amber-800">¿Qué falta por definir?</p>
             </div>
             <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{specNotes}</p>
             <div className="flex items-center gap-3 pt-1 border-t border-amber-100 text-[11px] text-slate-400">
@@ -151,7 +151,7 @@ export default function ProjectSpecRequest({
   if (!canRequest) return null
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       {!open ? (
         <button
           onClick={() => setOpen(true)}
@@ -192,11 +192,11 @@ export default function ProjectSpecRequest({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+            <label htmlFor="project-spec-request-f1" className="text-xs font-medium text-slate-500 block mb-2">
               ¿Qué falta por definir? *
               <span className="font-normal text-slate-400 normal-case ml-1">(mínimo 15 caracteres)</span>
             </label>
-            <textarea
+            <textarea id="project-spec-request-f1"
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Describe claramente qué puntos necesitan ser aclarados por el área comercial antes de continuar con el proyecto...

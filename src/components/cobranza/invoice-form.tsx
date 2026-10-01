@@ -8,6 +8,7 @@ import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { DOCUMENT_TYPE_LABEL, addDays, type DocumentType, type Invoice } from '@/lib/cobranza'
 import { chileDateString } from '@/lib/dates'
 import { formatCLP } from '@/lib/format'
+import { useDialog } from '@/lib/use-dialog'
 
 export type Option = { id: string; label: string }
 
@@ -49,6 +50,7 @@ export default function InvoiceForm({ companies, people, prefill, invoice, openI
     responsible_id: invoice?.responsible_id ?? '',
     notes: invoice?.notes ?? '',
   })
+  const dialogRef = useDialog<HTMLFormElement>(open, () => setOpen(false), busy)
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -111,7 +113,7 @@ export default function InvoiceForm({ companies, people, prefill, invoice, openI
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="invoice-form-title">
           <div className="absolute inset-0 bg-slate-900/30" onClick={busy ? undefined : () => setOpen(false)} />
-          <form onSubmit={submit} className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right-8 duration-200">
+          <form ref={dialogRef} tabIndex={-1} onSubmit={submit} className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right-8 duration-200 outline-none">
             <header className="flex items-center justify-between px-5 h-14 border-b border-slate-200 shrink-0">
               <h2 id="invoice-form-title" className="text-base font-semibold text-slate-900">
                 {editing ? 'Editar documento' : 'Nuevo documento por cobrar'}

@@ -109,7 +109,7 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
       {tab === 'rules' && (
         <div className="space-y-3">
           {rules.length === 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 flex flex-col items-center gap-3">
+            <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-10 flex flex-col items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
                 <Zap className="w-6 h-6 text-slate-300" />
               </div>
@@ -144,14 +144,14 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
                     )}
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Si:</span>
+                        <span className="text-xs font-medium text-slate-500">Si:</span>
                         <span className="text-xs font-medium text-slate-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
                           {triggerLabels[rule.trigger_type]} {triggerSummary(rule)}
                         </span>
                       </div>
                       <span className="text-slate-200">→</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Entonces:</span>
+                        <span className="text-xs font-medium text-slate-500">Entonces:</span>
                         <span className="text-xs font-medium text-slate-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
                           {actionLabels[rule.action_type]}: {actionSummary(rule)}
                         </span>
@@ -195,7 +195,7 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
       )}
 
       {tab === 'logs' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           {logs.length === 0 ? (
             <div className="p-10 flex flex-col items-center gap-3">
               <Clock className="w-8 h-8 text-slate-200" />

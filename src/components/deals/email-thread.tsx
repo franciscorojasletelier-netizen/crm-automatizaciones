@@ -71,7 +71,7 @@ export default function EmailThread({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Email</h2>
@@ -94,11 +94,11 @@ export default function EmailThread({
 
       {composing && (
         <div className="p-4 border-b border-slate-100 bg-slate-50 space-y-2.5">
-          <input value={to} onChange={e => setTo(e.target.value)} placeholder="Para"
+          <input aria-label="Para" value={to} onChange={e => setTo(e.target.value)} placeholder="Para"
             className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
-          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Asunto"
+          <input aria-label="Asunto" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Asunto"
             className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
-          <textarea value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Escribe el mensaje..."
+          <textarea aria-label="Escribe el mensaje" value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Escribe el mensaje..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button onClick={send} disabled={loading || !to.trim() || !subject.trim() || !body.trim()}

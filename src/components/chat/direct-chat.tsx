@@ -210,7 +210,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
         {/* Input */}
         <div className="px-3 pb-3 pt-2 border-t border-slate-100 shrink-0">
           <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-            <textarea ref={inputRef} value={input}
+            <textarea aria-label="Mensaje" ref={inputRef} value={input}
               onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
               placeholder={`Mensaje a ${recipient.name.split(' ')[0]}... (Enter)`}
               rows={1} style={{ resize: 'none', minHeight: '20px', maxHeight: '80px' }}

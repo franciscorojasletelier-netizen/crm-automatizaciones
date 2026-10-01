@@ -34,7 +34,7 @@ export default function UserLimitEditor({ orgId, currentUsers, maxUsers }: {
   const overLimit = maxUsers != null && currentUsers > maxUsers
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <div className="flex items-center gap-2.5 mb-3">
         <Users className="w-4 h-4 text-slate-500" />
         <h2 className="text-sm font-bold text-slate-800">Límite de usuarios</h2>
@@ -45,7 +45,7 @@ export default function UserLimitEditor({ orgId, currentUsers, maxUsers }: {
       </p>
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
       <div className="flex items-center gap-2">
-        <input
+        <input aria-label="Sin límite"
           type="number" min={1} value={value} onChange={e => setValue(e.target.value)}
           placeholder="Sin límite"
           className="w-32 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"

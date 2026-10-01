@@ -77,7 +77,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
           <span className="font-bold text-slate-900">{orgName}</span>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-6 md:p-8">
           <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
             <div>
               <h1 className="text-lg font-bold text-slate-900">Cotización #{quote.quote_number}</h1>
@@ -119,7 +119,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
             <p className="text-sm text-slate-400 text-center">Esta cotización todavía no está disponible para responder.</p>
           ) : showAcceptForm ? (
             <div className="space-y-2.5">
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo"
+              <input aria-label="Tu nombre completo" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo"
                 className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
               {decisionError && <p className="text-xs text-red-600">{decisionError}</p>}
               <div className="flex gap-2">

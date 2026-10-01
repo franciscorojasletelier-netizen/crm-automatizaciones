@@ -27,7 +27,7 @@ export default function ChangePasswordCard({ email }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
           <Shield className="w-3.5 h-3.5 text-indigo-600" />

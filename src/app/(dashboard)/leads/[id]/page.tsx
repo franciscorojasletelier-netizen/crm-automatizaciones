@@ -118,84 +118,71 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
   const score = deal.score ?? 0
 
-  return (
-    <div className="min-h-full bg-slate-50">
-      {/* Top bar */}
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between gap-4">
-        <Link href="/leads" className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Leads
-        </Link>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs px-3 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
-            {stageLabel(stages, deal.stage)}
-          </span>
-          {canDelete && (
-            <DeleteDealButton dealId={deal.id} />
-          )}
-        </div>
-      </div>
+  const stage = stageByKey(stages, deal.stage)
+  const whatsappHref = canSeePhone && deal.contacts?.phone ? (() => {
+    const phone = deal.contacts.phone.replace(/\D/g, '')
+    const intlPhone = phone.startsWith(orgCountryCode) ? phone : `${orgCountryCode}${phone}`
+    const nombre = deal.contacts.full_name?.split(' ')[0] ?? 'te'
+    const empresa = deal.companies?.name ?? 'tu empresa'
+    const msg = encodeURIComponent(`Hola ${nombre}, te contacto de ${orgDisplayName}. Vi que ${empresa} puede beneficiarse de nuestros servicios. ¿Tienes unos minutos para conversar?`)
+    return `https://wa.me/${intlPhone}?text=${msg}`
+  })() : null
 
-      <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
-        {/* Hero header */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="bg-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
-                 >
-                <Building2 className="w-6 h-6 text-white" />
+  return (
+    <div className="min-h-full">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-7 space-y-4">
+        {/* Encabezado */}
+        <div>
+          <Link href="/leads" className="inline-flex items-center gap-1 text-[13px] text-slate-500 hover:text-slate-900 mb-2">
+            <ArrowLeft className="w-3.5 h-3.5" /> Leads
+          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{deal.companies?.name ?? 'Sin empresa'}</h1>
+                <span className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-xs font-medium ${colorOf(stage).chip}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stage).dot}`} aria-hidden />
+                  {stageLabel(stages, deal.stage)}
+                </span>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">{deal.companies?.name ?? 'Sin empresa'}</h1>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  {deal.contacts?.full_name && <span className="font-medium text-slate-600">{deal.contacts.full_name}</span>}
-                  {deal.contacts?.full_name && deal.contacts?.email && <span className="mx-1.5 text-slate-300">·</span>}
-                  {deal.contacts?.email && <span>{deal.contacts.email}</span>}
-                </p>
-                {canSeePhone && deal.contacts?.phone && (() => {
-                  const phone = deal.contacts.phone.replace(/\D/g, '')
-                  const intlPhone = phone.startsWith(orgCountryCode) ? phone : `${orgCountryCode}${phone}`
-                  const nombre = deal.contacts.full_name?.split(' ')[0] ?? 'te'
-                  const empresa = deal.companies?.name ?? 'tu empresa'
-                  const msg = encodeURIComponent(`Hola ${nombre}, te contacto de ${orgDisplayName}. Vi que ${empresa} puede beneficiarse de nuestros servicios. ¿Tienes unos minutos para conversar?`)
-                  return (
-                    <a href={`https://wa.me/${intlPhone}?text=${msg}`} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl border border-green-200 transition-all">
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      WhatsApp · {deal.contacts.phone}
-                    </a>
-                  )
-                })()}
-              </div>
+              <p className="mt-1 text-sm text-slate-500">
+                {deal.contacts?.full_name && <span className="text-slate-700">{deal.contacts.full_name}</span>}
+                {deal.contacts?.full_name && deal.contacts?.email && <span className="mx-1.5 text-slate-300" aria-hidden>·</span>}
+                {deal.contacts?.email && <a href={`mailto:${deal.contacts.email}`} className="hover:text-accent-700 hover:underline">{deal.contacts.email}</a>}
+              </p>
             </div>
-            <div className="shrink-0 text-center">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${
-                score >= 60 ? 'bg-emerald-100 text-emerald-700' :
-                score >= 30 ? 'bg-amber-100 text-amber-700' :
-                'bg-slate-100 text-slate-500'
-              }`}>
-                {score}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1 font-medium">Score</p>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {whatsappHref && (
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 bg-white text-slate-800 text-[13px] font-medium shadow-xs hover:bg-slate-50">
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp
+                </a>
+              )}
+              {canDelete && <DeleteDealButton dealId={deal.id} />}
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
-            {[
-              { label: 'Valor estimado', value: formatCLP(deal.estimated_value), icon: TrendingUp, color: 'text-indigo-600 bg-indigo-50' },
-              { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—',           icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'Fuente',         value: deal.source ?? '—',                                         icon: User, color: 'text-amber-600 bg-amber-50' },
-            ].map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
-                  <p className="text-sm font-semibold text-slate-800 truncate">{value}</p>
-                </div>
-              </div>
-            ))}
-            {/* Responsable — con selector si es gerente/admin */}
+        {/* Resumen */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg shadow-xs overflow-hidden [&>*]:bg-white">
+          <div className="px-4 py-3.5">
+            <p className="text-[13px] text-slate-500">Valor estimado</p>
+            <p className="mt-1 text-xl font-semibold tracking-[-0.02em] tabular-nums text-slate-900">{formatCLP(deal.estimated_value)}</p>
+            {deal.source && <p className="mt-0.5 text-xs text-slate-500">Fuente: {deal.source}</p>}
+          </div>
+          <div className="px-4 py-3.5">
+            <p className="text-[13px] text-slate-500">Probabilidad</p>
+            <p className="mt-1 text-xl font-semibold tracking-[-0.02em] tabular-nums text-slate-900">
+              {deal.probability ? `${deal.probability}%` : stage?.defaultProbability ? `${stage.defaultProbability}%` : '—'}
+            </p>
+            {!deal.probability && stage?.defaultProbability ? <p className="mt-0.5 text-xs text-slate-500">Por defecto de la etapa</p> : null}
+          </div>
+          <div className="px-4 py-3.5">
+            <p className="text-[13px] text-slate-500">Score</p>
+            <p className={`mt-1 text-xl font-semibold tracking-[-0.02em] tabular-nums ${score >= 60 ? 'text-emerald-700' : score >= 30 ? 'text-amber-700' : 'text-slate-900'}`}>{score}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{score >= 60 ? 'Alto' : score >= 30 ? 'Medio' : 'Bajo'}</p>
+          </div>
+          <div className="px-4 py-3.5">
             <DealOwnerSelector
               dealId={deal.id}
               currentOwner={deal.profiles ? { id: (deal.profiles as any).id, full_name: (deal.profiles as any).full_name } : null}
@@ -203,32 +190,30 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               canReassign={canManage}
             />
           </div>
+        </div>
 
-          {/* Propuesta adjunta — visible si existe */}
-          {deal.proposal_filename && (
-            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 text-orange-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Propuesta adjunta</p>
-                <p className="text-sm font-semibold text-slate-800 truncate">{deal.proposal_filename}</p>
-                {deal.proposal_uploaded_at && (
-                  <p className="text-[11px] text-slate-400">
-                    {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
-              </div>
-              {deal.proposal_url && (
-                <a href={`/api/propuestas?deal=${deal.id}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl border border-orange-200 transition-all shrink-0">
-                  <Eye className="w-3.5 h-3.5" /> Ver propuesta
-                </a>
+        {/* Propuesta adjunta */}
+        {deal.proposal_filename && (
+          <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg shadow-xs px-4 py-3">
+            <FileText className="w-4 h-4 text-slate-500 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] text-slate-900 truncate">
+                <span className="text-slate-500">Propuesta: </span>{deal.proposal_filename}
+              </p>
+              {deal.proposal_uploaded_at && (
+                <p className="text-xs text-slate-500">
+                  Subida el {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
               )}
             </div>
-          )}
-
-        </div>
+            {deal.proposal_url && (
+              <a href={`/api/propuestas?deal=${deal.id}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 bg-white text-slate-800 text-[13px] font-medium hover:bg-slate-50 shrink-0">
+                <Eye className="w-3.5 h-3.5" /> Ver
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Banner: proyecto pendiente de especificaciones */}
         {linkedProject && (
@@ -244,7 +229,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         )}
 
         {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Columna izquierda */}
           <div className="lg:col-span-1 space-y-4">
             {/* Análisis IA */}
@@ -256,8 +241,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             />
 
             {/* Detalles editables */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detalles</h2>
+            <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+              <h2 className="text-sm font-semibold text-slate-900 mb-3">Detalles</h2>
               {canEdit
                 ? <DealEditFields deal={deal} />
                 : (
@@ -269,7 +254,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                       { label: 'Fuente',         value: deal.source ?? '—' },
                     ].map(({ label, value }) => (
                       <div key={label} className="py-1">
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                        <p className="text-xs font-medium text-slate-500">{label}</p>
                         <p className="text-sm font-semibold text-slate-800 mt-0.5">{value}</p>
                       </div>
                     ))}
@@ -289,15 +274,15 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
             {/* Campos personalizados de esta organización */}
             {dealFields.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Campos adicionales</h2>
+              <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+                <h2 className="text-sm font-semibold text-slate-900 mb-3">Campos adicionales</h2>
                 {canEdit ? (
                   <DynamicFields entity="deal" entityId={deal.id} fields={dealFields} values={deal.custom_fields ?? {}} />
                 ) : (
                   <div className="divide-y divide-slate-100">
                     {dealFields.map(f => (
                       <div key={f.id} className="py-1">
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{f.label}</p>
+                        <p className="text-xs font-medium text-slate-500">{f.label}</p>
                         <p className="text-sm font-semibold text-slate-800 mt-0.5">
                           {formatFieldValue(f, (deal.custom_fields ?? {})[f.key]) || '—'}
                         </p>

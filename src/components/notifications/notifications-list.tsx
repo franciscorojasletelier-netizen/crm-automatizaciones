@@ -106,7 +106,7 @@ export default function NotificationsList({ initialNotifications, userId }: Prop
       </div>
 
       {/* Lista */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">

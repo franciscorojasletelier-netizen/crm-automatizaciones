@@ -60,7 +60,7 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-bold text-slate-800">{label}</h2>
         <button onClick={() => setShowNew(v => !v)}
@@ -74,25 +74,25 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
       {showNew && (
         <form onSubmit={createField} className="flex flex-wrap items-end gap-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
-            <input value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+            <label htmlFor="fields-editor-f1" className="block text-[11px] font-semibold text-slate-500 mb-1">Clave (técnica, inmutable)</label>
+            <input id="fields-editor-f1" value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
               placeholder="ej. metros_cuadrados" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-44" />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre visible</label>
-            <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
+            <label htmlFor="fields-editor-f2" className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre visible</label>
+            <input id="fields-editor-f2" value={newLabel} onChange={e => setNewLabel(e.target.value)}
               placeholder="ej. Metros cuadrados" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-44" />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Tipo</label>
-            <select value={newType} onChange={e => setNewType(e.target.value as FieldType)} className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5">
+            <label htmlFor="fields-editor-f3" className="block text-[11px] font-semibold text-slate-500 mb-1">Tipo</label>
+            <select id="fields-editor-f3" value={newType} onChange={e => setNewType(e.target.value as FieldType)} className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5">
               {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
           {(newType === 'select' || newType === 'multiselect') && (
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Opciones (separadas por coma)</label>
-              <input value={newOptions} onChange={e => setNewOptions(e.target.value)}
+              <label htmlFor="fields-editor-f4" className="block text-[11px] font-semibold text-slate-500 mb-1">Opciones (separadas por coma)</label>
+              <input id="fields-editor-f4" value={newOptions} onChange={e => setNewOptions(e.target.value)}
                 placeholder="Casa, Departamento, Oficina" className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-56" />
             </div>
           )}
@@ -110,7 +110,7 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
         {fields.map(f => (
           <div key={f.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${f.isActive ? 'border-slate-200' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
             <div className="flex-1 min-w-0">
-              <input
+              <input aria-label="Nombre del campo"
                 defaultValue={f.label}
                 onBlur={e => e.target.value !== f.label && run(f.id, () => callApi('PATCH', { fieldId: f.id, label: e.target.value }))}
                 disabled={busy === f.id}

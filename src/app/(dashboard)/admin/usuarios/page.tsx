@@ -75,7 +75,7 @@ export default async function UsuariosPage() {
       {/* Resumen de roles */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {(Object.entries(ROLE_META) as [Role, typeof ROLE_META[Role]][]).map(([role, meta]) => (
-          <div key={role} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex items-center gap-3">
+          <div key={role} className="bg-white rounded-lg border border-slate-200 shadow-xs p-3 flex items-center gap-3">
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.badge}`} />
             <div className="min-w-0">
               <p className="text-xl font-bold text-slate-900">{byRole[role] ?? 0}</p>
@@ -86,7 +86,7 @@ export default async function UsuariosPage() {
       </div>
 
       {/* Tabla de usuarios */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
             <Users className="w-3.5 h-3.5 text-indigo-600" />

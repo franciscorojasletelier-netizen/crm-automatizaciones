@@ -56,7 +56,7 @@ export default async function EmpresasPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
             <Building2 className="w-4 h-4 text-green-600" />
           </div>
@@ -65,7 +65,7 @@ export default async function EmpresasPage() {
             <p className="text-xs text-slate-500 font-medium">Clientes</p>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <Users className="w-4 h-4 text-blue-600" />
           </div>
@@ -74,7 +74,7 @@ export default async function EmpresasPage() {
             <p className="text-xs text-slate-500 font-medium">Prospectos</p>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
             <TrendingUp className="w-4 h-4 text-indigo-600" />
           </div>
@@ -86,15 +86,15 @@ export default async function EmpresasPage() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100">
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Industria</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Contactos</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Deals activos</th>
-              <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Empresa</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden md:table-cell">Industria</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden lg:table-cell">Contactos</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden lg:table-cell">Deals activos</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Tipo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">

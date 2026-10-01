@@ -119,7 +119,7 @@ export default function DealSpecBanner({
         <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-2">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-3.5 h-3.5 text-amber-600" />
-            <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">
+            <p className="text-[13px] font-semibold text-amber-800">
               Qué falta por definir (según Producción)
             </p>
           </div>
@@ -158,10 +158,10 @@ export default function DealSpecBanner({
             </div>
           ) : (
             <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+              <p className="text-[13px] font-semibold text-slate-700">
                 ¿Qué resolviste o agregaste? <span className="font-normal text-slate-400 normal-case">(mín. 10 caracteres)</span>
               </p>
-              <textarea
+              <textarea aria-label="Describe qué información completaste o aclaraste para producción"
                 value={response}
                 onChange={e => { setResponse(e.target.value); setResponseError(false) }}
                 placeholder="Describe qué información completaste o aclaraste para producción..."

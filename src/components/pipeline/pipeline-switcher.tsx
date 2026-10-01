@@ -10,7 +10,7 @@ export default function PipelineSwitcher({ pipelines, selectedId }: { pipelines:
 
   return (
     <div className="relative">
-      <select
+      <select aria-label="Pipeline"
         value={selectedId}
         onChange={e => router.push(`${pathname}?pipeline=${e.target.value}`)}
         className="appearance-none text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 pl-3 pr-8 py-1.5 rounded-xl cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300"

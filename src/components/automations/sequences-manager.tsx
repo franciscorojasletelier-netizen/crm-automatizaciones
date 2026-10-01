@@ -106,13 +106,13 @@ export default function SequencesManager({ sequences: initialSequences, stages, 
       {showNew && (
         <form onSubmit={createSequence} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre</label>
-            <input value={name} onChange={e => setName(e.target.value)} required placeholder="ej. Reactivación de leads fríos"
+            <label htmlFor="sequences-manager-f1" className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre</label>
+            <input id="sequences-manager-f1" value={name} onChange={e => setName(e.target.value)} required placeholder="ej. Reactivación de leads fríos"
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Empieza cuando…</label>
-            <select value={triggerType} onChange={e => setTriggerType(e.target.value as any)}
+            <label htmlFor="sequences-manager-f2" className="block text-[11px] font-semibold text-slate-500 mb-1">Empieza cuando…</label>
+            <select id="sequences-manager-f2" value={triggerType} onChange={e => setTriggerType(e.target.value as any)}
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
               <option value="stage_change">Un deal entra a una etapa</option>
               <option value="deal_created">Se crea un deal nuevo</option>
@@ -120,8 +120,8 @@ export default function SequencesManager({ sequences: initialSequences, stages, 
           </div>
           {triggerType === 'stage_change' && (
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Etapa</label>
-              <select value={toStage} onChange={e => setToStage(e.target.value)}
+              <label htmlFor="sequences-manager-f3" className="block text-[11px] font-semibold text-slate-500 mb-1">Etapa</label>
+              <select id="sequences-manager-f3" value={toStage} onChange={e => setToStage(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
                 <option value="any">Cualquier etapa</option>
                 {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
@@ -241,13 +241,13 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
         <form onSubmit={addStep} className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Esperar (horas)</label>
-              <input type="number" min={0} value={delayHours} onChange={e => setDelayHours(Number(e.target.value))}
+              <label htmlFor="sequences-manager-f4" className="block text-[11px] font-semibold text-slate-500 mb-1">Esperar (horas)</label>
+              <input id="sequences-manager-f4" type="number" min={0} value={delayHours} onChange={e => setDelayHours(Number(e.target.value))}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Acción</label>
-              <select value={actionType} onChange={e => setActionType(e.target.value as any)}
+              <label htmlFor="sequences-manager-f5" className="block text-[11px] font-semibold text-slate-500 mb-1">Acción</label>
+              <select id="sequences-manager-f5" value={actionType} onChange={e => setActionType(e.target.value as any)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
                 {Object.entries(ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
@@ -257,18 +257,18 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
             templates.length === 0 ? (
               <p className="text-[11px] text-amber-600">No hay plantillas de WhatsApp creadas todavía — crea una primero desde el chat de un deal.</p>
             ) : (
-              <select value={templateId} onChange={e => setTemplateId(e.target.value)}
+              <select aria-label="Plantilla de WhatsApp" value={templateId} onChange={e => setTemplateId(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
                 {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             )
           )}
           {actionType === 'create_task' && (
-            <input value={taskTitle} onChange={e => setTaskTitle(e.target.value)} placeholder="Título de la tarea"
+            <input aria-label="Título de la tarea" value={taskTitle} onChange={e => setTaskTitle(e.target.value)} placeholder="Título de la tarea"
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
           )}
           {(actionType === 'notify_owner' || actionType === 'notify_team') && (
-            <input value={message} onChange={e => setMessage(e.target.value)} placeholder="Mensaje de la notificación"
+            <input aria-label="Mensaje de la notificación" value={message} onChange={e => setMessage(e.target.value)} placeholder="Mensaje de la notificación"
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
           )}
           <div className="flex gap-2">

@@ -91,9 +91,9 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
   const { subtotal, tax, total: totalAmount } = total(items, taxRate)
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cotizaciones</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Cotizaciones</h2>
         {canEdit && (
           <button onClick={() => setShowNew(v => !v)}
             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 px-2.5 py-1.5 rounded-lg transition-colors">
@@ -109,11 +109,11 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
           <div className="space-y-2">
             {items.map((item, i) => (
               <div key={i} className="flex gap-2 items-center">
-                <input value={item.description} onChange={e => updateItem(i, { description: e.target.value })}
+                <input aria-label="Descripción" value={item.description} onChange={e => updateItem(i, { description: e.target.value })}
                   placeholder="Descripción" className="flex-1 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5" />
-                <input type="number" min={0} value={item.quantity} onChange={e => updateItem(i, { quantity: Number(e.target.value) })}
+                <input aria-label="Cant" type="number" min={0} value={item.quantity} onChange={e => updateItem(i, { quantity: Number(e.target.value) })}
                   placeholder="Cant." className="w-16 text-sm border border-slate-200 rounded-lg px-2 py-1.5" />
-                <input type="number" min={0} value={item.unit_price} onChange={e => updateItem(i, { unit_price: Number(e.target.value) })}
+                <input aria-label="Precio" type="number" min={0} value={item.unit_price} onChange={e => updateItem(i, { unit_price: Number(e.target.value) })}
                   placeholder="Precio" className="w-28 text-sm border border-slate-200 rounded-lg px-2 py-1.5" />
                 <button onClick={() => removeItem(i)} className="text-slate-400 hover:text-red-500 shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
@@ -123,17 +123,17 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit }: 
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">IVA (%)</label>
-              <input type="number" min={0} value={taxRate} onChange={e => setTaxRate(Number(e.target.value))}
+              <label htmlFor="quotes-panel-f1" className="block text-[11px] font-semibold text-slate-500 mb-1">IVA (%)</label>
+              <input id="quotes-panel-f1" type="number" min={0} value={taxRate} onChange={e => setTaxRate(Number(e.target.value))}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Válida hasta</label>
-              <input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)}
+              <label htmlFor="quotes-panel-f2" className="block text-[11px] font-semibold text-slate-500 mb-1">Válida hasta</label>
+              <input id="quotes-panel-f2" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
           </div>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Notas (opcional)"
+          <textarea aria-label="Notas (opcional)" value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Notas (opcional)"
             className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full resize-none" />
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-200">

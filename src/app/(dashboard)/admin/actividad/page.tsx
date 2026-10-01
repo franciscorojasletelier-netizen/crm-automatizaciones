@@ -48,7 +48,7 @@ export default async function ActividadPage() {
       </div>
 
       {/* Equipo */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
             <Shield className="w-3.5 h-3.5 text-indigo-600" />
@@ -82,7 +82,7 @@ export default async function ActividadPage() {
       </div>
 
       {/* Historial de cambios en tareas */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
             <ClipboardList className="w-3.5 h-3.5 text-violet-600" />
@@ -143,7 +143,7 @@ export default async function ActividadPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Sesiones recientes */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
               <Wifi className="w-3.5 h-3.5 text-emerald-600" />
@@ -169,7 +169,7 @@ export default async function ActividadPage() {
         </div>
 
         {/* Feed de actividad */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
               <Activity className="w-3.5 h-3.5 text-amber-600" />

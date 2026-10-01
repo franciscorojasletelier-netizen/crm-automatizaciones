@@ -131,7 +131,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Empresa */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
                 <Building2 className="w-4 h-4 text-indigo-600" />
@@ -151,13 +151,13 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                 </select>
               </Field>
               <Field label="Sitio web">
-                <input value={form.website} onChange={e => set('website', e.target.value)} className={inputCls} placeholder="https://empresa.com" />
+                <input aria-label="https://empresa.com" value={form.website} onChange={e => set('website', e.target.value)} className={inputCls} placeholder="https://empresa.com" />
               </Field>
             </div>
           </div>
 
           {/* Contacto */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
                 <User className="w-4 h-4 text-purple-600" />
@@ -171,21 +171,21 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                 </Field>
               </div>
               <Field label="Email">
-                <input type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} className={inputCls} placeholder="juan@empresa.com" />
+                <input aria-label="juan@empresa.com" type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} className={inputCls} placeholder="juan@empresa.com" />
               </Field>
               <Field label="Teléfono">
-                <input value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} className={inputCls} placeholder="+56 9 1234 5678" />
+                <input aria-label="+56 9 1234 5678" value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} className={inputCls} placeholder="+56 9 1234 5678" />
               </Field>
               <div className="col-span-2">
                 <Field label="Cargo">
-                  <input value={form.contact_job_title} onChange={e => set('contact_job_title', e.target.value)} className={inputCls} placeholder="Gerente de Operaciones" />
+                  <input aria-label="Gerente de Operaciones" value={form.contact_job_title} onChange={e => set('contact_job_title', e.target.value)} className={inputCls} placeholder="Gerente de Operaciones" />
                 </Field>
               </div>
             </div>
           </div>
 
           {/* Oportunidad */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
@@ -207,11 +207,11 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                 </select>
               </Field>
               <Field label="Valor estimado (CLP)">
-                <input type="number" value={form.estimated_value} onChange={e => set('estimated_value', e.target.value)} className={inputCls} placeholder="5.000.000" />
+                <input aria-label="5.000.000" type="number" value={form.estimated_value} onChange={e => set('estimated_value', e.target.value)} className={inputCls} placeholder="5.000.000" />
               </Field>
               <div className="col-span-2">
                 <Field label="Próxima acción">
-                  <input value={form.next_action} onChange={e => set('next_action', e.target.value)} className={inputCls} placeholder="Llamar para agendar demo" />
+                  <input aria-label="Llamar para agendar demo" value={form.next_action} onChange={e => set('next_action', e.target.value)} className={inputCls} placeholder="Llamar para agendar demo" />
                 </Field>
               </div>
             </div>
@@ -219,7 +219,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
 
           {/* Campos personalizados de esta organización */}
           {dealFields.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
                 <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
                   <ListPlus className="w-4 h-4 text-slate-600" />

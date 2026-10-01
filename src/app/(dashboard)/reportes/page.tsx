@@ -181,7 +181,7 @@ export default async function ReportesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Revenue mensual */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Ingresos por mes</h2>
@@ -219,7 +219,7 @@ export default async function ReportesPage() {
         </div>
 
         {/* Embudo de conversión */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Embudo de conversión</h2>
@@ -266,7 +266,7 @@ export default async function ReportesPage() {
       </div>
 
       {/* Leaderboard ejecutivos */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
             <Award className="w-3.5 h-3.5 text-amber-600" />
@@ -277,13 +277,13 @@ export default async function ReportesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">#</th>
-                <th className="px-3 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ejecutivo</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ingresos</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Ganados</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Perdidos</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">En curso</th>
-                <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Tasa de cierre</th>
+                <th className="text-xs font-medium text-slate-500 px-5 py-3 text-left">#</th>
+                <th className="text-xs font-medium text-slate-500 px-3 py-3 text-left">Ejecutivo</th>
+                <th className="text-xs font-medium text-slate-500 px-3 py-3 text-right">Ingresos</th>
+                <th className="text-xs font-medium text-slate-500 px-3 py-3 text-right">Ganados</th>
+                <th className="text-xs font-medium text-slate-500 px-3 py-3 text-right">Perdidos</th>
+                <th className="text-xs font-medium text-slate-500 px-3 py-3 text-right">En curso</th>
+                <th className="text-xs font-medium text-slate-500 px-5 py-3 text-right">Tasa de cierre</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -355,7 +355,7 @@ export default async function ReportesPage() {
 
       {/* Últimos deals ganados */}
       {data.recentWon.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
               <Target className="w-3.5 h-3.5 text-emerald-600" />

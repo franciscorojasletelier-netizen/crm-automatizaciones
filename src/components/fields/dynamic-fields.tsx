@@ -70,7 +70,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
     return (
       <div className="group flex items-start justify-between gap-2 py-1">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{field.label}</p>
+          <p className="text-xs font-medium text-slate-500">{field.label}</p>
           <p className="text-sm font-semibold text-slate-800 mt-0.5">
             {display || <span className="text-slate-300 font-normal italic text-xs">Sin valor</span>}
           </p>
@@ -85,18 +85,18 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
 
   return (
     <div>
-      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+      <p className="text-xs font-medium text-slate-500 mb-1">
         {field.label}{field.isRequired && <span className="text-red-500 ml-0.5">*</span>}
       </p>
       <div className="flex items-start gap-1.5">
         <div className="flex-1">
           {field.fieldType === 'textarea' && (
-            <textarea value={raw} onChange={e => setRaw(e.target.value)} autoFocus rows={2}
+            <textarea aria-label={field.label} value={raw} onChange={e => setRaw(e.target.value)} autoFocus rows={2}
               placeholder={field.placeholder ?? ''}
               className="w-full text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
           )}
           {(field.fieldType === 'text' || field.fieldType === 'number' || field.fieldType === 'currency' || field.fieldType === 'date') && (
-            <input
+            <input aria-label={field.label}
               type={field.fieldType === 'number' || field.fieldType === 'currency' ? 'number' : field.fieldType === 'date' ? 'date' : 'text'}
               value={raw} onChange={e => setRaw(e.target.value)} autoFocus
               placeholder={field.placeholder ?? ''}
@@ -104,7 +104,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
               className="w-full text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
           )}
           {field.fieldType === 'select' && (
-            <select value={raw} onChange={e => setRaw(e.target.value)} autoFocus
+            <select aria-label={field.label} value={raw} onChange={e => setRaw(e.target.value)} autoFocus
               className="w-full text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
               <option value="">— Seleccionar —</option>
               {field.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

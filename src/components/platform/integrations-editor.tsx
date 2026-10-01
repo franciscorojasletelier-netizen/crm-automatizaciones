@@ -122,7 +122,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-sm font-bold text-slate-800">Integraciones</h2>
@@ -139,8 +139,8 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       {showNew && (
         <form onSubmit={create} className="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Tipo</label>
-            <select value={provider} onChange={e => setProvider(e.target.value as Integration['provider'])}
+            <label htmlFor="integrations-editor-f1" className="block text-[11px] font-semibold text-slate-500 mb-1">Tipo</label>
+            <select id="integrations-editor-f1" value={provider} onChange={e => setProvider(e.target.value as Integration['provider'])}
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
               {(Object.keys(PROVIDER_LABELS) as Integration['provider'][]).map(p => (
                 <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
@@ -149,19 +149,19 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
             <p className="text-[11px] text-slate-400 mt-1">{PROVIDER_HELP[provider]}</p>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre (opcional)</label>
-            <input value={label} onChange={e => setLabel(e.target.value)} placeholder="ej. Página de Facebook principal"
+            <label htmlFor="integrations-editor-f2" className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre (opcional)</label>
+            <input id="integrations-editor-f2" value={label} onChange={e => setLabel(e.target.value)} placeholder="ej. Página de Facebook principal"
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
           </div>
           {provider !== 'webhook_form' && (
             <>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                <label htmlFor="integrations-editor-f3" className="block text-[11px] font-semibold text-slate-500 mb-1">
                   {provider === 'meta_leads' ? 'Page ID'
                     : provider === 'whatsapp' ? 'Phone Number ID'
                     : 'Client ID'}
                 </label>
-                <input value={externalId} onChange={e => setExternalId(e.target.value)} required
+                <input id="integrations-editor-f3" value={externalId} onChange={e => setExternalId(e.target.value)} required
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
               <div>
@@ -170,14 +170,14 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                     ? 'Client secret'
                     : 'Access token (opcional — si se deja vacío, usa el global)'}
                 </label>
-                <input value={accessToken} onChange={e => setAccessToken(e.target.value)} type="password"
+                <input aria-label="Token de acceso" value={accessToken} onChange={e => setAccessToken(e.target.value)} type="password"
                   required={provider === 'google_workspace' || provider === 'microsoft_365'}
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
               {provider === 'google_workspace' && (
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">Tema de Pub/Sub (projects/…/topics/…)</label>
-                  <input value={pubsubTopic} onChange={e => setPubsubTopic(e.target.value)} required
+                  <label htmlFor="integrations-editor-f4" className="block text-[11px] font-semibold text-slate-500 mb-1">Tema de Pub/Sub (projects/…/topics/…)</label>
+                  <input id="integrations-editor-f4" value={pubsubTopic} onChange={e => setPubsubTopic(e.target.value)} required
                     placeholder="projects/mi-proyecto/topics/gmail-push"
                     className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
                 </div>

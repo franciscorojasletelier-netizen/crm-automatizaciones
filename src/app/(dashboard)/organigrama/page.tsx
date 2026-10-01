@@ -63,7 +63,7 @@ export default async function OrganigramaPage() {
       </div>
 
       {/* Organigrama */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 md:p-6">
         {activePeople.length === 0 ? (
           <div className="py-14 text-center">
             <Network className="w-8 h-8 text-slate-200 mx-auto mb-2" />

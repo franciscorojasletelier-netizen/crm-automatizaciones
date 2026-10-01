@@ -112,7 +112,7 @@ export default async function NotificacionesPage() {
 
       {/* Info: qué genera notificaciones */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">¿Cuándo recibes notificaciones?</p>
+        <p className="text-xs font-medium text-slate-500 mb-3">¿Cuándo recibes notificaciones?</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
             'Tareas vencidas asignadas a ti',
