@@ -24,9 +24,9 @@ interface Props {
 }
 
 export default function ProjectSpecRequest({
-  projectId, dealId, dealOwnerId, currentStatus,
+  projectId, dealOwnerId, currentStatus,
   specNotes, specRequestedAt, specRequestedByName,
-  currentUserId, canRequest, canResolve,
+  currentUserId, canRequest,
 }: Props) {
   const isPending = currentStatus === 'pendiente_especificaciones'
   const [open, setOpen] = useState(false)
@@ -60,7 +60,7 @@ export default function ProjectSpecRequest({
       .from('profiles').select('id')
       .in('role', ['gerente', 'super_admin', 'admin'])
       .eq('is_active', true)
-    gerentes?.forEach((g: any) => { if (!notifTargets.includes(g.id)) notifTargets.push(g.id) })
+    for (const g of (gerentes ?? []) as { id: string }[]) { if (!notifTargets.includes(g.id)) notifTargets.push(g.id) }
 
     if (notifTargets.length > 0) {
       const { error: notifErr } = await supabase.from('notifications').insert(

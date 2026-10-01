@@ -93,7 +93,7 @@ export async function getOutlookMessage(accessToken: string, messageId: string):
     id: data.id, conversationId: data.conversationId,
     subject: data.subject ?? '(sin asunto)',
     from: data.from?.emailAddress?.address ?? '',
-    to: (data.toRecipients ?? []).map((r: any) => r.emailAddress?.address).filter(Boolean),
+    to: (data.toRecipients ?? []).map((r: { emailAddress?: { address?: string } }) => r.emailAddress?.address).filter(Boolean),
     bodyText: isHtml ? '' : (data.body?.content ?? ''),
     bodyHtml: isHtml ? (data.body?.content ?? '') : '',
     receivedDateTime: data.receivedDateTime,

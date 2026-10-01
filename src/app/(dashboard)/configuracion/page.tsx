@@ -72,7 +72,7 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
 
         <TwoFactorCard mfaRequired={mfaRequired === '1'} />
 
-        <EmailAccountsCard accounts={(emailAccounts ?? []) as any} connectedMessage={emailConnected} errorMessage={emailError} />
+        <EmailAccountsCard accounts={(emailAccounts ?? []) as unknown as React.ComponentProps<typeof EmailAccountsCard>['accounts']} connectedMessage={emailConnected} errorMessage={emailError} />
 
       </div>
     </div>

@@ -42,10 +42,10 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
   // Stats header — cuentan los deals que siguen abiertos. Una etapa
   // terminal pero no resuelta (tipo "Frío") sigue sumando, igual que antes.
   const activeDeals = deals?.filter(d => {
-    const s = stageByKey(stages, (d as any).stage)
+    const s = stageByKey(stages, d.stage)
     return !s?.isWon && !s?.isLost
   }) ?? []
-  const totalValue  = activeDeals.reduce((sum, d: any) => sum + (Number(d.estimated_value) || 0), 0)
+  const totalValue  = activeDeals.reduce((sum, d) => sum + (Number(d.estimated_value) || 0), 0)
 
   return (
     <div className="p-4 md:p-6 h-full flex flex-col gap-4 bg-slate-50">
@@ -82,7 +82,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       </div>
 
       {/* Kanban con drag & drop */}
-      <KanbanBoard initialDeals={(deals ?? []) as any} readOnly={!canEdit} organizationId={organizationId ?? ''} stages={stages} />
+      <KanbanBoard initialDeals={(deals ?? []) as unknown as React.ComponentProps<typeof KanbanBoard>['initialDeals']} readOnly={!canEdit} organizationId={organizationId ?? ''} stages={stages} />
     </div>
   )
 }

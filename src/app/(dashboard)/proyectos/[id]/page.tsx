@@ -38,8 +38,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!project) notFound()
 
-  // Cast para campos nuevos que aún no están en los tipos generados
-  const proj = project as any
+  // Campos que usa la página (select('*') no infiere columnas; las relaciones son a-uno).
+  const proj = project as {
+    id: string; status: string; spec_requested_by: string | null; spec_notes: string | null; spec_requested_at: string | null
+    companies: { name: string | null; industry: string | null } | null
+    profiles: { full_name: string | null } | null
+    deals: { id: string; owner_id: string | null } | null
+  }
 
   // Query separada para quien solicitó las specs (evita el alias problemático)
   let specRequesterName: string | null = null
@@ -49,7 +54,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       .select('full_name')
       .eq('id', proj.spec_requested_by)
       .single()
-    specRequesterName = (requester as any)?.full_name ?? null
+    specRequesterName = requester?.full_name ?? null
   }
 
   const [{ data: deliverables }, { data: notes }] = await Promise.all([
@@ -57,7 +62,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     supabase.from('project_notes').select('*, profiles:user_id(full_name)').eq('project_id', id).order('created_at', { ascending: false }),
   ])
 
-  const completedDeliverables = deliverables?.filter((d: any) => d.is_completed).length ?? 0
+  const completedDeliverables = deliverables?.filter(d => d.is_completed).length ?? 0
   const totalDeliverables = deliverables?.length ?? 0
   const progress = totalDeliverables > 0 ? Math.round((completedDeliverables / totalDeliverables) * 100) : 0
 
@@ -99,8 +104,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-slate-900">{project.name}</h1>
               <p className="text-sm text-slate-500 mt-0.5">
-                {(project.companies as any)?.name && (
-                  <span className="font-medium text-slate-600">{(project.companies as any).name}</span>
+                {proj.companies?.name && (
+                  <span className="font-medium text-slate-600">{proj.companies.name}</span>
                 )}
               </p>
             </div>
@@ -110,7 +115,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             {[
               { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-accent-600 bg-accent-50' },
               { label: 'Presupuesto',  value: formatCLP(project.budget), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-accent-600 bg-accent-50' },
+              { label: 'Responsable',  value: proj.profiles?.full_name ?? '—', icon: User, color: 'text-accent-600 bg-accent-50' },
               { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-2.5">
@@ -140,10 +145,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           )}
 
           {/* Link al deal */}
-          {(project.deals as any)?.id && (
+          {proj.deals?.id && (
             <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-400 font-medium">Deal de origen</p>
-              <Link href={`/leads/${(project.deals as any).id}`}
+              <Link href={`/leads/${proj.deals.id}`}
                 className="text-xs font-semibold text-accent-600 hover:text-accent-800 bg-accent-50 hover:bg-accent-100 px-3 py-1 rounded-lg transition-colors">
                 Ver deal →
               </Link>

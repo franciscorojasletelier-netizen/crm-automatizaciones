@@ -11,9 +11,9 @@ interface Rule {
   name: string
   description: string | null
   trigger_type: string
-  trigger_config: Record<string, any>
+  trigger_config: { to_stage?: string; days?: number }
   action_type: string
-  action_config: Record<string, any>
+  action_config: { title?: string; days_after?: number; message?: string; template_id?: string }
   is_active: boolean
   run_count: number
   last_run_at: string | null
@@ -27,7 +27,7 @@ interface Log {
   rule_name: string | null
   entity_type: string | null
   status: string
-  details: Record<string, any> | null
+  details: { error?: string; reason?: string; task_title?: string; notified_count?: number; notified_user?: string } | null
   executed_at: string
   automation_rules?: { name: string } | null
 }

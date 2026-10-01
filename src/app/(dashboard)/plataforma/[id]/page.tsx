@@ -5,7 +5,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2 } from 'lucide-react'
 import { getAllStages, getPipelines } from '@/lib/stages'
-import { getFieldDefinitions, type FieldEntity } from '@/lib/fields'
+import { getFieldDefinitions } from '@/lib/fields'
 import { NAV_SECTIONS } from '@/lib/roles'
 import { chileDateString } from '@/lib/dates'
 import PipelinesManager from '@/components/platform/pipelines-manager'
@@ -88,7 +88,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
 
         <ModulesEditor orgId={org.id} sections={NAV_SECTIONS} enabledByKey={enabledByKey} expiresByKey={expiresByKey} />
 
-        <IntegrationsEditor orgId={org.id} integrations={(integrationsRes.data ?? []) as any} />
+        <IntegrationsEditor orgId={org.id} integrations={(integrationsRes.data ?? []) as unknown as React.ComponentProps<typeof IntegrationsEditor>['integrations']} />
       </div>
     </div>
   )

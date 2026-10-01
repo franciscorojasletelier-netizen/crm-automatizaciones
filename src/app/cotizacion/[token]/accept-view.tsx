@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import { CheckCircle2, XCircle, Loader2, AlertCircle, Zap } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
 import { DATE_ONLY_TZ } from '@/lib/dates'
-import { quoteTotals } from '@/lib/quotes'
+import { quoteTotals, type QuoteDoc, type QuoteDeal, type QuoteOrg } from '@/lib/quotes'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
 export default function QuoteAcceptView({ token }: { token: string }) {
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<{ quote: QuoteDoc; deal: QuoteDeal | null; org: QuoteOrg | null } | null>(null)
   const [error, setError] = useState('')
   const [name, setName] = useState('')
   const [deciding, setDeciding] = useState<'accepted' | 'rejected' | null>(null)
@@ -39,7 +39,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
       })
       const json = await res.json()
       if (!res.ok) { setDecisionError(json.error ?? 'No se pudo registrar la respuesta'); setDeciding(null); return }
-      setData((prev: any) => ({ ...prev, quote: { ...prev.quote, status: decision } }))
+      setData(prev => prev && ({ ...prev, quote: { ...prev.quote, status: decision } }))
     } catch {
       setDecisionError('Error de conexión')
       setDeciding(null)

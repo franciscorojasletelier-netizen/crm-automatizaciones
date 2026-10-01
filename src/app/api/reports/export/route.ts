@@ -14,6 +14,19 @@ type CellStyle = {
 }
 type BorderSide = { style?: string; color?: { rgb: string } }
 
+// Filas de las consultas (el cliente de Supabase no está tipado).
+type Named = { name: string | null } | null
+type Person = { full_name: string | null } | null
+type DealRow = {
+  id: string; stage: string; status: 'open' | 'won' | 'lost'; estimated_value: number | null; source: string | null
+  score: number | null; created_at: string; updated_at: string; next_action: string | null; lost_reason: string | null
+  companies: { name: string | null; industry: string | null } | null; profiles: Person
+}
+type WonRow = { id: string; estimated_value: number | null; updated_at: string; stage: string; companies: Named; profiles: Person }
+type LostRow = { id: string; estimated_value: number | null; lost_reason: string | null; updated_at: string; companies: Named }
+type TaskRow = { id: string; title: string; is_completed: boolean; due_date: string | null; deals: { companies: Named } | null; profiles: Person }
+type ProfileRow = { id: string; full_name: string | null; email: string | null; role: string; is_active: boolean }
+
 // ── Helpers de estilo ──────────────────────────────────────────
 const PURPLE   = '6366f1'
 const DARK     = '1e1b4b'
@@ -68,7 +81,7 @@ function pctStyle(bg = WHITE): CellStyle {
 }
 
 // Agrega una celda con estilo
-function sc(ws: Record<string, any>, r: number, c: number, v: any, style: CellStyle) {
+function sc(ws: XLSX.WorkSheet, r: number, c: number, v: string | number, style: CellStyle) {
   const ref = XLSX.utils.encode_cell({ r, c })
   const t   = typeof v === 'number' ? 'n' : 's'
   ws[ref] = { v, t, s: style }
@@ -84,7 +97,7 @@ function sc(ws: Record<string, any>, r: number, c: number, v: any, style: CellSt
   }
 }
 
-function merge(ws: Record<string, any>, s: {r:number,c:number}, e: {r:number,c:number}) {
+function merge(ws: XLSX.WorkSheet, s: {r:number,c:number}, e: {r:number,c:number}) {
   if (!ws['!merges']) ws['!merges'] = []
   ws['!merges'].push({ s, e })
 }
@@ -144,11 +157,11 @@ export async function GET() {
       return { label: m.label, revenue: rev }
     }))
 
-    const allDeals     = dealsAll.data ?? []
-    const wonData      = wonDeals.data ?? []
-    const lostData     = lostDeals.data ?? []
-    const tasksData    = tasks.data ?? []
-    const profilesData = profilesRes.data ?? []
+    const allDeals     = (dealsAll.data ?? []) as unknown as DealRow[]
+    const wonData      = (wonDeals.data ?? []) as unknown as WonRow[]
+    const lostData     = (lostDeals.data ?? []) as unknown as LostRow[]
+    const tasksData    = (tasks.data ?? []) as unknown as TaskRow[]
+    const profilesData = (profilesRes.data ?? []) as unknown as ProfileRow[]
 
     const totalWon     = wonData.length
     const totalLost    = lostData.length
@@ -158,7 +171,7 @@ export async function GET() {
 
     // Per-exec stats
     const execStats: Record<string, { name: string; won: number; lost: number; open: number; revenue: number }> = {}
-    allDeals.forEach((d: any) => {
+    allDeals.forEach(d => {
       const name = d.profiles?.full_name ?? 'Sin asignar'
       if (!execStats[name]) execStats[name] = { name, won: 0, lost: 0, open: 0, revenue: 0 }
       if (d.status === 'won')  { execStats[name].won++;  execStats[name].revenue += Number(d.estimated_value) || 0 }
@@ -166,9 +179,9 @@ export async function GET() {
       if (d.status === 'open')   execStats[name].open++
     })
     const stageDist: Record<string, number> = {}
-    allDeals.forEach((d: any) => { stageDist[d.stage] = (stageDist[d.stage] || 0) + 1 })
+    allDeals.forEach(d => { stageDist[d.stage] = (stageDist[d.stage] || 0) + 1 })
     const sourceDist: Record<string, number> = {}
-    allDeals.forEach((d: any) => {
+    allDeals.forEach(d => {
       const s = d.source || 'Sin fuente'
       sourceDist[s] = (sourceDist[s] || 0) + 1
     })
@@ -180,7 +193,7 @@ export async function GET() {
     // HOJA 1: RESUMEN EJECUTIVO
     // ────────────────────────────────────────────────────────────
     {
-      const ws: Record<string, any> = {}
+      const ws: XLSX.WorkSheet = {}
       ws['!cols'] = [{ wch: 30 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }]
       ws['!rows'] = [{ hpt: 40 }, { hpt: 16 }, { hpt: 32 }, { hpt: 28 }]
 
@@ -207,12 +220,12 @@ export async function GET() {
       r++
 
       // KPI values
-      sc(ws, r, 0, totalRevenue, { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } as any })
-      sc(ws, r, 1, `${winRate}%`, { ...pctStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } as any })
+      sc(ws, r, 0, totalRevenue, { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
+      sc(ws, r, 1, `${winRate}%`, { ...pctStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
       sc(ws, r, 2, totalWon,     { ...dStyle('eef2ff', PURPLE, true, 'center'), font: { color: { rgb: PURPLE }, sz: 14, bold: true } })
-      sc(ws, r, 3, avgDealSize,  { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } as any })
+      sc(ws, r, 3, avgDealSize,  { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
       sc(ws, r, 4, allDeals.filter(d => d.status === 'open').length, { ...dStyle('eef2ff', PURPLE, true, 'center'), font: { color: { rgb: PURPLE }, sz: 14, bold: true } })
-      ;(ws['!rows'] as any[]).push({ hpt: 36 })
+      ;(ws['!rows'] ??= []).push({ hpt: 36 })
       r++
 
       r++ // espacio
@@ -284,7 +297,7 @@ export async function GET() {
     // HOJA 2: TODOS LOS DEALS
     // ────────────────────────────────────────────────────────────
     {
-      const ws: Record<string, any> = {}
+      const ws: XLSX.WorkSheet = {}
       ws['!cols'] = [
         { wch: 26 }, { wch: 16 }, { wch: 22 }, { wch: 12 }, { wch: 18 },
         { wch: 20 }, { wch: 16 }, { wch: 8  }, { wch: 40 }, { wch: 14 },
@@ -303,7 +316,7 @@ export async function GET() {
       HEADERS.forEach((h, c) => sc(ws, r, c, h, hStyle(SLATE700, WHITE, true, 10)))
       r++
 
-      allDeals.forEach((d: any, i: number) => {
+      allDeals.forEach((d, i) => {
         const bg = i % 2 === 0 ? WHITE : SLATE100
         const statusLabel = d.status === 'won' ? 'Ganado' : d.status === 'lost' ? 'Perdido' : 'Activo'
         const statusStyle = d.status === 'won'
@@ -333,7 +346,7 @@ export async function GET() {
     // HOJA 3: GANADOS & PERDIDOS
     // ────────────────────────────────────────────────────────────
     {
-      const ws: Record<string, any> = {}
+      const ws: XLSX.WorkSheet = {}
       ws['!cols'] = [{ wch: 26 }, { wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 10 }]
 
       let r = 0
@@ -351,7 +364,7 @@ export async function GET() {
       sc(ws, r, 4, '',               hStyle(SLATE700))
       r++
 
-      wonData.forEach((d: any, i: number) => {
+      wonData.forEach((d, i) => {
         const bg = i % 2 === 0 ? WHITE : 'f0fdf4'
         sc(ws, r, 0, d.companies?.name ?? '', dStyle(bg, DARK, true))
         sc(ws, r, 1, Number(d.estimated_value) || 0, moneyStyle(bg))
@@ -384,7 +397,7 @@ export async function GET() {
       sc(ws, r, 4, '',               hStyle(SLATE700))
       r++
 
-      lostData.forEach((d: any, i: number) => {
+      lostData.forEach((d, i) => {
         const bg = i % 2 === 0 ? WHITE : 'fff1f2'
         sc(ws, r, 0, d.companies?.name ?? '', dStyle(bg, DARK, true))
         sc(ws, r, 1, Number(d.estimated_value) || 0, moneyStyle(bg))
@@ -402,7 +415,7 @@ export async function GET() {
     // HOJA 4: LEADERBOARD
     // ────────────────────────────────────────────────────────────
     {
-      const ws: Record<string, any> = {}
+      const ws: XLSX.WorkSheet = {}
       ws['!cols'] = [{ wch: 5 }, { wch: 24 }, { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 }]
 
       let r = 0
@@ -440,7 +453,7 @@ export async function GET() {
     // HOJA 5: TAREAS
     // ────────────────────────────────────────────────────────────
     {
-      const ws: Record<string, any> = {}
+      const ws: XLSX.WorkSheet = {}
       ws['!cols'] = [{ wch: 40 }, { wch: 26 }, { wch: 20 }, { wch: 14 }, { wch: 12 }]
 
       let r = 0
@@ -454,7 +467,7 @@ export async function GET() {
       THEADERS.forEach((h, c) => sc(ws, r, c, h, hStyle('334155', WHITE, true, 10)))
       r++
 
-      tasksData.forEach((t: any, i: number) => {
+      tasksData.forEach((t, i) => {
         const isOverdue = !t.is_completed && t.due_date && new Date(t.due_date) < now
         const bg = t.is_completed ? 'f0fdf4' : isOverdue ? 'fff1f2' : i % 2 === 0 ? WHITE : SLATE100
         const statusLabel = t.is_completed ? '✅ Completada' : isOverdue ? '⏰ Vencida' : '🔵 Pendiente'
@@ -476,7 +489,7 @@ export async function GET() {
     // HOJA 6: EQUIPO
     // ────────────────────────────────────────────────────────────
     {
-      const ws: Record<string, any> = {}
+      const ws: XLSX.WorkSheet = {}
       ws['!cols'] = [{ wch: 26 }, { wch: 32 }, { wch: 22 }, { wch: 10 }]
 
       let r = 0
@@ -490,7 +503,7 @@ export async function GET() {
       EHEADERS.forEach((h, c) => sc(ws, r, c, h, hStyle(SLATE700, WHITE, true, 10)))
       r++
 
-      profilesData.forEach((p: any, i: number) => {
+      profilesData.forEach((p, i) => {
         const bg = i % 2 === 0 ? WHITE : SLATE100
         const rolColor = p.role === 'super_admin' || p.role === 'admin' ? PURPLE
                        : p.role === 'gerente' ? AMBER : SLATE700
@@ -517,8 +530,8 @@ export async function GET() {
         'Cache-Control': 'no-store',
       },
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Export error:', err)
-    return NextResponse.json({ error: err?.message ?? 'Error generando reporte' }, { status: 500 })
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Error generando reporte' }, { status: 500 })
   }
 }

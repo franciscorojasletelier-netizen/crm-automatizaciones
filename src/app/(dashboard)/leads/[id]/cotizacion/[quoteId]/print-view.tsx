@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { formatCLP } from '@/lib/format'
 import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
-import { quoteTotals } from '@/lib/quotes'
+import { quoteTotals, type QuoteDoc, type QuoteDeal, type QuoteOrg } from '@/lib/quotes'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
+
 export default function QuotePrintView({ quote, deal, org, dealId }: {
-  quote: any; deal: any; org: any; dealId: string
+  quote: QuoteDoc; deal: QuoteDeal | null; org: QuoteOrg | null; dealId: string
 }) {
   const items: Item[] = quote.items ?? []
   const { subtotal, tax, total } = quoteTotals(items, quote.tax_rate)
@@ -102,13 +103,13 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
 
           {quote.status === 'accepted' && (
             <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
-              Aceptada por <b>{quote.accepted_by_name}</b> el {new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              Aceptada por <b>{quote.accepted_by_name}</b> el {quote.accepted_at ? new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
               {quote.accepted_ip && <span className="text-emerald-600"> · IP {quote.accepted_ip}</span>}
             </div>
           )}
           {quote.status === 'rejected' && (
             <div className="mt-4 print:mt-6 bg-slate-100 print:bg-transparent border border-slate-200 rounded-lg p-3 text-xs text-slate-600">
-              Rechazada el {new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' })}
+              Rechazada el {quote.rejected_at ? new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
             </div>
           )}
         </div>

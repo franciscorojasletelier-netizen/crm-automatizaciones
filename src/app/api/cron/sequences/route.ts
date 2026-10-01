@@ -76,6 +76,8 @@ export async function GET(request: NextRequest) {
           .from('deals')
           .select('id, owner_id, next_action, contacts:primary_contact_id(full_name, phone)')
           .eq('id', enrollment.deal_id).is('deleted_at', null).maybeSingle()
+        // contacts es a-uno; sin tipos de base se infiere como arreglo.
+        const contact = deal?.contacts as unknown as { full_name: string | null; phone: string | null } | null
 
         if (!deal) {
           await supabase.from('automation_sequence_enrollments')
@@ -88,7 +90,7 @@ export async function GET(request: NextRequest) {
         let stepDetail = ''
 
         if (step.action_type === 'send_whatsapp_template') {
-          const phone = (deal.contacts as any)?.phone
+          const phone = contact?.phone
           const templateId = step.action_config?.template_id
           if (!phone) { stepOk = false; stepDetail = 'Contacto sin teléfono' }
           else if (!templateId) { stepOk = false; stepDetail = 'Paso sin plantilla configurada' }
@@ -97,7 +99,7 @@ export async function GET(request: NextRequest) {
               .from('whatsapp_templates').select('content').eq('id', templateId).maybeSingle()
             if (!template) { stepOk = false; stepDetail = 'Plantilla no encontrada' }
             else {
-              const firstName = ((deal.contacts as any)?.full_name ?? '').split(' ')[0] ?? ''
+              const firstName = (contact?.full_name ?? '').split(' ')[0] ?? ''
               const body = template.content.replace(/\{\{\s*nombre\s*\}\}/gi, firstName)
               const result = await sendWhatsAppText(supabase, {
                 organizationId: enrollment.organization_id, dealId: enrollment.deal_id,
@@ -124,7 +126,7 @@ export async function GET(request: NextRequest) {
             targetIds = deal.owner_id ? [deal.owner_id] : []
           } else {
             const { data: members } = await supabase.from('deal_members').select('user_id').eq('deal_id', enrollment.deal_id)
-            targetIds = [...(members ?? []).map((m: any) => m.user_id), ...(deal.owner_id ? [deal.owner_id] : [])]
+            targetIds = [...((members ?? []) as { user_id: string }[]).map(m => m.user_id), ...(deal.owner_id ? [deal.owner_id] : [])]
               .filter((id, i, a) => a.indexOf(id) === i)
           }
           if (targetIds.length > 0) {
@@ -166,8 +168,8 @@ export async function GET(request: NextRequest) {
         }
 
         processed++
-      } catch (e: any) {
-        errors.push(`enrollment ${enrollment.id}: ${e.message}`)
+      } catch (e) {
+        errors.push(`enrollment ${enrollment.id}: ${e instanceof Error ? e.message : String(e)}`)
       }
     })
 

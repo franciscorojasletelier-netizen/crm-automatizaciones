@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getPermissions, normalizeRole, canEditSection, type Role, type SectionAccess } from '@/lib/roles'
+import { getPermissions, normalizeRole, canEditSection, type SectionAccess } from '@/lib/roles'
 import { getDisabledModules } from '@/lib/modules'
 
 export async function createClient() {
@@ -41,8 +41,8 @@ export async function getCurrentProfile() {
 
   // Normalizar rol legacy (admin → super_admin, etc.)
   const role = normalizeRole(profile?.role ?? 'soporte')
-  const sectionAccess = ((profile as any)?.section_access ?? null) as SectionAccess
-  const organizationId = (profile as any)?.organization_id ?? null
+  const sectionAccess = (profile?.section_access ?? null) as SectionAccess
+  const organizationId: string | null = profile?.organization_id ?? null
 
   if (organizationId) {
     const { data: org } = await supabase

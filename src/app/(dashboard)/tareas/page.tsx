@@ -67,7 +67,7 @@ export default async function TareasPage() {
       </StatStrip>
 
       {/* Tabla con búsqueda y filtros */}
-      <TasksTable tasks={all as any} readOnly={!canEdit} />
+      <TasksTable tasks={all as unknown as React.ComponentProps<typeof TasksTable>['tasks']} readOnly={!canEdit} />
     </div>
   )
 }

@@ -41,7 +41,7 @@ export default async function AutomatizacionesPage() {
         </div>
         <div className="flex items-center gap-2 text-xs bg-accent-600 text-white px-3 py-1.5 rounded-lg font-semibold shadow-xs">
           <Zap className="w-3.5 h-3.5" />
-          {(rules ?? []).filter((r: any) => r.is_active).length} activas
+          {(rules ?? []).filter(r => r.is_active).length} activas
         </div>
       </div>
 
@@ -86,13 +86,13 @@ export default async function AutomatizacionesPage() {
 
         {/* Lista de reglas */}
         <div className={canEdit ? 'lg:col-span-2 space-y-4' : 'lg:col-span-3 space-y-4'}>
-          <AutomationRulesList rules={(rules ?? []) as any} logs={(logs ?? []) as any} canEdit={canEdit} />
+          <AutomationRulesList rules={(rules ?? []) as unknown as React.ComponentProps<typeof AutomationRulesList>['rules']} logs={(logs ?? []) as unknown as React.ComponentProps<typeof AutomationRulesList>['logs']} canEdit={canEdit} />
         </div>
       </div>
 
       {canEdit && (
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
-          <SequencesManager sequences={(sequences ?? []) as any} stages={stages} templates={(templates ?? []) as any} />
+          <SequencesManager sequences={(sequences ?? []) as unknown as React.ComponentProps<typeof SequencesManager>['sequences']} stages={stages} templates={(templates ?? []) as unknown as React.ComponentProps<typeof SequencesManager>['templates']} />
         </div>
       )}
     </div>

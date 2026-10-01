@@ -74,7 +74,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
     router.refresh()
   }
 
-  async function removeMember(memberId: string, userId: string) {
+  async function removeMember(memberId: string) {
     setRemoving(memberId)
     await supabase.from('deal_members').delete().eq('id', memberId)
     setList(prev => prev.filter(m => m.id !== memberId))
@@ -226,7 +226,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
                   {changingOwner ? '...' : '→ Principal'}
                 </button>
               )}
-              <button onClick={() => removeMember(m.id, m.user_id)} disabled={removing === m.id}
+              <button onClick={() => removeMember(m.id)} disabled={removing === m.id}
                 className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                 {removing === m.id
                   ? <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useIsClient } from '@/lib/use-is-client'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronDown, Check, Loader2 } from 'lucide-react'
 import { getInitials } from '@/lib/format'
 
-interface Profile {
+export interface Profile {
   id: string
   full_name: string | null
   email: string | null
@@ -39,11 +40,10 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   const [saving, setSaving] = useState(false)
   const [owner, setOwner]   = useState(currentOwner)
   const [pos, setPos]       = useState({ top: 0, left: 0, width: 0, dropUp: false })
-  const [mounted, setMounted] = useState(false)
+  const mounted = useIsClient()
   const ref    = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     function handle(e: MouseEvent) {

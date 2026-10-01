@@ -60,7 +60,8 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
       if (!data) return
       setMessages(prev => {
         const ids = new Set(prev.map(m => m.id))
-        const incoming = (data as any[]).filter(m => !ids.has(m.id))
+        // profiles es a-uno; sin tipos de base se infiere como arreglo.
+        const incoming = (data as unknown as Message[]).filter(m => !ids.has(m.id))
         return incoming.length ? [...prev, ...incoming] : prev
       })
     }

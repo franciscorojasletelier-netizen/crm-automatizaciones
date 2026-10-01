@@ -25,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const body = await request.json()
-  const updates: Record<string, any> = {}
+  const updates: { is_active?: boolean; max_users?: number | null; require_mfa?: boolean } = {}
 
   // Plan: aplica límite y módulos de una vez (y nada más en esta llamada).
   if ('plan' in body) {

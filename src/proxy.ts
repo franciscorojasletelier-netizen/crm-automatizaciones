@@ -102,7 +102,8 @@ export async function proxy(request: NextRequest) {
     // enrolado (no es "pendiente de challenge" — eso ya se resolvió
     // arriba — es "nunca activó nada"). Se lo manda a activarlo antes
     // de dejarlo entrar a cualquier otra pantalla.
-    const requiresMfa = !!(profile as any)?.organizations?.require_mfa
+    // organizations es a-uno; sin tipos de base se infiere como arreglo.
+    const requiresMfa = !!(profile?.organizations as unknown as { require_mfa: boolean } | null)?.require_mfa
     if (requiresMfa && !mfaEnrolled && !pathname.startsWith('/configuracion')) {
       const url = request.nextUrl.clone()
       url.pathname = '/configuracion'
@@ -111,11 +112,11 @@ export async function proxy(request: NextRequest) {
     }
 
     const role = profile?.role ?? 'soporte'
-    const sectionAccess = (profile as any)?.section_access ?? null
+    const sectionAccess = profile?.section_access ?? null
     // Explícito: un platform_owner vería los módulos de TODAS las
     // organizaciones sin este filtro (su policy de SELECT bypasea el
     // filtro de organización).
-    const orgId = (profile as any)?.organization_id ?? undefined
+    const orgId: string | undefined = profile?.organization_id ?? undefined
     const disabledModules = await getDisabledModules(supabase, orgId)
 
     if (!canAccessRouteWithAccess(role, sectionAccess, pathname, disabledModules)) {

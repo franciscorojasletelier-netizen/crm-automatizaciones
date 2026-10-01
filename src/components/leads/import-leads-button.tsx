@@ -33,7 +33,7 @@ function parseCSV(text: string): string[][] {
 }
 
 // Detecta a qué campo corresponde cada encabezado del CSV
-function mapHeader(h: string): string | null {
+function mapHeader(h: string): keyof ParsedLead | null {
   const n = h.toLowerCase().trim()
   if (/empresa|company|compañia/.test(n))            return 'company'
   if (/industria|industry|rubro|sector/.test(n))     return 'industry'
@@ -77,7 +77,7 @@ export default function ImportLeadsButton() {
       }
 
       const parsed: ParsedLead[] = rows.slice(1).map(r => {
-        const lead: any = { company: '', contact: '', email: '', phone: '', industry: '', job: '', source: '', value: '', website: '' }
+        const lead: ParsedLead = { company: '', contact: '', email: '', phone: '', industry: '', job: '', source: '', value: '', website: '' }
         headerMap.forEach((field, i) => { if (field && r[i]) lead[field] = r[i] })
         return lead
       }).filter(l => l.company || l.contact)

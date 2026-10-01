@@ -11,27 +11,38 @@ interface TimelineEvent {
   authorName: string | null
 }
 
+type Author = { full_name: string | null; email?: string | null } | null
+
+/** Filas que alimentan la línea de tiempo (lo que se lee de cada una). */
+export interface TimelineSources {
+  history: { id: string; changed_at: string; from_stage: string | null; to_stage: string; profiles: Author }[]
+  interactions: { id: string; created_at: string; content: string | null; type: string | null; profiles: Author }[]
+  tasks: { id: string; created_at: string | null; due_date: string | null; title: string; is_completed: boolean; profiles: Author }[]
+  chatMessages: { id: string; created_at: string; content: string; profiles: Author }[]
+  emails: { id: string; sent_at: string | null; direction: string; subject: string | null; from_address: string | null }[]
+}
+
 export default function DealTimeline({
   stages, history, interactions, tasks, chatMessages, emails,
 }: {
   stages: Stage[]
-  history: any[]
-  interactions: any[]
-  tasks: any[]
-  chatMessages: any[]
-  emails?: any[]
+  history: TimelineSources['history']
+  interactions: TimelineSources['interactions']
+  tasks: TimelineSources['tasks']
+  chatMessages: TimelineSources['chatMessages']
+  emails?: TimelineSources['emails']
 }) {
   // Un solo feed cronológico en vez de 4 bloques separados — lo primero
   // que se evalúa en una demo de CRM es "¿veo todo lo que pasó de un vistazo?".
   const events: TimelineEvent[] = [
-    ...(history ?? []).map((h: any) => ({
+    ...(history ?? []).map(h => ({
       id: `stage-${h.id}`,
       type: 'stage' as const,
       date: h.changed_at,
       content: `${stageLabel(stages, h.from_stage)} → ${stageLabel(stages, h.to_stage)}`,
       authorName: h.profiles?.full_name ?? null,
     })),
-    ...(interactions ?? []).map((i: any) => ({
+    ...(interactions ?? []).map(i => ({
       id: `interaction-${i.id}`,
       type: 'interaction' as const,
       date: i.created_at,
@@ -41,24 +52,24 @@ export default function DealTimeline({
       content: i.content ?? i.type ?? 'Interacción registrada',
       authorName: i.profiles?.full_name ?? null,
     })),
-    ...(tasks ?? []).map((t: any) => ({
+    ...(tasks ?? []).map(t => ({
       id: `task-${t.id}`,
       type: 'task' as const,
-      date: t.created_at ?? t.due_date,
+      date: t.created_at ?? t.due_date ?? '',
       content: t.is_completed ? `Tarea completada: ${t.title}` : `Tarea creada: ${t.title}`,
       authorName: t.profiles?.full_name ?? null,
     })),
-    ...(chatMessages ?? []).map((m: any) => ({
+    ...(chatMessages ?? []).map(m => ({
       id: `message-${m.id}`,
       type: 'message' as const,
       date: m.created_at,
       content: m.content,
       authorName: m.profiles?.full_name ?? m.profiles?.email ?? null,
     })),
-    ...(emails ?? []).map((e: any) => ({
+    ...(emails ?? []).map(e => ({
       id: `email-${e.id}`,
       type: 'email' as const,
-      date: e.sent_at,
+      date: e.sent_at ?? '',
       content: `${e.direction === 'outbound' ? 'Enviado' : 'Recibido'}: ${e.subject ?? '(sin asunto)'}`,
       authorName: e.from_address ?? null,
     })),

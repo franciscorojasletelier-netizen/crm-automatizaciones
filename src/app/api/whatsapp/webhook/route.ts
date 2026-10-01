@@ -170,8 +170,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ status: 'ok' })
 
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error en webhook WhatsApp:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

@@ -73,7 +73,7 @@ export default function DealSpecBanner({
 
     if (targets && targets.length > 0) {
       await supabase.from('notifications').insert(
-        targets.map((t: any) => ({
+        (targets as { id: string }[]).map(t => ({
           user_id:     t.id,
           type:        'stage_changed',
           title:       '✅ Especificaciones listas — Proyecto reactivado',

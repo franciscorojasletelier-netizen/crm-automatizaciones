@@ -8,7 +8,20 @@ import Link from 'next/link'
 import DynamicFields from '@/components/fields/dynamic-fields'
 import type { FieldDefinition } from '@/lib/fields'
 
-export default function CompanyRow({ company, dealId, canEdit = true, fields = [] }: { company: any; dealId?: string; canEdit?: boolean; fields?: FieldDefinition[] }) {
+/** Fila de /empresas (misma forma que el select de la página). */
+export interface CompanyListItem {
+  id: string
+  name: string
+  industry: string | null
+  website: string | null
+  country: string | null
+  is_existing_client: boolean | null
+  custom_fields: Record<string, unknown> | null
+  contacts: { id: string }[] | null
+  deals: { id: string; status: string }[] | null
+}
+
+export default function CompanyRow({ company, dealId, canEdit = true, fields = [] }: { company: CompanyListItem; dealId?: string; canEdit?: boolean; fields?: FieldDefinition[] }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [data, setData] = useState({
@@ -19,7 +32,7 @@ export default function CompanyRow({ company, dealId, canEdit = true, fields = [
     is_existing_client: company.is_existing_client ?? false,
   })
   const router = useRouter()
-  const activeDeals = company.deals?.filter((d: any) => d.status === 'open').length ?? 0
+  const activeDeals = company.deals?.filter(d => d.status === 'open').length ?? 0
 
   async function save() {
     setSaving(true)
@@ -36,17 +49,17 @@ export default function CompanyRow({ company, dealId, canEdit = true, fields = [
         <td className="px-5 py-4" colSpan={5}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
+              {([
                 { label: 'Nombre', key: 'name' },
                 { label: 'Industria', key: 'industry' },
                 { label: 'Sitio web', key: 'website' },
                 { label: 'País', key: 'country' },
-              ].map(({ label, key }) => (
+              ] as const).map(({ label, key }) => (
                 <div key={key}>
                   <p className="text-xs font-semibold text-slate-500 mb-1">{label}</p>
                   <input aria-label={label}
                     type="text"
-                    value={(data as any)[key]}
+                    value={data[key]}
                     onChange={e => setData(p => ({ ...p, [key]: e.target.value }))}
                     className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white"
                   />

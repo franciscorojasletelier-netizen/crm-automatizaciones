@@ -3,6 +3,7 @@ import { getCurrentProfile } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { canSeeDeal } from '@/lib/visibility'
 import QuotePrintView from './print-view'
+import type { QuoteDeal, QuoteDoc } from '@/lib/quotes'
 
 export default async function QuotePage({ params }: { params: Promise<{ id: string; quoteId: string }> }) {
   const { id, quoteId } = await params
@@ -23,5 +24,6 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
     ? await supabase.from('organizations').select('name, display_name, phone, email, address').eq('id', organizationId).maybeSingle()
     : { data: null }
 
-  return <QuotePrintView quote={quote} deal={deal} org={org} dealId={id} />
+  // Relaciones a-uno: sin tipos de base se infieren como arreglo.
+  return <QuotePrintView quote={quote as QuoteDoc} deal={deal as unknown as QuoteDeal | null} org={org} dealId={id} />
 }

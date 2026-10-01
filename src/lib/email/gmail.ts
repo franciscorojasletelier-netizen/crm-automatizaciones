@@ -105,9 +105,12 @@ function decodeBase64Url(data: string) {
   return Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8')
 }
 
-function extractBody(payload: any): { text: string; html: string } {
+/** Parte MIME de la API de Gmail (solo lo que se lee acá). */
+interface GmailPart { mimeType?: string; body?: { data?: string }; parts?: GmailPart[] }
+
+function extractBody(payload: GmailPart | undefined): { text: string; html: string } {
   let text = ''; let html = ''
-  function walk(part: any) {
+  function walk(part: GmailPart | undefined) {
     if (!part) return
     if (part.mimeType === 'text/plain' && part.body?.data) text += decodeBase64Url(part.body.data)
     if (part.mimeType === 'text/html' && part.body?.data) html += decodeBase64Url(part.body.data)

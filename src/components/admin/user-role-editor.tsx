@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
+import { useIsClient } from '@/lib/use-is-client'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -25,12 +26,11 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [mounted, setMounted] = useState(false)
+  const mounted = useIsClient()
   const [pos, setPos] = useState({ top: 0, right: 0, dropUp: false })
   const btnRef = useRef<HTMLButtonElement>(null)
   const router = useRouter()
 
-  useEffect(() => { setMounted(true) }, [])
 
   function handleOpen() {
     if (saving) return

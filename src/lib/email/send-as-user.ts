@@ -2,7 +2,7 @@
 // Compartido por /api/email/send y /api/cobranza/enviar.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { ensureFreshAccessToken } from '@/lib/email/oauth'
+import { ensureFreshAccessToken, type EmailAccountRow } from '@/lib/email/oauth'
 import { sendGmailMessage } from '@/lib/email/gmail'
 import { sendOutlookMessage } from '@/lib/email/outlook'
 
@@ -36,7 +36,7 @@ export async function sendAsUser(
     .eq('id', owned.id).maybeSingle()
   if (!account) return { ok: false, error: 'Cuenta de correo no encontrada', status: 404 }
 
-  const accessToken = await ensureFreshAccessToken(svc, account as any)
+  const accessToken = await ensureFreshAccessToken(svc, account as EmailAccountRow)
   if (!accessToken) return { ok: false, error: 'No se pudo renovar el acceso a tu correo — reconéctalo desde Configuración', status: 400 }
 
   const result = account.provider === 'google_workspace'

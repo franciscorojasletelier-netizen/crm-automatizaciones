@@ -70,7 +70,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // lo reintenta más adelante.
     const { data: integration } = await svc.from('platform_integrations')
       .select('config').eq('provider', 'google_workspace').eq('organization_id', organizationId).maybeSingle()
-    const topicName = (integration?.config as any)?.pubsub_topic
+    const topicName = (integration?.config as { pubsub_topic?: string } | null)?.pubsub_topic
     if (topicName) {
       const watch = await watchGmail(tokens.accessToken, topicName)
       if (watch) {

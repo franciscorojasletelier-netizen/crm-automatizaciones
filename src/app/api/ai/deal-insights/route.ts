@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         .select('direction, body, created_at')
         .eq('deal_id', dealId).order('created_at', { ascending: true }).limit(100),
       supabase.from('interactions')
-        .select('type, notes, created_at')
+        .select('type, content, created_at')
         .eq('deal_id', dealId).order('created_at', { ascending: true }).limit(50),
       supabase.from('pipeline_stage_history')
         .select('from_stage, to_stage, changed_at')
@@ -55,14 +55,17 @@ export async function POST(request: NextRequest) {
     ])
 
   if (!deal) return NextResponse.json({ error: 'Deal no encontrado' }, { status: 404 })
+  // Relaciones a-uno: sin tipos de base se infieren como arreglo.
+  const company = deal.companies as unknown as { name: string | null; industry: string | null; website: string | null } | null
+  const contact = deal.contacts as unknown as { full_name: string | null; job_title: string | null } | null
 
   const context = {
     deal: {
-      empresa: (deal as any).companies?.name,
-      industria: (deal as any).companies?.industry,
-      sitio_web: (deal as any).companies?.website,
-      contacto: (deal as any).contacts?.full_name,
-      cargo_contacto: (deal as any).contacts?.job_title,
+      empresa: company?.name,
+      industria: company?.industry,
+      sitio_web: company?.website,
+      contacto: contact?.full_name,
+      cargo_contacto: contact?.job_title,
       etapa: deal.stage,
       estado: deal.status,
       valor_estimado: deal.estimated_value,
@@ -195,16 +198,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       insights,
-      created_at: (saved as any)?.created_at ?? new Date().toISOString(),
-      created_by_name: (saved as any)?.profiles?.full_name ?? null,
+      created_at: saved?.created_at ?? new Date().toISOString(),
+      created_by_name: (saved?.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
     })
-  } catch (err: any) {
+  } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       return NextResponse.json({ error: 'Límite de uso de IA alcanzado, intenta en unos minutos' }, { status: 429 })
     }
     if (err instanceof Anthropic.AuthenticationError) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY inválida' }, { status: 503 })
     }
-    return NextResponse.json({ error: `Error del análisis IA: ${err?.message ?? 'desconocido'}` }, { status: 502 })
+    return NextResponse.json({ error: `Error del análisis IA: ${err instanceof Error ? err.message : 'desconocido'}` }, { status: 502 })
   }
 }

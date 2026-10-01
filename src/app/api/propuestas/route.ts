@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
 
   // Rol para la verificación de visibilidad
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const role = (profile as any)?.role ?? 'soporte'
+  const role = profile?.role ?? 'soporte'
 
   const allowed = await canSeeDeal(supabase, user.id, role, dealId)
   if (!allowed) return NextResponse.json({ error: 'Sin acceso' }, { status: 403 })
 
   const { data: deal } = await supabase
     .from('deals').select('proposal_url').eq('id', dealId).single()
-  const stored = (deal as any)?.proposal_url as string | null
+  const stored: string | null = deal?.proposal_url ?? null
   if (!stored) return NextResponse.json({ error: 'Sin propuesta' }, { status: 404 })
 
   // Compatibilidad: propuestas antiguas guardaron la URL pública completa

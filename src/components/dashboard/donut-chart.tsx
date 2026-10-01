@@ -47,7 +47,8 @@ function DonutChart({ slices }: { slices: Slice[] }) {
   const CIRC   = 2 * Math.PI * RADIUS
   const GAP    = 3
 
-  let cumPct = 0
+  // Inicio acumulado de cada porción (calculado antes de dibujar).
+  const starts = slices.map((_, i) => slices.slice(0, i).reduce((s, x) => s + x.value / totalDeals, 0))
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
@@ -58,8 +59,7 @@ function DonutChart({ slices }: { slices: Slice[] }) {
             const pct    = slice.value / totalDeals
             const dash   = Math.max(pct * CIRC - GAP, 0)
             const gap    = CIRC - dash
-            const offset = cumPct * CIRC
-            cumPct      += pct
+            const offset = starts[i] * CIRC
 
             return (
               <circle

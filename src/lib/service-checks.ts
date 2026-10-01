@@ -84,10 +84,24 @@ export async function runServiceChecks(userClient: SupabaseClient, svc: Supabase
     svc.from('organization_modules').select('id, module_key, expires_at, organizations(name)').eq('enabled', true).not('expires_at', 'is', null),
   ])
   const health = (healthRes.data ?? null) as Health | null
-  return { checks: await buildChecks(now, health, remindersRes.data ?? [], accountsRes.data ?? [], integrationsRes.data ?? [], modulesRes.data ?? []), health }
+  // organizations(name) es a-uno; sin tipos de base se infiere como arreglo.
+  return {
+    checks: await buildChecks(now, health,
+      (remindersRes.data ?? []) as ReminderRow[],
+      (accountsRes.data ?? []) as unknown as AccountRow[],
+      (integrationsRes.data ?? []) as unknown as IntegrationRow[],
+      (modulesRes.data ?? []) as unknown as ModuleRow[]),
+    health,
+  }
 }
 
-async function buildChecks(now: number, health: Health | null, reminders: any[], accounts: any[], integrations: any[], modules: any[]): Promise<ServiceCheck[]> {
+type OrgName = { organizations: { name: string } | null }
+type ReminderRow = { id: string; name: string; category: string; expires_on: string | null; url: string | null; notes: string | null }
+type AccountRow = OrgName & { id: string; provider: string; email_address: string; is_active: boolean; connected_at: string; subscription_expires_at: string | null }
+type IntegrationRow = OrgName & { id: string; provider: string; label: string | null; access_token: string | null; is_active: boolean }
+type ModuleRow = OrgName & { id: string; module_key: string; expires_at: string }
+
+async function buildChecks(now: number, health: Health | null, reminders: ReminderRow[], accounts: AccountRow[], integrations: IntegrationRow[], modules: ModuleRow[]): Promise<ServiceCheck[]> {
   const checks: ServiceCheck[] = []
 
   // ── Supabase: el plan Free pausa el proyecto tras 7 días sin actividad.

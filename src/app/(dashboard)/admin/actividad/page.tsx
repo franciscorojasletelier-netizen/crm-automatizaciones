@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { createClient, requirePermission } from '@/lib/supabase/server'
-import { Activity, Clock, User, Shield, Wifi, ClipboardList, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
+import { Activity, User, Shield, Wifi, ClipboardList, ChevronRight } from 'lucide-react'
 import { CHILE_TZ } from '@/lib/dates'
 
 function timeAgo(date: string) {
@@ -23,6 +22,16 @@ const roleConfig: Record<string, { label: string; color: string }> = {
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+}
+
+// Filas de las consultas (las relaciones a-uno se infieren como arreglo sin tipos de base).
+type Person = { full_name: string | null; email?: string | null } | null
+type UserRow = { id: string; full_name: string | null; email: string | null; role: string; is_active: boolean }
+type SessionRow = { id: string; started_at: string; last_seen_at: string; profiles: Person }
+type ActivityRow = { id: string; action_type: string; entity_type: string | null; metadata: unknown; created_at: string; profiles: Person }
+type TaskHistoryRow = {
+  id: string; field_changed: string; old_value: string | null; new_value: string | null; comment: string | null; created_at: string
+  changer: Person; task: { title: string; deals: { companies: { name: string | null } | null } | null } | null
 }
 
 export default async function ActividadPage() {
@@ -60,7 +69,7 @@ export default async function ActividadPage() {
           {(!users || users.length === 0) && (
             <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">No hay usuarios registrados</p>
           )}
-          {users?.map((user: any) => (
+          {(users as UserRow[] | null)?.map(user => (
             <div key={user.id} className="px-5 py-3.5 flex items-center gap-3.5 hover:bg-slate-50/50 transition-colors">
               <div className="bg-accent-600 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
                  >
@@ -95,8 +104,8 @@ export default async function ActividadPage() {
         <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
           {(!taskHistory || taskHistory.length === 0) ? (
             <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin cambios registrados aún</p>
-          ) : (taskHistory as any[]).map((h) => {
-            const task = h.task as any
+          ) : (taskHistory as unknown as TaskHistoryRow[]).map((h) => {
+            const task = h.task
             const formatVal = (v: string | null) => {
               if (!v) return 'Sin fecha'
               const d = new Date(v)
@@ -109,7 +118,7 @@ export default async function ActividadPage() {
                   <div className="flex-1 min-w-0">
                     {/* Quién + qué tarea */}
                     <p className="text-sm text-slate-800 leading-snug">
-                      <span className="font-bold text-slate-900">{(h.changer as any)?.full_name ?? 'Usuario'}</span>
+                      <span className="font-bold text-slate-900">{h.changer?.full_name ?? 'Usuario'}</span>
                       <span className="text-slate-400 mx-1.5">reprogramó</span>
                       <span className="font-semibold text-accent-700">{task?.title ?? 'tarea'}</span>
                       {task?.deals?.companies?.name && (
@@ -154,7 +163,7 @@ export default async function ActividadPage() {
             {(!sessions || sessions.length === 0) && (
               <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin sesiones registradas</p>
             )}
-            {sessions?.map((s: any) => (
+            {(sessions as unknown as SessionRow[] | null)?.map(s => (
               <div key={s.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
@@ -180,7 +189,7 @@ export default async function ActividadPage() {
             {(!activity || activity.length === 0) && (
               <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin actividad registrada</p>
             )}
-            {activity?.map((a: any) => (
+            {(activity as unknown as ActivityRow[] | null)?.map(a => (
               <div key={a.id} className="px-5 py-3 flex items-start gap-3 hover:bg-slate-50/50 transition-colors">
                 <div className="w-1.5 h-1.5 rounded-full bg-accent-400 mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">

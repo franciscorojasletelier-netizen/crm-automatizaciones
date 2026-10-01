@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { friendlyError } from '@/lib/pg-error'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { escapeHtml } from '@/lib/html'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       if (legacyToken && legacyEmail && bearerToken === legacyToken) {
         const { data: ownerProfile } = await supabase
           .from('profiles').select('organization_id').eq('email', legacyEmail).maybeSingle()
-        orgId = (ownerProfile as any)?.organization_id ?? null
+        orgId = ownerProfile?.organization_id ?? null
       }
     }
     if (!orgId) {
@@ -305,14 +306,14 @@ export async function POST(request: NextRequest) {
         subject: `¡Recibimos tu mensaje! — ${orgDisplayName}`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
-            <h2 style="color:#111">¡Hola${contact_name ? ` ${contact_name.split(' ')[0]}` : ''}! 👋</h2>
+            <h2 style="color:#111">¡Hola${contact_name ? ` ${escapeHtml(contact_name.split(' ')[0])}` : ''}! 👋</h2>
             <p style="color:#444;line-height:1.6">
               Gracias por contactarnos. Recibimos tu mensaje y uno de nuestros especialistas
               te responderá en <strong>menos de 2 horas hábiles</strong>.
             </p>
-            ${message ? `<div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:24px 0;color:#555;font-style:italic;">"${message}"</div>` : ''}
+            ${message ? `<div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:24px 0;color:#555;font-style:italic;">"${escapeHtml(message)}"</div>` : ''}
             <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
-            <p style="color:#999;font-size:12px;">${orgDisplayName}</p>
+            <p style="color:#999;font-size:12px;">${escapeHtml(orgDisplayName)}</p>
           </div>
         `,
       }).catch(e => console.warn('Error email cliente:', e))
@@ -329,12 +330,12 @@ export async function POST(request: NextRequest) {
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
             <h2 style="color:#111">Nuevo lead recibido</h2>
             <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${contact_name ?? '—'}</td></tr>
-              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${contact_email ?? '—'}</td></tr>
-              <tr><td style="padding:8px;color:#666;">Teléfono</td><td style="padding:8px;">${contact_phone ?? '—'}</td></tr>
-              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${company_name ?? '—'}</td></tr>
-              <tr><td style="padding:8px;color:#666;">Fuente</td><td style="padding:8px;">${source}</td></tr>
-              ${message ? `<tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Mensaje</td><td style="padding:8px;">${message}</td></tr>` : ''}
+              <tr><td style="padding:8px;color:#666;width:140px;">Nombre</td><td style="padding:8px;font-weight:bold;">${escapeHtml(contact_name ?? '—')}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Email</td><td style="padding:8px;">${escapeHtml(contact_email ?? '—')}</td></tr>
+              <tr><td style="padding:8px;color:#666;">Teléfono</td><td style="padding:8px;">${escapeHtml(contact_phone ?? '—')}</td></tr>
+              <tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Empresa</td><td style="padding:8px;">${escapeHtml(company_name ?? '—')}</td></tr>
+              <tr><td style="padding:8px;color:#666;">Fuente</td><td style="padding:8px;">${escapeHtml(source)}</td></tr>
+              ${message ? `<tr style="background:#f9f9f9;"><td style="padding:8px;color:#666;">Mensaje</td><td style="padding:8px;">${escapeHtml(message)}</td></tr>` : ''}
             </table>
             <a href="https://crm-automatizaciones.vercel.app/leads"
                style="display:inline-block;background:#111;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
@@ -352,9 +353,9 @@ export async function POST(request: NextRequest) {
       contact_id: contact.id,
     }, { status: 201, headers: CORS_HEADERS })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Webhook error:', error)
-    return NextResponse.json({ error: friendlyError(error.message, 'Error interno') }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json({ error: friendlyError(error instanceof Error ? error.message : String(error), 'Error interno') }, { status: 500, headers: CORS_HEADERS })
   }
 }
 

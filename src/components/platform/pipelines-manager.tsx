@@ -33,8 +33,8 @@ export default function PipelinesManager({ orgId, pipelines: initialPipelines, a
       setSelected(data.id)
       setName(''); setShowNew(false)
       router.refresh()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setSaving(false)
     }

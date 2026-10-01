@@ -41,12 +41,12 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
     contact_name: '', contact_email: '', contact_phone: '', contact_job_title: '',
     source: '', estimated_value: '', next_action: '',
   })
-  const [customValues, setCustomValues] = useState<Record<string, any>>({})
+  const [customValues, setCustomValues] = useState<Record<string, string | string[] | boolean>>({})
   const [duplicate, setDuplicate] = useState<string | null>(null)
   const [forceCreate, setForceCreate] = useState(false)
 
   function set(field: string, value: string) { setForm(f => ({ ...f, [field]: value })) }
-  function setCustom(key: string, value: any) { setCustomValues(v => ({ ...v, [key]: value })) }
+  function setCustom(key: string, value: string | string[] | boolean) { setCustomValues(v => ({ ...v, [key]: value })) }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -112,8 +112,9 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
       })
       if (dealError) throw dealError
       router.push('/leads')
-    } catch (err: any) {
-      setError(`Error: ${err?.message ?? err?.code ?? JSON.stringify(err)}`)
+    } catch (err) {
+      const e = err as { message?: string; code?: string }
+      setError(`Error: ${e?.message ?? e?.code ?? JSON.stringify(err)}`)
       setLoading(false)
     }
   }
@@ -231,17 +232,17 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                   <div key={f.id} className={f.fieldType === 'textarea' || f.fieldType === 'multiselect' ? 'col-span-2' : ''}>
                     <Field label={f.label} required={f.isRequired} group={f.fieldType === 'multiselect'}>
                       {f.fieldType === 'textarea' && (
-                        <textarea rows={2} placeholder={f.placeholder ?? ''} value={customValues[f.key] ?? ''}
+                        <textarea rows={2} placeholder={f.placeholder ?? ''} value={(customValues[f.key] as string | undefined) ?? ''}
                           onChange={e => setCustom(f.key, e.target.value)} className={`${inputCls} h-auto py-2 resize-none`} />
                       )}
                       {(f.fieldType === 'text' || f.fieldType === 'number' || f.fieldType === 'currency' || f.fieldType === 'date') && (
                         <input
                           type={f.fieldType === 'number' || f.fieldType === 'currency' ? 'number' : f.fieldType === 'date' ? 'date' : 'text'}
-                          placeholder={f.placeholder ?? ''} value={customValues[f.key] ?? ''}
+                          placeholder={f.placeholder ?? ''} value={(customValues[f.key] as string | undefined) ?? ''}
                           onChange={e => setCustom(f.key, e.target.value)} className={inputCls} />
                       )}
                       {f.fieldType === 'select' && (
-                        <select value={customValues[f.key] ?? ''} onChange={e => setCustom(f.key, e.target.value)} className={inputCls}>
+                        <select value={(customValues[f.key] as string | undefined) ?? ''} onChange={e => setCustom(f.key, e.target.value)} className={inputCls}>
                           <option value="">Seleccionar</option>
                           {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
@@ -249,7 +250,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                       {f.fieldType === 'multiselect' && (
                         <div className="flex flex-wrap gap-1.5">
                           {f.options.map(o => {
-                            const selected: string[] = customValues[f.key] ?? []
+                            const selected = (customValues[f.key] as string[] | undefined) ?? []
                             const checked = selected.includes(o.value)
                             return (
                               <button key={o.value} type="button"

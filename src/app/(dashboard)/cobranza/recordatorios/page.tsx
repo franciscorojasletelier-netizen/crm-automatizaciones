@@ -75,7 +75,10 @@ export default async function RecordatoriosPage() {
           <p className="px-4 py-5 text-sm text-slate-500">Todavía no se ha enviado ninguno.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {(history ?? []).map((h: any) => (
+            {((history ?? []) as unknown as {
+              id: string; milestone: string; sent_to: string; sent_at: string
+              invoices: { invoice_number: number; document_folio: string | null; companies: { name: string } | null } | null
+            }[]).map(h => (
               <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[13px]">
                 <span className="text-slate-900">
                   {h.invoices?.companies?.name ?? 'Cliente'} · <span className="text-slate-500">{MILESTONE_LABEL(h.milestone)}</span>

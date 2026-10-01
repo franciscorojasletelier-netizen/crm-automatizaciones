@@ -111,7 +111,7 @@ export default function TemplatePicker({
           <div className="max-h-56 overflow-y-auto">
             {loading && <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-300" /></div>}
             {!loading && templates.length === 0 && !creating && (
-              <p className="text-xs text-slate-400 text-center py-6 px-3">Sin plantillas todavía. Crea la primera con "Nueva".</p>
+              <p className="text-xs text-slate-400 text-center py-6 px-3">Sin plantillas todavía. Crea la primera con “Nueva”.</p>
             )}
             {templates.map(t => (
               <div key={t.id} className="group flex items-start gap-1.5 px-3 py-2 hover:bg-slate-50 transition-colors">

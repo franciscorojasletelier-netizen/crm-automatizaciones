@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
@@ -34,8 +34,13 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
   const supabase = createClient()
   const isPending = status === 'pendiente_especificaciones' || currentStatus === 'pendiente_especificaciones'
 
-  useEffect(() => { setPhase(currentPhase) }, [currentPhase])
-  useEffect(() => { setStatus(currentStatus) }, [currentStatus])
+  // Adoptar los valores nuevos del servidor (ajuste en el render, sin efecto).
+  const [prev, setPrev] = useState({ currentPhase, currentStatus })
+  if (prev.currentPhase !== currentPhase || prev.currentStatus !== currentStatus) {
+    setPrev({ currentPhase, currentStatus })
+    setPhase(currentPhase)
+    setStatus(currentStatus)
+  }
 
   async function handlePhaseChange(newPhase: string) {
     if (readOnly || newPhase === phase) return
@@ -45,7 +50,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       return
     }
     setLoading(true); setError(''); setPhase(newPhase)
-    const updates: Record<string, any> = { phase: newPhase }
+    const updates: { phase: string; status?: string } = { phase: newPhase }
     if (newPhase === 'entrega') updates.status = 'entregado'
     const { error: err } = await supabase.from('projects').update(updates).eq('id', projectId)
     if (err) { setError(friendlyError(err.message)); setPhase(currentPhase) }
@@ -60,7 +65,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       return
     }
     setLoading(true); setStatus(newStatus)
-    const updates: Record<string, any> = { status: newStatus }
+    const updates: { status: string; delivered_at?: string } = { status: newStatus }
     if (newStatus === 'entregado') updates.delivered_at = new Date().toISOString()
     const { error: err } = await supabase.from('projects').update(updates).eq('id', projectId)
     if (err) { setError(friendlyError(err.message)); setStatus(currentStatus) }

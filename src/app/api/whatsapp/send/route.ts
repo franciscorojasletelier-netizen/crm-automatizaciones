@@ -6,12 +6,13 @@ import { sendWhatsAppText } from '@/lib/whatsapp'
 
 export async function POST(request: NextRequest) {
   try {
-    let user: any, role: string, rlsSupabase: any
+    let ctx: Awaited<ReturnType<typeof getCurrentProfile>>
     try {
-      ;({ user, role, supabase: rlsSupabase } = await getCurrentProfile())
+      ctx = await getCurrentProfile()
     } catch {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
+    const { user, role, supabase: rlsSupabase } = ctx
 
     // Solo roles con acceso comercial pueden enviar
     const allowed = ['super_admin', 'admin', 'gerente', 'comercial']
@@ -47,7 +48,8 @@ export async function POST(request: NextRequest) {
 
     if (!deal) return NextResponse.json({ error: 'Deal no encontrado' }, { status: 404 })
 
-    const phone = (deal.contacts as any)?.phone
+    // contacts es a-uno; sin tipos de base se infiere como arreglo.
+    const phone = (deal.contacts as unknown as { phone: string | null } | null)?.phone
     if (!phone) return NextResponse.json({ error: 'El contacto no tiene teléfono registrado' }, { status: 400 })
 
     const result = await sendWhatsAppText(supabase, {
@@ -60,8 +62,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, message: result.message })
 
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error en /api/whatsapp/send:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno al enviar el mensaje' }, { status: 500 })
   }
 }

@@ -8,6 +8,7 @@
 //  sección nueva al CRM no la deja invisible para las organizaciones
 //  existentes hasta sembrarla a mano.
 // ============================================================
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Claves de módulo que esta organización tiene explícitamente apagadas.
@@ -18,13 +19,13 @@
  * filtro explícito vería (y mezclaría) los módulos apagados de TODAS las
  * organizaciones, no solo la propia.
  */
-export async function getDisabledModules(supabase: any, orgId?: string): Promise<Set<string>> {
+export async function getDisabledModules(supabase: SupabaseClient, orgId?: string): Promise<Set<string>> {
   // Apagado explícito o con fecha de vencimiento ya cumplida (módulo contratado por un plazo).
   let q = supabase.from('organization_modules').select('module_key')
     .or(`enabled.eq.false,expires_at.lt.${new Date().toISOString()}`)
   if (orgId) q = q.eq('organization_id', orgId)
   const { data } = await q
-  return new Set((data ?? []).map((r: any) => r.module_key))
+  return new Set(((data ?? []) as { module_key: string }[]).map(r => r.module_key))
 }
 
 export function isModuleEnabled(disabledModules: Set<string> | null | undefined, key: string): boolean {
