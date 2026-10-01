@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { ExternalLink } from 'lucide-react'
 import { getCurrentProfile } from '@/lib/supabase/server'
-import { emailServiceClient } from '@/lib/email/send-as-user'
+import { serviceClient } from '@/lib/supabase/service'
 import { runServiceChecks, type CheckStatus, type ServiceCheck } from '@/lib/service-checks'
 import { CHILE_TZ } from '@/lib/dates'
 import { cn } from '@/lib/utils'
@@ -44,7 +44,7 @@ export default async function ServiciosPage() {
   if (!owner) redirect('/dashboard')
 
   const [{ checks }, { data: reminderRows }] = await Promise.all([
-    runServiceChecks(supabase, emailServiceClient()),
+    runServiceChecks(supabase, serviceClient()),
     supabase.from('service_reminders').select('id, name, category, expires_on, url, notes'),
   ])
   const reminders = new Map(((reminderRows ?? []) as Reminder[]).map(r => [`rem-${r.id}`, r]))
