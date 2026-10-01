@@ -274,7 +274,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
       {moreOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="Menú">
           <div className="absolute inset-0 bg-slate-900/40" onClick={() => setMoreOpen(false)} />
-          <div ref={drawerRef} tabIndex={-1} className="relative bg-white rounded-t-2xl flex flex-col max-h-[85vh] shadow-2xl outline-none">
+          <div ref={drawerRef} tabIndex={-1} className="relative bg-white rounded-t-lg flex flex-col max-h-[85vh] shadow-2xl outline-none">
             <div className="px-4 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
               <Brand organizationName={organizationName} />
               <button onClick={() => setMoreOpen(false)} aria-label="Cerrar menú"

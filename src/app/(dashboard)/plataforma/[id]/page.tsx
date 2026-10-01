@@ -55,11 +55,11 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     <div className="p-4 md:p-6 min-h-full bg-slate-50">
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <Link href="/plataforma" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-3">
+          <Link href="/plataforma" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors mb-3">
             <ArrowLeft className="w-4 h-4" /> Volver a organizaciones
           </Link>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-indigo-600" />
+            <Building2 className="w-6 h-6 text-accent-600" />
             {org.name}
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">

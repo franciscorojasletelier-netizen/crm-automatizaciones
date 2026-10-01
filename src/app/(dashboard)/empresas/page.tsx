@@ -45,7 +45,7 @@ export default async function EmpresasPage() {
         </div>
         {canEdit && (
           <Link href="/leads/nuevo"
-            className="bg-accent-600 shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            className="bg-accent-600 shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-xs hover:-translate-y-0.5 transition-all"
              >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nueva empresa</span>
@@ -57,7 +57,7 @@ export default async function EmpresasPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
             <Building2 className="w-4 h-4 text-green-600" />
           </div>
           <div>
@@ -66,7 +66,7 @@ export default async function EmpresasPage() {
           </div>
         </div>
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
             <Users className="w-4 h-4 text-blue-600" />
           </div>
           <div>
@@ -75,8 +75,8 @@ export default async function EmpresasPage() {
           </div>
         </div>
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-4 h-4 text-indigo-600" />
+          <div className="w-9 h-9 rounded-lg bg-accent-50 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-4 h-4 text-accent-600" />
           </div>
           <div>
             <p className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">{totalWithDeals}</p>
@@ -103,7 +103,7 @@ export default async function EmpresasPage() {
                 <td colSpan={5} className="px-5 py-14 text-center">
                   <Building2 className="w-8 h-8 text-slate-200 mx-auto mb-2" />
                   <p className="text-slate-400 text-sm font-medium">No hay empresas aún.</p>
-                  <Link href="/leads/nuevo" className="text-indigo-600 text-sm font-medium hover:text-indigo-800 mt-1 inline-block">
+                  <Link href="/leads/nuevo" className="text-accent-600 text-sm font-medium hover:text-accent-800 mt-1 inline-block">
                     Crear un lead →
                   </Link>
                 </td>

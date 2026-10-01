@@ -77,14 +77,14 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Tareas</h2>
           {pending.length > 0 && (
-            <span className="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold bg-accent-100 text-accent-600 px-2 py-0.5 rounded-full">
               {pending.length} pendiente{pending.length > 1 ? 's' : ''}
             </span>
           )}
         </div>
         <button onClick={() => setShowing(!showing)}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-            showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+            showing ? 'bg-slate-100 text-slate-600' : 'bg-accent-50 text-accent-600 hover:bg-accent-100'
           }`}>
           {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showing ? 'Cancelar' : 'Nueva tarea'}
@@ -95,7 +95,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
         <div className="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
           <input aria-label="Descripción de la tarea" value={title} onChange={e => setTitle(e.target.value)}
             placeholder="Descripción de la tarea..."
-            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400"
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400"
             onKeyDown={e => { if (e.key === 'Enter' && title.trim()) handleAdd() }}
           />
           <div>
@@ -103,16 +103,16 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
               <Calendar className="w-3 h-3" /> Fecha límite (opcional)
             </label>
             <input id="deal-tasks-f1" type="datetime-local" value={dueDate} onChange={e => handleDateChange(e.target.value)}
-              className={`w-full px-3.5 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 bg-white transition-colors ${
+              className={`w-full px-3.5 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white transition-colors ${
                 conflicts.length > 0
                   ? 'border-amber-400 focus:ring-amber-400 bg-amber-50'
-                  : 'border-slate-200 focus:ring-indigo-500'
+                  : 'border-slate-200 focus:ring-accent-500'
               }`}
             />
 
             {/* Advertencia de conflicto */}
             {conflicts.length > 0 && !showConflictConfirm && (
-              <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+              <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
                 <div className="text-xs text-amber-700 space-y-0.5">
                   <p className="font-bold">Conflicto de horario (±30 min)</p>
@@ -125,7 +125,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
 
             {/* Confirmación de conflicto */}
             {showConflictConfirm && (
-              <div className="mt-2 bg-amber-50 border-2 border-amber-300 rounded-xl p-3 space-y-2">
+              <div className="mt-2 bg-amber-50 border-2 border-amber-300 rounded-lg p-3 space-y-2">
                 <p className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" /> ¿Crear igual con conflicto de horario?
                 </p>
@@ -145,7 +145,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
 
           {!showConflictConfirm && (
             <button onClick={() => handleAdd()} disabled={loading || !title.trim()}
-              className={`flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 transition-all hover:shadow-md ${
+              className={`flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-all ${
                 conflicts.length > 0 ? 'bg-amber-500 hover:bg-amber-600' : ''
               }`}
               style={conflicts.length > 0 ? {} : { background: 'var(--color-accent-600)' }}>
@@ -171,7 +171,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
               <button onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0 transition-transform hover:scale-110">
                 {overdue
                   ? <AlertTriangle className="w-4.5 h-4.5 text-red-500" />
-                  : <Circle className="w-4.5 h-4.5 text-slate-400 hover:text-indigo-500 transition-colors" />
+                  : <Circle className="w-4.5 h-4.5 text-slate-400 hover:text-accent-500 transition-colors" />
                 }
               </button>
               <div className="flex-1 min-w-0">

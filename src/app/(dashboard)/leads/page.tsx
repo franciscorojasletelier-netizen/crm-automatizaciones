@@ -85,7 +85,7 @@ export default async function LeadsPage() {
           <div className="flex items-center gap-2">
           <ImportLeadsButton />
           <Link href="/leads/nuevo"
-            className="bg-accent-600 shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            className="bg-accent-600 shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-xs hover:-translate-y-0.5 transition-all"
              >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nuevo lead</span>
@@ -110,9 +110,9 @@ export default async function LeadsPage() {
           <div className="space-y-2">
             {pendingSpecDeals.map((proj: any) => (
               <Link key={proj.id} href={`/leads/${proj.deal_id}`}
-                className="flex items-center justify-between gap-4 bg-amber-50 border-2 border-amber-300 rounded-2xl px-5 py-3.5 hover:border-amber-400 hover:shadow-sm transition-all group">
+                className="flex items-center justify-between gap-4 bg-amber-50 border-2 border-amber-300 rounded-lg px-5 py-3.5 hover:border-amber-400 hover:shadow-sm transition-all group">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-amber-200 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-200 flex items-center justify-center shrink-0">
                     <AlertTriangle className="w-4 h-4 text-amber-700" />
                   </div>
                   <div>
@@ -124,7 +124,7 @@ export default async function LeadsPage() {
                     </p>
                   </div>
                 </div>
-                <span className="shrink-0 text-xs font-bold text-amber-700 bg-amber-200 px-3 py-1 rounded-xl border border-amber-300 group-hover:bg-amber-300 transition-colors">
+                <span className="shrink-0 text-xs font-bold text-amber-700 bg-amber-200 px-3 py-1 rounded-lg border border-amber-300 group-hover:bg-amber-300 transition-colors">
                   Ver deal →
                 </span>
               </Link>

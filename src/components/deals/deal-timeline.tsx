@@ -76,10 +76,10 @@ export default function DealTimeline({
   }
 
   const ICONS: Record<TimelineEvent['type'], { icon: typeof GitBranch; color: string }> = {
-    stage:       { icon: GitBranch,       color: 'text-indigo-500 bg-indigo-50' },
+    stage:       { icon: GitBranch,       color: 'text-accent-500 bg-accent-50' },
     interaction: { icon: MessageSquare,   color: 'text-amber-500 bg-amber-50' },
     task:        { icon: CheckSquare,     color: 'text-emerald-500 bg-emerald-50' },
-    message:     { icon: MessagesSquare,  color: 'text-purple-500 bg-purple-50' },
+    message:     { icon: MessagesSquare,  color: 'text-accent-500 bg-accent-50' },
     email:       { icon: Mail,            color: 'text-sky-500 bg-sky-50' },
   }
 

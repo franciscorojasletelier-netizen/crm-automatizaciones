@@ -168,7 +168,7 @@ export default function ImportLeadsButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-white border border-slate-200 shadow-sm hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md transition-all"
+        className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 bg-white border border-slate-200 shadow-sm hover:border-accent-300 hover:text-accent-600 hover:shadow-md transition-all"
       >
         <Upload className="w-4 h-4" />
         <span className="hidden sm:inline">Importar CSV</span>
@@ -183,8 +183,8 @@ export default function ImportLeadsButton() {
             {/* Header */}
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-                  <FileSpreadsheet className="w-4.5 h-4.5 text-indigo-600" />
+                <div className="w-9 h-9 rounded-lg bg-accent-100 flex items-center justify-center">
+                  <FileSpreadsheet className="w-4.5 h-4.5 text-accent-600" />
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900">Importar leads desde CSV</h2>
@@ -202,7 +202,7 @@ export default function ImportLeadsButton() {
               {/* Resultado final */}
               {result ? (
                 <div className="space-y-4">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-5 text-center">
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                     <p className="text-lg font-bold text-slate-900">{result.ok} leads importados</p>
                     <div className="flex items-center justify-center gap-4 mt-2 text-xs">
@@ -212,7 +212,7 @@ export default function ImportLeadsButton() {
                   </div>
                   <button 
                     onClick={() => { setOpen(false); reset() }}
-                    className="bg-accent-600 w-full py-2.5 rounded-xl text-sm font-semibold text-white"
+                    className="bg-accent-600 w-full py-2.5 rounded-lg text-sm font-semibold text-white"
                   >
                     Listo
                   </button>
@@ -220,7 +220,7 @@ export default function ImportLeadsButton() {
               ) : leads.length === 0 ? (
                 <>
                   {/* Zona de carga */}
-                  <label className="block border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-2xl p-8 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-indigo-50/30">
+                  <label className="block border-2 border-dashed border-slate-300 hover:border-accent-400 rounded-lg p-8 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-accent-50/30">
                     <input
                       ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
@@ -231,12 +231,12 @@ export default function ImportLeadsButton() {
                   </label>
 
                   <button onClick={downloadTemplate}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors mx-auto">
+                    className="flex items-center gap-1.5 text-xs font-semibold text-accent-600 hover:text-accent-800 transition-colors mx-auto">
                     <Download className="w-3.5 h-3.5" /> Descargar plantilla de ejemplo
                   </button>
 
                   {error && (
-                    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+                    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
                       <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                       <p className="text-xs text-red-600">{error}</p>
                     </div>
@@ -247,9 +247,9 @@ export default function ImportLeadsButton() {
                   {/* Preview */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-indigo-500" />
+                      <FileSpreadsheet className="w-4 h-4 text-accent-500" />
                       <span className="text-sm font-bold text-slate-800">{fileName}</span>
-                      <span className="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold bg-accent-100 text-accent-600 px-2 py-0.5 rounded-full">
                         {leads.length} lead{leads.length > 1 ? 's' : ''}
                       </span>
                     </div>
@@ -260,7 +260,7 @@ export default function ImportLeadsButton() {
                     )}
                   </div>
 
-                  <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  <div className="border border-slate-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
                     <table className="w-full text-xs">
                       <thead className="bg-slate-50 sticky top-0">
                         <tr>
@@ -290,7 +290,7 @@ export default function ImportLeadsButton() {
 
                   <button
                     onClick={runImport} disabled={importing}
-                    className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                    className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
                   >
                     {importing
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Importando {leads.length} leads...</>

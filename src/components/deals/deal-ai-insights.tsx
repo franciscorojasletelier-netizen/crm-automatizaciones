@@ -79,14 +79,14 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
     <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="bg-accent-50 px-4 py-3 flex items-center gap-2 border-b border-slate-100"
          >
-        <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+        <div className="w-7 h-7 rounded-lg bg-accent-100 flex items-center justify-center">
+          <Sparkles className="w-3.5 h-3.5 text-accent-600" />
         </div>
         <h2 className="flex-1 text-sm font-semibold text-slate-900">Análisis IA</h2>
         {insights && !loading && (
           <button onClick={analyze} disabled={cooldown > 0}
             title={cooldown > 0 ? `Puedes volver a analizar en ${cooldown}s` : 'Volver a analizar'}
-            className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-violet-600 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed flex items-center gap-1">
+            className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-accent-600 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed flex items-center gap-1">
             <RefreshCw className="w-3.5 h-3.5" />
             {cooldown > 0 && <span className="text-[11px] font-semibold">{cooldown}s</span>}
           </button>
@@ -100,7 +100,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
               Investiga la empresa en la web, resume el historial del deal, sugiere el enfoque de venta y evalúa el riesgo.
             </p>
             <button onClick={analyze}
-              className="bg-accent-600 inline-flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
+              className="bg-accent-600 inline-flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-lg shadow-xs transition-all"
                >
               <Sparkles className="w-3.5 h-3.5" />
               Analizar deal
@@ -109,7 +109,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
         )}
 
         {loading && (
-          <div className="flex items-center justify-center gap-2 py-6 text-violet-500">
+          <div className="flex items-center justify-center gap-2 py-6 text-accent-500">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span className="text-xs font-medium">Investigando la empresa y analizando el deal…</span>
           </div>
@@ -117,12 +117,12 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
 
         {error && !loading && (
           <div className="space-y-2">
-            <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+            <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
               <p className="text-xs text-red-700">{error}</p>
             </div>
             <button onClick={analyze}
-              className="text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors">
+              className="text-xs font-semibold text-accent-600 hover:text-accent-800 transition-colors">
               Reintentar
             </button>
           </div>
@@ -136,7 +136,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
             </div>
 
             {insights.contexto_empresa && (
-              <div className="bg-sky-50/60 border border-sky-100 rounded-xl px-3 py-2.5">
+              <div className="bg-sky-50/60 border border-sky-100 rounded-lg px-3 py-2.5">
                 <p className="text-[13px] font-semibold text-sky-600 mb-1 flex items-center gap-1">
                   <Globe className="w-3 h-3" /> Sobre la empresa
                 </p>
@@ -145,19 +145,19 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
             )}
 
             {insights.enfoque_recomendado && (
-              <div className="bg-violet-50/60 border border-violet-100 rounded-xl px-3 py-2.5">
-                <p className="text-[13px] font-semibold text-violet-600 mb-1 flex items-center gap-1">
+              <div className="bg-accent-50/60 border border-accent-100 rounded-lg px-3 py-2.5">
+                <p className="text-[13px] font-semibold text-accent-600 mb-1 flex items-center gap-1">
                   <Target className="w-3 h-3" /> Enfoque de venta
                 </p>
-                <p className="text-xs text-violet-900 leading-relaxed">{insights.enfoque_recomendado}</p>
+                <p className="text-xs text-accent-900 leading-relaxed">{insights.enfoque_recomendado}</p>
               </div>
             )}
 
-            <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl px-3 py-2.5">
-              <p className="text-[13px] font-semibold text-indigo-500 mb-1 flex items-center gap-1">
+            <div className="bg-accent-50/60 border border-accent-100 rounded-lg px-3 py-2.5">
+              <p className="text-[13px] font-semibold text-accent-500 mb-1 flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" /> Próxima acción sugerida
               </p>
-              <p className="text-sm font-medium text-indigo-900">{insights.proxima_accion}</p>
+              <p className="text-sm font-medium text-accent-900">{insights.proxima_accion}</p>
             </div>
 
             <div className="flex items-start gap-2.5">

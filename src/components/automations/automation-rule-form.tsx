@@ -86,8 +86,8 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 sticky top-4">
       <div className="flex items-center gap-2 mb-5">
-        <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-          <Plus className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+          <Plus className="w-3.5 h-3.5 text-accent-600" />
         </div>
         <h2 className="text-sm font-semibold text-slate-900">Nueva regla</h2>
       </div>
@@ -99,7 +99,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Ej: Seguimiento propuesta"
-            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 focus:border-accent-300 bg-slate-50 text-slate-900 placeholder:text-slate-400"
           />
         </div>
 
@@ -109,7 +109,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Opcional"
-            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 focus:border-accent-300 bg-slate-50 text-slate-900 placeholder:text-slate-400"
           />
         </div>
 
@@ -119,7 +119,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
           <select id="automation-rule-form-f3"
             value={triggerType}
             onChange={e => setTriggerType(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900"
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900"
           >
             {TRIGGER_TYPES.map(t => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -137,7 +137,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
             <select id="automation-rule-form-f4"
               value={toStage}
               onChange={e => setToStage(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900"
             >
               {STAGE_OPTIONS.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -153,7 +153,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
               min={1} max={90}
               value={daysInactive}
               onChange={e => setDaysInactive(Number(e.target.value))}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900"
             />
           </div>
         )}
@@ -164,7 +164,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
           <select id="automation-rule-form-f6"
             value={actionType}
             onChange={e => setActionType(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900"
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900"
           >
             {ACTION_TYPES.map(a => (
               <option key={a.value} value={a.value}>{a.label}</option>
@@ -184,7 +184,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
                 value={taskTitle}
                 onChange={e => setTaskTitle(e.target.value)}
                 placeholder="Ej: Llamada de seguimiento"
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900 placeholder:text-slate-400"
               />
             </div>
             <div>
@@ -193,7 +193,7 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
                 type="number" min={1} max={30}
                 value={taskDaysAfter}
                 onChange={e => setTaskDaysAfter(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900"
               />
             </div>
           </div>
@@ -206,19 +206,19 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
               onChange={e => setNotifMessage(e.target.value)}
               placeholder="Ej: Este deal necesita seguimiento"
               rows={2}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 resize-none"
             />
           </div>
         )}
 
         {error && (
-          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{error}</p>
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
         )}
 
         <button
           type="submit"
           disabled={saving || !name.trim()}
-          className="bg-accent-600 w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+          className="bg-accent-600 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
            
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}

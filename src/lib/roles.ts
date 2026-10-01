@@ -15,15 +15,15 @@ export const ROLE_META: Record<Role, {
   super_admin: {
     label: 'Super Admin',
     description: 'Acceso total al sistema, gestión de usuarios y configuración técnica',
-    color: 'text-purple-700 bg-purple-100 ring-purple-200',
-    badge: 'bg-purple-500',
+    color: 'text-accent-700 bg-accent-100 ring-accent-200',
+    badge: 'bg-accent-500',
     level: 5,
   },
   gerente: {
     label: 'Gerente',
     description: 'Visibilidad completa del negocio, reportes y gestión de equipo',
-    color: 'text-indigo-700 bg-indigo-100 ring-indigo-200',
-    badge: 'bg-indigo-500',
+    color: 'text-accent-700 bg-accent-100 ring-accent-200',
+    badge: 'bg-accent-500',
     level: 4,
   },
   comercial: {

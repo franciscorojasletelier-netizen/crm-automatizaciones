@@ -134,13 +134,13 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   return (
     <div className="fixed bottom-[76px] md:bottom-6 right-3 md:right-6 z-40 flex flex-col items-end gap-3">
       {open && (
-        <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+        <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
           style={{ height: 'min(500px, calc(100dvh - 10rem))' }}>
 
           <div className="bg-slate-900 px-4 py-3 flex items-center gap-2 shrink-0"
              >
-            <div className="w-7 h-7 rounded-xl bg-indigo-500/30 flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 text-indigo-300" />
+            <div className="w-7 h-7 rounded-lg bg-accent-500/30 flex items-center justify-center">
+              <MessageCircle className="w-4 h-4 text-accent-300" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-white">Chat del equipo</p>
@@ -190,7 +190,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
                           <Trash2 className="w-2.5 h-2.5" />
                         </button>
                       )}
-                      <div className={`px-3 py-1.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
+                      <div className={`px-3 py-1.5 rounded-lg text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
                         isTemp ? 'opacity-60' : 'opacity-100'
                       } ${isMe
                         ? 'bg-accent-600 text-white rounded-br-sm'
@@ -210,7 +210,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
           </div>
 
           {error && (
-            <div className="mx-3 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            <div className="mx-3 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
               <p className="text-xs text-red-700 flex-1">{error}</p>
               <button onClick={() => setError('')} className="text-red-400 text-xs" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
@@ -218,14 +218,14 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
           )}
 
           <div className="px-3 pb-3 pt-2 border-t border-slate-100 shrink-0">
-            <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+            <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus-within:border-accent-300 focus-within:ring-2 focus-within:ring-accent-100 transition-all">
               <textarea aria-label="Mensaje al equipo... (Enter)" ref={inputRef} value={input}
                 onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
                 placeholder="Mensaje al equipo... (Enter)"
                 rows={1} style={{ resize: 'none', minHeight: '20px', maxHeight: '80px' }}
                 className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
               <button aria-label="Enviar mensaje" onClick={sendMessage} disabled={!input.trim() || sending}
-                className="w-7 h-7 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
+                className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30 transition-all hover:scale-105 shrink-0"
                 style={{ background: input.trim() ? 'var(--color-accent-600)' : 'var(--color-slate-200)' }}>
                 <Send className={`w-3.5 h-3.5 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />
               </button>

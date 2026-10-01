@@ -36,7 +36,7 @@ export default function RequireMfaToggle({ orgId, requireMfa }: { orgId: string;
           <input type="checkbox" checked={requireMfa} disabled={saving}
             onChange={e => toggle(e.target.checked)}
             className="sr-only peer" />
-          <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-indigo-600 peer-disabled:opacity-50 transition-colors" />
+          <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-accent-600 peer-disabled:opacity-50 transition-colors" />
           <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-3.5" />
         </div>
       </label>

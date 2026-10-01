@@ -122,7 +122,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
     <div className="min-h-full bg-slate-50 p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <Link href="/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-4">
+          <Link href="/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /> Volver a leads
           </Link>
           <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Nuevo lead</h1>
@@ -133,8 +133,8 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           {/* Empresa */}
           <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-indigo-600" />
+              <div className="w-8 h-8 rounded-lg bg-accent-50 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-accent-600" />
               </div>
               <h2 className="text-sm font-bold text-slate-800">Empresa</h2>
             </div>
@@ -159,8 +159,8 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           {/* Contacto */}
           <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
-                <User className="w-4 h-4 text-purple-600" />
+              <div className="w-8 h-8 rounded-lg bg-accent-50 flex items-center justify-center">
+                <User className="w-4 h-4 text-accent-600" />
               </div>
               <h2 className="text-sm font-bold text-slate-800">Contacto principal</h2>
             </div>
@@ -187,7 +187,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           {/* Oportunidad */}
           <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
               </div>
               <h2 className="text-sm font-bold text-slate-800">Oportunidad</h2>
@@ -221,7 +221,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           {dealFields.length > 0 && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 space-y-4">
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
                   <ListPlus className="w-4 h-4 text-slate-600" />
                 </div>
                 <h2 className="text-sm font-bold text-slate-800">Campos adicionales</h2>
@@ -255,7 +255,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                               <button key={o.value} type="button"
                                 onClick={() => setCustom(f.key, checked ? selected.filter(v => v !== o.value) : [...selected, o.value])}
                                 className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors ${
-                                  checked ? 'bg-indigo-100 border-indigo-300 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                  checked ? 'bg-accent-100 border-accent-300 text-accent-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
                                 }`}>
                                 {o.label}
                               </button>
@@ -265,7 +265,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                       )}
                       {f.fieldType === 'boolean' && (
                         <button type="button" onClick={() => setCustom(f.key, !customValues[f.key])}
-                          className={`text-xs px-3 py-2 rounded-xl border font-semibold transition-colors ${
+                          className={`text-xs px-3 py-2 rounded-lg border font-semibold transition-colors ${
                             customValues[f.key] ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-slate-500'
                           }`}>
                           {customValues[f.key] ? 'Sí' : 'No'}
@@ -280,7 +280,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           )}
 
           {duplicate && (
-            <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-amber-800">{duplicate}</p>
@@ -293,7 +293,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
           )}
 
           {error && (
-            <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
               <p className="text-sm font-medium text-red-700">{error}</p>
             </div>
@@ -301,7 +301,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
 
           <div className="flex gap-3 pt-1">
             <button type="submit" disabled={loading}
-              className="bg-accent-600 flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
+              className="bg-accent-600 flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-lg disabled:opacity-50 transition-all"
                >
               {loading ? (
                 <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/></svg>Guardando...</>
@@ -309,7 +309,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                 <><CheckCircle2 className="w-4 h-4" />Crear lead</>
               )}
             </button>
-            <Link href="/leads" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+            <Link href="/leads" className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
               Cancelar
             </Link>
           </div>

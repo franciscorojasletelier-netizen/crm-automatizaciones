@@ -76,7 +76,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div className={`sticky top-0 z-10 border-b px-4 md:px-6 py-3 flex items-center justify-between gap-4 ${
         isPending ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'
       }`}>
-        <Link href="/proyectos" className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+        <Link href="/proyectos" className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Proyectos
         </Link>
         <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         {/* Hero */}
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5">
           <div className="flex items-start gap-4">
-            <div className="bg-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+            <div className="bg-accent-600 w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
                >
               <Building2 className="w-6 h-6 text-white" />
             </div>
@@ -108,9 +108,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             {[
-              { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-indigo-600 bg-indigo-50' },
+              { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-accent-600 bg-accent-50' },
               { label: 'Presupuesto',  value: formatCLP(project.budget), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-purple-600 bg-purple-50' },
+              { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-accent-600 bg-accent-50' },
               { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-2.5">
@@ -144,7 +144,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-400 font-medium">Deal de origen</p>
               <Link href={`/leads/${(project.deals as any).id}`}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg transition-colors">
+                className="text-xs font-semibold text-accent-600 hover:text-accent-800 bg-accent-50 hover:bg-accent-100 px-3 py-1 rounded-lg transition-colors">
                 Ver deal →
               </Link>
             </div>

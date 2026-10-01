@@ -48,10 +48,10 @@ export default function UserLimitEditor({ orgId, currentUsers, maxUsers }: {
         <input aria-label="Sin límite"
           type="number" min={1} value={value} onChange={e => setValue(e.target.value)}
           placeholder="Sin límite"
-          className="w-32 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-32 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500"
         />
         <button onClick={save} disabled={saving}
-          className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg disabled:opacity-50 transition-colors">
+          className="text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 px-3 py-2 rounded-lg disabled:opacity-50 transition-colors">
           Guardar
         </button>
         <span className="text-[11px] text-slate-400">Vacío = sin límite</span>

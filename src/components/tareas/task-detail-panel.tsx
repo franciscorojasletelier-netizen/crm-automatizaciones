@@ -159,7 +159,7 @@ export default function TaskDetailPanel({
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {task.deals?.companies?.name && (
-                <span className="flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-medium">
+                <span className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-0.5 rounded-md font-medium">
                   <Building2 className="w-3 h-3" />{task.deals.companies.name}
                 </span>
               )}
@@ -189,7 +189,7 @@ export default function TaskDetailPanel({
           {/* Edit date/time */}
           {readOnly ? (
             <div className="px-5 py-4 border-b border-slate-100">
-              <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
+              <div className="bg-slate-50 rounded-lg p-3 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <div>
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Fecha programada</p>
@@ -207,7 +207,7 @@ export default function TaskDetailPanel({
             </p>
 
             {/* Current date */}
-            <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
+            <div className="bg-slate-50 rounded-lg p-3 flex items-center gap-2">
               <Clock className="w-4 h-4 text-slate-400 shrink-0" />
               <div>
                 <p className="text-[11px] text-slate-400 font-semibold uppercase">Fecha actual</p>
@@ -226,7 +226,7 @@ export default function TaskDetailPanel({
                 type="datetime-local"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white"
               />
             </div>
 
@@ -241,7 +241,7 @@ export default function TaskDetailPanel({
                 onChange={e => setComment(e.target.value)}
                 placeholder="Explica brevemente por qué se reprograma esta tarea..."
                 rows={3}
-                className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none placeholder:text-slate-400 transition-colors ${
+                className={`w-full px-3.5 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white resize-none placeholder:text-slate-400 transition-colors ${
                   dateChanged && comment.trim().length < 5 && comment.length > 0
                     ? 'border-red-300 focus:ring-red-400'
                     : 'border-slate-200'
@@ -259,7 +259,7 @@ export default function TaskDetailPanel({
             <button
               onClick={handleSave}
               disabled={!canSave || saving}
-              className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-all hover:shadow-md disabled:cursor-not-allowed"
+              className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-40 transition-all disabled:cursor-not-allowed"
                
             >
               <Save className="w-4 h-4" />
@@ -300,7 +300,7 @@ export default function TaskDetailPanel({
                   {history.map((entry, i) => (
                     <div key={entry.id} className="flex gap-3">
                       <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5 ${
-                        i === 0 ? 'border-indigo-500 bg-indigo-100' : 'border-slate-300 bg-white'
+                        i === 0 ? 'border-accent-500 bg-accent-100' : 'border-slate-300 bg-white'
                       }`} />
                       <div className="flex-1 min-w-0 pb-1">
                         <div className="flex items-start justify-between gap-2">
@@ -320,7 +320,7 @@ export default function TaskDetailPanel({
                             {entry.field_changed === 'due_date' ? formatDt(entry.old_value) : (entry.old_value ?? '—')}
                           </span>
                           <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded font-medium">
+                          <span className="text-[11px] text-accent-700 bg-accent-50 px-2 py-0.5 rounded font-medium">
                             {entry.field_changed === 'due_date' ? formatDt(entry.new_value) : (entry.new_value ?? '—')}
                           </span>
                         </div>

@@ -20,7 +20,7 @@ export default async function NuevaOrganizacionPage() {
       <div className="max-w-lg mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-indigo-600" />
+            <Building2 className="w-6 h-6 text-accent-600" />
             Nueva organización
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">

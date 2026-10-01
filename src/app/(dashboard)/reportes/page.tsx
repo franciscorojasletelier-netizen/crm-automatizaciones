@@ -122,7 +122,7 @@ export default async function ReportesPage() {
           <a
             href="/api/reports/export"
             download
-            className="bg-emerald-600 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            className="bg-emerald-600 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white shadow-xs hover:-translate-y-0.5 transition-all"
 
           >
             <Download className="w-3.5 h-3.5" />
@@ -147,8 +147,8 @@ export default async function ReportesPage() {
             value: `${data.winRate}%`,
             sub: `${data.totalWon} ganados / ${data.totalLost} perdidos`,
             icon: Target,
-            color: 'text-indigo-600 bg-indigo-50',
-            border: 'border-indigo-100',
+            color: 'text-accent-600 bg-accent-50',
+            border: 'border-accent-100',
           },
           {
             label: 'Valor promedio',
@@ -163,12 +163,12 @@ export default async function ReportesPage() {
             value: formatCLP(data.forecast),
             sub: `${data.openCount} deals abiertos × probabilidad`,
             icon: Award,
-            color: 'text-violet-600 bg-violet-50',
-            border: 'border-violet-100',
+            color: 'text-accent-600 bg-accent-50',
+            border: 'border-accent-100',
           },
         ].map(({ label, value, sub, icon: Icon, color, border }) => (
-          <div key={label} className={`bg-white rounded-2xl border ${border} p-4 md:p-5 shadow-sm relative overflow-hidden`}>
-            <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mb-3`}>
+          <div key={label} className={`bg-white rounded-lg border ${border} p-4 md:p-5 shadow-sm relative overflow-hidden`}>
+            <div className={`w-9 h-9 rounded-lg ${color} flex items-center justify-center mb-3`}>
               <Icon className="w-4 h-4" />
             </div>
             <p className="text-2xl md:text-3xl font-bold text-slate-900 leading-none">{value}</p>
@@ -225,7 +225,7 @@ export default async function ReportesPage() {
               <h2 className="text-sm font-semibold text-slate-900">Embudo de conversión</h2>
               <p className="text-[11px] text-slate-400 mt-0.5">Distribución por etapa</p>
             </div>
-            <Link href="/pipeline" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+            <Link href="/pipeline" className="text-xs text-accent-600 hover:text-accent-800 font-medium flex items-center gap-1">
               Pipeline <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -367,7 +367,7 @@ export default async function ReportesPage() {
               <Link key={deal.id} href={`/leads/${deal.id}`}
                 className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors group">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                  <p className="text-sm font-semibold text-slate-900 group-hover:text-accent-700 transition-colors">
                     {deal.companies?.name ?? 'Sin empresa'}
                   </p>
                   {deal.profiles?.full_name && (

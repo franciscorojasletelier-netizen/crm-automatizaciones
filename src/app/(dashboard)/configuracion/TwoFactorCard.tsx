@@ -105,14 +105,14 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-          <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+          <ShieldCheck className="w-3.5 h-3.5 text-accent-600" />
         </div>
         <h2 className="text-sm font-semibold text-slate-900">Doble factor de autenticación</h2>
       </div>
       <div className="px-5 py-4 space-y-3">
         {mfaRequired && status !== 'enrolled' && (
-          <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">Tu organización exige doble factor para poder usar el CRM. Activalo para continuar.</p>
           </div>
@@ -137,7 +137,7 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
           <div className="space-y-3">
             <p className="text-xs text-slate-500">Abre tu app de autenticación (Google Authenticator, Authy, etc.) y usa su opción para escanear un código QR — <span className="font-semibold text-slate-600">no la cámara normal del teléfono</span>, que solo va a mostrar texto. Si preferís, ingresa la clave manualmente.</p>
             {qrCode && (
-              <div className="flex justify-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="flex justify-center p-3 bg-slate-50 rounded-lg border border-slate-100">
                 {/* qr_code ya viene como data URI completa (data:image/svg+xml;...) */}
                 <img src={qrCode} alt="Código QR para activar 2FA" className="w-40 h-40" />
               </div>
@@ -150,7 +150,7 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
                 type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                 value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                 autoFocus placeholder="000000"
-                className="w-full text-center tracking-[0.5em] text-base font-semibold px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 placeholder:text-slate-300 placeholder:tracking-[0.5em]"
+                className="w-full text-center tracking-[0.5em] text-base font-semibold px-3 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-slate-50 placeholder:text-slate-300 placeholder:tracking-[0.5em]"
               />
               {error && <p className="text-xs text-red-600">{error}</p>}
               <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
         )}
 
         {error && status !== 'enrolling' && status !== 'enrolled' && (
-          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
             <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
             <p className="text-xs font-medium text-red-700">{error}</p>
           </div>

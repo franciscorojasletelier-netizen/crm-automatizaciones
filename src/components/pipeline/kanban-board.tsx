@@ -51,7 +51,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onCancel} />
-      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Mover deal de etapa" className="relative w-full max-w-lg bg-white rounded-t-2xl shadow-2xl overflow-hidden outline-none">
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Mover deal de etapa" className="relative w-full max-w-lg bg-white rounded-t-lg shadow-2xl overflow-hidden outline-none">
         <div className="px-5 pt-5 pb-3 border-b border-slate-100">
           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
           <p className="text-xs font-medium text-slate-500 mb-0.5">Mover deal</p>
@@ -64,7 +64,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
             const c = colorOf(s)
             return (
               <button key={s.key} onClick={() => !isCurrent && onSelect(s.key)} disabled={isCurrent}
-                className={`flex items-center gap-2 px-3 py-3 rounded-2xl text-sm font-semibold border-2 transition-all text-left ${
+                className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-semibold border-2 transition-all text-left ${
                   isCurrent
                     ? `${c.light} ${c.text} border-current opacity-60 cursor-default`
                     : 'border-slate-200 text-slate-700 hover:border-slate-300 active:scale-95'
@@ -215,7 +215,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
   return (
     <>
       {error && (
-        <div className="mb-3 flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-4 py-2.5 rounded-xl">
+        <div className="mb-3 flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-4 py-2.5 rounded-lg">
           <X className="w-4 h-4" /> {error}
           <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600"><X className="w-3.5 h-3.5" /></button>
         </div>
@@ -231,17 +231,17 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
         </p>
 
         {stalledCount > 0 && (
-          <span className="flex items-center gap-1.5 text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl">
+          <span className="flex items-center gap-1.5 text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg">
             <Flame className="w-3.5 h-3.5" /> {stalledCount} estancado{stalledCount > 1 ? 's' : ''} (7d+ sin contacto)
           </span>
         )}
 
         {/* Toggle Tablero / Lista (patrón HubSpot) */}
-        <div className="flex bg-slate-100 rounded-xl p-0.5">
+        <div className="flex bg-slate-100 rounded-lg p-0.5">
           {([['board', 'Tablero'], ['list', 'Lista']] as const).map(([key, label]) => (
             <button key={key} onClick={() => setView(key)}
               className={`px-3 py-1.5 rounded-[10px] text-xs font-bold transition-all ${
-                view === key ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                view === key ? 'bg-white text-accent-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}>
               {label}
             </button>
@@ -270,7 +270,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                 const stalled = isStalled(deal)
                 const days = staleDays(deal)
                 return (
-                  <tr key={deal.id} className="hover:bg-indigo-50/40 transition-colors">
+                  <tr key={deal.id} className="hover:bg-accent-50/40 transition-colors">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900">{deal.companies?.name ?? 'Sin empresa'}</span>
@@ -301,7 +301,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     </td>
                     <td className="px-4 py-2.5">
                       <Link href={`/leads/${deal.id}`}
-                        className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-indigo-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
+                        className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-accent-100 flex items-center justify-center text-slate-400 hover:text-accent-600 transition-colors">
                         <span className="text-[11px] font-bold">→</span>
                       </Link>
                     </td>
@@ -347,14 +347,14 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                 onDragOver={e => onDragOver(e, stage.key)}
                 onDragLeave={onDragLeave}
                 onDrop={e => onDrop(e, stage.key)}
-                className={`flex flex-col gap-2 min-h-[100px] rounded-xl p-1.5 transition-all duration-150 ${
+                className={`flex flex-col gap-2 min-h-[100px] rounded-lg p-1.5 transition-all duration-150 ${
                   isOver
                     ? `ring-2 ${c.ring} bg-white shadow-lg scale-[1.01]`
                     : 'ring-1 ring-transparent'
                 }`}
               >
                 {stageDeals.length === 0 ? (
-                  <div className={`border-2 border-dashed rounded-xl h-20 flex items-center justify-center transition-colors ${
+                  <div className={`border-2 border-dashed rounded-lg h-20 flex items-center justify-center transition-colors ${
                     isOver ? `${c.light} border-current ${c.text}` : 'border-slate-200 bg-white/50'
                   }`}>
                     <p className={`text-xs font-medium ${isOver ? c.text : 'text-slate-300'}`}>
@@ -426,7 +426,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
 
                 {/* Indicador "soltar aquí" cuando hay deals */}
                 {isOver && stageDeals.length > 0 && (
-                  <div className={`border-2 border-dashed rounded-xl h-12 flex items-center justify-center ${c.light} border-current ${c.text}`}>
+                  <div className={`border-2 border-dashed rounded-lg h-12 flex items-center justify-center ${c.light} border-current ${c.text}`}>
                     <p className="text-xs font-semibold">Soltar aquí</p>
                   </div>
                 )}
@@ -454,7 +454,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                   onDragOver={e => onDragOver(e, zone.key)}
                   onDragLeave={onDragLeave}
                   onDrop={e => onDrop(e, zone.key)}
-                  className={`flex flex-col items-center justify-center gap-0.5 h-16 rounded-2xl border-2 border-dashed font-bold text-xs tracking-wider transition-all duration-150 ${
+                  className={`flex flex-col items-center justify-center gap-0.5 h-16 rounded-lg border-2 border-dashed font-bold text-xs tracking-wider transition-all duration-150 ${
                     isOver
                       ? `${c.solid} text-white scale-105 border-transparent`
                       : `${c.light} ${c.text} border-current/40`
@@ -493,9 +493,9 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     draggable={!readOnly}
                     onDragStart={e => onDragStart(e, deal)}
                     onDragEnd={onDragEnd}
-                    className={`flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl border cursor-grab active:cursor-grabbing transition-all hover:shadow-sm ${
+                    className={`flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-lg border cursor-grab active:cursor-grabbing transition-all hover:shadow-sm ${
                       draggingId === deal.id
-                        ? 'border-dashed border-indigo-300 bg-indigo-50/50 opacity-60'
+                        ? 'border-dashed border-accent-300 bg-accent-50/50 opacity-60'
                         : `bg-white border-slate-200 hover:border-slate-300`
                     }`}
                   >
@@ -510,7 +510,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     <Link
                       href={`/leads/${deal.id}`}
                       onClick={e => e.stopPropagation()}
-                      className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                      className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-accent-100 hover:text-accent-600 transition-colors"
                     >
                       <span className="text-[11px] font-bold">→</span>
                     </Link>

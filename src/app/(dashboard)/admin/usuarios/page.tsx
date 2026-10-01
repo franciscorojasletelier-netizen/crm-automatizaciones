@@ -88,8 +88,8 @@ export default async function UsuariosPage() {
       {/* Tabla de usuarios */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-            <Users className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-accent-600" />
           </div>
           <h2 className="text-sm font-semibold text-slate-900">Usuarios del sistema</h2>
         </div>
@@ -116,7 +116,7 @@ export default async function UsuariosPage() {
             return (
               <div key={u.id} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                 {/* Avatar */}
-                <div className="bg-accent-600 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+                <div className="bg-accent-600 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
                    >
                   {initials}
                 </div>
@@ -126,7 +126,7 @@ export default async function UsuariosPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-slate-900">{u.full_name ?? '—'}</p>
                     {isSelf && (
-                      <span className="text-[11px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">Tú</span>
+                      <span className="text-[11px] font-bold bg-accent-100 text-accent-600 px-1.5 py-0.5 rounded-full">Tú</span>
                     )}
                   </div>
                   <p className="text-xs text-slate-400">{u.email}</p>

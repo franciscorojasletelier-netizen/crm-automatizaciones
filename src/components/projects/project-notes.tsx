@@ -37,8 +37,8 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
         </div>
         {!readOnly && (
           <button onClick={() => setShowing(!showing)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-              showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+              showing ? 'bg-slate-100 text-slate-600' : 'bg-accent-50 text-accent-600 hover:bg-accent-100'
             }`}>
             {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             {showing ? 'Cancelar' : 'Agregar'}
@@ -50,9 +50,9 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
         <div className="p-4 border-b border-slate-100 bg-amber-50/50 space-y-3">
           <textarea aria-label="Nota interna del equipo (no visible para el cliente)" value={content} onChange={e => setContent(e.target.value)} rows={3}
             placeholder="Nota interna del equipo (no visible para el cliente)..."
-            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400" />
           <button onClick={handleAdd} disabled={loading || !content.trim()}
-            className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 hover:shadow-md transition-all"
+            className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-all"
              >
             <Send className="w-3.5 h-3.5" />{loading ? 'Guardando...' : 'Guardar nota'}
           </button>

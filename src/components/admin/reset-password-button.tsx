@@ -45,7 +45,7 @@ export default function ResetPasswordButton({ userId }: Props) {
       disabled={loading}
       title={error || 'Enviar enlace de restablecimiento de contraseña'}
       className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
-        done ? 'bg-emerald-50 text-emerald-600' : error ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600'
+        done ? 'bg-emerald-50 text-emerald-600' : error ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-400 hover:bg-accent-50 hover:text-accent-600'
       }`}
     >
       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : done ? <Check className="w-3.5 h-3.5" /> : <KeyRound className="w-3.5 h-3.5" />}

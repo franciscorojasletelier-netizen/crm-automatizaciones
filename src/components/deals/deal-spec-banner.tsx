@@ -92,11 +92,11 @@ export default function DealSpecBanner({
   if (resolved) return null
 
   return (
-    <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 space-y-4 shadow-sm">
+    <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-5 space-y-4 shadow-sm">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-200 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-amber-200 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-700" />
           </div>
           <div>
@@ -116,7 +116,7 @@ export default function DealSpecBanner({
 
       {/* Notas de producción */}
       {specNotes && (
-        <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-2">
+        <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-2">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-3.5 h-3.5 text-amber-600" />
             <p className="text-[13px] font-semibold text-amber-800">
@@ -148,7 +148,7 @@ export default function DealSpecBanner({
           {!showForm ? (
             <div className="flex items-center gap-3 flex-wrap">
               <button onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:shadow-md transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 transition-all">
                 <CheckCircle2 className="w-4 h-4" /> Responder a Producción
               </button>
               <Link href={`/proyectos/${projectId}`}
@@ -157,7 +157,7 @@ export default function DealSpecBanner({
               </Link>
             </div>
           ) : (
-            <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
+            <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-3">
               <p className="text-[13px] font-semibold text-slate-700">
                 ¿Qué resolviste o agregaste? <span className="font-normal text-slate-400 normal-case">(mín. 10 caracteres)</span>
               </p>
@@ -166,7 +166,7 @@ export default function DealSpecBanner({
                 onChange={e => { setResponse(e.target.value); setResponseError(false) }}
                 placeholder="Describe qué información completaste o aclaraste para producción..."
                 rows={3}
-                className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 resize-none text-slate-800 placeholder:text-slate-400 ${
+                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 resize-none text-slate-800 placeholder:text-slate-400 ${
                   responseError ? 'border-red-300 bg-red-50/30 focus:ring-red-200' : 'border-slate-200 bg-slate-50 focus:ring-emerald-200 focus:border-emerald-300'
                 }`}
               />
@@ -174,11 +174,11 @@ export default function DealSpecBanner({
               {saveError && <p className="text-xs text-red-500">{saveError}</p>}
               <div className="flex gap-2">
                 <button onClick={handleResolve} disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:shadow-md disabled:opacity-50 transition-all">
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 disabled:opacity-50 transition-all">
                   {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar y devolver</>}
                 </button>
                 <button onClick={() => { setShowForm(false); setResponse(''); setResponseError(false) }}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
                   Cancelar
                 </button>
               </div>

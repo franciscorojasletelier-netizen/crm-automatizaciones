@@ -46,7 +46,7 @@ export default function OrganizationsTable({ organizations }: { organizations: O
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       {error && (
         <div className="px-4 py-2.5 bg-red-50 border-b border-red-200 text-sm text-red-700">{error}</div>
       )}
@@ -79,7 +79,7 @@ export default function OrganizationsTable({ organizations }: { organizations: O
               <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
                 <Link
                   href={`/plataforma/${org.id}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-accent-600 hover:bg-accent-50 transition-colors"
                 >
                   <Settings className="w-3.5 h-3.5" />
                   Configurar

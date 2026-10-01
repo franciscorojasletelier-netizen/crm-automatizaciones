@@ -40,7 +40,7 @@ export default function ModulesEditor({ orgId, sections, enabledByKey }: {
         {sections.map(s => {
           const enabled = enabledByKey[s.key] !== false
           return (
-            <label key={s.key} className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer">
+            <label key={s.key} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer">
               <span className="text-xs font-semibold text-slate-700">{s.label}</span>
               <div className="relative inline-flex items-center shrink-0">
                 <input type="checkbox" checked={enabled} disabled={busy === s.key}

@@ -70,7 +70,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center gap-2.5 mb-6">
-          <div className="bg-accent-600 w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          <div className="bg-accent-600 w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
              >
             <Zap className="w-4 h-4 text-white" />
           </div>
@@ -106,12 +106,12 @@ export default function QuoteAcceptView({ token }: { token: string }) {
           {quote.notes && <p className="text-xs text-slate-500 mb-6 whitespace-pre-wrap">{quote.notes}</p>}
 
           {quote.status === 'accepted' ? (
-            <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               <p className="text-sm font-semibold text-emerald-800">Cotización aceptada. Nos vamos a contactar a la brevedad.</p>
             </div>
           ) : quote.status === 'rejected' ? (
-            <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200 rounded-lg px-4 py-3">
               <XCircle className="w-5 h-5 text-slate-500 shrink-0" />
               <p className="text-sm font-semibold text-slate-600">Cotización rechazada.</p>
             </div>
@@ -120,11 +120,11 @@ export default function QuoteAcceptView({ token }: { token: string }) {
           ) : showAcceptForm ? (
             <div className="space-y-2.5">
               <input aria-label="Tu nombre completo" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo"
-                className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
               {decisionError && <p className="text-xs text-red-600">{decisionError}</p>}
               <div className="flex gap-2">
                 <button onClick={() => decide('accepted')} disabled={deciding !== null}
-                  className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                  className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-lg disabled:opacity-50 transition-colors">
                   {deciding === 'accepted' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar aceptación'}
                 </button>
                 <button onClick={() => setShowAcceptForm(false)} className="text-sm font-semibold text-slate-500 px-3">Cancelar</button>
@@ -134,11 +134,11 @@ export default function QuoteAcceptView({ token }: { token: string }) {
           ) : (
             <div className="flex gap-2">
               <button onClick={() => setShowAcceptForm(true)} disabled={deciding !== null}
-                className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-lg disabled:opacity-50 transition-colors">
                 <CheckCircle2 className="w-4 h-4" /> Aceptar
               </button>
               <button onClick={() => decide('rejected')} disabled={deciding !== null}
-                className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 py-2.5 rounded-lg disabled:opacity-50 transition-colors">
                 {deciding === 'rejected' ? <Loader2 className="w-4 h-4 animate-spin" /> : <><XCircle className="w-4 h-4" /> Rechazar</>}
               </button>
             </div>

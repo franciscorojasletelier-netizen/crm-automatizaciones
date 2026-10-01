@@ -95,11 +95,11 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
   return (
     <div className="space-y-4">
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm w-fit">
+      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm w-fit">
         {([['rules', 'Reglas'], ['logs', 'Historial']] as const).map(([t, l]) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              tab === t ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              tab === t ? 'bg-accent-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}>
             {l} {t === 'rules' ? `(${rules.length})` : `(${logs.length})`}
           </button>
@@ -110,7 +110,7 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
         <div className="space-y-3">
           {rules.length === 0 && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-10 flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
                 <Zap className="w-6 h-6 text-slate-300" />
               </div>
               <p className="text-sm font-semibold text-slate-400">Sin reglas configuradas</p>
@@ -118,15 +118,15 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
             </div>
           )}
           {rules.map((rule) => (
-            <div key={rule.id} className={`bg-white rounded-2xl border shadow-sm p-4 transition-all ${
+            <div key={rule.id} className={`bg-white rounded-lg border shadow-sm p-4 transition-all ${
               rule.is_active ? 'border-slate-200' : 'border-slate-100 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                    rule.is_active ? 'bg-indigo-100' : 'bg-slate-100'
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                    rule.is_active ? 'bg-accent-100' : 'bg-slate-100'
                   }`}>
-                    <Zap className={`w-3.5 h-3.5 ${rule.is_active ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <Zap className={`w-3.5 h-3.5 ${rule.is_active ? 'text-accent-600' : 'text-slate-400'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

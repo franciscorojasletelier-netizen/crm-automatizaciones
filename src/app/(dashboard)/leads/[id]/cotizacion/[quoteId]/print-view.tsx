@@ -19,17 +19,17 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
     <div className="min-h-full bg-slate-100">
       {/* Barra de acciones — no se imprime */}
       <div className="print:hidden sticky top-0 z-10 bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between">
-        <Link href={`/leads/${dealId}`} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+        <Link href={`/leads/${dealId}`} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Volver al deal
         </Link>
         <button onClick={() => window.print()}
-          className="bg-accent-600 flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all">
+          className="bg-accent-600 flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-xs transition-all">
           <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
         </button>
       </div>
 
       <div className="max-w-2xl mx-auto p-6 md:p-10 print:p-0">
-        <div className="bg-white rounded-2xl print:rounded-none print:shadow-none shadow-sm border border-slate-200 print:border-none p-8">
+        <div className="bg-white rounded-lg print:rounded-none print:shadow-none shadow-sm border border-slate-200 print:border-none p-8">
           {/* Encabezado */}
           <div className="flex items-start justify-between mb-8 pb-6 border-b border-slate-100">
             <div>
@@ -101,13 +101,13 @@ export default function QuotePrintView({ quote, deal, org, dealId }: {
           )}
 
           {quote.status === 'accepted' && (
-            <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800">
+            <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
               Aceptada por <b>{quote.accepted_by_name}</b> el {new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               {quote.accepted_ip && <span className="text-emerald-600"> · IP {quote.accepted_ip}</span>}
             </div>
           )}
           {quote.status === 'rejected' && (
-            <div className="mt-4 print:mt-6 bg-slate-100 print:bg-transparent border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
+            <div className="mt-4 print:mt-6 bg-slate-100 print:bg-transparent border border-slate-200 rounded-lg p-3 text-xs text-slate-600">
               Rechazada el {new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' })}
             </div>
           )}

@@ -178,7 +178,7 @@ export default function DashboardDonut({ byEtapa, byFuente, byIndustria, byRespo
               onClick={() => setFilter(key)}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
                 filter === key
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-accent-600 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
               }`}
             >

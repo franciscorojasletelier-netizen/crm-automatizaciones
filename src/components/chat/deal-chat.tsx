@@ -130,9 +130,9 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden flex flex-col" style={{ maxHeight: '480px' }}>
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2 shrink-0">
-        <MessageCircle className="w-4 h-4 text-indigo-500" />
+        <MessageCircle className="w-4 h-4 text-accent-500" />
         <h2 className="text-sm font-semibold text-slate-900">Chat del equipo</h2>
-        <span className="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">{messages.length}</span>
+        <span className="text-xs font-bold bg-accent-100 text-accent-600 px-2 py-0.5 rounded-full">{messages.length}</span>
         <span className="ml-auto flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />En vivo
         </span>
@@ -157,7 +157,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
             <div key={msg.id} className={`flex gap-2 group ${isMe ? 'flex-row-reverse' : ''} ${msg.isFirst ? 'mt-3' : 'mt-0.5'}`}>
               <div className="w-7 h-7 shrink-0 self-end">
                 {msg.isLast && (
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold text-white ${color}`}>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white ${color}`}>
                     {initials}
                   </div>
                 )}
@@ -173,7 +173,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
                       <Trash2 className="w-3 h-3" />
                     </button>
                   )}
-                  <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
+                  <div className={`px-3 py-2 rounded-lg text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
                     isTemp ? 'opacity-60' : 'opacity-100'
                   } ${isMe
                     ? 'bg-accent-600 text-white rounded-br-sm'
@@ -193,7 +193,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
       </div>
 
       {error && (
-        <div className="mx-4 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+        <div className="mx-4 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
           <p className="text-xs text-red-700 flex-1">{error}</p>
           <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-xs" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
@@ -201,7 +201,7 @@ export default function DealChat({ dealId, currentUserId, currentUserName, initi
       )}
 
       <div className="px-4 pb-4 pt-2 border-t border-slate-100 shrink-0">
-        <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+        <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus-within:border-accent-300 focus-within:ring-2 focus-within:ring-accent-100 transition-all">
           <textarea aria-label="Escribe un mensaje... (Enter para enviar)" ref={inputRef} value={input}
             onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
             placeholder="Escribe un mensaje... (Enter para enviar)"

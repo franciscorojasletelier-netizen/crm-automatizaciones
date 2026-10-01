@@ -87,7 +87,7 @@ export default function DealStageSelector({
       <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-slate-900">Cambiar etapa</h2>
-          {busy && <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />}
+          {busy && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-500" />}
         </div>
 
         <div className="flex flex-wrap gap-1.5">
@@ -98,7 +98,7 @@ export default function DealStageSelector({
             return (
               <button key={s.key} onClick={() => requestChange(s.key)} disabled={busy}
                 aria-pressed={isCurrent} title={hint || undefined}
-                className={`relative text-xs px-3 py-1.5 rounded-xl font-semibold transition-all duration-150 disabled:cursor-not-allowed ${
+                className={`relative text-xs px-3 py-1.5 rounded-lg font-semibold transition-all duration-150 disabled:cursor-not-allowed ${
                   isCurrent ? `${c.solid} text-white ring-1 ${c.ring}` : `${c.light} ${c.text} hover:brightness-95`
                 }`}>
                 {s.label}
@@ -117,7 +117,7 @@ export default function DealStageSelector({
         {proposalFilename && (
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-xs font-medium text-slate-500 mb-2">Propuesta adjunta</p>
-            <div className="flex items-center gap-2.5 p-2.5 bg-orange-50 border border-orange-200 rounded-xl">
+            <div className="flex items-center gap-2.5 p-2.5 bg-orange-50 border border-orange-200 rounded-lg">
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-orange-600" />
               </div>

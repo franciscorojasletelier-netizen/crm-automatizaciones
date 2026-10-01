@@ -103,7 +103,7 @@ export default async function NotificacionesPage() {
           </p>
         </div>
         {unreadCount > 0 && (
-          <div className="flex items-center gap-2 text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-xl font-semibold">
+          <div className="flex items-center gap-2 text-xs bg-accent-50 border border-accent-200 text-accent-700 px-3 py-1.5 rounded-lg font-semibold">
             <Bell className="w-3.5 h-3.5" />
             {unreadCount} nuevas
           </div>
@@ -111,7 +111,7 @@ export default async function NotificacionesPage() {
       </div>
 
       {/* Info: qué genera notificaciones */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
         <p className="text-xs font-medium text-slate-500 mb-3">¿Cuándo recibes notificaciones?</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[

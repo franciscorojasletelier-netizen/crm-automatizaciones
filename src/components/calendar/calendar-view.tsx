@@ -122,23 +122,23 @@ export default function CalendarView({ tasks }: Props) {
               <div
                 key={day}
                 onClick={() => setSelectedDay(isSelected ? null : day)}
-                className={`h-16 md:h-20 border-r border-b border-slate-100 last:border-r-0 p-1.5 cursor-pointer transition-all hover:bg-indigo-50/50 ${
-                  isSelected ? 'bg-indigo-50 ring-2 ring-inset ring-indigo-300' : ''
+                className={`h-16 md:h-20 border-r border-b border-slate-100 last:border-r-0 p-1.5 cursor-pointer transition-all hover:bg-accent-50/50 ${
+                  isSelected ? 'bg-accent-50 ring-2 ring-inset ring-accent-300' : ''
                 }`}
               >
                 <div className="flex items-start justify-between">
                   <span className={`w-6 h-6 flex items-center justify-center text-xs font-semibold rounded-full transition-all ${
                     isTodayCell
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-accent-600 text-white'
                       : isSelected
-                        ? 'text-indigo-700 font-bold'
+                        ? 'text-accent-700 font-bold'
                         : 'text-slate-700'
                   }`}>
                     {day}
                   </span>
                   {dayTasks.length > 0 && (
                     <span className={`text-[11px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center ${
-                      hasOverdue ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'
+                      hasOverdue ? 'bg-red-100 text-red-600' : 'bg-accent-100 text-accent-600'
                     }`}>
                       {dayTasks.length}
                     </span>
@@ -151,7 +151,7 @@ export default function CalendarView({ tasks }: Props) {
                       className={`w-1.5 h-1.5 rounded-full ${
                         t.is_completed ? 'bg-emerald-400' :
                         new Date(t.due_date) < today ? 'bg-red-400' :
-                        priorityColors[t.priority ?? ''] ?? 'bg-indigo-400'
+                        priorityColors[t.priority ?? ''] ?? 'bg-accent-400'
                       }`}
                     />
                   ))}
@@ -169,13 +169,13 @@ export default function CalendarView({ tasks }: Props) {
       {selectedDay && (
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <CalendarDays className="w-3.5 h-3.5 text-indigo-600" />
+            <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+              <CalendarDays className="w-3.5 h-3.5 text-accent-600" />
             </div>
             <h2 className="text-sm font-semibold text-slate-900">
               {selectedDay} de {MONTHS[month]} de {year}
             </h2>
-            <span className="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold bg-accent-100 text-accent-600 px-2 py-0.5 rounded-full">
               {selectedTasks.length} tarea{selectedTasks.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -218,7 +218,7 @@ export default function CalendarView({ tasks }: Props) {
                     )}
                     {task.deals?.id && (
                       <Link href={`/leads/${task.deals.id}`}
-                        className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold shrink-0 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors">
+                        className="text-[11px] text-accent-600 hover:text-accent-800 font-semibold shrink-0 bg-accent-50 hover:bg-accent-100 px-2.5 py-1 rounded-lg transition-colors">
                         Ver deal
                       </Link>
                     )}
@@ -237,7 +237,7 @@ export default function CalendarView({ tasks }: Props) {
           { color: 'bg-red-400', label: 'Vencida' },
           { color: 'bg-red-500', label: 'Prioridad alta' },
           { color: 'bg-amber-500', label: 'Prioridad media' },
-          { color: 'bg-indigo-400', label: 'Prioridad baja / sin priority' },
+          { color: 'bg-accent-400', label: 'Prioridad baja / sin priority' },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
