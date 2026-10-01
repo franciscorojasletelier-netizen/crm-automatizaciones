@@ -221,7 +221,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
   return (
     <>
       {/* ── Escritorio ─────────────────────────────── */}
-      <aside className="hidden md:flex w-60 shrink-0 flex-col h-full bg-sidebar border-r border-slate-200">
+      <aside className="hidden md:flex print:hidden w-60 shrink-0 flex-col h-full bg-sidebar border-r border-slate-200">
         <div className="px-4 h-14 flex items-center">
           <Brand organizationName={organizationName} />
         </div>
@@ -235,7 +235,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
       </aside>
 
       {/* ── Encabezado móvil ───────────────────────── */}
-      <header className="md:hidden fixed top-0 inset-x-0 z-40 h-[52px] px-3 flex items-center gap-3 bg-white/95 backdrop-blur border-b border-slate-200">
+      <header className="md:hidden print:hidden fixed top-0 inset-x-0 z-40 h-[52px] px-3 flex items-center gap-3 bg-white/95 backdrop-blur border-b border-slate-200">
         <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] font-semibold shrink-0" aria-hidden>
           {getInitials(organizationName ?? 'CRM', null, 'C')}
         </div>
@@ -249,7 +249,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
       </header>
 
       {/* ── Navegación inferior móvil ──────────────── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 flex bg-white border-t border-slate-200"
+      <nav className="md:hidden print:hidden fixed bottom-0 inset-x-0 z-40 flex bg-white border-t border-slate-200"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label="Navegación rápida">
         {mobileNavBase.filter(itemVisible).slice(0, 4).map(item => {
           const active = isActive(item.href)

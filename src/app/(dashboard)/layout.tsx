@@ -107,19 +107,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages, disabledModules, organizationName } = await getLayoutData()
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background print:block print:h-auto">
       <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} organizationName={organizationName} />
-      <main className="flex-1 overflow-auto pt-[52px] pb-[132px] md:pt-0 md:pb-16">
+      <main className="flex-1 overflow-auto pt-[52px] pb-[132px] md:pt-0 md:pb-16 print:p-0 print:overflow-visible">
         {children}
       </main>
 
       {/* Chat global flotante — visible en todo el dashboard */}
       {userId && (
-        <GlobalChat
-          currentUserId={userId}
-          currentUserName={userName}
-          initialMessages={chatMessages as any}
-        />
+        <div className="print:hidden">
+          <GlobalChat
+            currentUserId={userId}
+            currentUserName={userName}
+            initialMessages={chatMessages as any}
+          />
+        </div>
       )}
     </div>
   )
