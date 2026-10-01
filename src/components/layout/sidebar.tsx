@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import GlobalSearch from './global-search'
+import ThemeToggle from './theme-toggle'
 import { getPermissions, getRoleMeta, canAccessSection } from '@/lib/roles'
 import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
 import type { Role } from '@/lib/roles'
@@ -201,6 +202,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
         <p className="text-[13px] font-medium text-slate-900 truncate">{displayName}</p>
         <p className="text-[11px] text-slate-500 truncate">{roleMeta.label}</p>
       </div>
+      <ThemeToggle />
       <button onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión"
         className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors">
         <LogOut className="w-4 h-4" />
