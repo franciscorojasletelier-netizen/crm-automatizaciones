@@ -1,7 +1,7 @@
-import { createClient, getCurrentProfile } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, Calendar, TrendingUp, User, FileText, Eye, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, FileText, Eye, MessageCircle } from 'lucide-react'
 import DealStageSelector from '@/components/deals/deal-stage-selector'
 import DealInteractions from '@/components/deals/deal-interactions'
 import DealTasks from '@/components/deals/deal-tasks'
@@ -164,7 +164,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         {/* Resumen */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg shadow-xs overflow-hidden [&>*]:bg-white">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg shadow-xs overflow-hidden [&>*]:bg-card">
           <div className="px-4 py-3.5">
             <p className="text-[13px] text-slate-500">Valor estimado</p>
             <p className="mt-1 text-xl font-semibold tracking-[-0.02em] tabular-nums text-slate-900">{formatCLP(deal.estimated_value)}</p>

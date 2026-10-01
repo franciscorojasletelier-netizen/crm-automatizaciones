@@ -145,14 +145,14 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-slate-500">Si:</span>
-                        <span className="text-xs font-medium text-slate-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
+                        <span className="text-xs font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
                           {triggerLabels[rule.trigger_type]} {triggerSummary(rule)}
                         </span>
                       </div>
                       <span className="text-slate-200">→</span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-slate-500">Entonces:</span>
-                        <span className="text-xs font-medium text-slate-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
+                        <span className="text-xs font-medium text-accent-800 bg-accent-50 px-2 py-0.5 rounded-lg border border-accent-100">
                           {actionLabels[rule.action_type]}: {actionSummary(rule)}
                         </span>
                       </div>

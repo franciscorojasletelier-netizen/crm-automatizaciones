@@ -1,26 +1,24 @@
 export const dynamic = 'force-dynamic'
-import { createClient, requirePermission } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Plus, Eye, AlertTriangle } from 'lucide-react'
+import { Plus, AlertTriangle } from 'lucide-react'
 import LeadsTable from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
-import { getVisibleDealIds } from '@/lib/visibility'
 import { formatCLP } from '@/lib/format'
 import { getStages } from '@/lib/stages'
 
 export default async function LeadsPage() {
-  const { role, perms, profile, supabase, user, canEdit, organizationId } = await requirePermission('leads')
-  const userId = user?.id ?? ''
+  const { role, perms, supabase, canEdit, organizationId } = await requirePermission('leads')
   const stages = await getStages(supabase, organizationId ?? undefined)
 
-  // Filtrar por visibilidad según rol
-  const visibleIds = await getVisibleDealIds(supabase, userId, role)
+  // La visibilidad por rol (propios + compartidos para comercial) la aplica
+  // la RLS de deals; antes se repetía acá con 2 consultas extra y un IN gigante.
 
   // Con miles de deals abiertos, traer todo sin límite degrada linealmente
   // y sin techo — mismo tope que ya usa /pipeline.
   const LEADS_LIMIT = 500
 
-  let query = supabase
+  const query = supabase
     .from('deals')
     .select(`
       id, stage, pipeline_id, score, estimated_value, next_action, source,
@@ -33,29 +31,8 @@ export default async function LeadsPage() {
     .order('created_at', { ascending: false })
     .limit(LEADS_LIMIT)
 
-  let countQuery = supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open')
+  const countQuery = supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open')
 
-  // Si hay filtro de visibilidad, aplicarlo
-  if (visibleIds !== null) {
-    if (visibleIds.length === 0) {
-      // Sin deals asignados
-      return (
-        <div className="p-4 md:p-6 min-h-full bg-slate-50 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto">
-              <Eye className="w-7 h-7 text-slate-400" />
-            </div>
-            <p className="text-slate-700 font-semibold">Sin leads asignados</p>
-            <p className="text-sm text-slate-400 max-w-xs">
-              Tu gerente aún no te ha asignado ningún lead. Cuando lo haga, aparecerán aquí.
-            </p>
-          </div>
-        </div>
-      )
-    }
-    query = query.in('id', visibleIds)
-    countQuery = countQuery.in('id', visibleIds)
-  }
 
   const [{ data: deals }, { count: totalCount }] = await Promise.all([query, countQuery])
 
@@ -86,7 +63,7 @@ export default async function LeadsPage() {
 
   const total = totalCount ?? deals?.length ?? 0
   const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
-  const isFiltered = visibleIds !== null // true = ve solo los suyos
+  const isFiltered = !['super_admin', 'gerente'].includes(role) // ve solo sus deals (RLS)
   const canCreate = perms.canCreateLeads && canEdit
 
   return (
