@@ -52,8 +52,8 @@ export default function AutomationRuleForm({ createdBy, stages }: Props) {
     if (!name.trim()) { setError('El nombre es requerido'); return }
     setSaving(true); setError('')
 
-    const triggerConfig: Record<string, any> = {}
-    const actionConfig: Record<string, any> = {}
+    const triggerConfig: { to_stage?: string; days?: number } = {}
+    const actionConfig: { title?: string; days_after?: number; message?: string; template_id?: string } = {}
 
     if (triggerType === 'stage_change') triggerConfig.to_stage = toStage
     if (triggerType === 'days_inactive') triggerConfig.days = daysInactive

@@ -43,11 +43,14 @@ export default async function NotificacionesPage() {
     (todayNotifs ?? []).map(n => `${n.type}:${n.entity_id}`)
   )
 
-  const newNotifs: any[] = []
+  type NewNotif = { user_id: string; type: string; title: string; body: string; entity_type: string; entity_id: string }
+  // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
+  type TaskRow = { id: string; title: string; due_date: string | null; deals: { companies: { name: string | null } | null } | null }
+  const newNotifs: NewNotif[] = []
 
-  for (const task of overdueTasks ?? []) {
+  for (const task of (overdueTasks ?? []) as unknown as TaskRow[]) {
     if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
-    const company = (task.deals as any)?.companies?.name
+    const company = task.deals?.companies?.name
     const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
     newNotifs.push({
       user_id:     user.id,
@@ -59,12 +62,12 @@ export default async function NotificacionesPage() {
     })
   }
 
-  for (const task of todayTasks ?? []) {
+  for (const task of (todayTasks ?? []) as unknown as TaskRow[]) {
     if (alreadyNotified.has(`task_due:${task.id}`)) continue
     // Una tarea vencida hoy no debe generar ambas notificaciones
     if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
     if (newNotifs.some(n => n.entity_id === task.id)) continue
-    const company = (task.deals as any)?.companies?.name
+    const company = task.deals?.companies?.name
     const dueStr  = task.due_date
       ? new Date(task.due_date).toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' })
       : null

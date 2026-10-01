@@ -135,10 +135,11 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
 
         {status === 'enrolling' && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-500">Abre tu app de autenticación (Google Authenticator, Authy, etc.) y usa su opción para escanear un código QR — <span className="font-semibold text-slate-600">no la cámara normal del teléfono</span>, que solo va a mostrar texto. Si preferís, ingresa la clave manualmente.</p>
+            <p className="text-xs text-slate-500">Abre tu app de autenticación (Google Authenticator, Authy, etc.) y usa su opción para escanear un código QR — <span className="font-semibold text-slate-600">no la cámara normal del teléfono</span>, que solo va a mostrar texto. Si prefieres, ingresa la clave manualmente.</p>
             {qrCode && (
               <div className="flex justify-center p-3 bg-slate-50 rounded-lg border border-slate-100">
-                {/* qr_code ya viene como data URI completa (data:image/svg+xml;...) */}
+                {/* qr_code ya viene como data URI completa (data:image/svg+xml;...): next/image no aporta nada acá. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrCode} alt="Código QR para activar 2FA" className="w-40 h-40" />
               </div>
             )}

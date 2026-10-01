@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Phone, Mail, Users, FileText, Plus, X, Send } from 'lucide-react'
+import { Phone, Mail, Users, FileText, Plus, X, Send, type LucideIcon } from 'lucide-react'
 import { timeAgo } from '@/lib/format'
 
-const typeConfig: Record<string, { icon: any; label: string; color: string; bg: string }> = {
+const typeConfig: Record<string, { icon: LucideIcon; label: string; color: string; bg: string }> = {
   email:   { icon: Mail,     label: 'Email',    color: 'text-blue-600',   bg: 'bg-blue-50'   },
   call:    { icon: Phone,    label: 'Llamada',  color: 'text-green-600',  bg: 'bg-green-50'  },
   meeting: { icon: Users,    label: 'Reunión',  color: 'text-accent-600', bg: 'bg-accent-50' },
@@ -14,7 +14,15 @@ const typeConfig: Record<string, { icon: any; label: string; color: string; bg: 
 }
 
 
-export default function DealInteractions({ dealId, interactions }: { dealId: string; interactions: any[] }) {
+export interface InteractionItem {
+  id: string
+  type: string
+  content: string | null
+  created_at: string
+  profiles: { full_name: string | null } | null
+}
+
+export default function DealInteractions({ dealId, interactions }: { dealId: string; interactions: InteractionItem[] }) {
   const [list, setList] = useState(interactions)
   const [showing, setShowing] = useState(false)
   const [type, setType] = useState('note')
@@ -100,7 +108,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
             <p className="text-sm text-slate-400 font-medium">Sin interacciones aún</p>
           </div>
         )}
-        {list.map((i: any) => {
+        {list.map(i => {
           const cfg = typeConfig[i.type] ?? typeConfig.note
           const Icon = cfg.icon
           return (

@@ -32,7 +32,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
   field: FieldDefinition; entityId: string; entity: FieldEntity; value: unknown; onSaved: (v: unknown) => void
 }) {
   const [editing, setEditing] = useState(false)
-  const [raw, setRaw] = useState<any>(field.fieldType === 'boolean' ? !!value : (field.fieldType === 'multiselect' ? (Array.isArray(value) ? value : []) : toInputValue(value)))
+  const [raw, setRaw] = useState<string | boolean | string[]>(field.fieldType === 'boolean' ? !!value : (field.fieldType === 'multiselect' ? (Array.isArray(value) ? value : []) : toInputValue(value)))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -91,20 +91,20 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
       <div className="flex items-start gap-1.5">
         <div className="flex-1">
           {field.fieldType === 'textarea' && (
-            <textarea aria-label={field.label} value={raw} onChange={e => setRaw(e.target.value)} autoFocus rows={2}
+            <textarea aria-label={field.label} value={raw as string} onChange={e => setRaw(e.target.value)} autoFocus rows={2}
               placeholder={field.placeholder ?? ''}
               className="w-full text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           )}
           {(field.fieldType === 'text' || field.fieldType === 'number' || field.fieldType === 'currency' || field.fieldType === 'date') && (
             <input aria-label={field.label}
               type={field.fieldType === 'number' || field.fieldType === 'currency' ? 'number' : field.fieldType === 'date' ? 'date' : 'text'}
-              value={raw} onChange={e => setRaw(e.target.value)} autoFocus
+              value={raw as string} onChange={e => setRaw(e.target.value)} autoFocus
               placeholder={field.placeholder ?? ''}
               onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
               className="w-full text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           )}
           {field.fieldType === 'select' && (
-            <select aria-label={field.label} value={raw} onChange={e => setRaw(e.target.value)} autoFocus
+            <select aria-label={field.label} value={raw as string} onChange={e => setRaw(e.target.value)} autoFocus
               className="w-full text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white">
               <option value="">— Seleccionar —</option>
               {field.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -116,7 +116,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
                 const checked = (raw as string[]).includes(o.value)
                 return (
                   <button key={o.value} type="button"
-                    onClick={() => setRaw((prev: string[]) => checked ? prev.filter(v => v !== o.value) : [...prev, o.value])}
+                    onClick={() => setRaw(prev => { const list = Array.isArray(prev) ? prev : []; return checked ? list.filter(v => v !== o.value) : [...list, o.value] })}
                     className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${
                       checked ? 'bg-accent-100 border-accent-300 text-accent-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}>
@@ -127,7 +127,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
             </div>
           )}
           {field.fieldType === 'boolean' && (
-            <button type="button" onClick={() => setRaw((prev: boolean) => !prev)}
+            <button type="button" onClick={() => setRaw(prev => !prev)}
               className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-colors ${
                 raw ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500'
               }`}>

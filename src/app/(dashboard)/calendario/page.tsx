@@ -34,7 +34,7 @@ export default async function CalendarioPage() {
         <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Calendario</h1>
         <p className="text-sm text-slate-500 mt-0.5">Vista mensual de tareas y actividades</p>
       </div>
-      <CalendarView tasks={(tasks ?? []) as any} />
+      <CalendarView tasks={(tasks ?? []) as unknown as React.ComponentProps<typeof CalendarView>['tasks']} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import crypto from 'crypto'
+import { escapeHtml } from '@/lib/html'
 
 // Sin fallback: un token público en el repo permitiría verificar un
 // endpoint de webhook falso si la env var no está seteada en producción.
@@ -102,15 +103,18 @@ export async function POST(request: NextRequest) {
       if (!legacyEmail) return null
       const { data: ownerProfile } = await supabase
         .from('profiles').select('organization_id').eq('email', legacyEmail).maybeSingle()
-      const orgId = (ownerProfile as any)?.organization_id ?? null
+      const orgId = ownerProfile?.organization_id ?? null
       return orgId ? { orgId, pageToken: process.env.META_PAGE_ACCESS_TOKEN } : null
     }
 
-    const leadgenChanges = (body.entry ?? [])
-      .flatMap((entry: any) => (entry.changes ?? []).map((change: any) => ({ change, entryId: entry.id })))
-      .filter((c: any) => c.change.field === 'leadgen')
+    // Payload del webhook de Meta (solo lo que se lee).
+    type LeadgenChange = { field: string; value: { leadgen_id: string; form_id?: string; page_id?: string } }
+    type MetaEntry = { id: string; changes?: LeadgenChange[] }
+    const leadgenChanges = ((body.entry ?? []) as MetaEntry[])
+      .flatMap(entry => (entry.changes ?? []).map(change => ({ change, entryId: entry.id })))
+      .filter(c => c.change.field === 'leadgen')
 
-    await mapWithConcurrency(leadgenChanges, CONCURRENCY, async ({ change, entryId }: any) => {
+    await mapWithConcurrency(leadgenChanges, CONCURRENCY, async ({ change, entryId }) => {
       {
         const leadData = change.value
         const leadId = leadData.leadgen_id
@@ -225,10 +229,10 @@ export async function POST(request: NextRequest) {
           html: `
             <h2>Nuevo lead desde Facebook Ads</h2>
             <table style="border-collapse:collapse;width:100%;max-width:500px">
-              <tr><td style="padding:8px;color:#666">Nombre</td><td style="padding:8px;font-weight:bold">${contact_name}</td></tr>
-              ${email ? `<tr><td style="padding:8px;color:#666">Email</td><td style="padding:8px">${email}</td></tr>` : ''}
-              ${phone ? `<tr><td style="padding:8px;color:#666">Telefono</td><td style="padding:8px">${phone}</td></tr>` : ''}
-              <tr><td style="padding:8px;color:#666">Empresa</td><td style="padding:8px">${company_name}</td></tr>
+              <tr><td style="padding:8px;color:#666">Nombre</td><td style="padding:8px;font-weight:bold">${escapeHtml(contact_name)}</td></tr>
+              ${email ? `<tr><td style="padding:8px;color:#666">Email</td><td style="padding:8px">${escapeHtml(email)}</td></tr>` : ''}
+              ${phone ? `<tr><td style="padding:8px;color:#666">Telefono</td><td style="padding:8px">${escapeHtml(phone)}</td></tr>` : ''}
+              <tr><td style="padding:8px;color:#666">Empresa</td><td style="padding:8px">${escapeHtml(company_name)}</td></tr>
               <tr><td style="padding:8px;color:#666">Fuente</td><td style="padding:8px">Facebook Ads (Lead Form)</td></tr>
             </table>
             <br>

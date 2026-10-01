@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { normalizeRole } from '@/lib/roles'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { Resend } from 'resend'
+import { escapeHtml } from '@/lib/html'
 
 // El admin/gerente nunca ve ni define la contraseña de otro usuario —
 // solo dispara un enlace de recuperación real de Supabase Auth, igual
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     .from('profiles').select('role, organization_id').eq('id', user.id).single()
 
   const editorRole = normalizeRole(editorProfile?.role ?? '')
-  const organizationId = (editorProfile as any)?.organization_id ?? null
+  const organizationId = editorProfile?.organization_id ?? null
 
   if (!['super_admin', 'gerente'].includes(editorRole)) {
     return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
@@ -82,11 +83,11 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: process.env.EMAIL_FROM?.trim() || `${orgName} <onboarding@resend.dev>`,
       to: target.email,
-      subject: 'Restablecé tu contraseña',
+      subject: 'Restablece tu contraseña',
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
-          <h2 style="color:#111">Hola${target.full_name ? ` ${target.full_name.split(' ')[0]}` : ''}</h2>
-          <p style="color:#444;line-height:1.6">Un administrador de ${orgName} generó un enlace para que restablezcas tu contraseña de acceso al CRM.</p>
+          <h2 style="color:#111">Hola${target.full_name ? ` ${escapeHtml(target.full_name.split(' ')[0])}` : ''}</h2>
+          <p style="color:#444;line-height:1.6">Un administrador de ${escapeHtml(orgName)} generó un enlace para que restablezcas tu contraseña de acceso al CRM.</p>
           <a href="${linkData.properties.action_link}"
              style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
             Restablecer contraseña

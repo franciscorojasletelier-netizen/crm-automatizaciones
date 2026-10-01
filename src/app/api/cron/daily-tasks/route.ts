@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CHILE_TZ, chileDayStart } from '@/lib/dates'
+import { escapeHtml } from '@/lib/html'
 
 // Cron: 8:00 AM Chile (UTC-3) = 11:00 UTC
 // vercel.json: "schedule": "0 11 * * *"
@@ -47,18 +48,19 @@ export async function GET(request: NextRequest) {
     // "CRM Autopilot" sin importar a qué organización pertenecía el usuario.
     const { data: orgLinks } = await supabase
       .from('profiles').select('id, organization_id').in('id', profiles.map(p => p.id))
-    const orgIdByProfile = new Map((orgLinks ?? []).map((p: any) => [p.id, p.organization_id]))
+    const orgIdByProfile = new Map(((orgLinks ?? []) as { id: string; organization_id: string | null }[]).map(p => [p.id, p.organization_id] as const))
     const orgIds = Array.from(new Set(Array.from(orgIdByProfile.values()).filter(Boolean)))
     const { data: orgs } = orgIds.length > 0
       ? await supabase.from('organizations').select('id, name, display_name').in('id', orgIds)
       : { data: [] }
-    const orgNameById = new Map((orgs ?? []).map((o: any) => [o.id, o.display_name || o.name || 'CRM']))
+    const orgNameById = new Map(((orgs ?? []) as { id: string; name: string; display_name: string | null }[]).map(o => [o.id, o.display_name || o.name || 'CRM'] as const))
 
     let sent = 0
     const errors: string[] = []
 
     for (const profile of profiles) {
-      const orgName = orgNameById.get(orgIdByProfile.get(profile.id)) ?? 'CRM'
+      const orgId = orgIdByProfile.get(profile.id)
+      const orgName = (orgId && orgNameById.get(orgId)) || 'CRM'
       if (!profile.email) continue
 
       // Tareas para hoy/mañana via función SECURITY DEFINER
@@ -141,11 +143,12 @@ function buildEmailHtml(
   })
 
   const row = (t: Record<string, unknown>, isOverdue: boolean) => {
-    const title = String(t.title ?? '')
+    const title = escapeHtml(t.title)
     const d = t.due_date ? new Date(String(t.due_date)) : null
     const dateStr = d ? d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' }) : ''
-    const hasTime = d && (d.getHours() !== 0 || d.getMinutes() !== 0)
-    const timeStr = hasTime ? d!.toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' }) : null
+    // Hora en Chile (getHours() sería la del servidor, UTC): 00:00 = tarea sin hora.
+    const chileTime = d ? d.toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : null
+    const timeStr = chileTime && chileTime !== '00:00' ? chileTime : null
 
     const dateDisplay = timeStr
       ? `${dateStr} <span style="background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:600">🕐 ${timeStr}</span>`
@@ -165,7 +168,7 @@ function buildEmailHtml(
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,sans-serif;">
 <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
   <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);border-radius:16px;padding:32px;margin-bottom:24px;">
-    <h1 style="color:white;font-size:22px;font-weight:700;margin:0 0 4px">Buenos días, ${userName} 👋</h1>
+    <h1 style="color:white;font-size:22px;font-weight:700;margin:0 0 4px">Buenos días, ${escapeHtml(userName)} 👋</h1>
     <p style="color:#94a3b8;margin:0;font-size:14px">${today}</p>
   </div>
 
@@ -194,6 +197,6 @@ function buildEmailHtml(
       Ver mis tareas en el CRM →
     </a>
   </div>
-  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">${orgName} · Notificación automática diaria</p>
+  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">${escapeHtml(orgName)} · Notificación automática diaria</p>
 </div></body></html>`
 }

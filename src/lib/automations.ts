@@ -18,20 +18,29 @@ interface AutomationContext {
   userId: string
 }
 
+/** Lo que executeAutomationAction usa de una fila de automation_rules. */
+export interface AutomationRuleRow {
+  id: string
+  name: string
+  action_type: string
+  action_config: { title?: string; days_after?: number; message?: string } | null
+  run_count: number | null
+}
+
 // Ejecuta la acción de una regla ya disparada (create_task / notify_owner /
 // notify_team), registra el log y actualiza el contador. Compartido entre
 // el disparador client-side (cambios de etapa) y el cron (days_inactive).
 export async function executeAutomationAction(
   supabase: SupabaseClient,
-  rule: any,
+  rule: AutomationRuleRow,
   { dealId, ownerId, userId }: { dealId: string; ownerId?: string; userId?: string }
 ) {
-  let logDetails: Record<string, any> = {}
+  let logDetails: Record<string, unknown> = {}
   let logStatus = 'success'
 
   try {
     if (rule.action_type === 'create_task') {
-      const cfg = rule.action_config
+      const cfg = rule.action_config ?? {}
       const dueDate = new Date()
       dueDate.setDate(dueDate.getDate() + (cfg.days_after ?? 1))
 
@@ -59,7 +68,7 @@ export async function executeAutomationAction(
       logDetails = { task_title: cfg.title, days_after: cfg.days_after }
 
     } else if (rule.action_type === 'notify_owner' && ownerId) {
-      const cfg = rule.action_config
+      const cfg = rule.action_config ?? {}
       const { error } = await supabase.from('notifications').insert({
         user_id:     ownerId,
         type:        'automation',
@@ -72,14 +81,14 @@ export async function executeAutomationAction(
       logDetails = { notified_user: ownerId }
 
     } else if (rule.action_type === 'notify_team') {
-      const cfg = rule.action_config
+      const cfg = rule.action_config ?? {}
       const { data: members } = await supabase
         .from('deal_members')
         .select('user_id')
         .eq('deal_id', dealId)
 
       const targetIds = [
-        ...(members ?? []).map((m: any) => m.user_id),
+        ...((members ?? []) as { user_id: string }[]).map(m => m.user_id),
         ...(ownerId ? [ownerId] : []),
       ].filter((id, i, a) => a.indexOf(id) === i)
 
@@ -100,9 +109,9 @@ export async function executeAutomationAction(
       logStatus = 'skipped'
       logDetails = { reason: `action_type "${rule.action_type}" no soportado` }
     }
-  } catch (actionErr: any) {
+  } catch (actionErr) {
     logStatus = 'failed'
-    logDetails = { error: actionErr?.message ?? 'Error desconocido' }
+    logDetails = { error: actionErr instanceof Error ? actionErr.message : (actionErr as { message?: string })?.message ?? 'Error desconocido' }
   }
 
   await supabase.from('automation_logs').insert({

@@ -2,6 +2,7 @@
 //  Campos personalizados por organización (deals / companies / contacts).
 //  Ver src/lib/stages.ts para la contraparte de etapas — mismo patrón.
 // ============================================================
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type FieldType =
   | 'text' | 'textarea' | 'number' | 'currency' | 'date'
@@ -28,14 +29,20 @@ export interface FieldDefinition {
   isActive: boolean
 }
 
-function toField(r: any): FieldDefinition {
+/** Fila de field_definitions tal como la devuelve SELECT. */
+interface FieldRow {
+  id: string; entity: FieldEntity; key: string; label: string; field_type: FieldType; options: unknown
+  placeholder: string | null; help_text: string | null; is_required: boolean; sort_order: number; is_active: boolean
+}
+
+function toField(r: FieldRow): FieldDefinition {
   return {
     id: r.id,
     entity: r.entity,
     key: r.key,
     label: r.label,
     fieldType: r.field_type,
-    options: Array.isArray(r.options) ? r.options : [],
+    options: Array.isArray(r.options) ? (r.options as FieldOption[]) : [],
     placeholder: r.placeholder,
     helpText: r.help_text,
     isRequired: r.is_required,
@@ -52,11 +59,11 @@ const SELECT = `
 // orgId obligatorio si quien consulta puede ser platform_owner — mismo
 // motivo que en getStages/getDisabledModules: su policy de SELECT bypasea
 // el filtro de organización.
-export async function getFieldDefinitions(supabase: any, entity: FieldEntity, orgId?: string): Promise<FieldDefinition[]> {
+export async function getFieldDefinitions(supabase: SupabaseClient, entity: FieldEntity, orgId?: string): Promise<FieldDefinition[]> {
   let q = supabase.from('field_definitions').select(SELECT).eq('entity', entity).eq('is_active', true)
   if (orgId) q = q.eq('organization_id', orgId)
   const { data } = await q.order('sort_order', { ascending: true })
-  return (data ?? []).map(toField)
+  return ((data ?? []) as unknown as FieldRow[]).map(toField)
 }
 
 /** Formatea un valor de custom_fields para mostrarlo, según el tipo de campo. */

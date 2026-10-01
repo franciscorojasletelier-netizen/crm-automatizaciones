@@ -78,10 +78,13 @@ export default function EmailAccountsCard({
         )}
 
         <div className="flex gap-2 pt-1">
+          {/* <a> y no <Link>: es una ruta de API que redirige a Google (OAuth); Link la prefetchearía. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/api/email/connect/google"
             className="flex-1 text-center text-xs font-semibold text-slate-700 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
             Conectar Gmail
           </a>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/api/email/connect/microsoft"
             className="flex-1 text-center text-xs font-semibold text-slate-700 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
             Conectar Outlook

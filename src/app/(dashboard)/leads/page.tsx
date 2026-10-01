@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, AlertTriangle } from 'lucide-react'
-import LeadsTable from '@/components/leads/leads-table'
+import LeadsTable, { type LeadRow } from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { formatCLP } from '@/lib/format'
 import { getStages } from '@/lib/stages'
@@ -39,23 +39,24 @@ export default async function LeadsPage() {
   const teamQuery = canReassign
     ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true)
         .in('role', ['super_admin', 'admin', 'gerente', 'comercial', 'produccion', 'soporte'])
-    : Promise.resolve({ data: [] as any[] })
+    : Promise.resolve({ data: [] as { id: string; full_name: string | null; email: string | null; role: string }[] })
 
   // Deals ganados con proyectos pendientes de especificaciones; la empresa
   // viene embebida (antes: una segunda consulta con IN).
   const pendingQuery = supabase
     .from('projects')
     .select('id, name, deal_id, deal:deal_id(companies(name))')
-    .eq('status', 'pendiente_especificaciones' as any)
+    .eq('status', 'pendiente_especificaciones')
     .not('deal_id', 'is', null)
 
   // Las cuatro consultas son independientes: en paralelo, no en cascada.
   const [{ data: deals }, { count: totalCount }, { data: teamUsers }, { data: pendingSpecRaw }] =
     await Promise.all([query, countQuery, teamQuery, pendingQuery])
-  const pendingSpecDeals = (pendingSpecRaw ?? []) as any[]
+  // deal:deal_id es a-uno; sin tipos de base se infiere como arreglo.
+  const pendingSpecDeals = (pendingSpecRaw ?? []) as unknown as { id: string; name: string; deal_id: string; deal: { companies: { name: string | null } | null } | null }[]
 
   const total = totalCount ?? deals?.length ?? 0
-  const totalValue = deals?.reduce((s, d: any) => s + (Number(d.estimated_value) || 0), 0) ?? 0
+  const totalValue = deals?.reduce((s, d) => s + (Number(d.estimated_value) || 0), 0) ?? 0
   const isFiltered = !['super_admin', 'gerente'].includes(role) // ve solo sus deals (RLS)
   const canCreate = perms.canCreateLeads && canEdit
 
@@ -84,7 +85,7 @@ export default async function LeadsPage() {
             <Badge className="bg-amber-100 text-amber-800 tabular-nums">{pendingSpecDeals.length}</Badge></span>}
           description="Producción necesita más información para partir estos proyectos.">
           <ul className="divide-y divide-slate-100">
-            {pendingSpecDeals.map((proj: any) => (
+            {pendingSpecDeals.map(proj => (
               <li key={proj.id}>
                 <Link href={`/leads/${proj.deal_id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50 transition-colors">
                   <div className="min-w-0">
@@ -99,7 +100,7 @@ export default async function LeadsPage() {
         </Panel>
       )}
 
-      <LeadsTable deals={deals ?? []} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} stages={stages} />
+      <LeadsTable deals={(deals ?? []) as unknown as LeadRow[]} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} stages={stages} />
     </PageContainer>
   )
 }

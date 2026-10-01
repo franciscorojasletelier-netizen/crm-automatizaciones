@@ -6,7 +6,15 @@ import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, Circle, Plus, X, Calendar, Package } from 'lucide-react'
 import { DATE_ONLY_TZ } from '@/lib/dates'
 
-export default function ProjectDeliverables({ projectId, deliverables, readOnly }: { projectId: string; deliverables: any[]; readOnly?: boolean }) {
+export interface Deliverable {
+  id: string
+  title: string
+  description: string | null
+  due_date: string | null
+  is_completed: boolean
+}
+
+export default function ProjectDeliverables({ projectId, deliverables, readOnly }: { projectId: string; deliverables: Deliverable[]; readOnly?: boolean }) {
   const [list, setList] = useState(deliverables)
   const [showing, setShowing] = useState(false)
   const [title, setTitle] = useState('')
@@ -102,7 +110,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
             <p className="text-sm text-slate-400 font-medium">Sin entregables aún</p>
           </div>
         )}
-        {pending.map((d: any) => (
+        {pending.map(d => (
           <div key={d.id} className="px-5 py-3.5 flex items-start gap-3.5 hover:bg-slate-50/50 transition-colors">
             <button onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly}
               className={`mt-0.5 shrink-0 transition-transform ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
@@ -122,7 +130,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
         ))}
         {done.length > 0 && (
           <div className="divide-y divide-slate-50 opacity-50">
-            {done.map((d: any) => (
+            {done.map(d => (
               <div key={d.id} className="px-5 py-3 flex items-center gap-3.5">
                 <button onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly} className="shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />

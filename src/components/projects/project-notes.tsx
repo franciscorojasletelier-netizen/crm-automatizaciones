@@ -7,7 +7,14 @@ import { Plus, Lock, Send, X, StickyNote } from 'lucide-react'
 import { timeAgo } from '@/lib/format'
 
 
-export default function ProjectNotes({ projectId, notes, readOnly }: { projectId: string; notes: any[]; readOnly?: boolean }) {
+export interface ProjectNote {
+  id: string
+  content: string
+  created_at: string
+  profiles: { full_name: string | null; email?: string | null } | null
+}
+
+export default function ProjectNotes({ projectId, notes, readOnly }: { projectId: string; notes: ProjectNote[]; readOnly?: boolean }) {
   const [list, setList] = useState(notes)
   const [showing, setShowing] = useState(false)
   const [content, setContent] = useState('')
@@ -66,7 +73,7 @@ export default function ProjectNotes({ projectId, notes, readOnly }: { projectId
             <p className="text-sm text-slate-400 font-medium">Sin notas aún</p>
           </div>
         )}
-        {list.map((note: any) => (
+        {list.map(note => (
           <div key={note.id} className="px-5 py-3.5 flex gap-3.5 hover:bg-slate-50/50 transition-colors">
             <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
               <Lock className="w-3 h-3 text-amber-600" />

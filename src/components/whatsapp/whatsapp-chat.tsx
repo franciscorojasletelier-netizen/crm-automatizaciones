@@ -48,24 +48,32 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
   const prevInbound = useRef(0)
   const supabase  = createClient()
 
-  const fetchMessages = useCallback(async () => {
+  // Solo consulta; el estado se aplica tras la respuesta.
+  const loadMessages = useCallback(async () => {
     const { data } = await supabase
       .from('whatsapp_messages')
       .select('*, profiles:sent_by(full_name)')
       .eq('deal_id', dealId)
       .order('created_at', { ascending: true })
       .limit(100)
-
-    if (data) setMessages(data as WaMessage[])
-    setLoading(false)
+    return (data ?? null) as WaMessage[] | null
   }, [dealId, supabase])
 
+  const applyMessages = useCallback((data: WaMessage[] | null) => {
+    if (data) setMessages(data)
+    setLoading(false)
+  }, [])
+
+  const fetchMessages = useCallback(() => loadMessages().then(applyMessages), [loadMessages, applyMessages])
+
   useEffect(() => {
-    fetchMessages()
+    let alive = true
+    const tick = () => loadMessages().then(d => { if (alive) applyMessages(d) })
+    tick()
     // Poll cada 10s para mensajes nuevos
-    const interval = setInterval(fetchMessages, 10_000)
-    return () => clearInterval(interval)
-  }, [fetchMessages])
+    const interval = setInterval(tick, 10_000)
+    return () => { alive = false; clearInterval(interval) }
+  }, [loadMessages, applyMessages])
 
   // Contador de mensajes entrantes nuevos mientras el panel está cerrado
   const inboundCount = messages.filter(m => m.direction === 'inbound').length

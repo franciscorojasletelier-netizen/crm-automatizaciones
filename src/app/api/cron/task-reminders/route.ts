@@ -2,18 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { CHILE_TZ, chileDayStart } from '@/lib/dates'
+import { escapeHtml } from '@/lib/html'
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
 
-function buildEmailHtml(orgName: string, now: Date, todayTasks: any[], overdueTasks: any[]) {
+type ReminderTask = { title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }
+
+function buildEmailHtml(orgName: string, now: Date, todayTasks: ReminderTask[], overdueTasks: ReminderTask[]) {
   const todayHtml = todayTasks.length > 0 ? `
     <h3 style="color:#111;font-size:14px;margin:0 0 8px;">📋 Tareas para hoy (${todayTasks.length})</h3>
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
       ${todayTasks.map(t => `
         <tr style="border-bottom:1px solid #f0f0f0;">
-          <td style="padding:8px 0;font-size:13px;color:#111;">${t.title}</td>
-          <td style="padding:8px 0;font-size:12px;color:#888;text-align:right;">${t.deals?.companies?.name ?? ''}</td>
+          <td style="padding:8px 0;font-size:13px;color:#111;">${escapeHtml(t.title)}</td>
+          <td style="padding:8px 0;font-size:12px;color:#888;text-align:right;">${escapeHtml(t.deals?.companies?.name)}</td>
         </tr>
       `).join('')}
     </table>
@@ -24,7 +27,7 @@ function buildEmailHtml(orgName: string, now: Date, todayTasks: any[], overdueTa
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
       ${overdueTasks.map(t => `
         <tr style="border-bottom:1px solid #f0f0f0;">
-          <td style="padding:8px 0;font-size:13px;color:#111;">${t.title}</td>
+          <td style="padding:8px 0;font-size:13px;color:#111;">${escapeHtml(t.title)}</td>
           <td style="padding:8px 0;font-size:12px;color:#dc2626;text-align:right;">${formatDate(t.due_date)}</td>
         </tr>
       `).join('')}
@@ -35,7 +38,7 @@ function buildEmailHtml(orgName: string, now: Date, todayTasks: any[], overdueTa
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
       <h2 style="color:#111;margin:0 0 4px;">Buenos días 👋</h2>
       <p style="color:#666;font-size:14px;margin:0 0 24px;">
-        ${orgName} — ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        ${escapeHtml(orgName)} — ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       </p>
       ${todayHtml}
       ${overdueHtml}
@@ -105,7 +108,8 @@ export async function GET(request: NextRequest) {
       from: process.env.EMAIL_FROM?.trim() || 'CRM Automatizaciones <onboarding@resend.dev>',
       to: org.notification_email!,
       subject: `📅 ${todayTasks?.length ?? 0} tarea${(todayTasks?.length ?? 0) !== 1 ? 's' : ''} para hoy — ${orgName}`,
-      html: buildEmailHtml(orgName, now, todayTasks ?? [], overdueTasks ?? []),
+      // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
+      html: buildEmailHtml(orgName, now, (todayTasks ?? []) as unknown as ReminderTask[], (overdueTasks ?? []) as unknown as ReminderTask[]),
     })
     sent++
   }

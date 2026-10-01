@@ -37,10 +37,10 @@ async function getLayoutData() {
     // El rol decide si los contadores son globales (gerente/admin) o propios
     const profileRes = await supabase.from('profiles')
       .select('id, full_name, email, role, is_active, section_access, organization_id').eq('id', user.id).single()
-    const seesAll = ['super_admin', 'admin', 'gerente'].includes((profileRes.data as any)?.role ?? '')
+    const seesAll = ['super_admin', 'admin', 'gerente'].includes(profileRes.data?.role ?? '')
     // Explícito: sin esto, un platform_owner vería en su propio sidebar el
     // embudo y los módulos de TODAS las organizaciones mezclados.
-    const orgId = (profileRes.data as any)?.organization_id ?? undefined
+    const orgId: string | undefined = profileRes.data?.organization_id ?? undefined
 
     const tasksBase = () => {
       let q = supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false)
@@ -119,7 +119,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <GlobalChat
             currentUserId={userId}
             currentUserName={userName}
-            initialMessages={chatMessages as any}
+            initialMessages={chatMessages as unknown as React.ComponentProps<typeof GlobalChat>['initialMessages']}
           />
         </div>
       )}

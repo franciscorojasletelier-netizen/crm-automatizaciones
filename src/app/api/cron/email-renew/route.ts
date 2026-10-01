@@ -41,13 +41,13 @@ async function handle(request: NextRequest) {
 
   for (const account of accounts ?? []) {
     try {
-      const accessToken = await ensureFreshAccessToken(svc, account as any)
+      const accessToken = await ensureFreshAccessToken(svc, account)
       if (!accessToken) { errors.push(`${account.id}: sin token válido`); continue }
 
       if (account.provider === 'google_workspace') {
         const { data: integration } = await svc.from('platform_integrations')
           .select('config').eq('provider', 'google_workspace').eq('organization_id', account.organization_id).maybeSingle()
-        const topicName = (integration?.config as any)?.pubsub_topic
+        const topicName = (integration?.config as { pubsub_topic?: string } | null)?.pubsub_topic
         if (!topicName) { errors.push(`${account.id}: sin pubsub_topic configurado`); continue }
 
         const watch = await watchGmail(accessToken, topicName)
@@ -57,7 +57,7 @@ async function handle(request: NextRequest) {
         }).eq('id', account.id)
         renewed++
       } else {
-        let renewedSub = account.subscription_id
+        const renewedSub = account.subscription_id
           ? await renewOutlookSubscription(accessToken, account.subscription_id)
           : null
 
@@ -78,8 +78,8 @@ async function handle(request: NextRequest) {
         }
         renewed++
       }
-    } catch (e: any) {
-      errors.push(`${account.id}: ${e.message}`)
+    } catch (e) {
+      errors.push(`${account.id}: ${e instanceof Error ? e.message : String(e)}`)
     }
   }
 

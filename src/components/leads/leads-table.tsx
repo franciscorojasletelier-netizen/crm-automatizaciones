@@ -1,22 +1,38 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare, Download, GitBranch } from 'lucide-react'
-import DealOwnerSelector from '@/components/deals/deal-owner-selector'
+import DealOwnerSelector, { type Profile as TeamUser } from '@/components/deals/deal-owner-selector'
 import { formatCLP } from '@/lib/format'
 import { type Stage, stageByKey, colorOf, statusForStage } from '@/lib/stages'
 
+/** Fila de /leads (misma forma que el select de la página). */
+export interface LeadRow {
+  id: string
+  stage: string
+  pipeline_id: string
+  score: number | null
+  estimated_value: number | null
+  next_action: string | null
+  source: string | null
+  created_at: string
+  last_contacted_at: string | null
+  companies: { name: string | null; industry: string | null } | null
+  contacts: { full_name: string | null; email: string | null } | null
+  profiles: { id: string; full_name: string | null } | null
+}
+
 // Días desde el último contacto (o desde la creación si nunca se contactó)
-function daysSinceContact(deal: any): number {
+function daysSinceContact(deal: Pick<LeadRow, 'last_contacted_at' | 'created_at'>): number {
   const ref = deal.last_contacted_at ?? deal.created_at
   if (!ref) return 0
   return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000)
 }
 
-function StaleBadge({ deal, stages }: { deal: any; stages: Stage[] }) {
+function StaleBadge({ deal, stages }: { deal: LeadRow; stages: Stage[] }) {
   // Antes era un array CLOSED hardcodeado con las 4 etapas terminales.
   // No tiene nada que ver con ganado/perdido: un deal cerrado o congelado
   // simplemente no acumula "días sin contacto".
@@ -45,12 +61,12 @@ function ScoreBadge({ score }: { score: number | null }) {
   )
 }
 
-function toCsvValue(v: any): string {
+function toCsvValue(v: string | number | null | undefined): string {
   const s = String(v ?? '')
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
-export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false, stages = [] }: { deals: any[]; teamUsers?: any[]; canReassign?: boolean; stages?: Stage[] }) {
+export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false, stages = [] }: { deals: LeadRow[]; teamUsers?: TeamUser[]; canReassign?: boolean; stages?: Stage[] }) {
   const [deals, setDeals]   = useState(initialDeals)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
@@ -62,10 +78,12 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
   const [maxValue, setMaxValue] = useState('')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
-  // Cuando el server rerenderiza, sincronizar
-  useEffect(() => { setDeals(initialDeals) }, [initialDeals])
+  // Cuando el server rerenderiza, adoptar los datos nuevos (ajuste en el
+  // render, sin efecto: evita un render extra con datos viejos).
+  const [prevInitial, setPrevInitial] = useState(initialDeals)
+  if (initialDeals !== prevInitial) { setPrevInitial(initialDeals); setDeals(initialDeals) }
 
-  function handleReassigned(dealId: string, newOwner: any) {
+  function handleReassigned(dealId: string, newOwner: TeamUser) {
     setDeals(prev => prev.map(d =>
       d.id === dealId
         ? { ...d, profiles: { id: newOwner.id, full_name: newOwner.full_name } }
@@ -191,7 +209,10 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
   const [page, setPage] = useState(1)
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  useEffect(() => setPage(1), [search, stageFilter, sourceFilter, ownerFilter, dateFrom, dateTo, minValue, maxValue])
+  // Volver a la página 1 cuando cambia cualquier filtro.
+  const filterKey = [search, stageFilter, sourceFilter, ownerFilter, dateFrom, dateTo, minValue, maxValue].join('|')
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey)
+  if (filterKey !== prevFilterKey) { setPrevFilterKey(filterKey); setPage(1) }
 
   function clearFilters() {
     setSearch(''); setStageFilter(''); setSourceFilter(''); setOwnerFilter('')
@@ -302,12 +323,12 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                 <th className="pl-4 pr-0 py-3.5 w-8">
                   <input
                     type="checkbox"
-                    checked={paginated.length > 0 && paginated.every((d: any) => selected.has(d.id))}
+                    checked={paginated.length > 0 && paginated.every(d => selected.has(d.id))}
                     onChange={e => {
                       setSelected(prev => {
                         const next = new Set(prev)
-                        if (e.target.checked) paginated.forEach((d: any) => next.add(d.id))
-                        else paginated.forEach((d: any) => next.delete(d.id))
+                        if (e.target.checked) paginated.forEach(d => next.add(d.id))
+                        else paginated.forEach(d => next.delete(d.id))
                         return next
                       })
                     }}
@@ -335,7 +356,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                 </td>
               </tr>
             )}
-            {paginated.map((deal: any) => (
+            {paginated.map(deal => (
               <tr key={deal.id} className={`transition-colors group ${selected.has(deal.id) ? 'bg-accent-50/60' : 'hover:bg-accent-50/40'}`}>
                 {canReassign && (
                   <td className="pl-4 pr-0 py-3.5 w-8">
@@ -418,7 +439,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <p className="text-sm text-slate-500 font-medium">{deals.length === 0 ? 'Aún no hay leads. Crea el primero o conecta el formulario web.' : 'No hay leads que coincidan'}</p>
           </div>
         )}
-        {paginated.map((deal: any) => (
+        {paginated.map(deal => (
           <Link key={deal.id} href={`/leads/${deal.id}`}
             className="flex flex-col bg-white rounded-lg border border-slate-200 p-4 hover:border-accent-300 hover:shadow-md transition-all">
             <div className="flex items-start justify-between gap-2 mb-2">
@@ -491,7 +512,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
               <GitBranch className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-xs text-slate-400 font-medium">Mover a:</span>
               {(() => {
-                const selectedPipelineIds = new Set(deals.filter(d => selected.has(d.id)).map((d: any) => d.pipeline_id))
+                const selectedPipelineIds = new Set(deals.filter(d => selected.has(d.id)).map(d => d.pipeline_id))
                 const mixedPipelines = selectedPipelineIds.size > 1
                 const stageOptions = mixedPipelines ? [] : stages.filter(s => s.isActive && (selectedPipelineIds.size === 0 || s.pipelineId === [...selectedPipelineIds][0]))
                 return mixedPipelines ? (

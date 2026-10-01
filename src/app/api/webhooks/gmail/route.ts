@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   if (!account) return NextResponse.json({ ok: true })
 
-  const accessToken = await ensureFreshAccessToken(svc, account as any)
+  const accessToken = await ensureFreshAccessToken(svc, account)
   if (!accessToken) return NextResponse.json({ ok: true })
 
   const startHistoryId = account.sync_cursor ?? payload.historyId

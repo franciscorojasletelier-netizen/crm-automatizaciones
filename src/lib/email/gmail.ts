@@ -105,9 +105,12 @@ function decodeBase64Url(data: string) {
   return Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8')
 }
 
-function extractBody(payload: any): { text: string; html: string } {
+/** Parte MIME de la API de Gmail (solo lo que se lee acá). */
+interface GmailPart { mimeType?: string; body?: { data?: string }; parts?: GmailPart[] }
+
+function extractBody(payload: GmailPart | undefined): { text: string; html: string } {
   let text = ''; let html = ''
-  function walk(part: any) {
+  function walk(part: GmailPart | undefined) {
     if (!part) return
     if (part.mimeType === 'text/plain' && part.body?.data) text += decodeBase64Url(part.body.data)
     if (part.mimeType === 'text/html' && part.body?.data) html += decodeBase64Url(part.body.data)
@@ -139,15 +142,30 @@ export async function getGmailMessage(accessToken: string, messageId: string): P
 
 export async function sendGmailMessage(
   accessToken: string,
-  { to, subject, bodyText, threadId, inReplyTo }: { to: string; subject: string; bodyText: string; threadId?: string; inReplyTo?: string }
+  { to, subject, bodyText, bodyHtml, threadId, inReplyTo }: { to: string; subject: string; bodyText: string; bodyHtml?: string; threadId?: string; inReplyTo?: string }
 ) {
   // Sin saltos de línea en cabeceras: evita inyectar Bcc/To adicionales.
   to = to.replace(/[\r\n]+/g, ' '); subject = subject.replace(/[\r\n]+/g, ' ')
   // Asunto con tildes/ñ: codificado (RFC 2047); sin esto llega como mojibake.
   const encSubject = /[^ -~]/.test(subject) ? `=?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=` : subject
-  const headers = [`To: ${to}`, `Subject: ${encSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: 8bit']
+  const headers = [`To: ${to}`, `Subject: ${encSubject}`, 'MIME-Version: 1.0']
   if (inReplyTo) { headers.push(`In-Reply-To: ${inReplyTo}`, `References: ${inReplyTo}`) }
-  const raw = Buffer.from(`${headers.join('\r\n')}\r\n\r\n${bodyText}`)
+  // Con HTML: multipart/alternative (texto + diseño); el cliente de correo elige.
+  const b64 = (v: string) => Buffer.from(v, 'utf8').toString('base64').replace(/.{76}/g, '$&\r\n')
+  let mime: string
+  if (bodyHtml) {
+    const boundary = `=_crm_${Date.now().toString(36)}`
+    headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`)
+    mime = [
+      `--${boundary}`, 'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: base64', '', b64(bodyText),
+      `--${boundary}`, 'Content-Type: text/html; charset="UTF-8"', 'Content-Transfer-Encoding: base64', '', b64(bodyHtml),
+      `--${boundary}--`, '',
+    ].join('\r\n')
+  } else {
+    headers.push('Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: 8bit')
+    mime = bodyText
+  }
+  const raw = Buffer.from(`${headers.join('\r\n')}\r\n\r\n${mime}`)
     .toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
   const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {

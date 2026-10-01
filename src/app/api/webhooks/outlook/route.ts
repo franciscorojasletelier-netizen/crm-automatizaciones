@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => null)
-  const items: any[] = body?.value ?? []
+  // Notificaciones de Microsoft Graph (solo lo que se lee).
+  const items: { subscriptionId: string; clientState?: string; resourceData?: { id?: string } }[] = body?.value ?? []
   if (items.length === 0) return NextResponse.json({ ok: true })
 
   const svc = serviceClient()
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     const messageId = item.resourceData?.id
     if (!messageId) continue
 
-    const accessToken = await ensureFreshAccessToken(svc, account as any)
+    const accessToken = await ensureFreshAccessToken(svc, account)
     if (!accessToken) continue
 
     const msg = await getOutlookMessage(accessToken, messageId)
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-async function resolveAccount(svc: ReturnType<typeof serviceClient>, subscriptionId: string, clientState: string) {
+async function resolveAccount(svc: ReturnType<typeof serviceClient>, subscriptionId: string, clientState: string | undefined) {
   if (!subscriptionId || !clientState) return null
   const { data } = await svc.from('email_accounts')
     .select('id, organization_id, user_id, provider, email_address, access_token, refresh_token, token_expires_at, sync_cursor')

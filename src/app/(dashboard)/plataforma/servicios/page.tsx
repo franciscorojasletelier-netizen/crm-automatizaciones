@@ -18,7 +18,7 @@ const STATUS_META: Record<CheckStatus, { label: string; chip: string; dot: strin
   desconocido: { label: 'Sin fecha',   chip: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',     dot: 'bg-slate-400' },
 }
 
-const GROUPS: ServiceCheck['group'][] = ['Recordatorios', 'Infraestructura', 'Correo', 'Meta (WhatsApp / Leads)', 'Procesos automáticos']
+const GROUPS: ServiceCheck['group'][] = ['Recordatorios', 'Infraestructura', 'Módulos de clientes', 'Correo', 'Meta (WhatsApp / Leads)', 'Procesos automáticos']
 
 /** Servicios revisados que no caducan: para no tener que volver a averiguarlo. */
 const NO_EXPIRAN = [

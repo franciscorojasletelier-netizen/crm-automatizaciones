@@ -6,7 +6,7 @@ import { Plus, Star, Trophy, Lock, Paperclip, MessageSquareWarning, AlertTriangl
 import type { Stage } from '@/lib/stages'
 import { STAGE_COLOR_TOKENS, colorOf } from '@/lib/stages'
 
-async function callApi(method: 'POST' | 'PATCH', body: any) {
+async function callApi(method: 'POST' | 'PATCH', body: Record<string, unknown>) {
   const res = await fetch('/api/platform/stages', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
@@ -22,14 +22,14 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
   const [newLabel, setNewLabel] = useState('')
   const [newColor, setNewColor] = useState('slate')
 
-  async function run(id: string, fn: () => Promise<any>) {
+  async function run(id: string, fn: () => Promise<unknown>) {
     setBusy(id)
     setError('')
     try {
       await fn()
       router.refresh()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setBusy(null)
     }

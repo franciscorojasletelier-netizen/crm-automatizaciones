@@ -10,7 +10,7 @@ const TYPE_LABELS: Record<FieldType, string> = {
   date: 'Fecha', select: 'Lista (una opción)', multiselect: 'Lista (varias opciones)', boolean: 'Sí/No',
 }
 
-async function callApi(method: 'POST' | 'PATCH', body: any) {
+async function callApi(method: 'POST' | 'PATCH', body: Record<string, unknown>) {
   const res = await fetch('/api/platform/fields', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
@@ -29,14 +29,14 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
   const [newType, setNewType] = useState<FieldType>('text')
   const [newOptions, setNewOptions] = useState('') // "Casa,Departamento" -> [{value:'casa',label:'Casa'}, ...]
 
-  async function run(id: string, fn: () => Promise<any>) {
+  async function run(id: string, fn: () => Promise<unknown>) {
     setBusy(id)
     setError('')
     try {
       await fn()
       router.refresh()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setBusy(null)
     }

@@ -96,7 +96,22 @@ const greeting = (name?: string | null) => {
   return first ? `Hola ${first}` : 'Hola'
 }
 
-/** Correo: asunto + cuerpo con el detalle completo. */
+/**
+ * Línea del cuerpo del correo que se reemplaza por el detalle de los
+ * documentos: tabla en la versión con diseño, lista en la de texto.
+ */
+export const DETAIL_MARKER = '{detalle}'
+
+/** Detalle en texto plano (versión sin diseño y WhatsApp largo). */
+export function detailText(statement: Statement) {
+  return [
+    ...statement.lines.map(lineText),
+    '',
+    `Total adeudado: ${clp(statement.total)}${statement.overdue > 0 && statement.overdue !== statement.total ? ` (vencido: ${clp(statement.overdue)})` : ''}`,
+  ].join('\n')
+}
+
+/** Correo: asunto + cuerpo editable (el detalle va en DETAIL_MARKER). */
 export function emailMessage({ statement, tone, companyName, contactName, senderName, orgName }: MessageInput) {
   const n = statement.lines.length
   const docs = n === 1 ? 'el siguiente documento' : `los siguientes ${n} documentos`
@@ -128,9 +143,7 @@ export function emailMessage({ statement, tone, companyName, contactName, sender
     '',
     intro,
     '',
-    ...statement.lines.map(lineText),
-    '',
-    `Total adeudado: ${clp(statement.total)}${statement.overdue > 0 && statement.overdue !== statement.total ? ` (vencido: ${clp(statement.overdue)})` : ''}`,
+    DETAIL_MARKER,
     '',
     close,
     '',

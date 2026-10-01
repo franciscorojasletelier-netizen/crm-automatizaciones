@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, Circle, Plus, AlertTriangle, X, Calendar, Clock } from 'lucide-react'
+import { CheckCircle2, Circle, Plus, AlertTriangle, X, Calendar } from 'lucide-react'
 import { checkTaskConflict, formatConflictTime, type ConflictTask } from '@/lib/task-conflict'
 import { CHILE_TZ } from '@/lib/dates'
 
@@ -12,7 +12,14 @@ function isOverdue(due: string | null) {
   return new Date(due) < new Date()
 }
 
-export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: any[] }) {
+export interface DealTaskItem {
+  id: string
+  title: string
+  due_date: string | null
+  is_completed: boolean
+}
+
+export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: DealTaskItem[] }) {
   const [list, setList]         = useState(tasks)
   const [showing, setShowing]   = useState(false)
   const [title, setTitle]       = useState('')
@@ -164,7 +171,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
           </div>
         )}
 
-        {pending.map((task: any) => {
+        {pending.map(task => {
           const overdue = isOverdue(task.due_date)
           return (
             <div key={task.id} className={`px-5 py-3.5 flex items-start gap-3.5 transition-colors ${overdue ? 'hover:bg-red-50/30' : 'hover:bg-slate-50/50'}`}>
@@ -190,7 +197,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: an
 
         {done.length > 0 && (
           <div className="divide-y divide-slate-50 opacity-50">
-            {done.map((task: any) => (
+            {done.map(task => (
               <div key={task.id} className="px-5 py-3 flex items-center gap-3.5">
                 <button onClick={() => handleToggle(task.id, task.is_completed)} className="shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />

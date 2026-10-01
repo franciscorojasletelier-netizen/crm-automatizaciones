@@ -47,13 +47,12 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   }, [])
 
   useEffect(() => {
-    if (open) { scrollDown(); setUnread(0) }
+    if (open) scrollDown()
   }, [open, messages.length, scrollDown])
 
   // Poll mensajes de otros usuarios cada 5 s cuando el chat está abierto
   useEffect(() => {
     if (!open) return
-    const latestId = messages[messages.length - 1]?.id
 
     const fetchNew = async () => {
       const query = supabase
@@ -67,7 +66,8 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
       if (!data) return
       setMessages(prev => {
         const ids = new Set(prev.map(m => m.id))
-        const incoming = (data as any[]).filter(m => !ids.has(m.id) && m.user_id !== currentUserId)
+        // profiles es a-uno; sin tipos de base se infiere como arreglo.
+        const incoming = (data as unknown as Message[]).filter(m => !ids.has(m.id) && m.user_id !== currentUserId)
         if (!incoming.length) return prev
         if (!open) setUnread(n => n + incoming.length)
         return [...prev, ...incoming]

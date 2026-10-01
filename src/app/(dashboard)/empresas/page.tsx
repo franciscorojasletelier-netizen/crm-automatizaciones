@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, Building2, Search, ChevronLeft, ChevronRight } from 'lucide-react'
-import CompanyRow from '@/components/empresas/company-row'
+import CompanyRow, { type CompanyListItem } from '@/components/empresas/company-row'
 import { getFieldDefinitions } from '@/lib/fields'
 import { PageContainer, PageHeader, StatStrip, Stat, EmptyState, buttonClass, inputClass } from '@/components/ui/page'
 import { cn } from '@/lib/utils'
@@ -120,7 +120,7 @@ export default async function EmpresasPage({ searchParams }: { searchParams: Pro
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {companies.map((company: any) => (
+              {(companies as unknown as CompanyListItem[]).map(company => (
                 <CompanyRow key={company.id} company={company} dealId={dealByCompany[company.id]} canEdit={canEdit} fields={companyFields} />
               ))}
             </tbody>

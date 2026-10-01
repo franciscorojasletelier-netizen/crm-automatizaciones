@@ -44,7 +44,8 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000
 // Requiere un cliente service_role: access_token/refresh_token son
 // columnas que `authenticated` no puede ni leer (ver migración 034).
 export async function ensureFreshAccessToken(
-  supabase: SupabaseClient, account: EmailAccountRow
+  // Solo lo que se usa: los llamadores no siempre traen user_id ni email_address.
+  supabase: SupabaseClient, account: Pick<EmailAccountRow, 'id' | 'organization_id' | 'provider' | 'access_token' | 'refresh_token' | 'token_expires_at'>
 ): Promise<string | null> {
   const expiresAt = account.token_expires_at ? new Date(account.token_expires_at).getTime() : 0
   if (account.access_token && expiresAt - Date.now() > REFRESH_MARGIN_MS) {

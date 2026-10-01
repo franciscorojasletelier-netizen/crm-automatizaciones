@@ -93,7 +93,7 @@ export async function getOutlookMessage(accessToken: string, messageId: string):
     id: data.id, conversationId: data.conversationId,
     subject: data.subject ?? '(sin asunto)',
     from: data.from?.emailAddress?.address ?? '',
-    to: (data.toRecipients ?? []).map((r: any) => r.emailAddress?.address).filter(Boolean),
+    to: (data.toRecipients ?? []).map((r: { emailAddress?: { address?: string } }) => r.emailAddress?.address).filter(Boolean),
     bodyText: isHtml ? '' : (data.body?.content ?? ''),
     bodyHtml: isHtml ? (data.body?.content ?? '') : '',
     receivedDateTime: data.receivedDateTime,
@@ -102,8 +102,10 @@ export async function getOutlookMessage(accessToken: string, messageId: string):
 
 export async function sendOutlookMessage(
   accessToken: string,
-  { to, subject, bodyText, replyToMessageId }: { to: string; subject: string; bodyText: string; replyToMessageId?: string }
+  { to, subject, bodyText, bodyHtml, replyToMessageId }: { to: string; subject: string; bodyText: string; bodyHtml?: string; replyToMessageId?: string }
 ) {
+  // Graph acepta un solo cuerpo: el HTML si viene, si no el texto.
+  const body = bodyHtml ? { contentType: 'html', content: bodyHtml } : { contentType: 'text', content: bodyText }
   // Responder DENTRO del hilo (createReply) cuando hay mensaje de
   // origen — mantiene el thread_id/conversationId sin reimplementar
   // encabezados MIME a mano, a diferencia de Gmail.
@@ -116,7 +118,7 @@ export async function sendOutlookMessage(
     const updateRes = await fetch(`${GRAPH_BASE}/me/messages/${draft.id}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: { contentType: 'text', content: bodyText } }),
+      body: JSON.stringify({ body }),
     })
     if (!updateRes.ok) return { ok: false as const, error: 'No se pudo redactar la respuesta' }
     const sendRes = await fetch(`${GRAPH_BASE}/me/messages/${draft.id}/send`, {
@@ -131,7 +133,7 @@ export async function sendOutlookMessage(
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message: {
-        subject, body: { contentType: 'text', content: bodyText },
+        subject, body,
         toRecipients: [{ emailAddress: { address: to } }],
       },
       saveToSentItems: true,

@@ -74,21 +74,22 @@ export default function TaskDetailPanel({
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
 
-  // Load history
+  // Historial de la tarea (estado solo tras la respuesta y si sigue montado).
   useEffect(() => {
-    async function load() {
-      setLoadingHistory(true)
-      const { data } = await supabase
-        .from('task_history')
-        .select('*, changer:changed_by(full_name)')
-        .eq('task_id', task.id)
-        .order('created_at', { ascending: false })
-        .limit(50)
-      setHistory((data as any) ?? [])
-      setLoadingHistory(false)
-    }
-    load()
-  }, [task.id])
+    let alive = true
+    supabase
+      .from('task_history')
+      .select('*, changer:changed_by(full_name)')
+      .eq('task_id', task.id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        if (!alive) return
+        setHistory((data ?? []) as HistoryEntry[])
+        setLoadingHistory(false)
+      })
+    return () => { alive = false }
+  }, [task.id, supabase])
 
   const dateChanged = newDate !== toDatetimeLocal(task.due_date)
   const canSave = dateChanged && comment.trim().length >= 5

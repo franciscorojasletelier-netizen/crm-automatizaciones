@@ -12,7 +12,7 @@ interface Step {
   step_order: number
   delay_hours: number
   action_type: 'send_whatsapp_template' | 'create_task' | 'notify_owner' | 'notify_team'
-  action_config: any
+  action_config: { title?: string; days_after?: number; message?: string; template_id?: string }
 }
 
 interface Sequence {
@@ -20,7 +20,7 @@ interface Sequence {
   name: string
   description: string | null
   trigger_type: 'stage_change' | 'deal_created'
-  trigger_config: any
+  trigger_config: { to_stage?: string; days?: number }
   is_active: boolean
   automation_sequence_steps: Step[]
 }
@@ -112,7 +112,7 @@ export default function SequencesManager({ sequences: initialSequences, stages, 
           </div>
           <div>
             <label htmlFor="sequences-manager-f2" className="block text-[11px] font-semibold text-slate-500 mb-1">Empieza cuando…</label>
-            <select id="sequences-manager-f2" value={triggerType} onChange={e => setTriggerType(e.target.value as any)}
+            <select id="sequences-manager-f2" value={triggerType} onChange={e => setTriggerType(e.target.value as Sequence['trigger_type'])}
               className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
               <option value="stage_change">Un deal entra a una etapa</option>
               <option value="deal_created">Se crea un deal nuevo</option>
@@ -170,7 +170,7 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
   async function addStep(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const config: any = {}
+    const config: Step['action_config'] = {}
     if (actionType === 'send_whatsapp_template') config.template_id = templateId
     if (actionType === 'create_task') config.title = taskTitle
     if (actionType === 'notify_owner' || actionType === 'notify_team') config.message = message
@@ -247,7 +247,7 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
             </div>
             <div>
               <label htmlFor="sequences-manager-f5" className="block text-[11px] font-semibold text-slate-500 mb-1">Acción</label>
-              <select id="sequences-manager-f5" value={actionType} onChange={e => setActionType(e.target.value as any)}
+              <select id="sequences-manager-f5" value={actionType} onChange={e => setActionType(e.target.value as Step['action_type'])}
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full bg-white">
                 {Object.entries(ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>

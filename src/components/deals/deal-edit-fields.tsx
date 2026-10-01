@@ -65,7 +65,9 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix }
   )
 }
 
-export default function DealEditFields({ deal }: { deal: any }) {
+export default function DealEditFields({ deal }: {
+  deal: { id: string; estimated_value: number | null; probability: number | null; next_action: string | null; source: string | null }
+}) {
   return (
     <div className="divide-y divide-slate-100">
       <EditableField label="Valor estimado" value={deal.estimated_value?.toString() ?? null} fieldKey="estimated_value" dealId={deal.id} type="number" prefix="$" />

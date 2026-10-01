@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Pencil, Check, X, User, Building2, Mail, Phone, Briefcase, Globe } from 'lucide-react'
+import { Pencil, Check, X, User, Building2, Mail, Phone, Briefcase, Globe, type LucideIcon } from 'lucide-react'
 import DynamicFields from '@/components/fields/dynamic-fields'
 import type { FieldDefinition } from '@/lib/fields'
 
-function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) {
+function InfoRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value?: string | null }) {
   if (!value) return null
   return (
     <div className="flex items-start gap-2.5">
@@ -30,8 +30,12 @@ function EditInput({ label, value, onChange }: { label: string; value: string; o
   )
 }
 
+type CustomFields = Record<string, unknown> | null
+export interface ContactInfo { id: string; full_name: string | null; email: string | null; phone?: string | null; job_title: string | null; custom_fields: CustomFields }
+export interface CompanyInfo { id: string; name: string | null; industry: string | null; website: string | null; custom_fields: CustomFields }
+
 export default function ContactEdit({ contact, company, canSeePhone = false, contactFields = [], companyFields = [] }: {
-  contact: any; company: any; canSeePhone?: boolean; contactFields?: FieldDefinition[]; companyFields?: FieldDefinition[]
+  contact: ContactInfo | null; company: CompanyInfo | null; canSeePhone?: boolean; contactFields?: FieldDefinition[]; companyFields?: FieldDefinition[]
 }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)

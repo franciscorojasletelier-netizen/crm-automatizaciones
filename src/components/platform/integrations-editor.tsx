@@ -80,8 +80,8 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
       setShowNew(false); setLabel(''); setExternalId(''); setAccessToken(''); setPubsubTopic('')
       router.refresh()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setBusy(null)
     }
@@ -98,8 +98,8 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
       router.refresh()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setBusy(null)
     }
@@ -114,8 +114,8 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
       router.refresh()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setBusy(null)
     }

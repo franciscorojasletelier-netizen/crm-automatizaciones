@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic'
-import { createClient, requirePermission } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/server'
 import { getVisibleProjectIds } from '@/lib/visibility'
 import { formatCLP } from '@/lib/format'
 import Link from 'next/link'
-import { FolderOpen, ChevronRight, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
+import { FolderOpen, ChevronRight, AlertTriangle, Clock } from 'lucide-react'
 import { DATE_ONLY_TZ } from '@/lib/dates'
 
 const phaseLabels: Record<string, string> = {
@@ -59,7 +59,13 @@ export default async function ProyectosPage() {
       : baseQuery.eq('id', 'no-match')
   }
 
-  const { data: projects } = await baseQuery
+  const { data } = await baseQuery
+  // Relaciones a-uno: sin tipos de base se infieren como arreglo.
+  type ProjectRow = {
+    id: string; name: string; phase: string; status: string; budget: number | null; due_date: string | null; start_date: string | null
+    companies: { name: string | null } | null; profiles: { full_name: string | null } | null
+  }
+  const projects = data as unknown as ProjectRow[] | null
 
   const pending = projects?.filter(p => p.status === 'pendiente_especificaciones') ?? []
   const active  = projects?.filter(p => p.status === 'activo') ?? []
@@ -97,7 +103,7 @@ export default async function ProyectosPage() {
             <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">{pending.length}</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {pending.map((project: any) => {
+            {pending.map(project => {
               const progress = phaseProgress[project.phase] ?? 0
               return (
                 <Link key={project.id} href={`/proyectos/${project.id}`}
@@ -136,7 +142,7 @@ export default async function ProyectosPage() {
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-900 px-1">Activos</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {active.map((project: any) => {
+            {active.map(project => {
               const overdue = isOverdue(project.due_date)
               const soon = isDueSoon(project.due_date)
               const progress = phaseProgress[project.phase] ?? 0
@@ -213,7 +219,7 @@ export default async function ProyectosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {others.map((project: any) => (
+                {others.map(project => (
                   <tr key={project.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-5 py-3.5">
                       <p className="font-semibold text-slate-700">{project.name}</p>

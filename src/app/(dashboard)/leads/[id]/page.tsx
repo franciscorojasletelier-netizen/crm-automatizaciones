@@ -18,7 +18,7 @@ import DealSpecBanner from '@/components/deals/deal-spec-banner'
 import DealOwnerSelector from '@/components/deals/deal-owner-selector'
 import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 import DealAiInsights from '@/components/deals/deal-ai-insights'
-import DealTimeline from '@/components/deals/deal-timeline'
+import DealTimeline, { type TimelineSources } from '@/components/deals/deal-timeline'
 import QuotesPanel from '@/components/deals/quotes-panel'
 import EmailThread from '@/components/deals/email-thread'
 import { formatCLP } from '@/lib/format'
@@ -82,7 +82,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   if (linkedProject?.spec_requested_by) {
     const { data: reqProfile } = await supabase
       .from('profiles').select('full_name').eq('id', linkedProject.spec_requested_by).single()
-    specRequesterName = (reqProfile as any)?.full_name ?? null
+    specRequesterName = reqProfile?.full_name ?? null
   }
 
   const seesCobranza = canAccessSection(role, sectionAccess, 'cobranza')
@@ -114,7 +114,12 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number }[])
     .find(q => q.status === 'accepted') ?? null
 
-  const lastInsight = (aiInsights as any)?.[0] ?? null
+  // profiles:created_by es a-uno; sin tipos de base se infiere como arreglo.
+  const lastInsight = (aiInsights?.[0] ?? null) as unknown as {
+    insights: React.ComponentProps<typeof DealAiInsights>['initialInsights']
+    created_at: string
+    profiles: { full_name: string | null } | null
+  } | null
 
   const score = deal.score ?? 0
 
@@ -185,7 +190,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <div className="px-4 py-3.5">
             <DealOwnerSelector
               dealId={deal.id}
-              currentOwner={deal.profiles ? { id: (deal.profiles as any).id, full_name: (deal.profiles as any).full_name } : null}
+              currentOwner={deal.profiles ? { id: deal.profiles.id, full_name: deal.profiles.full_name } : null}
               teamUsers={teamUsers ?? []}
               canReassign={canManage}
             />
@@ -220,8 +225,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <DealSpecBanner
             projectId={linkedProject.id}
             projectName={linkedProject.name}
-            specNotes={(linkedProject as any).spec_notes ?? null}
-            specRequestedAt={(linkedProject as any).spec_requested_at ?? null}
+            specNotes={linkedProject.spec_notes ?? null}
+            specRequestedAt={linkedProject.spec_requested_at ?? null}
             specRequestedByName={specRequesterName}
             currentUserId={userId}
             canResolve={canEdit}
@@ -299,8 +304,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <DealMembers
               dealId={deal.id}
               ownerId={deal.owner_id}
-              members={(members ?? []) as any}
-              teamUsers={(teamUsers ?? []) as any}
+              members={(members ?? []) as unknown as React.ComponentProps<typeof DealMembers>['members']}
+              teamUsers={(teamUsers ?? []) as React.ComponentProps<typeof DealMembers>['teamUsers']}
               currentUserId={userId}
               canManage={canManage}
             />
@@ -311,7 +316,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               history={history ?? []}
               interactions={interactions ?? []}
               tasks={tasks ?? []}
-              chatMessages={chatMessages ?? []}
+              chatMessages={(chatMessages ?? []) as unknown as TimelineSources['chatMessages']}
               emails={emails ?? []}
             />
           </div>
@@ -326,11 +331,11 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               proposalFilename={deal.proposal_filename ?? null}
               proposalUrl={deal.proposal_url ?? null}
               organizationId={organizationId ?? ''}
-              companyName={(deal as any).companies?.name ?? null}
+              companyName={deal.companies?.name ?? null}
               estimatedValue={deal.estimated_value ?? null}
             />
           )}
-            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as any} canEdit={canEdit} />
+            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} />
             {seesCobranza && (
               <DealInvoicesPanel
                 invoices={(dealInvoices ?? []) as unknown as Invoice[]}
@@ -345,10 +350,10 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             )}
             <EmailThread
               dealId={deal.id}
-              contactId={(deal.contacts as any)?.id ?? null}
-              contactEmail={(deal.contacts as any)?.email ?? null}
+              contactId={deal.contacts?.id ?? null}
+              contactEmail={deal.contacts?.email ?? null}
               hasConnectedAccount={!!connectedAccount}
-              emails={(emails ?? []) as any}
+              emails={(emails ?? []) as React.ComponentProps<typeof EmailThread>['emails']}
             />
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />
             <DealTasks dealId={deal.id} tasks={tasks ?? []} />
@@ -356,7 +361,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               dealId={deal.id}
               currentUserId={userId}
               currentUserName={userName}
-              initialMessages={(chatMessages ?? []) as any}
+              initialMessages={(chatMessages ?? []) as unknown as React.ComponentProps<typeof DealChat>['initialMessages']}
             />
           </div>
         </div>
@@ -365,8 +370,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       {/* Chat WhatsApp flotante — visible para todos, envío solo para comerciales+ */}
       <WhatsAppChat
         dealId={deal.id}
-        contactName={(deal.contacts as any)?.full_name ?? 'Cliente'}
-        contactPhone={canSeePhone ? ((deal.contacts as any)?.phone ?? null) : null}
+        contactName={deal.contacts?.full_name ?? 'Cliente'}
+        contactPhone={canSeePhone ? (deal.contacts?.phone ?? null) : null}
         canSend={canEdit}
         orgPhone={org?.phone ?? null}
       />

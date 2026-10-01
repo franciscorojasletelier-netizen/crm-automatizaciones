@@ -6,13 +6,14 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Mail, MessageCircle, Send, X, CheckCircle2 } from 'lucide-react'
+import { Loader2, Mail, MessageCircle, Send, X, CheckCircle2, Eye } from 'lucide-react'
+import { renderCollectionEmail, type EmailOrg } from '@/lib/cobranza-email'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { useDialog } from '@/lib/use-dialog'
 import { clp } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
-  TONE_META, emailMessage, whatsappMessage, suggestedTone, waPhone, waLink,
+  TONE_META, DETAIL_MARKER, emailMessage, whatsappMessage, suggestedTone, waPhone, waLink,
   type Statement, type Tone,
 } from '@/lib/cobranza-mensajes'
 
@@ -28,6 +29,8 @@ export interface SendCollectionProps {
   canSendEmail: boolean
   /** Remitente del sistema (Resend) si no usa su cuenta; null = su cuenta conectada. */
   emailFrom?: string | null
+  /** Datos de la empresa para la versión con diseño y la vista previa. */
+  emailOrg?: EmailOrg
   /** Canal con que abre el panel (botones separados en la ficha). */
   initialChannel?: Channel
   variant?: 'primary' | 'secondary'
@@ -35,7 +38,7 @@ export interface SendCollectionProps {
 }
 
 export default function SendCollection({
-  companyId, companyName, contact, statement, senderName, orgName, canSendEmail, emailFrom = null,
+  companyId, companyName, contact, statement, senderName, orgName, canSendEmail, emailFrom = null, emailOrg,
   initialChannel = 'email', variant = 'primary', label = 'Enviar cobro',
 }: SendCollectionProps) {
   const router = useRouter()
@@ -51,6 +54,7 @@ export default function SendCollection({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
+  const [preview, setPreview] = useState<string | null>(null)
   const dialogRef = useDialog<HTMLFormElement>(open, () => { if (!busy) setOpen(false) }, busy)
 
   const waNumber = useMemo(() => waPhone(phone), [phone])
@@ -83,7 +87,7 @@ export default function SendCollection({
     if (!to.trim()) { setError('Indica el correo del cliente.'); return }
     setBusy(true)
     try {
-      const r = await log({ channel: 'email', to: to.trim(), subject, body })
+      const r = await log({ channel: 'email', to: to.trim(), subject, body, tone })
       setDone(r.warning ?? `Correo enviado a ${to.trim()}. Quedó registrado como gestión.`)
       router.refresh()
     } catch (err) {
@@ -197,8 +201,17 @@ export default function SendCollection({
                       </div>
                       <div>
                         <label htmlFor="sc-body" className={labelClass}>Mensaje</label>
-                        <textarea id="sc-body" value={body} onChange={e => setBody(e.target.value)} rows={16} maxLength={10000}
+                        <textarea id="sc-body" value={body} onChange={e => setBody(e.target.value)} rows={14} maxLength={10000}
                           className={cn(inputClass, 'h-auto py-2 text-[13px] leading-relaxed resize-y')} />
+                        <p className="mt-1 text-xs text-slate-500">
+                          La línea <code className="px-1 rounded bg-slate-100 text-slate-700">{DETAIL_MARKER}</code> se reemplaza por el resumen, la tabla de documentos
+                          {emailOrg?.paymentInstructions ? ' y los datos para pagar' : ''}.
+                        </p>
+                        <button type="button"
+                          onClick={() => setPreview(renderCollectionEmail({ body, subject, statement, tone, org: emailOrg ?? { name: orgName ?? 'Tu empresa' } }).html)}
+                          className={cn(buttonClass.ghost, 'mt-1 -ml-2.5')}>
+                          <Eye className="w-3.5 h-3.5" /> Vista previa del correo
+                        </button>
                       </div>
                     </>
                   ) : (
@@ -236,6 +249,23 @@ export default function SendCollection({
               </>
             )}
           </form>
+        </div>
+      )}
+
+      {preview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Vista previa del correo">
+          <div className="absolute inset-0 bg-slate-900/50" onClick={() => setPreview(null)} />
+          <div className="relative w-full max-w-[680px] h-[85vh] bg-card rounded-lg shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 h-12 border-b border-slate-200 shrink-0">
+              <p className="text-sm font-medium text-slate-900 truncate">Vista previa · {subject}</p>
+              <button type="button" onClick={() => setPreview(null)} aria-label="Cerrar vista previa"
+                className="w-8 h-8 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* sandbox sin scripts: el HTML del correo no ejecuta nada. */}
+            <iframe title="Vista previa del correo" srcDoc={preview} sandbox="" className="flex-1 w-full bg-white" />
+          </div>
         </div>
       )}
     </>

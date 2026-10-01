@@ -32,9 +32,11 @@ export async function checkTaskConflict(
     .gte('due_date', from)
     .lte('due_date', to)
 
-  return (data ?? [])
-    .filter((t: any) => t.id !== excludeTaskId)
-    .map((t: any) => ({
+  // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
+  type Row = { id: string; title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }
+  return ((data ?? []) as unknown as Row[])
+    .filter(t => t.id !== excludeTaskId)
+    .map(t => ({
       id:       t.id,
       title:    t.title,
       due_date: t.due_date,

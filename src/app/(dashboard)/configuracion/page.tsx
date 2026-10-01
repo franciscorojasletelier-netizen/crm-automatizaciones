@@ -4,6 +4,7 @@ import { getRoleMeta } from '@/lib/roles'
 import ChangePasswordCard from './ChangePasswordCard'
 import TwoFactorCard from './TwoFactorCard'
 import EmailAccountsCard from './EmailAccountsCard'
+import CompanyProfileCard, { type CompanyProfile } from './CompanyProfileCard'
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
@@ -21,13 +22,21 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
   const initials = getInitials(displayName)
   const role = getRoleMeta(profile?.role ?? '')
 
+  // Datos de la empresa: solo gerencia/administración (la RLS lo exige igual).
+  const isManager = ['super_admin', 'admin', 'gerente'].includes(profile?.role ?? '')
+  const { data: org } = isManager && profile?.organization_id
+    ? await supabase.from('organizations')
+        .select('id, name, display_name, logo_url, email, phone, address, payment_instructions')
+        .eq('id', profile.organization_id).maybeSingle()
+    : { data: null }
+
   return (
     <div className="p-4 md:p-6 min-h-full bg-slate-50">
       <div className="max-w-2xl mx-auto space-y-5">
 
         <div>
           <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Configuración</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Ajustes de tu cuenta</p>
+          <p className="text-sm text-slate-500 mt-0.5">Ajustes de tu cuenta{org ? ' y de la empresa' : ''}</p>
         </div>
 
         {/* Perfil hero */}
@@ -67,12 +76,14 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
           </div>
         </div>
 
+        {org && <CompanyProfileCard org={org as CompanyProfile} />}
+
         {/* Seguridad — flujo real de cambio de contraseña, no un mensaje muerto */}
         <ChangePasswordCard email={user?.email ?? ''} />
 
         <TwoFactorCard mfaRequired={mfaRequired === '1'} />
 
-        <EmailAccountsCard accounts={(emailAccounts ?? []) as any} connectedMessage={emailConnected} errorMessage={emailError} />
+        <EmailAccountsCard accounts={(emailAccounts ?? []) as unknown as React.ComponentProps<typeof EmailAccountsCard>['accounts']} connectedMessage={emailConnected} errorMessage={emailError} />
 
       </div>
     </div>

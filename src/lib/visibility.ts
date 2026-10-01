@@ -4,10 +4,6 @@
 // ─────────────────────────────────────────────
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-type CanSeeAll  = 'super_admin' | 'gerente'
-type OwnerOnly  = 'comercial'
-type MemberOnly = 'produccion' | 'soporte'
-
 /**
  * Devuelve los IDs de deals que el usuario puede ver.
  * - super_admin / gerente   → null  (sin filtro — ve todo)

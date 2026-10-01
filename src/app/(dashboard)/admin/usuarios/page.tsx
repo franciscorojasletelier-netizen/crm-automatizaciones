@@ -66,7 +66,7 @@ export default async function UsuariosPage() {
           <AreasManager areas={areas ?? []} />
           <AddUserButton
             editorRole={normalizedRole}
-            people={(users ?? []).map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email }))}
+            people={(users ?? []).map(u => ({ id: u.id, full_name: u.full_name, email: u.email }))}
             areas={areas ?? []}
           />
         </div>
@@ -102,7 +102,7 @@ export default async function UsuariosPage() {
             </div>
           )}
 
-          {users?.map((u: any) => {
+          {users?.map(u => {
             const roleMeta = getRoleMeta(u.role)
             const initials = getInitials(u.full_name, u.email)
             const isSelf = u.id === user.id

@@ -49,23 +49,25 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
     if (list) list.scrollTop = list.scrollHeight
   }, [])
 
-  const fetchMessages = useCallback(async () => {
-    const { data } = await supabase
-      .from('direct_messages')
-      .select('id, sender_id, recipient_id, content, created_at, read_at')
-      .or(pairFilter)
-      .order('created_at', { ascending: true })
-      .limit(100)
-    if (data) setMessages(data as DirectMessage[])
-    setLoading(false)
-  }, [supabase, pairFilter])
-
-  // Carga inicial + polling cada 5 s
+  // Carga inicial + polling cada 5 s. El estado solo se toca tras la
+  // respuesta y si el chat sigue montado (alive).
   useEffect(() => {
-    fetchMessages()
-    const interval = setInterval(fetchMessages, 5_000)
-    return () => clearInterval(interval)
-  }, [fetchMessages])
+    let alive = true
+    const load = async () => {
+      const { data } = await supabase
+        .from('direct_messages')
+        .select('id, sender_id, recipient_id, content, created_at, read_at')
+        .or(pairFilter)
+        .order('created_at', { ascending: true })
+        .limit(100)
+      if (!alive) return
+      if (data) setMessages(data as DirectMessage[])
+      setLoading(false)
+    }
+    load()
+    const interval = setInterval(load, 5_000)
+    return () => { alive = false; clearInterval(interval) }
+  }, [supabase, pairFilter])
 
   useEffect(() => { scrollDown() }, [messages, scrollDown])
 

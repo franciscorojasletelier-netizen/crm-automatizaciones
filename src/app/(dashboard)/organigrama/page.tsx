@@ -28,9 +28,11 @@ export default async function OrganigramaPage() {
     .select('id, name, color')
     .order('name')
 
-  const activePeople = (people ?? [])
-    .filter((p: any) => p.is_active)
-    .map((p: any) => ({
+  // areas:area_id es a-uno; sin tipos de base se infiere como arreglo.
+  type PersonRow = Omit<OrgPerson, 'area_name' | 'area_color'> & { areas: { name: string; color: string | null } | null }
+  const activePeople = ((people ?? []) as unknown as PersonRow[])
+    .filter(p => p.is_active)
+    .map(p => ({
       ...p,
       area_name: p.areas?.name ?? null,
       area_color: p.areas?.color ?? null,

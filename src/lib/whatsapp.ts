@@ -7,7 +7,8 @@ export interface SendWhatsAppResult {
   error?: string
   outsideWindow?: boolean
   messageId?: string | null
-  message?: any
+  /** Fila insertada en whatsapp_messages. */
+  message?: Record<string, unknown> | null
 }
 
 // Extraído de /api/whatsapp/send para reutilizarlo desde el cron de

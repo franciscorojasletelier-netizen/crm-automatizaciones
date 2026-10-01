@@ -4,19 +4,22 @@ import Link from 'next/link'
 import { requirePermission } from '@/lib/supabase/server'
 import { chileDateString } from '@/lib/dates'
 import { clp, formatCLP } from '@/lib/format'
-import { PageContainer, PageHeader, Stat, StatStrip, Panel } from '@/components/ui/page'
+import { PageContainer, PageHeader, Stat, StatStrip, Panel, buttonClass } from '@/components/ui/page'
+import { BellRing } from 'lucide-react'
 import InvoicesTable from '@/components/cobranza/invoices-table'
 import InvoiceForm, { type InvoicePrefill } from '@/components/cobranza/invoice-form'
-import { INVOICE_SELECT, AGING_BUCKETS, monthStart, summarize, type Invoice } from '@/lib/cobranza'
+import { INVOICE_SELECT, AGING_BUCKETS, monthStart, summarize, buildCollectionQueue, type Invoice } from '@/lib/cobranza'
+import CollectionQueue from '@/components/cobranza/collection-queue'
+import { loadContactsByCompany, loadSenderContext } from '@/lib/cobranza-server'
 import { cn } from '@/lib/utils'
 
 const COLLECTION_MANAGERS = ['super_admin', 'gerente', 'finanzas']
 
 export default async function CobranzaPage({ searchParams }: {
-  searchParams: Promise<{ nuevo?: string; empresa?: string; deal?: string; proyecto?: string; cotizacion?: string; monto?: string; concepto?: string; filtro?: string }>
+  searchParams: Promise<{ nuevo?: string; empresa?: string; deal?: string; proyecto?: string; cotizacion?: string; monto?: string; concepto?: string; filtro?: string; cola?: string }>
 }) {
   const params = await searchParams
-  const { role, canEdit, supabase, organizationId } = await requirePermission('cobranza')
+  const { role, canEdit, supabase, organizationId, user } = await requirePermission('cobranza')
   const canManage = canEdit && COLLECTION_MANAGERS.includes(role)
   const today = chileDateString()
 
@@ -36,6 +39,15 @@ export default async function CobranzaPage({ searchParams }: {
   const companies = (companiesRes.data ?? []).map(c => ({ id: c.id, label: c.name }))
   const people = (peopleRes.data ?? []).map(p => ({ id: p.id, label: p.full_name ?? p.email ?? 'Usuario' }))
 
+  // Cola del día (solo quien puede gestionar): contactos y remitente en paralelo.
+  const queue = canEdit ? buildCollectionQueue(invoices, today) : []
+  const [queueContacts, sender] = canEdit
+    ? await Promise.all([
+        loadContactsByCompany(supabase, queue.map(q => q.companyId)),
+        loadSenderContext(supabase, user.id, organizationId ?? null),
+      ])
+    : [new Map(), null]
+
   // Viene de "Crear cobro" en un deal, proyecto o cotización.
   const prefill: InvoicePrefill = {
     company_id: params.empresa, deal_id: params.deal, project_id: params.proyecto, quote_id: params.cotizacion,
@@ -51,7 +63,12 @@ export default async function CobranzaPage({ searchParams }: {
           ? `${summary.openCount} ${summary.openCount === 1 ? 'documento abierto' : 'documentos abiertos'} · ${summary.overdueCount} ${summary.overdueCount === 1 ? 'vencido' : 'vencidos'}`
           : 'Documentos por cobrar, pagos y gestiones de cobranza'}
         actions={canManage && (
-          <InvoiceForm companies={companies} people={people} prefill={prefill} openInitially={params.nuevo === '1'} />
+          <>
+            <Link href="/cobranza/recordatorios" className={buttonClass.secondary}>
+              <BellRing className="w-3.5 h-3.5" /> Recordatorios
+            </Link>
+            <InvoiceForm companies={companies} people={people} prefill={prefill} openInitially={params.nuevo === '1'} />
+          </>
         )}
       />
 
@@ -70,6 +87,14 @@ export default async function CobranzaPage({ searchParams }: {
           value={clp(summary.collectedThisMonth)}
           context="Pagos registrados desde el día 1" />
       </StatStrip>
+
+      {canEdit && sender && (
+        <div className="mt-4">
+          <CollectionQueue queue={queue} invoices={invoices} today={today} contacts={queueContacts}
+            sender={{ senderName: sender.senderName, orgName: sender.orgName, canSendEmail: sender.canSendEmail, emailFrom: sender.emailFrom, emailOrg: sender.emailOrg }}
+            showAll={params.cola === 'todos'} />
+        </div>
+      )}
 
       {summary.receivable > 0 && (
         <Panel className="mt-4" title="Antigüedad de la deuda" description="Saldo por cobrar según días de mora">
