@@ -6,6 +6,7 @@ import { getCurrentProfile } from '@/lib/supabase/server'
 import { canEditSection } from '@/lib/roles'
 import { getDisabledModules } from '@/lib/modules'
 import { sendAsUser } from '@/lib/email/send-as-user'
+import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { chileDateString } from '@/lib/dates'
 import { clp } from '@/lib/format'
 import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
@@ -48,20 +49,39 @@ export async function POST(request: NextRequest) {
     if (!EMAIL_RE.test(to)) return NextResponse.json({ error: 'Correo de destino no válido' }, { status: 400 })
     if (!subject) return NextResponse.json({ error: 'Falta el asunto' }, { status: 400 })
 
-    const sent = await sendAsUser(supabase, user.id, { to, subject, body })
-    if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: sent.status })
+    // 1° la cuenta conectada del ejecutivo; 2° el correo del sistema (Resend).
+    const { data: account } = await supabase.from('email_accounts')
+      .select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle()
 
-    // Historial de correos (enlazado al contacto si existe en la empresa).
-    const { data: contact } = await supabase.from('contacts').select('id')
-      .eq('company_id', companyId).ilike('email', to).limit(1).maybeSingle()
-    await sent.svc.from('email_messages').insert({
-      organization_id: organizationId, deal_id: null, contact_id: contact?.id ?? null,
-      email_account_id: sent.accountId, direction: 'outbound',
-      subject, body_text: body, body_html: null,
-      from_address: sent.fromAddress, to_addresses: [to],
-      provider_message_id: sent.messageId, thread_id: sent.threadId,
-      sent_at: new Date().toISOString(),
-    })
+    if (account) {
+      const sent = await sendAsUser(supabase, user.id, { to, subject, body })
+      if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: sent.status })
+
+      // Historial de correos (enlazado al contacto si existe en la empresa).
+      const { data: contact } = await supabase.from('contacts').select('id')
+        .eq('company_id', companyId).ilike('email', to).limit(1).maybeSingle()
+      await sent.svc.from('email_messages').insert({
+        organization_id: organizationId, deal_id: null, contact_id: contact?.id ?? null,
+        email_account_id: sent.accountId, direction: 'outbound',
+        subject, body_text: body, body_html: null,
+        from_address: sent.fromAddress, to_addresses: [to],
+        provider_message_id: sent.messageId, thread_id: sent.threadId,
+        sent_at: new Date().toISOString(),
+      })
+    } else if (systemMailConfigured()) {
+      const [{ data: me }, { data: org }] = await Promise.all([
+        supabase.from('profiles').select('full_name, email').eq('id', user.id).maybeSingle(),
+        supabase.from('organizations').select('name, display_name').eq('id', organizationId).maybeSingle(),
+      ])
+      const sent = await sendSystemMail({
+        to, subject, body,
+        fromName: org?.display_name || org?.name || null,
+        replyTo: me?.email ?? null,
+      })
+      if (!sent.ok) return NextResponse.json({ error: `No se pudo enviar: ${sent.error}` }, { status: 502 })
+    } else {
+      return NextResponse.json({ error: 'No hay correo configurado: conecta tu cuenta en Configuración o pide al administrador activar el correo del sistema.' }, { status: 400 })
+    }
     destino = to
   }
 

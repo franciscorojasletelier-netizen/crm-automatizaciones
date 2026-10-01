@@ -24,7 +24,7 @@ export default async function EstadoDeCuentaPage({ params }: { params: Promise<{
   const today = chileDateString()
   const sendProps = {
     companyId: company.id, companyName: company.name, contact, statement,
-    senderName: ctx.senderName, orgName, hasEmailAccount: ctx.hasEmailAccount,
+    senderName: ctx.senderName, orgName, canSendEmail: ctx.canSendEmail, emailFrom: ctx.emailFrom,
   }
 
   return (

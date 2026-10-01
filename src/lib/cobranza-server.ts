@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { chileDateString } from '@/lib/dates'
 import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
 import { buildStatement } from '@/lib/cobranza-mensajes'
+import { systemMailAddress, systemMailConfigured } from '@/lib/email/system-mail'
 
 export async function loadCollectionContext(supabase: SupabaseClient, companyId: string, userId: string, organizationId: string | null) {
   const [invRes, companyRes, contactRes, orgRes, meRes, mailRes] = await Promise.all([
@@ -29,6 +30,9 @@ export async function loadCollectionContext(supabase: SupabaseClient, companyId:
     org,
     orgName: org?.display_name || org?.name || null,
     senderName: (meRes.data as { full_name: string | null } | null)?.full_name ?? null,
-    hasEmailAccount: !!mailRes.data,
+    // Puede enviar con su cuenta conectada o, si no, con el correo del sistema.
+    canSendEmail: !!mailRes.data || systemMailConfigured(),
+    /** Remitente cuando NO usa su propia cuenta (null = su cuenta conectada). */
+    emailFrom: mailRes.data ? null : systemMailAddress(),
   }
 }

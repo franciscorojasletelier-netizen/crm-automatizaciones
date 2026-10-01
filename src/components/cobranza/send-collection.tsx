@@ -25,7 +25,9 @@ export interface SendCollectionProps {
   statement: Statement
   senderName: string | null
   orgName: string | null
-  hasEmailAccount: boolean
+  canSendEmail: boolean
+  /** Remitente del sistema (Resend) si no usa su cuenta; null = su cuenta conectada. */
+  emailFrom?: string | null
   /** Canal con que abre el panel (botones separados en la ficha). */
   initialChannel?: Channel
   variant?: 'primary' | 'secondary'
@@ -33,7 +35,7 @@ export interface SendCollectionProps {
 }
 
 export default function SendCollection({
-  companyId, companyName, contact, statement, senderName, orgName, hasEmailAccount,
+  companyId, companyName, contact, statement, senderName, orgName, canSendEmail, emailFrom = null,
   initialChannel = 'email', variant = 'primary', label = 'Enviar cobro',
 }: SendCollectionProps) {
   const router = useRouter()
@@ -173,10 +175,16 @@ export default function SendCollection({
 
                   {channel === 'email' ? (
                     <>
-                      {!hasEmailAccount && (
+                      {!canSendEmail ? (
                         <p className="text-[13px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                          No tienes un correo conectado. Conéctalo en <a href="/configuracion" className="font-medium underline">Configuración</a> para enviar desde tu cuenta.
+                          No hay correo configurado. Conecta tu cuenta en <a href="/configuracion" className="font-medium underline">Configuración</a> o pide al administrador activar el correo del sistema.
                         </p>
+                      ) : emailFrom ? (
+                        <p className="text-xs text-slate-500">
+                          Se envía desde <span className="font-medium text-slate-700">{emailFrom}</span> y las respuestas del cliente llegan a tu correo.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-500">Se envía desde tu cuenta de correo conectada.</p>
                       )}
                       <div>
                         <label htmlFor="sc-to" className={labelClass}>Para</label>
@@ -216,7 +224,7 @@ export default function SendCollection({
                 <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200 shrink-0">
                   <button type="button" onClick={() => setOpen(false)} disabled={busy} className={buttonClass.ghost}>Cancelar</button>
                   {channel === 'email' ? (
-                    <button type="submit" disabled={busy || !hasEmailAccount} className={buttonClass.primary}>
+                    <button type="submit" disabled={busy || !canSendEmail} className={buttonClass.primary}>
                       {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Enviar correo
                     </button>
                   ) : (
