@@ -141,7 +141,11 @@ export async function sendGmailMessage(
   accessToken: string,
   { to, subject, bodyText, threadId, inReplyTo }: { to: string; subject: string; bodyText: string; threadId?: string; inReplyTo?: string }
 ) {
-  const headers = [`To: ${to}`, `Subject: ${subject}`, 'Content-Type: text/plain; charset="UTF-8"']
+  // Sin saltos de línea en cabeceras: evita inyectar Bcc/To adicionales.
+  to = to.replace(/[\r\n]+/g, ' '); subject = subject.replace(/[\r\n]+/g, ' ')
+  // Asunto con tildes/ñ: codificado (RFC 2047); sin esto llega como mojibake.
+  const encSubject = /[^ -~]/.test(subject) ? `=?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=` : subject
+  const headers = [`To: ${to}`, `Subject: ${encSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: 8bit']
   if (inReplyTo) { headers.push(`In-Reply-To: ${inReplyTo}`, `References: ${inReplyTo}`) }
   const raw = Buffer.from(`${headers.join('\r\n')}\r\n\r\n${bodyText}`)
     .toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')

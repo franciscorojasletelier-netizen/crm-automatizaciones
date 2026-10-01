@@ -2,15 +2,17 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Phone, Mail, MessageCircle, Users, Handshake, StickyNote, ExternalLink } from 'lucide-react'
+import { Phone, Mail, MessageCircle, Users, Handshake, StickyNote, ExternalLink, FileText } from 'lucide-react'
 import { requirePermission } from '@/lib/supabase/server'
 import { canAccessSection } from '@/lib/roles'
 import { CHILE_TZ, DATE_ONLY_TZ, chileDateString } from '@/lib/dates'
 import { clp, getInitials } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { PageContainer, PageHeader, Panel, Stat, StatStrip, EmptyState } from '@/components/ui/page'
+import { PageContainer, PageHeader, Panel, Stat, StatStrip, EmptyState, buttonClass } from '@/components/ui/page'
 import InvoiceForm from '@/components/cobranza/invoice-form'
 import { PaymentForm, ActivityForm, DeletePaymentButton, CancelInvoiceButton } from '@/components/cobranza/invoice-actions'
+import SendCollection from '@/components/cobranza/send-collection'
+import { loadCollectionContext } from '@/lib/cobranza-server'
 import {
   INVOICE_SELECT, STATUS_META, DOCUMENT_TYPE_LABEL, PAYMENT_METHOD_LABEL, ACTIVITY_LABEL,
   balanceOf, daysOverdue, effectiveStatus, invoiceCode, isOpen, daysBetween,
@@ -33,7 +35,7 @@ type Activity = { id: string; kind: ActivityKind; notes: string; promise_date: s
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { role, canEdit, supabase, organizationId, sectionAccess, disabledModules } = await requirePermission('cobranza')
+  const { role, canEdit, supabase, organizationId, sectionAccess, disabledModules, user } = await requirePermission('cobranza')
   const canManage = canEdit && COLLECTION_MANAGERS.includes(role)
   const today = chileDateString()
 
@@ -41,7 +43,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   if (!raw) notFound()
   const invoice = raw as unknown as Invoice
 
-  const [paymentsRes, activitiesRes, contactRes, companiesRes, peopleRes, dealRes] = await Promise.all([
+  const [paymentsRes, activitiesRes, contactRes, companiesRes, peopleRes, dealRes, collection] = await Promise.all([
     supabase.from('invoice_payments').select('id, amount, paid_on, method, reference, created_at, author:created_by(full_name)')
       .eq('invoice_id', id).order('paid_on', { ascending: false }),
     supabase.from('invoice_activities').select('id, kind, notes, promise_date, promise_amount, created_at, author:created_by(full_name, email)')
@@ -52,6 +54,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
     canManage ? supabase.from('profiles').select('id, full_name, email').eq('organization_id', organizationId ?? '').eq('is_active', true).order('full_name')
               : Promise.resolve({ data: [] as { id: string; full_name: string | null; email: string | null }[] }),
     invoice.deal_id ? supabase.from('deals').select('id').eq('id', invoice.deal_id).maybeSingle() : Promise.resolve({ data: null }),
+    // Estado de cuenta del cliente completo (todos sus documentos abiertos), para enviar el cobro.
+    canEdit && isOpen(invoice) ? loadCollectionContext(supabase, invoice.company_id, user.id, organizationId ?? null) : Promise.resolve(null),
   ])
 
   const payments = (paymentsRes.data ?? []) as unknown as Payment[]
@@ -186,6 +190,31 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 </div>
               </div>
             ) : <p className="mt-2 text-[13px] text-slate-500">Sin contacto registrado.</p>}
+            <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+              {collection && collection.statement.lines.length > 0 && (
+                <>
+                  <p className="text-xs text-slate-500">
+                    Deuda total del cliente: <span className="font-medium text-slate-900 tabular-nums">{clp(collection.statement.total)}</span>
+                    {' '}en {collection.statement.lines.length} {collection.statement.lines.length === 1 ? 'documento' : 'documentos'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <SendCollection
+                      companyId={invoice.company_id} companyName={invoice.companies?.name ?? 'Cliente'}
+                      contact={collection.contact} statement={collection.statement}
+                      senderName={collection.senderName} orgName={collection.orgName} hasEmailAccount={collection.hasEmailAccount}
+                      initialChannel="email" label="Correo" />
+                    <SendCollection
+                      companyId={invoice.company_id} companyName={invoice.companies?.name ?? 'Cliente'}
+                      contact={collection.contact} statement={collection.statement}
+                      senderName={collection.senderName} orgName={collection.orgName} hasEmailAccount={collection.hasEmailAccount}
+                      initialChannel="whatsapp" variant="secondary" label="WhatsApp" />
+                  </div>
+                </>
+              )}
+              <Link href={`/cobranza/estado/${invoice.company_id}`} className={cn(buttonClass.secondary, 'w-full')}>
+                <FileText className="w-3.5 h-3.5" /> Estado de cuenta
+              </Link>
+            </div>
           </Panel>
 
           <Panel title="Detalles">

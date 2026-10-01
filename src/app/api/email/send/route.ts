@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
-import { ensureFreshAccessToken } from '@/lib/email/oauth'
-import { sendGmailMessage } from '@/lib/email/gmail'
-import { sendOutlookMessage } from '@/lib/email/outlook'
-
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
+import { sendAsUser } from '@/lib/email/send-as-user'
 
 export async function POST(request: NextRequest) {
   const { user, role, organizationId, supabase } = await getCurrentProfile()
@@ -33,35 +23,15 @@ export async function POST(request: NextRequest) {
     if (!contact) return NextResponse.json({ error: 'Contacto no encontrado' }, { status: 404 })
   }
 
-  // Confirma, con el cliente de sesión del propio usuario (pasa por
-  // RLS), que la cuenta le pertenece — el service_role de abajo es
-  // solo para poder leer las columnas de token, que `authenticated`
-  // no puede ver ni de su propia fila.
-  const { data: owned } = await supabase.from('email_accounts')
-    .select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle()
-  if (!owned) return NextResponse.json({ error: 'No tienes una cuenta de correo conectada' }, { status: 400 })
+  const sent = await sendAsUser(supabase, user.id, { to, subject, body, threadId, replyToMessageId })
+  if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: sent.status })
 
-  const svc = serviceClient()
-  const { data: account } = await svc.from('email_accounts')
-    .select('id, organization_id, user_id, provider, email_address, access_token, refresh_token, token_expires_at')
-    .eq('id', owned.id).maybeSingle()
-  if (!account) return NextResponse.json({ error: 'Cuenta de correo no encontrada' }, { status: 404 })
-
-  const accessToken = await ensureFreshAccessToken(svc, account as any)
-  if (!accessToken) return NextResponse.json({ error: 'No se pudo renovar el acceso a tu correo — reconéctalo desde Configuración' }, { status: 400 })
-
-  const result = account.provider === 'google_workspace'
-    ? await sendGmailMessage(accessToken, { to, subject, bodyText: body, threadId, inReplyTo: replyToMessageId })
-    : await sendOutlookMessage(accessToken, { to, subject, bodyText: body, replyToMessageId })
-
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-
-  const { data: saved, error } = await svc.from('email_messages').insert({
+  const { data: saved, error } = await sent.svc.from('email_messages').insert({
     organization_id: organizationId, deal_id: dealId ?? null, contact_id: contactId ?? null,
-    email_account_id: account.id, direction: 'outbound',
+    email_account_id: sent.accountId, direction: 'outbound',
     subject, body_text: body, body_html: null,
-    from_address: account.email_address, to_addresses: [to],
-    provider_message_id: result.messageId, thread_id: result.threadId ?? threadId ?? null,
+    from_address: sent.fromAddress, to_addresses: [to],
+    provider_message_id: sent.messageId, thread_id: sent.threadId,
     sent_at: new Date().toISOString(),
   }).select().single()
 
