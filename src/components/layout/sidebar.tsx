@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, Building2, TrendingUp, CheckSquare, FolderOpen, Activity, Settings,
-  LogOut, UserCog, BarChart3, Bell, GitBranch, CalendarDays, Network, Menu, X, Wallet, Globe2,
+  LogOut, UserCog, BarChart3, Bell, GitBranch, CalendarDays, Network, Menu, X, Wallet, Globe2, Gauge,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -148,7 +148,11 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
   }
 
   const current = pendingHref ?? pathname
-  const isActive = (href: string) => current === href || current.startsWith(href + '/')
+  const matches = (href: string) => current === href || current.startsWith(href + '/')
+  // Con rutas anidadas en el menú (/plataforma y /plataforma/servicios) solo
+  // se marca la más específica.
+  const NESTED = ['/plataforma/servicios']
+  const isActive = (href: string) => matches(href) && !NESTED.some(n => n !== href && n.startsWith(href + '/') && matches(n))
   const markPending = (href: string) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
     if (href !== pathname) setPendingHref(href)
@@ -196,6 +200,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
         <div className="mt-5">
           <p className="px-2.5 mb-1 text-[11px] font-medium text-slate-400">Plataforma</p>
           {renderLink({ label: 'Organizaciones', href: '/plataforma', icon: Globe2 }, onNavigate, dense)}
+          {renderLink({ label: 'Servicios', href: '/plataforma/servicios', icon: Gauge }, onNavigate, dense)}
         </div>
       )}
     </>
