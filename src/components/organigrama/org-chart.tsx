@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
-import { getRoleMeta, NAV_SECTIONS, type SectionMode } from '@/lib/roles'
+import { getRoleMeta, normalizeRole, NAV_SECTIONS, type SectionMode } from '@/lib/roles'
 import { MessageCircle, Loader2, Pencil, X, Shield } from 'lucide-react'
 import DirectChat from '@/components/chat/direct-chat'
 import SectionChecklist from '@/components/admin/section-checklist'
@@ -204,6 +204,7 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
 
       {editNode && (
         <EditModal
+          isSelf={editNode.id === currentUserId}
           node={editNode}
           people={people}
           areas={areas}
@@ -220,8 +221,9 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
 
 // ── Modal de edición (cargo, área, jefe, nivel de acceso) ──
 function EditModal({
-  node, people, areas, editorRole, supabase, onClose, onSaved, excluded,
+  node, people, areas, editorRole, supabase, onClose, onSaved, excluded, isSelf,
 }: {
+  isSelf: boolean
   node: TreeNode
   people: OrgPerson[]
   areas: Area[]
@@ -234,7 +236,10 @@ function EditModal({
   const [jobTitle, setJobTitle] = useState(node.job_title ?? '')
   const [areaId, setAreaId] = useState(node.area_id ?? '')
   const [managerId, setManagerId] = useState(node.manager_id ?? '')
-  const [isAdmin, setIsAdmin] = useState(['super_admin', 'gerente'].includes(node.role))
+  // 'admin' es el nombre legacy de super_admin: sin normalizar, el interruptor
+  // partía apagado y al guardar intentaba degradar la cuenta.
+  const nodeRole = normalizeRole(node.role)
+  const [isAdmin, setIsAdmin] = useState(['super_admin', 'gerente'].includes(nodeRole))
   const [sections, setSections] = useState<Record<string, SectionMode>>(() => {
     if (Array.isArray(node.section_access)) {
       return Object.fromEntries(node.section_access.map(k => [k, 'full' as SectionMode]))
@@ -243,33 +248,46 @@ function EditModal({
     return Object.fromEntries(NAV_SECTIONS.map(s => [s.key, 'full' as SectionMode]))
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const dialogRef = useDialog(true, onClose, saving)
 
   const name = node.full_name ?? node.email ?? 'Usuario'
   const managerOptions = people.filter(p => !excluded.has(p.id))
-  const canMakeAdmin = editorRole === 'super_admin'
+  // Nadie cambia su propio nivel ni sus accesos (la base también lo impide):
+  // evita quedar fuera por error.
+  const canMakeAdmin = normalizeRole(editorRole) === 'super_admin' && !isSelf
 
   async function save() {
-    setSaving(true)
-    // El nivel base (RLS/datos) se deriva del interruptor; conserva super_admin si ya lo era
-    const derivedRole = isAdmin
-      ? (node.role === 'super_admin' ? 'super_admin' : 'gerente')
-      : 'comercial'
-    await supabase.from('profiles').update({
+    setSaving(true); setError('')
+    const changes: Record<string, unknown> = {
       job_title: jobTitle.trim() || null,
       area_id: areaId || null,
       manager_id: managerId || null,
-      role: derivedRole,
-      section_access: sections,
-    }).eq('id', node.id)
+    }
+    if (!isSelf) {
+      // El nivel base (RLS/datos) se deriva del interruptor. Un rol que ya era
+      // de jefatura o específico (finanzas, producción…) se conserva si el
+      // interruptor no cambió.
+      const wasAdmin = ['super_admin', 'gerente'].includes(nodeRole)
+      const derivedRole = isAdmin === wasAdmin ? nodeRole : isAdmin ? 'gerente' : 'comercial'
+      if (derivedRole !== nodeRole) changes.role = derivedRole
+      changes.section_access = sections
+    }
+    const { error: err } = await supabase.from('profiles').update(changes).eq('id', node.id)
     setSaving(false)
+    if (err) {
+      setError(err.message.includes('row-level security')
+        ? 'No tienes permiso para hacer este cambio.'
+        : err.message)
+      return
+    }
     onSaved()
   }
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
-      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Editar persona" className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden outline-none" onClick={e => e.stopPropagation()}>
-        <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5" >
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Editar persona" className="w-full max-w-md max-h-[90vh] flex flex-col bg-white rounded-lg shadow-2xl overflow-hidden outline-none" onClick={e => e.stopPropagation()}>
+        <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-accent-500/30 flex items-center justify-center">
             <Pencil className="w-4 h-4 text-accent-300" />
           </div>
@@ -279,7 +297,7 @@ function EditModal({
           </button>
         </div>
 
-        <div className="p-5 space-y-3.5">
+        <div className="p-5 space-y-3.5 overflow-y-auto">
           <div>
             <label htmlFor="org-chart-f1" className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
             <input id="org-chart-f1" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
@@ -317,7 +335,12 @@ function EditModal({
             </button>
           )}
 
-          {/* Checklist de secciones */}
+          {isSelf ? (
+            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+              Tu nivel de administrador y tus accesos los cambia otro administrador; así nadie se deja fuera por error.
+              Como {getRoleMeta(nodeRole).label} ves todos los módulos.
+            </p>
+          ) : (
           <SectionChecklist
             value={sections}
             isAdmin={isAdmin}
@@ -328,6 +351,9 @@ function EditModal({
               return next
             })}
           />
+          )}
+
+          {error && <p role="alert" className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
 
           <div className="flex gap-2 pt-1">
             <button onClick={onClose} className="flex-1 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg py-2 transition-colors">

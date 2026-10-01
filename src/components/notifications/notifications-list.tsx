@@ -37,6 +37,7 @@ function notifIcon(type: string) {
 }
 
 function entityLink(type: string | null, id: string | null): string | null {
+  if (type === 'service') return '/plataforma/servicios'
   if (!type || !id) return null
   if (type === 'deal')    return `/leads/${id}`
   if (type === 'task')    return `/tareas`

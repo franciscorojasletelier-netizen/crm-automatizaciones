@@ -61,7 +61,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       organization_id: organizationId, user_id: user.id, provider, email_address: email,
       access_token: tokens.accessToken, refresh_token: tokens.refreshToken ?? null,
       token_expires_at: new Date(Date.now() + tokens.expiresInSeconds * 1000).toISOString(),
-      is_active: true, updated_at: new Date().toISOString(),
+      is_active: true, updated_at: new Date().toISOString(), connected_at: new Date().toISOString(),
     }, { onConflict: 'organization_id,user_id,provider,email_address' }).select('id').single()
     if (error || !account) return NextResponse.redirect(configUrl('No se pudo guardar la conexión', false))
 
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     organization_id: organizationId, user_id: user.id, provider, email_address: email,
     access_token: tokens.accessToken, refresh_token: tokens.refreshToken ?? null,
     token_expires_at: new Date(Date.now() + tokens.expiresInSeconds * 1000).toISOString(),
-    is_active: true, updated_at: new Date().toISOString(),
+    is_active: true, updated_at: new Date().toISOString(), connected_at: new Date().toISOString(),
   }, { onConflict: 'organization_id,user_id,provider,email_address' }).select('id').single()
   if (error || !account) return NextResponse.redirect(configUrl('No se pudo guardar la conexión', false))
 
