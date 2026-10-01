@@ -1,7 +1,8 @@
 'use client'
 
 // Datos de la empresa que aparecen en correos de cobranza, estados de
-// cuenta y cotizaciones. Lo editan gerentes y administradores (RLS).
+// cuenta y cotizaciones. Lo editan gerentes y administradores de la
+// organización (Configuración) y el dueño de la plataforma (su ficha).
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9,6 +10,7 @@ import { Building2, Check, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { cn } from '@/lib/utils'
+import { uploadOrgLogo } from '@/lib/org-logo'
 
 export interface CompanyProfile {
   id: string
@@ -21,9 +23,7 @@ export interface CompanyProfile {
   payment_instructions: string | null
 }
 
-const MAX_LOGO = 512 * 1024
-
-export default function CompanyProfileCard({ org }: { org: CompanyProfile }) {
+export default function CompanyProfileCard({ org, description = 'Aparecen en los correos de cobranza, estados de cuenta y cotizaciones.' }: { org: CompanyProfile; description?: string }) {
   const [v, setV] = useState({
     display_name: org.display_name ?? '', email: org.email ?? '', phone: org.phone ?? '',
     address: org.address ?? '', payment_instructions: org.payment_instructions ?? '',
@@ -50,20 +50,11 @@ export default function CompanyProfileCard({ org }: { org: CompanyProfile }) {
   }
 
   async function uploadLogo(file: File) {
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setMsg({ ok: false, text: 'El logo debe ser PNG, JPG o WebP.' }); return }
-    if (file.size > MAX_LOGO) { setMsg({ ok: false, text: 'El logo no puede pesar más de 512 KB.' }); return }
     setBusy('logo'); setMsg(null)
-    const sb = createClient()
-    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
-    // Nombre nuevo en cada subida: los clientes de correo cachean la URL.
-    const path = `${org.id}/logo-${Date.now()}.${ext}`
-    const { error: upErr } = await sb.storage.from('logos').upload(path, file, { contentType: file.type, upsert: false })
-    if (upErr) { setBusy(null); setMsg({ ok: false, text: upErr.message }); return }
-    const url = sb.storage.from('logos').getPublicUrl(path).data.publicUrl
-    const { error } = await sb.from('organizations').update({ logo_url: url }).eq('id', org.id)
+    const res = await uploadOrgLogo(createClient(), org.id, file)
     setBusy(null)
-    if (error) { setMsg({ ok: false, text: error.message }); return }
-    setLogo(url); setMsg({ ok: true, text: 'Logo actualizado.' }); router.refresh()
+    if ('error' in res) { setMsg({ ok: false, text: res.error }); return }
+    setLogo(res.url); setMsg({ ok: true, text: 'Logo actualizado.' }); router.refresh()
   }
 
   async function removeLogo() {
@@ -78,7 +69,7 @@ export default function CompanyProfileCard({ org }: { org: CompanyProfile }) {
     <form onSubmit={save} className="bg-card rounded-lg border border-slate-200 shadow-xs">
       <div className="px-5 pt-4 pb-3 border-b border-slate-100">
         <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><Building2 className="w-4 h-4 text-slate-500" /> Datos de la empresa</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Aparecen en los correos de cobranza, estados de cuenta y cotizaciones.</p>
+        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
       </div>
 
       <div className="p-5 space-y-4">
