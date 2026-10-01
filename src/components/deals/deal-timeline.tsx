@@ -68,24 +68,24 @@ export default function DealTimeline({
 
   if (events.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Actividad</h2>
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+        <h2 className="text-sm font-semibold text-slate-900 mb-2">Actividad</h2>
         <p className="text-xs text-slate-400">Todavía no hay actividad registrada en este deal.</p>
       </div>
     )
   }
 
   const ICONS: Record<TimelineEvent['type'], { icon: typeof GitBranch; color: string }> = {
-    stage:       { icon: GitBranch,       color: 'text-indigo-500 bg-indigo-50' },
+    stage:       { icon: GitBranch,       color: 'text-accent-500 bg-accent-50' },
     interaction: { icon: MessageSquare,   color: 'text-amber-500 bg-amber-50' },
     task:        { icon: CheckSquare,     color: 'text-emerald-500 bg-emerald-50' },
-    message:     { icon: MessagesSquare,  color: 'text-purple-500 bg-purple-50' },
+    message:     { icon: MessagesSquare,  color: 'text-accent-500 bg-accent-50' },
     email:       { icon: Mail,            color: 'text-sky-500 bg-sky-50' },
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-      <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Actividad</h2>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+      <h2 className="text-sm font-semibold text-slate-900 mb-3">Actividad</h2>
       <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
         {events.map(e => {
           const { icon: Icon, color } = ICONS[e.type]

@@ -110,6 +110,7 @@ Fuente de verdad de los tokens: `src/app/globals.css`. Primitivas de página: `s
 - **Neutro (`slate-*`)**: redefinido a bajo croma (matiz 255). `slate-400` y `slate-500` están oscurecidos respecto del default para que el texto secundario alcance contraste AA sobre blanco. Texto principal `slate-900`, secundario `slate-500`, terciario/placeholder `slate-400`.
 - **Semánticos**: rojo = mora, error o destrucción; ámbar = por vencer/advertencia; verde = pagado, ganado, éxito. El rojo nunca es decorativo: si todo es rojo, nada es urgente.
 - **Excepciones documentadas**: el chat de WhatsApp conserva los verdes de la marca WhatsApp (`#075e54`, `#128c7e`, `#25d366`) para que se reconozca el canal; los correos HTML (`src/app/api/**`) llevan colores y radios en línea porque los clientes de correo no leen los tokens CSS.
+- **Modo oscuro**: clase `.dark` en `<html>` (preferencia en `localStorage['tema']`: sistema/claro/oscuro, aplicada antes del primer pintado por `THEME_BOOT_SCRIPT` en `src/lib/theme.ts`; selector en la barra lateral). El bloque `html.dark` de `globals.css` espeja la escala `slate` completa y los extremos (50–300 ↔ 700–950) del acento y los semánticos, de modo que el código escrito con clases de modo claro funciona sin variantes `dark:`. Las superficies `bg-white` pasan a `--card`; los velos de modal a negro 60 %. En código nuevo usar `bg-card` para superficies.
 - **Etapas del pipeline**: su color es configuración por organización (`src/lib/stages.ts`, paleta `STAGE_COLORS`); se usan como punto de 6 px o chip suave, nunca como fondo de página.
 
 ## Typography
@@ -156,6 +157,8 @@ Profundidad mínima y con desplazamiento real (tokens `--shadow-*` en `globals.c
 - **Formularios de creación**: panel lateral derecho (hoja) con cabecera, cuerpo desplazable y pie fijo de acciones.
 - **Estado vacío** (`EmptyState`): ícono en círculo neutro, título, explicación y acción.
 - **Íconos**: Lucide, trazo único, 14–16 px en interfaz.
+- **Zona táctil**: en punteros gruesos (`pointer: coarse`) todo botón o enlace de solo ícono amplía su área a 44 px con un `::after` invisible, sin cambiar el tamaño visual.
+- **Móvil**: las tablas anchas ocultan columnas secundarias o pasan a lista de tarjetas por debajo de `md`.
 
 ## Do's and Don'ts
 

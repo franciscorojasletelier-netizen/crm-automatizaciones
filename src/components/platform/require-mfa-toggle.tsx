@@ -23,7 +23,7 @@ export default function RequireMfaToggle({ orgId, requireMfa }: { orgId: string;
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
       <label className="flex items-center justify-between gap-3 cursor-pointer">
         <div className="flex items-center gap-2.5 min-w-0">
           <ShieldCheck className="w-4 h-4 text-slate-500 shrink-0" />
@@ -36,7 +36,7 @@ export default function RequireMfaToggle({ orgId, requireMfa }: { orgId: string;
           <input type="checkbox" checked={requireMfa} disabled={saving}
             onChange={e => toggle(e.target.checked)}
             className="sr-only peer" />
-          <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-indigo-600 peer-disabled:opacity-50 transition-colors" />
+          <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-accent-600 peer-disabled:opacity-50 transition-colors" />
           <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-3.5" />
         </div>
       </label>

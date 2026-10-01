@@ -75,7 +75,7 @@ export default async function UsuariosPage() {
       {/* Resumen de roles */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {(Object.entries(ROLE_META) as [Role, typeof ROLE_META[Role]][]).map(([role, meta]) => (
-          <div key={role} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex items-center gap-3">
+          <div key={role} className="bg-white rounded-lg border border-slate-200 shadow-xs p-3 flex items-center gap-3">
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.badge}`} />
             <div className="min-w-0">
               <p className="text-xl font-bold text-slate-900">{byRole[role] ?? 0}</p>
@@ -86,10 +86,10 @@ export default async function UsuariosPage() {
       </div>
 
       {/* Tabla de usuarios */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-            <Users className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-accent-600" />
           </div>
           <h2 className="text-sm font-semibold text-slate-900">Usuarios del sistema</h2>
         </div>
@@ -116,7 +116,7 @@ export default async function UsuariosPage() {
             return (
               <div key={u.id} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                 {/* Avatar */}
-                <div className="bg-accent-600 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+                <div className="bg-accent-600 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
                    >
                   {initials}
                 </div>
@@ -126,7 +126,7 @@ export default async function UsuariosPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-slate-900">{u.full_name ?? '—'}</p>
                     {isSelf && (
-                      <span className="text-[11px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">Tú</span>
+                      <span className="text-[11px] font-bold bg-accent-100 text-accent-600 px-1.5 py-0.5 rounded-full">Tú</span>
                     )}
                   </div>
                   <p className="text-xs text-slate-400">{u.email}</p>

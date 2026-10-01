@@ -39,20 +39,20 @@ export default async function AutomatizacionesPage() {
           <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Automatizaciones</h1>
           <p className="text-sm text-slate-500 mt-0.5">Reglas automáticas para el equipo comercial</p>
         </div>
-        <div className="flex items-center gap-2 text-xs bg-accent-600 text-white px-3 py-1.5 rounded-xl font-semibold shadow-sm">
+        <div className="flex items-center gap-2 text-xs bg-accent-600 text-white px-3 py-1.5 rounded-lg font-semibold shadow-xs">
           <Zap className="w-3.5 h-3.5" />
           {(rules ?? []).filter((r: any) => r.is_active).length} activas
         </div>
       </div>
 
       {/* Cómo funciona */}
-      <div className="bg-slate-900 rounded-2xl p-5 text-white relative overflow-hidden">
+      <div className="bg-slate-900 rounded-lg p-5 text-white relative overflow-hidden">
         <div className="hidden absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
             />
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/30 flex items-center justify-center">
-              <GitBranch className="w-3.5 h-3.5 text-indigo-300" />
+            <div className="w-7 h-7 rounded-lg bg-accent-500/30 flex items-center justify-center">
+              <GitBranch className="w-3.5 h-3.5 text-accent-300" />
             </div>
             <p className="text-sm font-bold">¿Cómo funcionan las automatizaciones?</p>
           </div>
@@ -63,7 +63,7 @@ export default async function AutomatizacionesPage() {
               { step: '3', label: 'Acción', desc: 'Qué hace el sistema: crear tarea, notificar, etc.' },
             ].map(({ step, label, desc }) => (
               <div key={step} className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-indigo-500/30 text-indigo-300 text-xs font-bold flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-full bg-accent-500/30 text-accent-300 text-xs font-bold flex items-center justify-center shrink-0">
                   {step}
                 </div>
                 <div>
@@ -91,7 +91,7 @@ export default async function AutomatizacionesPage() {
       </div>
 
       {canEdit && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
           <SequencesManager sequences={(sequences ?? []) as any} stages={stages} templates={(templates ?? []) as any} />
         </div>
       )}

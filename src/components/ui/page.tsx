@@ -100,7 +100,7 @@ export function Stat({ label, value, context, tone = 'neutral', href }: {
 export function StatStrip({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      'grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg shadow-xs overflow-hidden [&>*]:bg-white',
+      'grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg shadow-xs overflow-hidden [&>*]:bg-card',
       className
     )}>
       {children}

@@ -44,14 +44,14 @@ export default function PipelinesManager({ orgId, pipelines: initialPipelines, a
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-sm font-bold text-slate-800">Pipelines</h2>
             <p className="text-[11px] text-slate-400 mt-0.5">Cada pipeline tiene su propio embudo — útil para líneas de negocio distintas (ej. proyectos nuevos vs. renovación).</p>
           </div>
           <button onClick={() => setShowNew(v => !v)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 px-2.5 py-1.5 rounded-lg transition-colors shrink-0">
+            className="flex items-center gap-1.5 text-xs font-semibold text-accent-600 hover:bg-accent-50 px-2.5 py-1.5 rounded-lg transition-colors shrink-0">
             <Plus className="w-3.5 h-3.5" /> Nuevo pipeline
           </button>
         </div>
@@ -59,13 +59,13 @@ export default function PipelinesManager({ orgId, pipelines: initialPipelines, a
         {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
         {showNew && (
-          <form onSubmit={createPipeline} className="flex items-end gap-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <form onSubmit={createPipeline} className="flex items-end gap-2 mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre</label>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="ej. Renovación de contratos"
+              <label htmlFor="pipelines-manager-f1" className="block text-[11px] font-semibold text-slate-500 mb-1">Nombre</label>
+              <input id="pipelines-manager-f1" value={name} onChange={e => setName(e.target.value)} placeholder="ej. Renovación de contratos"
                 className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full" />
             </div>
-            <button type="submit" disabled={saving} className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg disabled:opacity-50">
+            <button type="submit" disabled={saving} className="text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 px-3 py-2 rounded-lg disabled:opacity-50">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Crear'}
             </button>
           </form>
@@ -75,7 +75,7 @@ export default function PipelinesManager({ orgId, pipelines: initialPipelines, a
           {pipelines.map(p => (
             <button key={p.id} onClick={() => setSelected(p.id)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                selected === p.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                selected === p.id ? 'bg-accent-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}>
               {p.name}{p.isDefault ? ' (default)' : ''}
             </button>

@@ -97,17 +97,17 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   }
 
   const initials    = getInitials(owner?.full_name ?? null, null, '?')
-  const avatarColor = owner ? getAvatarColor(owner.id) : 'from-slate-400 to-slate-500'
+  const avatarColor = owner ? getAvatarColor(owner.id) : 'bg-slate-400'
 
   if (!canReassign) {
     // Solo mostrar, sin dropdown
     return (
       <div className="flex items-center gap-2.5">
-        <div className={`w-8 h-8 rounded-lg ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
+        <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center shrink-0`}>
           <span className="text-[11px] font-bold text-white">{initials}</span>
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Responsable</p>
+          <p className="text-[13px] text-slate-500">Responsable</p>
           <p className="text-sm font-semibold text-slate-800 truncate">{owner?.full_name ?? '—'}</p>
         </div>
       </div>
@@ -118,21 +118,21 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
     <div ref={ref} className="relative">
       <button
         onClick={handleOpen}
-        className={`flex items-center gap-2.5 w-full text-left rounded-xl transition-all group ${
-          open ? 'ring-2 ring-indigo-300 bg-indigo-50' : 'hover:bg-slate-50'
+        className={`flex items-center gap-2.5 w-full text-left rounded-md transition-colors group -m-1 p-1 ${
+          open ? 'ring-2 ring-accent-200 bg-accent-50' : 'hover:bg-slate-50'
         }`}
       >
-        <div className={`w-8 h-8 rounded-lg ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
+        <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center shrink-0`}>
           {saving
             ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
             : <span className="text-[11px] font-bold text-white">{initials}</span>
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Responsable</p>
+          <p className="text-[13px] text-slate-500">Responsable</p>
           <p className="text-sm font-semibold text-slate-800 truncate">{owner?.full_name ?? 'Sin asignar'}</p>
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''} group-hover:text-indigo-500`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''} group-hover:text-accent-500`} />
       </button>
 
       {open && mounted && createPortal(
@@ -145,10 +145,10 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
             width:  pos.width,
             zIndex: 9999,
           }}
-          className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in duration-150"
+          className="bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in duration-150"
         >
           <div className="px-3 py-2.5 border-b border-slate-100 bg-slate-50">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Reasignar lead a</p>
+            <p className="text-xs font-medium text-slate-500">Reasignar lead a</p>
           </div>
           <div className="max-h-64 overflow-y-auto py-1">
             {teamUsers.length === 0 && (
@@ -158,8 +158,8 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
               <button
                 key={u.id}
                 onClick={() => assign(u)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50 transition-colors text-left ${
-                  u.id === owner?.id ? 'bg-indigo-50' : ''
+                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent-50 transition-colors text-left ${
+                  u.id === owner?.id ? 'bg-accent-50' : ''
                 }`}
               >
                 <div className={`w-8 h-8 rounded-lg ${getAvatarColor(u.id)} flex items-center justify-center shrink-0`}>
@@ -170,7 +170,7 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
                   <p className="text-[11px] text-slate-400">{ROLE_LABELS[u.role] ?? u.role}</p>
                 </div>
                 {u.id === owner?.id && (
-                  <Check className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <Check className="w-4 h-4 text-accent-500 shrink-0" />
                 )}
               </button>
             ))}

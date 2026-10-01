@@ -10,16 +10,18 @@ import { type Stage, colorOf } from '@/lib/stages'
 import { StageIcon } from '@/lib/stage-icons'
 import { formatBytes, formatCLP } from '@/lib/format'
 import { PROPOSAL_ACCEPT, PROPOSAL_MAX_MB } from '@/lib/deal-stage-change'
+import { useDialog } from '@/lib/use-dialog'
 
 const MIN_COMMENT = 10
 
 function ModalShell({ onClose, busy, children, size = 'md' }: {
   onClose: () => void; busy: boolean; children: React.ReactNode; size?: 'sm' | 'md'
 }) {
+  const ref = useDialog(true, onClose, busy)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
-      <div className={`relative w-full ${size === 'sm' ? 'max-w-sm' : 'max-w-md'} bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden`}>
+      <div className="absolute inset-0 bg-slate-900/50" onClick={busy ? undefined : onClose} />
+      <div ref={ref} tabIndex={-1} className={`relative w-full ${size === 'sm' ? 'max-w-sm' : 'max-w-md'} bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden outline-none`}>
         {children}
       </div>
     </div>
@@ -32,7 +34,7 @@ function ModalFooter({ onCancel, busy, children }: { onCancel: () => void; busy:
       {children}
       {!busy && (
         <button onClick={onCancel}
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+          className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
           Cancelar
         </button>
       )}
@@ -60,7 +62,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
       <div className={`px-6 py-5 ${c.light} border-b border-slate-200`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
               <StageIcon stage={targetStage} className={`w-5 h-5 ${c.text}`} />
             </div>
             <div>
@@ -76,7 +78,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
             </button>
           )}
         </div>
-        <div className="mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+        <div className="mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           <p className="text-xs font-semibold text-amber-800">Gerencia será notificada automáticamente con esta información</p>
         </div>
@@ -84,11 +86,11 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
 
       <div className="p-6 space-y-4">
         <div>
-          <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">Motivo principal *</p>
+          <p className="text-xs font-medium text-slate-500 mb-2">Motivo principal *</p>
           <div className="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto pr-1">
             {targetStage.reasons.map(r => (
               <button key={r} type="button" onClick={() => setReason(r)} aria-pressed={reason === r}
-                className={`text-left px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
+                className={`text-left px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
                   reason === r ? `${c.light} border-slate-300 ${c.text} font-semibold` : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}>
                 {reason === r && <Check className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />}{r}
@@ -97,15 +99,15 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
           </div>
         </div>
         <div>
-          <label htmlFor="stage-comment" className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1 uppercase tracking-wide">
+          <label htmlFor="stage-comment" className="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1">
             <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
             Comentario adicional * <span className="font-normal normal-case text-slate-400">(mín. {MIN_COMMENT} caracteres)</span>
           </label>
           <textarea id="stage-comment" value={comment} onChange={e => setComment(e.target.value)} onBlur={() => setTouched(true)}
             placeholder="Describe qué ocurrió con este deal para que gerencia entienda la situación..."
             rows={3}
-            className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 resize-none transition-colors placeholder:text-slate-400 text-slate-800 ${
-              touched && commentTooShort ? 'border-red-300 bg-red-50/30 focus:ring-red-200' : 'border-slate-200 bg-slate-50 focus:ring-indigo-200 focus:border-indigo-300'
+            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 resize-none transition-colors placeholder:text-slate-400 text-slate-800 ${
+              touched && commentTooShort ? 'border-red-300 bg-red-50/30 focus:ring-red-200' : 'border-slate-200 bg-slate-50 focus:ring-accent-200 focus:border-accent-300'
             }`} />
           <p className={`text-[11px] mt-1 text-right ${commentTooShort ? 'text-slate-400' : 'text-emerald-600'}`}>
             {comment.trim().length} / {MIN_COMMENT} mín.
@@ -115,7 +117,7 @@ export function ReasonModal({ targetStage, subtitle, onConfirm, onCancel, busy }
 
       <ModalFooter onCancel={onCancel} busy={busy}>
         <button onClick={() => canSubmit && onConfirm(reason, comment.trim())} disabled={!canSubmit}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow-md ${c.solid}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all ${c.solid}`}>
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><StageIcon stage={targetStage} className="w-4 h-4" /> {targetStage.confirmLabel ?? 'Confirmar'}</>}
         </button>
       </ModalFooter>
@@ -151,7 +153,7 @@ export function ProposalModal({ stageLabel, companyName, existingFilename, repla
       <div className="px-6 py-5 bg-orange-50 border-b border-orange-200">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white border border-orange-200 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-white border border-orange-200 flex items-center justify-center shadow-sm">
               <Paperclip className="w-5 h-5 text-orange-600" />
             </div>
             <div>
@@ -171,7 +173,7 @@ export function ProposalModal({ stageLabel, companyName, existingFilename, repla
 
       <div className="p-6 space-y-3">
         {existingFilename && !file && (
-          <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+          <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <FileText className="w-5 h-5 text-orange-500 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-orange-700">Propuesta actual</p>
@@ -188,7 +190,7 @@ export function ProposalModal({ stageLabel, companyName, existingFilename, repla
             onClick={() => inputRef.current?.click()}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click() }}
             role="button" tabIndex={0}
-            className={`border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all ${
+            className={`border-2 border-dashed rounded-lg p-7 text-center cursor-pointer transition-all ${
               dragOver ? 'border-orange-400 bg-orange-50' : 'border-slate-300 hover:border-orange-300 hover:bg-orange-50/50'
             }`}>
             <input ref={inputRef} type="file" accept={PROPOSAL_ACCEPT} className="hidden"
@@ -198,7 +200,7 @@ export function ProposalModal({ stageLabel, companyName, existingFilename, repla
             <p className="text-xs text-slate-400 mt-1">o haz clic para seleccionar · PDF, Office o imagen · Máx. {PROPOSAL_MAX_MB} MB</p>
           </div>
         ) : (
-          <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-3.5 flex items-center gap-3">
             <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-emerald-900 truncate">{file.name}</p>
@@ -213,7 +215,7 @@ export function ProposalModal({ stageLabel, companyName, existingFilename, repla
         )}
 
         {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
             <p className="text-xs font-medium text-red-700">{error}</p>
           </div>
@@ -222,7 +224,7 @@ export function ProposalModal({ stageLabel, companyName, existingFilename, repla
 
       <ModalFooter onCancel={onCancel} busy={busy}>
         <button onClick={() => file && onConfirm(file)} disabled={!file || busy}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <><CheckCircle2 className="w-4 h-4" /> Adjuntar y confirmar</>}
         </button>
       </ModalFooter>
@@ -254,7 +256,7 @@ export function WonModal({ companyName, value, createsProject, onConfirm, onCanc
       </div>
       <ModalFooter onCancel={onCancel} busy={busy}>
         <button onClick={onConfirm} disabled={busy}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors">
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors">
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar ganado</>}
         </button>
       </ModalFooter>

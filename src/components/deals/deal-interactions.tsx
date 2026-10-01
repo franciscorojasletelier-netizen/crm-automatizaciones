@@ -9,7 +9,7 @@ import { timeAgo } from '@/lib/format'
 const typeConfig: Record<string, { icon: any; label: string; color: string; bg: string }> = {
   email:   { icon: Mail,     label: 'Email',    color: 'text-blue-600',   bg: 'bg-blue-50'   },
   call:    { icon: Phone,    label: 'Llamada',  color: 'text-green-600',  bg: 'bg-green-50'  },
-  meeting: { icon: Users,    label: 'Reunión',  color: 'text-purple-600', bg: 'bg-purple-50' },
+  meeting: { icon: Users,    label: 'Reunión',  color: 'text-accent-600', bg: 'bg-accent-50' },
   note:    { icon: FileText, label: 'Nota',     color: 'text-amber-600',  bg: 'bg-amber-50'  },
 }
 
@@ -43,7 +43,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Interacciones</h2>
@@ -52,8 +52,8 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
           )}
         </div>
         <button onClick={() => setShowing(!showing)}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-            showing ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+            showing ? 'bg-slate-100 text-slate-600' : 'bg-accent-50 text-accent-600 hover:bg-accent-100'
           }`}>
           {showing ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showing ? 'Cancelar' : 'Agregar'}
@@ -68,7 +68,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
               const Icon = cfg.icon
               return (
                 <button key={key} onClick={() => setType(key)}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl ring-1 transition-all ${
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg ring-1 transition-all ${
                     type === key
                       ? `${cfg.bg} ${cfg.color} ring-current`
                       : 'bg-white text-slate-500 ring-slate-200 hover:bg-slate-50'
@@ -79,12 +79,12 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
               )
             })}
           </div>
-          <textarea value={content} onChange={e => setContent(e.target.value)} rows={3}
+          <textarea aria-label="Escribe los detalles de la interacción" value={content} onChange={e => setContent(e.target.value)} rows={3}
             placeholder="Escribe los detalles de la interacción..."
-            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-slate-400" />
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400" />
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={loading || !content.trim()}
-              className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-xl disabled:opacity-50 transition-all hover:shadow-md"
+              className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-all "
                >
               <Send className="w-3.5 h-3.5" />
               {loading ? 'Guardando...' : 'Guardar'}
@@ -105,7 +105,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
           const Icon = cfg.icon
           return (
             <div key={i.id} className="px-5 py-3.5 flex gap-3.5 hover:bg-slate-50/50 transition-colors">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${cfg.bg}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${cfg.bg}`}>
                 <Icon className={`w-4 h-4 ${cfg.color}`} />
               </div>
               <div className="flex-1 min-w-0">

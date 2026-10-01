@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { formatCLP, getInitials } from '@/lib/format'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
+import { useDialog } from '@/lib/use-dialog'
 
 type Command = { icon: React.ComponentType<{ className?: string }>; label: string; keywords: string; href: string }
 
@@ -60,6 +61,8 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  const paletteRef = useDialog(open, () => setOpen(false))
 
   function openPalette() { setQuery(''); setResults({ deals: [], contacts: [] }); setSelected(0); setOpen(true) }
 
@@ -135,12 +138,12 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" role="dialog" aria-modal="true" aria-label="Búsqueda y comandos">
           <div className="absolute inset-0 bg-slate-900/40" onClick={() => setOpen(false)} />
 
-          <div className="relative w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200">
+          <div ref={paletteRef} tabIndex={-1} className="relative w-full max-w-xl overflow-hidden rounded-lg bg-white shadow-2xl border border-slate-200 outline-none">
             <div className="flex items-center gap-3 px-4 h-12 border-b border-slate-200">
               {loading
                 ? <Loader2 className="w-4 h-4 text-slate-400 shrink-0 animate-spin" />
                 : <Search className="w-4 h-4 text-slate-400 shrink-0" />}
-              <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={onInputKey}
+              <input aria-label="Buscar empresa, contacto o email, o escribir un comando" ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={onInputKey}
                 placeholder="Buscar empresa, contacto o email, o escribir un comando"
                 className="flex-1 text-sm outline-none text-slate-900 placeholder:text-slate-400 bg-transparent" />
               <kbd className="text-[11px] text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">Esc</kbd>

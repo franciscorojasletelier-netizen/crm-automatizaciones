@@ -9,6 +9,7 @@ import { MessageCircle, Loader2, Pencil, X, Shield } from 'lucide-react'
 import DirectChat from '@/components/chat/direct-chat'
 import SectionChecklist from '@/components/admin/section-checklist'
 import { getInitials } from '@/lib/format'
+import { useDialog } from '@/lib/use-dialog'
 
 export interface OrgPerson {
   id: string
@@ -98,23 +99,23 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
     const cargo = node.job_title || meta.label
 
     return (
-      <div className={`relative bg-white rounded-2xl border shadow-sm px-4 py-3 w-60 ${
+      <div className={`relative bg-white rounded-lg border shadow-sm px-4 py-3 w-60 ${
         node.is_active ? 'border-slate-200' : 'border-slate-200 opacity-60'
       }`}>
         {/* Banda de color del área */}
         {node.area_color && (
-          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: node.area_color }} />
+          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-lg" style={{ background: node.area_color }} />
         )}
 
         <div className="flex items-center gap-3">
-          <div className="bg-accent-600 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+          <div className="bg-accent-600 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
              >
             {initials}
           </div>
           <div className="flex-1 min-w-0 text-left">
             <div className="flex items-center gap-1.5">
               <p className="text-sm font-semibold text-slate-900 truncate">{name}</p>
-              {isSelf && <span className="text-[11px] font-bold bg-indigo-100 text-indigo-600 px-1 py-0.5 rounded-full shrink-0">Tú</span>}
+              {isSelf && <span className="text-[11px] font-bold bg-accent-100 text-accent-600 px-1 py-0.5 rounded-full shrink-0">Tú</span>}
             </div>
             <p className="text-xs font-medium text-slate-600 truncate">{cargo}</p>
           </div>
@@ -137,14 +138,14 @@ export default function OrgChart({ people, areas, currentUserId, isAdmin, editor
         <div className="mt-2.5 flex items-center gap-2">
           {!isSelf && (
             <button onClick={() => setChatWith({ id: node.id, name, email: node.email })}
-              className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl py-1.5 transition-colors">
+              className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-accent-600 bg-accent-50 hover:bg-accent-100 rounded-lg py-1.5 transition-colors">
               <MessageCircle className="w-3.5 h-3.5" />
               Chatear
             </button>
           )}
           {isAdmin && (
             <button onClick={() => setEditNode(node)}
-              className={`flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl py-1.5 transition-colors ${isSelf ? 'flex-1' : 'px-3'}`}>
+              className={`flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg py-1.5 transition-colors ${isSelf ? 'flex-1' : 'px-3'}`}>
               <Pencil className="w-3.5 h-3.5" />
               {isSelf && 'Editar'}
             </button>
@@ -242,6 +243,7 @@ function EditModal({
     return Object.fromEntries(NAV_SECTIONS.map(s => [s.key, 'full' as SectionMode]))
   })
   const [saving, setSaving] = useState(false)
+  const dialogRef = useDialog(true, onClose, saving)
 
   const name = node.full_name ?? node.email ?? 'Usuario'
   const managerOptions = people.filter(p => !excluded.has(p.id))
@@ -266,10 +268,10 @@ function EditModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Editar persona" className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden outline-none" onClick={e => e.stopPropagation()}>
         <div className="bg-slate-900 px-5 py-4 flex items-center gap-2.5" >
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/30 flex items-center justify-center">
-            <Pencil className="w-4 h-4 text-indigo-300" />
+          <div className="w-8 h-8 rounded-lg bg-accent-500/30 flex items-center justify-center">
+            <Pencil className="w-4 h-4 text-accent-300" />
           </div>
           <h2 className="flex-1 text-sm font-bold text-white truncate">Editar: {name}</h2>
           <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
@@ -279,23 +281,23 @@ function EditModal({
 
         <div className="p-5 space-y-3.5">
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
-            <input value={jobTitle} onChange={e => setJobTitle(e.target.value)}
+            <label htmlFor="org-chart-f1" className="text-xs font-semibold text-slate-600 mb-1 block">Cargo / Puesto</label>
+            <input id="org-chart-f1" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
               placeholder="Ej: Jefe de Marketing"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-accent-300 focus:ring-2 focus:ring-accent-100" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
-            <select value={areaId} onChange={e => setAreaId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
+            <label htmlFor="org-chart-f2" className="text-xs font-semibold text-slate-600 mb-1 block">Área / Departamento</label>
+            <select id="org-chart-f2" value={areaId} onChange={e => setAreaId(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-accent-300 bg-white">
               <option value="">— Sin área —</option>
               {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1 block">Jefe directo</label>
-            <select value={managerId} onChange={e => setManagerId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-300 bg-white">
+            <label htmlFor="org-chart-f3" className="text-xs font-semibold text-slate-600 mb-1 block">Jefe directo</label>
+            <select id="org-chart-f3" value={managerId} onChange={e => setManagerId(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-accent-300 bg-white">
               <option value="">— Sin jefe —</option>
               {managerOptions.map(p => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
             </select>
@@ -303,13 +305,13 @@ function EditModal({
           {/* Interruptor Administrador */}
           {canMakeAdmin && (
             <button type="button" onClick={() => setIsAdmin(v => !v)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${isAdmin ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white'}`}>
-              <Shield className={`w-4 h-4 ${isAdmin ? 'text-indigo-600' : 'text-slate-400'}`} />
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-colors ${isAdmin ? 'border-accent-300 bg-accent-50' : 'border-slate-200 bg-white'}`}>
+              <Shield className={`w-4 h-4 ${isAdmin ? 'text-accent-600' : 'text-slate-400'}`} />
               <div className="flex-1 text-left">
                 <p className="text-xs font-semibold text-slate-700">Administrador</p>
                 <p className="text-[11px] text-slate-400">Gestiona usuarios, áreas y datos sensibles</p>
               </div>
-              <span className={`w-9 h-5 rounded-full transition-colors relative ${isAdmin ? 'bg-indigo-500' : 'bg-slate-300'}`}>
+              <span className={`w-9 h-5 rounded-full transition-colors relative ${isAdmin ? 'bg-accent-500' : 'bg-slate-300'}`}>
                 <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isAdmin ? 'left-[18px]' : 'left-0.5'}`} />
               </span>
             </button>
@@ -328,11 +330,11 @@ function EditModal({
           />
 
           <div className="flex gap-2 pt-1">
-            <button onClick={onClose} className="flex-1 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl py-2 transition-colors">
+            <button onClick={onClose} className="flex-1 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg py-2 transition-colors">
               Cancelar
             </button>
             <button onClick={save} disabled={saving}
-              className="bg-accent-600 flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-xl py-2 disabled:opacity-50 transition-all"
+              className="bg-accent-600 flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white rounded-lg py-2 disabled:opacity-50 transition-all"
                >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Guardar

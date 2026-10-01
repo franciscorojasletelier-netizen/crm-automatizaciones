@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CHILE_TZ } from '@/lib/dates'
+import { useDialog } from '@/lib/use-dialog'
 import {
   X, Calendar, Clock, MessageSquare, History,
   AlertTriangle, CheckCircle2, User, Building2,
@@ -137,13 +138,15 @@ export default function TaskDetailPanel({
   }
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.is_completed
+  const dialogRef = useDialog(true, onClose, saving)
 
   return (
     // Backdrop
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
       {/* Slide panel */}
       <div
-        className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
+        ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Tarea: ${task.title}`}
+        className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 outline-none"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -156,7 +159,7 @@ export default function TaskDetailPanel({
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {task.deals?.companies?.name && (
-                <span className="flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-medium">
+                <span className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-0.5 rounded-md font-medium">
                   <Building2 className="w-3 h-3" />{task.deals.companies.name}
                 </span>
               )}
@@ -178,7 +181,7 @@ export default function TaskDetailPanel({
           {/* Description */}
           {task.description && (
             <div className="px-5 py-4 border-b border-slate-50">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Descripción</p>
+              <p className="text-xs font-medium text-slate-500 mb-1">Descripción</p>
               <p className="text-sm text-slate-700 leading-relaxed">{task.description}</p>
             </div>
           )}
@@ -186,7 +189,7 @@ export default function TaskDetailPanel({
           {/* Edit date/time */}
           {readOnly ? (
             <div className="px-5 py-4 border-b border-slate-100">
-              <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
+              <div className="bg-slate-50 rounded-lg p-3 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <div>
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Fecha programada</p>
@@ -199,12 +202,12 @@ export default function TaskDetailPanel({
             </div>
           ) : (
           <div className="px-5 py-5 border-b border-slate-100 space-y-4">
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+            <p className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" /> Reprogramar tarea
             </p>
 
             {/* Current date */}
-            <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2">
+            <div className="bg-slate-50 rounded-lg p-3 flex items-center gap-2">
               <Clock className="w-4 h-4 text-slate-400 shrink-0" />
               <div>
                 <p className="text-[11px] text-slate-400 font-semibold uppercase">Fecha actual</p>
@@ -216,29 +219,29 @@ export default function TaskDetailPanel({
 
             {/* New date input */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
+              <label htmlFor="task-detail-panel-f1" className="text-xs font-semibold text-slate-500 mb-1.5 block">
                 Nueva fecha y hora
               </label>
-              <input
+              <input id="task-detail-panel-f1"
                 type="datetime-local"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white"
               />
             </div>
 
             {/* Comment — required */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <label htmlFor="task-detail-panel-f2" className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
                 <MessageSquare className="w-3 h-3" />
                 Motivo del cambio <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <textarea id="task-detail-panel-f2"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 placeholder="Explica brevemente por qué se reprograma esta tarea..."
                 rows={3}
-                className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none placeholder:text-slate-400 transition-colors ${
+                className={`w-full px-3.5 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white resize-none placeholder:text-slate-400 transition-colors ${
                   dateChanged && comment.trim().length < 5 && comment.length > 0
                     ? 'border-red-300 focus:ring-red-400'
                     : 'border-slate-200'
@@ -256,7 +259,7 @@ export default function TaskDetailPanel({
             <button
               onClick={handleSave}
               disabled={!canSave || saving}
-              className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-all hover:shadow-md disabled:cursor-not-allowed"
+              className="bg-accent-600 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-40 transition-all disabled:cursor-not-allowed"
                
             >
               <Save className="w-4 h-4" />
@@ -267,7 +270,7 @@ export default function TaskDetailPanel({
 
           {/* History timeline */}
           <div className="px-5 py-5">
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5 mb-4">
+            <p className="text-[13px] font-semibold text-slate-700 flex items-center gap-1.5 mb-4">
               <History className="w-3.5 h-3.5" /> Historial de cambios
             </p>
 
@@ -297,7 +300,7 @@ export default function TaskDetailPanel({
                   {history.map((entry, i) => (
                     <div key={entry.id} className="flex gap-3">
                       <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5 ${
-                        i === 0 ? 'border-indigo-500 bg-indigo-100' : 'border-slate-300 bg-white'
+                        i === 0 ? 'border-accent-500 bg-accent-100' : 'border-slate-300 bg-white'
                       }`} />
                       <div className="flex-1 min-w-0 pb-1">
                         <div className="flex items-start justify-between gap-2">
@@ -317,7 +320,7 @@ export default function TaskDetailPanel({
                             {entry.field_changed === 'due_date' ? formatDt(entry.old_value) : (entry.old_value ?? '—')}
                           </span>
                           <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded font-medium">
+                          <span className="text-[11px] text-accent-700 bg-accent-50 px-2 py-0.5 rounded font-medium">
                             {entry.field_changed === 'due_date' ? formatDt(entry.new_value) : (entry.new_value ?? '—')}
                           </span>
                         </div>

@@ -30,7 +30,7 @@ export default function DeleteDealButton({ dealId }: { dealId: string }) {
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+      <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
         <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
         <span className="text-xs font-semibold text-red-700">{error || '¿Eliminar este deal?'}</span>
         <button onClick={handleDelete} disabled={loading}
@@ -48,7 +48,7 @@ export default function DeleteDealButton({ dealId }: { dealId: string }) {
 
   return (
     <button onClick={() => setConfirming(true)}
-      className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-xl transition-all">
+      className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-all">
       <Trash2 className="w-4 h-4" />
       <span className="hidden sm:inline">Eliminar</span>
     </button>

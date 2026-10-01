@@ -90,7 +90,7 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
       {/* Selector de rol */}
       <div className="relative">
         <button ref={btnRef} onClick={handleOpen} disabled={saving}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl ring-1 transition-all hover:shadow-sm ${roleMeta.color}`}>
+          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg ring-1 transition-all hover:shadow-sm ${roleMeta.color}`}>
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
           {roleMeta.label}
           <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -107,26 +107,26 @@ export default function UserRoleEditor({ userId, currentRole, isActive, editorRo
                 right:  pos.right,
                 zIndex: 99,
               }}
-              className="w-52 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+              className="w-52 bg-white rounded-lg border border-slate-200 shadow-xl overflow-hidden">
               <div className="p-1.5 space-y-0.5">
                 {assignableRoles.map(r => {
                   const meta = ROLE_META[r]
                   const isSelected = r === role
                   return (
                     <button key={r} onClick={() => handleRoleChange(r)}
-                      className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left transition-colors group ${
-                        isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                      className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-left transition-colors group ${
+                        isSelected ? 'bg-accent-50' : 'hover:bg-slate-50'
                       }`}>
                       <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${meta.badge}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold ${isSelected ? 'text-indigo-700' : 'text-slate-800'}`}>
+                        <p className={`text-xs font-semibold ${isSelected ? 'text-accent-700' : 'text-slate-800'}`}>
                           {meta.label}
                         </p>
                         <p className="text-[11px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
                           {meta.description}
                         </p>
                       </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-accent-600 shrink-0 mt-0.5" />}
                     </button>
                   )
                 })}

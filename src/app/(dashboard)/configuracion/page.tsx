@@ -31,13 +31,13 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
         </div>
 
         {/* Perfil hero */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
           <div className="bg-slate-900 h-12 relative" >
             <div className="hidden absolute inset-0 opacity-20"  />
           </div>
           <div className="px-6 pb-6 pt-4">
             <div className="flex items-center gap-4 mb-4">
-              <div className="bg-accent-600 w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-sm shrink-0"
+              <div className="bg-accent-600 w-14 h-14 rounded-lg flex items-center justify-center text-lg font-bold text-white shadow-sm shrink-0"
                  >
                 {initials}
               </div>
@@ -48,14 +48,14 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rol</p>
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-slate-500 mb-1">Rol</p>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ring-1 ${role.color}`}>
                   {role.label}
                 </span>
               </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</p>
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-slate-500 mb-1">Estado</p>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${profile?.is_active ? 'bg-emerald-500' : 'bg-red-400'}`} />
                   <span className="text-xs font-semibold text-slate-700">

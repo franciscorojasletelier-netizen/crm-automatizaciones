@@ -10,11 +10,13 @@ import {
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import GlobalSearch from './global-search'
+import ThemeToggle from './theme-toggle'
 import { getPermissions, getRoleMeta, canAccessSection } from '@/lib/roles'
 import type { NavCounts, UserProfile } from '@/app/(dashboard)/layout'
 import type { Role } from '@/lib/roles'
 import type { Stage } from '@/lib/stages'
 import { getInitials } from '@/lib/format'
+import { useDialog } from '@/lib/use-dialog'
 
 interface SidebarProps {
   counts: NavCounts
@@ -132,6 +134,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
     return () => clearInterval(interval)
   }, [profile?.id, supabase])
 
+  const drawerRef = useDialog(moreOpen, () => setMoreOpen(false))
   const liveCounts = { ...counts, notificaciones: notifCount }
   const role = (profile?.role ?? 'soporte') as Role
   const roleMeta = getRoleMeta(role)
@@ -199,6 +202,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
         <p className="text-[13px] font-medium text-slate-900 truncate">{displayName}</p>
         <p className="text-[11px] text-slate-500 truncate">{roleMeta.label}</p>
       </div>
+      <ThemeToggle />
       <button onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión"
         className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors">
         <LogOut className="w-4 h-4" />
@@ -270,7 +274,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
       {moreOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="Menú">
           <div className="absolute inset-0 bg-slate-900/40" onClick={() => setMoreOpen(false)} />
-          <div className="relative bg-white rounded-t-2xl flex flex-col max-h-[85vh] shadow-2xl">
+          <div ref={drawerRef} tabIndex={-1} className="relative bg-white rounded-t-lg flex flex-col max-h-[85vh] shadow-2xl outline-none">
             <div className="px-4 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
               <Brand organizationName={organizationName} />
               <button onClick={() => setMoreOpen(false)} aria-label="Cerrar menú"

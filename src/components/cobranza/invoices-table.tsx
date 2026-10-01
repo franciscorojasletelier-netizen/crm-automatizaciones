@@ -86,7 +86,38 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
             ? (canManage ? 'Crea el primero desde "Nuevo documento" o desde un deal ganado.' : 'Finanzas registrará aquí los documentos de tus deals.')
             : 'Prueba con otro filtro o término de búsqueda.'} />
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        <ul className="md:hidden divide-y divide-slate-100">
+          {rows.map(inv => {
+            const meta = STATUS_META[effectiveStatus(inv, today)]
+            const late = daysOverdue(inv, today)
+            const balance = balanceOf(inv)
+            return (
+              <li key={inv.id}>
+                <Link href={`/cobranza/${inv.id}`} className="flex items-start gap-3 px-4 py-3 active:bg-slate-50">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-900 truncate">{inv.companies?.name ?? '—'}</p>
+                    <p className="text-xs text-slate-500 truncate">{invoiceCode(inv)} · {inv.description}</p>
+                    <p className="mt-1 flex items-center gap-2 text-xs">
+                      <span className={cn('inline-flex items-center gap-1 h-5 px-1.5 rounded-full font-medium', meta.chip)}>{meta.label}</span>
+                      <span className={late > 0 ? 'text-red-700 font-medium' : 'text-slate-500'}>
+                        {late > 0 ? `${late} d de mora` : `Vence ${fmtDate(inv.due_date)}`}
+                      </span>
+                    </p>
+                  </div>
+                  <p className={cn('text-sm font-semibold tabular-nums whitespace-nowrap', balance > 0 ? (late > 0 ? 'text-red-700' : 'text-slate-900') : 'text-slate-400')}>
+                    {balance > 0 ? formatCLP(balance) : 'Pagado'}
+                  </p>
+                </Link>
+              </li>
+            )
+          })}
+          <li className="flex justify-between px-4 py-2.5 text-xs text-slate-500 bg-slate-50/60">
+            <span>{rows.length} {rows.length === 1 ? 'documento' : 'documentos'}</span>
+            <span className="font-semibold text-slate-900 tabular-nums">{clp(total)}</span>
+          </li>
+        </ul>
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-[13px] min-w-[860px]">
             <thead>
               <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
@@ -153,6 +184,7 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
             </tfoot>
           </table>
         </div>
+        </>
       )}
     </div>
   )

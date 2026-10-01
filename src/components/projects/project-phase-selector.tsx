@@ -8,7 +8,7 @@ import { Loader2, AlertTriangle, Lock, X } from 'lucide-react'
 
 const phases = [
   { key: 'discovery',  label: 'Discovery',        active: 'bg-blue-500 text-white ring-blue-600',    inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
-  { key: 'diseno',     label: 'Diseño de Flujos',  active: 'bg-purple-500 text-white ring-purple-600', inactive: 'bg-purple-50 text-purple-600 hover:bg-purple-100' },
+  { key: 'diseno',     label: 'Diseño de Flujos',  active: 'bg-accent-500 text-white ring-accent-600', inactive: 'bg-accent-50 text-accent-600 hover:bg-accent-100' },
   { key: 'desarrollo', label: 'Desarrollo',        active: 'bg-yellow-500 text-white ring-yellow-600', inactive: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100' },
   { key: 'pruebas',    label: 'Pruebas',           active: 'bg-orange-500 text-white ring-orange-600', inactive: 'bg-orange-50 text-orange-600 hover:bg-orange-100' },
   { key: 'entrega',    label: 'Entrega',           active: 'bg-green-500 text-white ring-green-600',   inactive: 'bg-green-50 text-green-600 hover:bg-green-100' },
@@ -68,24 +68,24 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
   }
 
   return (
-    <div className={`rounded-2xl border shadow-sm p-4 space-y-4 ${
+    <div className={`rounded-lg border shadow-sm p-4 space-y-4 ${
       isPending ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200'
     }`}>
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fase del proyecto</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Fase del proyecto</h2>
         <div className="flex items-center gap-2">
           {isPending && (
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-200">
               <Lock className="w-3 h-3" /> Bloqueado — Pend. Especificaciones
             </div>
           )}
-          {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />}
+          {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-500" />}
         </div>
       </div>
 
       {/* Aviso de bloqueo */}
       {isPending && (
-        <div className="flex items-start gap-2 bg-amber-100 border border-amber-200 rounded-xl px-3 py-2.5">
+        <div className="flex items-start gap-2 bg-amber-100 border border-amber-200 rounded-lg px-3 py-2.5">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800 leading-relaxed">
             Los cambios de fase y estado están <strong>bloqueados</strong> mientras el área comercial no responda las especificaciones pendientes.
@@ -94,14 +94,14 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       )}
 
       <div>
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Fase actual</p>
+        <p className="text-xs font-medium text-slate-500 mb-2">Fase actual</p>
         <div className="flex flex-wrap gap-1.5">
           {phases.map(p => (
             <button key={p.key}
               onClick={() => handlePhaseChange(p.key)}
               disabled={loading || isPending || readOnly}
               title={readOnly ? 'Solo lectura' : isPending ? 'Bloqueado — esperando respuesta de comercial' : undefined}
-              className={`text-xs px-3 py-1.5 rounded-xl font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`text-xs px-3 py-1.5 rounded-lg font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${
                 phase === p.key ? `${p.active} ring-1` : p.inactive
               }`}>
               {p.label}
@@ -111,7 +111,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       </div>
 
       <div>
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Estado</p>
+        <p className="text-xs font-medium text-slate-500 mb-2">Estado</p>
         <div className="flex flex-wrap gap-1.5">
           {statuses.map(s => (
             <button key={s.key}
@@ -123,7 +123,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
                 : !s.clickable ? 'Se gestiona automáticamente desde el flujo de especificaciones'
                 : undefined
               }
-              className={`text-xs px-3 py-1.5 rounded-xl font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed ${
+              className={`text-xs px-3 py-1.5 rounded-lg font-semibold ring-1 ring-transparent transition-all duration-150 disabled:cursor-not-allowed ${
                 isPending ? 'opacity-60' : ''
               } ${status === s.key ? `${s.active} ring-1` : s.inactive}`}>
               {s.label}
@@ -133,7 +133,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
           <p className="text-xs text-red-700 flex-1">{error}</p>
           <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-xs shrink-0" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>

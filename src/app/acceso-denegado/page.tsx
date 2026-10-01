@@ -32,7 +32,7 @@ export default async function AccesoDenegadoPage({
 
         {/* Ícono */}
         <div className="relative inline-flex">
-          <div className="bg-slate-900 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-lg"
+          <div className="bg-slate-900 w-20 h-20 rounded-lg flex items-center justify-center mx-auto shadow-lg"
              >
             <ShieldX className="w-10 h-10 text-red-400" />
           </div>
@@ -55,21 +55,21 @@ export default async function AccesoDenegadoPage({
         </div>
 
         {/* Info del rol */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-left">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tu acceso actual</p>
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 text-left">
+          <p className="text-xs font-medium text-slate-500 mb-2">Tu acceso actual</p>
           <p className="text-sm text-slate-600 leading-relaxed">{roleMeta.description}</p>
         </div>
 
         {/* Acciones */}
         <div className="flex flex-col gap-2">
           <Link href="/dashboard"
-            className="bg-accent-600 flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all"
+            className="bg-accent-600 flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg text-sm font-semibold text-white shadow-xs transition-all"
              >
             <Zap className="w-4 h-4" />
             Ir a mi Dashboard
           </Link>
           <Link href="/leads"
-            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
             Volver a Leads
           </Link>
         </div>

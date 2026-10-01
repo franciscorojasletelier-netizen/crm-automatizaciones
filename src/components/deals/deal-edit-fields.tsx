@@ -27,12 +27,12 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix }
   if (editing) {
     return (
       <div>
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
+        <p className="text-xs font-medium text-slate-500 mb-1">{label}</p>
         <div className="flex items-center gap-1.5">
           {prefix && <span className="text-sm font-semibold text-slate-400">{prefix}</span>}
-          <input type={type} value={val} onChange={e => setVal(e.target.value)} autoFocus
+          <input aria-label={label} type={type} value={val} onChange={e => setVal(e.target.value)} autoFocus
             onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
-            className="flex-1 text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+            className="flex-1 text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           <button aria-label="Guardar" onClick={save} disabled={saving} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition-colors">
             <Check className="w-3.5 h-3.5" />
           </button>
@@ -47,7 +47,7 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix }
   return (
     <div className="group flex items-start justify-between gap-2 py-1">
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-medium text-slate-500">{label}</p>
         <p className="text-sm font-semibold text-slate-800 mt-0.5">
           {value
             ? (prefix === '$' && type === 'number'
@@ -58,7 +58,7 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix }
         </p>
       </div>
       <button onClick={() => setEditing(true)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 shrink-0 mt-0.5">
+        className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 shrink-0 mt-0.5">
         <Pencil className="w-3 h-3" />
       </button>
     </div>

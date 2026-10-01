@@ -85,10 +85,10 @@ export default function ProjectSpecRequest({
   // ── Banner: proyecto pendiente de especificaciones ──────────
   if (isPending) {
     return (
-      <div className="bg-amber-50 border border-amber-300 rounded-2xl p-5 space-y-4">
+      <div className="bg-amber-50 border border-amber-300 rounded-lg p-5 space-y-4">
         {/* Header alerta */}
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
           <div className="flex-1">
@@ -104,10 +104,10 @@ export default function ProjectSpecRequest({
 
         {/* Notas de producción */}
         {specNotes && (
-          <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-2">
+          <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-2">
             <div className="flex items-center gap-2">
               <ClipboardList className="w-3.5 h-3.5 text-amber-600" />
-              <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">¿Qué falta por definir?</p>
+              <p className="text-[13px] font-semibold text-amber-800">¿Qué falta por definir?</p>
             </div>
             <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{specNotes}</p>
             <div className="flex items-center gap-3 pt-1 border-t border-amber-100 text-[11px] text-slate-400">
@@ -129,7 +129,7 @@ export default function ProjectSpecRequest({
         {/* Acciones — solo producción puede actualizar notas desde aquí */}
         {/* "Devolver a Producción" es exclusivo del área comercial desde el deal */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex-1 bg-white border border-amber-200 rounded-xl px-3 py-2 flex items-center gap-2">
+          <div className="flex-1 bg-white border border-amber-200 rounded-lg px-3 py-2 flex items-center gap-2">
             <ArrowLeftRight className="w-3.5 h-3.5 text-amber-500 shrink-0" />
             <p className="text-xs text-amber-700">
               El área comercial debe responder desde el <strong>deal vinculado</strong> para devolver el proyecto a producción.
@@ -137,7 +137,7 @@ export default function ProjectSpecRequest({
           </div>
           {canRequest && (
             <button onClick={() => setOpen(true)} disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-200 transition-all shrink-0">
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-200 transition-all shrink-0">
               <ClipboardList className="w-4 h-4" />
               Actualizar notas
             </button>
@@ -151,13 +151,13 @@ export default function ProjectSpecRequest({
   if (!canRequest) return null
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       {!open ? (
         <button
           onClick={() => setOpen(true)}
           className="w-full flex items-center gap-3 px-5 py-4 hover:bg-amber-50 transition-colors group text-left"
         >
-          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
             <ArrowLeftRight className="w-4 h-4 text-amber-600" />
           </div>
           <div className="flex-1">
@@ -183,7 +183,7 @@ export default function ProjectSpecRequest({
             </button>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
               El proyecto quedará en estado <strong>Pendiente de Especificaciones</strong>.
@@ -192,11 +192,11 @@ export default function ProjectSpecRequest({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+            <label htmlFor="project-spec-request-f1" className="text-xs font-medium text-slate-500 block mb-2">
               ¿Qué falta por definir? *
               <span className="font-normal text-slate-400 normal-case ml-1">(mínimo 15 caracteres)</span>
             </label>
-            <textarea
+            <textarea id="project-spec-request-f1"
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Describe claramente qué puntos necesitan ser aclarados por el área comercial antes de continuar con el proyecto...
@@ -206,7 +206,7 @@ Ejemplo:
 - Falta confirmar integraciones con sistemas del cliente
 - Presupuesto de hosting no acordado"
               rows={6}
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-300 bg-slate-50 text-slate-800 placeholder:text-slate-400 resize-none"
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-300 bg-slate-50 text-slate-800 placeholder:text-slate-400 resize-none"
             />
             <p className={`text-[11px] mt-1 text-right ${notes.length >= 15 ? 'text-emerald-600' : 'text-slate-400'}`}>
               {notes.length} / 15 mín.
@@ -214,17 +214,17 @@ Ejemplo:
           </div>
 
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{error}</p>
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <div className="flex gap-2">
             <button onClick={handleRequest} disabled={loading || notes.trim().length < 15}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
               {loading ? 'Enviando...' : 'Enviar a Comercial'}
             </button>
             <button onClick={() => { setOpen(false); setNotes(''); setError('') }}
-              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+              className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
               Cancelar
             </button>
           </div>

@@ -32,7 +32,7 @@ export default function SectionChecklist({ value, onChange, isAdmin }: Props) {
                   <Eye className="w-3 h-3" /> Lectura
                 </button>
                 <button type="button" disabled={disabled} onClick={() => onChange(s.key, 'full')}
-                  className={`px-2 py-1 text-[11px] font-semibold border-l border-slate-200 flex items-center gap-1 transition-colors ${mode === 'full' ? 'bg-indigo-100 text-indigo-700' : 'bg-white text-slate-400 hover:bg-slate-50'}`}>
+                  className={`px-2 py-1 text-[11px] font-semibold border-l border-slate-200 flex items-center gap-1 transition-colors ${mode === 'full' ? 'bg-accent-100 text-accent-700' : 'bg-white text-slate-400 hover:bg-slate-50'}`}>
                   <Pencil className="w-3 h-3" /> Completo
                 </button>
               </div>

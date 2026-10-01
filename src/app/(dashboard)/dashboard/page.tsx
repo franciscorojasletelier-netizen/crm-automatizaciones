@@ -235,14 +235,14 @@ export default async function DashboardPage() {
               <EmptyState title="No hay deals abiertos" description="Los leads del formulario web, Meta y WhatsApp aparecerán aquí." />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-[13px] min-w-[640px]">
+                <table className="w-full text-[13px]">
                   <thead>
                     <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
                       <th scope="col" className="font-medium px-4 py-2">Empresa</th>
-                      <th scope="col" className="font-medium px-3 py-2">Etapa</th>
-                      <th scope="col" className="font-medium px-3 py-2">Próxima acción</th>
+                      <th scope="col" className="font-medium px-3 py-2 hidden sm:table-cell">Etapa</th>
+                      <th scope="col" className="font-medium px-3 py-2 hidden lg:table-cell">Próxima acción</th>
                       <th scope="col" className="font-medium px-3 py-2 text-right">Valor</th>
-                      <th scope="col" className="font-medium px-4 py-2 text-right">Actualizado</th>
+                      <th scope="col" className="font-medium px-4 py-2 text-right hidden sm:table-cell">Actualizado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -254,14 +254,14 @@ export default async function DashboardPage() {
                             <Link href={`/leads/${d.id}`} className="font-medium text-slate-900 hover:text-accent-700">{d.companies?.name ?? 'Sin empresa'}</Link>
                             {d.profiles?.full_name && <span className="block text-xs text-slate-500">{d.profiles.full_name}</span>}
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td className="px-3 py-2.5 hidden sm:table-cell">
                             <span className="inline-flex items-center gap-1.5 text-slate-700">
                               <span className={cn('w-1.5 h-1.5 rounded-full', colorOf(st).dot)} aria-hidden />{st?.label ?? d.stage}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 text-slate-600 max-w-[260px] truncate">{d.next_action ?? '—'}</td>
+                          <td className="px-3 py-2.5 text-slate-600 max-w-[260px] truncate hidden lg:table-cell">{d.next_action ?? '—'}</td>
                           <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">{d.estimated_value ? clp(d.estimated_value) : '—'}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-500 whitespace-nowrap">{timeAgo(d.updated_at)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500 whitespace-nowrap hidden sm:table-cell">{timeAgo(d.updated_at)}</td>
                         </tr>
                       )
                     })}

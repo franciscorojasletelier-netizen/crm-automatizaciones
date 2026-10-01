@@ -27,16 +27,16 @@ export default function ChangePasswordCard({ email }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-          <Shield className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+          <Shield className="w-3.5 h-3.5 text-accent-600" />
         </div>
         <h2 className="text-sm font-semibold text-slate-900">Seguridad</h2>
       </div>
       <div className="px-5 py-4">
         {sent ? (
-          <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-emerald-800">Enlace enviado</p>

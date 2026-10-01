@@ -42,7 +42,7 @@ export default async function OrganigramaPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Network className="w-6 h-6 text-indigo-600" />
+            <Network className="w-6 h-6 text-accent-600" />
             Organigrama
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -53,9 +53,9 @@ export default async function OrganigramaPage() {
       </div>
 
       {/* Aviso según rol */}
-      <div className="flex items-start gap-2.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl px-4 py-3">
-        <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-        <p className="text-xs text-indigo-900/80 leading-relaxed">
+      <div className="flex items-start gap-2.5 bg-accent-50/60 border border-accent-100 rounded-lg px-4 py-3">
+        <Info className="w-4 h-4 text-accent-500 shrink-0 mt-0.5" />
+        <p className="text-xs text-accent-900/80 leading-relaxed">
           {isAdmin
             ? 'Como administrador puedes asignar el jefe directo de cada persona con el selector de cada tarjeta. Haz clic en "Chatear" para abrir una conversación directa.'
             : 'Haz clic en "Chatear" en cualquier persona para abrir una conversación directa. La estructura del equipo solo la edita el administrador.'}
@@ -63,7 +63,7 @@ export default async function OrganigramaPage() {
       </div>
 
       {/* Organigrama */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4 md:p-6">
         {activePeople.length === 0 ? (
           <div className="py-14 text-center">
             <Network className="w-8 h-8 text-slate-200 mx-auto mb-2" />

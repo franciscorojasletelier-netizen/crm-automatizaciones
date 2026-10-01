@@ -76,7 +76,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div className={`sticky top-0 z-10 border-b px-4 md:px-6 py-3 flex items-center justify-between gap-4 ${
         isPending ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'
       }`}>
-        <Link href="/proyectos" className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+        <Link href="/proyectos" className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Proyectos
         </Link>
         <div className="flex items-center gap-2">
@@ -90,9 +90,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
 
         {/* Hero */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-5">
           <div className="flex items-start gap-4">
-            <div className="bg-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+            <div className="bg-accent-600 w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
                >
               <Building2 className="w-6 h-6 text-white" />
             </div>
@@ -108,9 +108,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             {[
-              { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-indigo-600 bg-indigo-50' },
+              { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-accent-600 bg-accent-50' },
               { label: 'Presupuesto',  value: formatCLP(project.budget), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-purple-600 bg-purple-50' },
+              { label: 'Responsable',  value: (project.profiles as any)?.full_name ?? '—', icon: User, color: 'text-accent-600 bg-accent-50' },
               { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-2.5">
@@ -118,7 +118,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <Icon className="w-3.5 h-3.5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                  <p className="text-xs font-medium text-slate-500">{label}</p>
                   <p className="text-sm font-semibold text-slate-800 truncate">{value}</p>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-400 font-medium">Deal de origen</p>
               <Link href={`/leads/${(project.deals as any).id}`}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg transition-colors">
+                className="text-xs font-semibold text-accent-600 hover:text-accent-800 bg-accent-50 hover:bg-accent-100 px-3 py-1 rounded-lg transition-colors">
                 Ver deal →
               </Link>
             </div>
@@ -156,8 +156,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="lg:col-span-1 space-y-4">
 
             {/* Detalles */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detalles</h2>
+            <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+              <h2 className="text-sm font-semibold text-slate-900 mb-3">Detalles</h2>
               <div className="space-y-3 divide-y divide-slate-100">
                 {[
                   { label: 'Horas estimadas', value: project.estimated_hours ? `${project.estimated_hours}h` : null },
@@ -165,7 +165,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   { label: 'Inicio',          value: project.start_date ? new Date(project.start_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : null },
                 ].filter(x => x.value).map(({ label, value }) => (
                   <div key={label} className="pt-2 first:pt-0">
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+                    <p className="text-xs font-medium text-slate-500">{label}</p>
                     <p className="text-sm font-semibold text-slate-800 mt-0.5">{value}</p>
                   </div>
                 ))}
@@ -174,8 +174,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
             {/* Satisfacción */}
             {project.customer_satisfaction_score && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Satisfacción cliente</h2>
+              <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
+                <h2 className="text-sm font-semibold text-slate-900 mb-2">Satisfacción cliente</h2>
                 <p className="text-2xl">
                   {'★'.repeat(project.customer_satisfaction_score)}
                   <span className="text-slate-200">{'★'.repeat(5 - project.customer_satisfaction_score)}</span>

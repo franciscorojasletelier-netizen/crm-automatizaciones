@@ -27,7 +27,7 @@ export default async function PlataformaPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-indigo-600" />
+              <Building2 className="w-6 h-6 text-accent-600" />
               Organizaciones
             </h1>
             <p className="text-sm text-slate-500 mt-0.5">
@@ -36,7 +36,7 @@ export default async function PlataformaPage() {
           </div>
           <Link
             href="/plataforma/nueva-organizacion"
-            className="bg-accent-600 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all"
+            className="bg-accent-600 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold text-white shadow-xs transition-all"
              
           >
             <Plus className="w-4 h-4" />

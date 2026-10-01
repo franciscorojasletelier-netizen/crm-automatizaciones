@@ -37,22 +37,22 @@ export default function EmailAccountsCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-          <Mail className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="w-7 h-7 rounded-lg bg-accent-50 flex items-center justify-center">
+          <Mail className="w-3.5 h-3.5 text-accent-600" />
         </div>
         <h2 className="text-sm font-semibold text-slate-900">Correo conectado</h2>
       </div>
       <div className="px-5 py-4 space-y-3">
         {connectedMessage && (
-          <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <p className="text-xs text-emerald-800">Conectado: {connectedMessage}</p>
           </div>
         )}
         {errorMessage && (
-          <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
             <p className="text-xs text-red-800">{errorMessage}</p>
           </div>
@@ -63,7 +63,7 @@ export default function EmailAccountsCard({
         ) : (
           <div className="space-y-2">
             {accounts.map(a => (
-              <div key={a.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-slate-200">
+              <div key={a.id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-slate-200">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-700 truncate">{a.email_address}</p>
                   <p className="text-[11px] text-slate-400">{PROVIDER_LABEL[a.provider]}</p>

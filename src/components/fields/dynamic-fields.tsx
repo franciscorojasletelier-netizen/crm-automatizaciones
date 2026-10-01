@@ -70,13 +70,13 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
     return (
       <div className="group flex items-start justify-between gap-2 py-1">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{field.label}</p>
+          <p className="text-xs font-medium text-slate-500">{field.label}</p>
           <p className="text-sm font-semibold text-slate-800 mt-0.5">
             {display || <span className="text-slate-300 font-normal italic text-xs">Sin valor</span>}
           </p>
         </div>
         <button onClick={() => setEditing(true)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 shrink-0 mt-0.5">
+          className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 shrink-0 mt-0.5">
           <Pencil className="w-3 h-3" />
         </button>
       </div>
@@ -85,27 +85,27 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
 
   return (
     <div>
-      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+      <p className="text-xs font-medium text-slate-500 mb-1">
         {field.label}{field.isRequired && <span className="text-red-500 ml-0.5">*</span>}
       </p>
       <div className="flex items-start gap-1.5">
         <div className="flex-1">
           {field.fieldType === 'textarea' && (
-            <textarea value={raw} onChange={e => setRaw(e.target.value)} autoFocus rows={2}
+            <textarea aria-label={field.label} value={raw} onChange={e => setRaw(e.target.value)} autoFocus rows={2}
               placeholder={field.placeholder ?? ''}
-              className="w-full text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              className="w-full text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           )}
           {(field.fieldType === 'text' || field.fieldType === 'number' || field.fieldType === 'currency' || field.fieldType === 'date') && (
-            <input
+            <input aria-label={field.label}
               type={field.fieldType === 'number' || field.fieldType === 'currency' ? 'number' : field.fieldType === 'date' ? 'date' : 'text'}
               value={raw} onChange={e => setRaw(e.target.value)} autoFocus
               placeholder={field.placeholder ?? ''}
               onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
-              className="w-full text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              className="w-full text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           )}
           {field.fieldType === 'select' && (
-            <select value={raw} onChange={e => setRaw(e.target.value)} autoFocus
-              className="w-full text-sm border border-indigo-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+            <select aria-label={field.label} value={raw} onChange={e => setRaw(e.target.value)} autoFocus
+              className="w-full text-sm border border-accent-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white">
               <option value="">— Seleccionar —</option>
               {field.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -118,7 +118,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
                   <button key={o.value} type="button"
                     onClick={() => setRaw((prev: string[]) => checked ? prev.filter(v => v !== o.value) : [...prev, o.value])}
                     className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${
-                      checked ? 'bg-indigo-100 border-indigo-300 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      checked ? 'bg-accent-100 border-accent-300 text-accent-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}>
                     {o.label}
                   </button>

@@ -130,13 +130,13 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
 
   return (
     <div className="fixed bottom-20 md:bottom-6 right-3 md:right-6 z-[60] flex flex-col items-end">
-      <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+      <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
         style={{ height: 'min(500px, calc(100dvh - 10rem))' }}>
 
         {/* Header */}
         <div className="bg-slate-900 px-4 py-3 flex items-center gap-2.5 shrink-0"
            >
-          <div className="bg-accent-600 w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+          <div className="bg-accent-600 w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0"
              >
             {initials}
           </div>
@@ -157,7 +157,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
         <div className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0 bg-slate-50/50">
           {loading && (
             <div className="flex justify-center py-8">
-              <div className="w-5 h-5 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-slate-200 border-t-accent-500 rounded-full animate-spin" />
             </div>
           )}
           {!loading && messages.length === 0 && (
@@ -180,7 +180,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
                         <Trash2 className="w-2.5 h-2.5" />
                       </button>
                     )}
-                    <div className={`px-3 py-1.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
+                    <div className={`px-3 py-1.5 rounded-lg text-sm leading-relaxed whitespace-pre-wrap break-words transition-opacity ${
                       isTemp ? 'opacity-60' : 'opacity-100'
                     } ${isMe
                       ? 'bg-accent-600 text-white rounded-br-sm'
@@ -200,7 +200,7 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
         </div>
 
         {error && (
-          <div className="mx-3 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          <div className="mx-3 mb-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
             <p className="text-xs text-red-700 flex-1">{error}</p>
             <button onClick={() => setError('')} className="text-red-400 text-xs" aria-label="Descartar error"><X className="w-3.5 h-3.5" /></button>
@@ -209,14 +209,14 @@ export default function DirectChat({ currentUserId, recipient, onClose }: Props)
 
         {/* Input */}
         <div className="px-3 pb-3 pt-2 border-t border-slate-100 shrink-0">
-          <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-            <textarea ref={inputRef} value={input}
+          <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus-within:border-accent-300 focus-within:ring-2 focus-within:ring-accent-100 transition-all">
+            <textarea aria-label="Mensaje" ref={inputRef} value={input}
               onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
               placeholder={`Mensaje a ${recipient.name.split(' ')[0]}... (Enter)`}
               rows={1} style={{ resize: 'none', minHeight: '20px', maxHeight: '80px' }}
               className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none leading-relaxed" />
             <button aria-label="Enviar mensaje" onClick={sendMessage} disabled={!input.trim() || sending}
-              className="w-7 h-7 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all hover:scale-105 shrink-0"
+              className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30 transition-all hover:scale-105 shrink-0"
               style={{ background: input.trim() ? 'var(--color-accent-600)' : 'var(--color-slate-200)' }}>
               <Send className={`w-3.5 h-3.5 ${input.trim() ? 'text-white' : 'text-slate-400'}`} />
             </button>

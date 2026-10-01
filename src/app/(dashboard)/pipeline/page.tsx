@@ -1,8 +1,8 @@
 export const dynamic = 'force-dynamic'
+import { chileDayStart } from '@/lib/dates'
 import { requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { getVisibleDealIds } from '@/lib/visibility'
 import KanbanBoard from '@/components/pipeline/kanban-board'
 import PipelineSwitcher from '@/components/pipeline/pipeline-switcher'
 import { formatCLP } from '@/lib/format'
@@ -10,17 +10,16 @@ import { getStages, getPipelines, defaultPipeline, stageByKey } from '@/lib/stag
 
 export default async function PipelinePage({ searchParams }: { searchParams: Promise<{ pipeline?: string }> }) {
   const { pipeline: pipelineParam } = await searchParams
-  const { role, supabase, user, canEdit, organizationId } = await requirePermission('pipeline')
+  const { supabase, canEdit, organizationId } = await requirePermission('pipeline')
 
   const pipelines = await getPipelines(supabase, organizationId ?? undefined)
   const selectedPipeline = (pipelineParam && pipelines.find(p => p.id === pipelineParam)) || defaultPipeline(pipelines)
 
   const stages = await getStages(supabase, organizationId ?? undefined, selectedPipeline?.id)
 
-  const visibleIds = await getVisibleDealIds(supabase, user?.id ?? '', role)
 
   // Fetch TODAS las etapas: activas + ganadas/perdidas recientes (90 días)
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const ninetyDaysAgo = chileDayStart(-90).toISOString()
 
   let query = supabase
     .from('deals')
@@ -30,17 +29,13 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       contacts:primary_contact_id(full_name),
       profiles:owner_id(full_name)
     `)
-    .or(`status.eq.open,and(status.in.(won,lost),updated_at.gte.${ninetyDaysAgo})`)
+    .or(`status.eq.open,and(status.in.(won,lost),closed_at.gte.${ninetyDaysAgo})`)
     .order('score', { ascending: false })
     .limit(300)
 
   if (selectedPipeline) query = query.eq('pipeline_id', selectedPipeline.id)
 
-  if (visibleIds !== null) {
-    query = visibleIds.length > 0
-      ? query.in('id', visibleIds)
-      : query.eq('id', 'no-match')
-  }
+  // Visibilidad por rol: la aplica la RLS de deals.
 
   const { data: deals } = await query
 
@@ -78,7 +73,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
         </div>
         {canEdit && (
           <Link href={selectedPipeline ? `/leads/nuevo?pipeline=${selectedPipeline.id}` : '/leads/nuevo'}
-            className="bg-accent-600 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+            className="bg-accent-600 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-xs transition-all hover:-translate-y-0.5"
              >
             <Plus className="w-4 h-4" />
             Nuevo lead

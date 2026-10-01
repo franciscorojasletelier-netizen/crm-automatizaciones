@@ -17,7 +17,7 @@ const phaseLabels: Record<string, string> = {
 
 const phaseColors: Record<string, string> = {
   discovery: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',
-  diseno:    'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
+  diseno:    'bg-accent-100 text-accent-700 ring-1 ring-accent-200',
   desarrollo:'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200',
   pruebas:   'bg-orange-100 text-orange-700 ring-1 ring-orange-200',
   entrega:   'bg-green-100 text-green-700 ring-1 ring-green-200',
@@ -79,7 +79,7 @@ export default async function ProyectosPage() {
 
       {/* Empty state */}
       {(!projects || projects.length === 0) && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm py-16 flex flex-col items-center gap-3">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs py-16 flex flex-col items-center gap-3">
           <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
             <FolderOpen className="w-7 h-7 text-slate-400" />
           </div>
@@ -93,7 +93,7 @@ export default async function ProyectosPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h2 className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pendientes de especificaciones</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Pendientes de especificaciones</h2>
             <span className="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">{pending.length}</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -101,7 +101,7 @@ export default async function ProyectosPage() {
               const progress = phaseProgress[project.phase] ?? 0
               return (
                 <Link key={project.id} href={`/proyectos/${project.id}`}
-                  className="group bg-amber-50 rounded-2xl border-2 border-amber-300 shadow-sm p-5 hover:border-amber-400 hover:shadow-md transition-all overflow-hidden relative">
+                  className="group bg-amber-50 rounded-lg border-2 border-amber-300 shadow-sm p-5 hover:border-amber-400 hover:shadow-md transition-all overflow-hidden relative">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-amber-400" />
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
@@ -134,7 +134,7 @@ export default async function ProyectosPage() {
       {/* Proyectos activos */}
       {active.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Activos</h2>
+          <h2 className="text-sm font-semibold text-slate-900 px-1">Activos</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {active.map((project: any) => {
               const overdue = isOverdue(project.due_date)
@@ -142,14 +142,14 @@ export default async function ProyectosPage() {
               const progress = phaseProgress[project.phase] ?? 0
               return (
                 <Link key={project.id} href={`/proyectos/${project.id}`}
-                  className="group bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-indigo-300 hover:shadow-md transition-all overflow-hidden relative">
+                  className="group bg-white rounded-lg border border-slate-200 shadow-xs p-5 hover:border-accent-300 hover:shadow-md transition-all overflow-hidden relative">
                   <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-100">
                     <div className="h-full bg-accent-600 transition-all"
                       style={{ width: `${progress}%` }} />
                   </div>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">{project.name}</p>
+                      <p className="font-bold text-slate-900 group-hover:text-accent-700 transition-colors truncate">{project.name}</p>
                       {project.companies?.name && (
                         <p className="text-xs text-slate-500 mt-0.5 font-medium">{project.companies.name}</p>
                       )}
@@ -166,8 +166,8 @@ export default async function ProyectosPage() {
                       )}
                       {project.profiles?.full_name && (
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-[11px] font-bold text-indigo-600">
+                          <div className="w-5 h-5 rounded-full bg-accent-100 flex items-center justify-center">
+                            <span className="text-[11px] font-bold text-accent-600">
                               {project.profiles.full_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -189,7 +189,7 @@ export default async function ProyectosPage() {
 
                   <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-[11px] text-slate-400 font-medium">{progress}% completado</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-accent-500 transition-colors" />
                   </div>
                 </Link>
               )
@@ -201,14 +201,14 @@ export default async function ProyectosPage() {
       {/* Otros proyectos */}
       {others.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Otros</h2>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <h2 className="text-sm font-semibold text-slate-900 px-1">Otros</h2>
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Proyecto</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Fase</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Fecha límite</th>
+                  <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Proyecto</th>
+                  <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden md:table-cell">Fase</th>
+                  <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5 hidden lg:table-cell">Fecha límite</th>
                   <th className="px-5 py-3.5" />
                 </tr>
               </thead>
@@ -229,7 +229,7 @@ export default async function ProyectosPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <Link href={`/proyectos/${project.id}`}>
-                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-accent-500 transition-colors" />
                       </Link>
                     </td>
                   </tr>
