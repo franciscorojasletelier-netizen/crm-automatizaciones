@@ -19,7 +19,9 @@
  * organizaciones, no solo la propia.
  */
 export async function getDisabledModules(supabase: any, orgId?: string): Promise<Set<string>> {
-  let q = supabase.from('organization_modules').select('module_key').eq('enabled', false)
+  // Apagado explícito o con fecha de vencimiento ya cumplida (módulo contratado por un plazo).
+  let q = supabase.from('organization_modules').select('module_key')
+    .or(`enabled.eq.false,expires_at.lt.${new Date().toISOString()}`)
   if (orgId) q = q.eq('organization_id', orgId)
   const { data } = await q
   return new Set((data ?? []).map((r: any) => r.module_key))

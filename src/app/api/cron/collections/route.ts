@@ -4,6 +4,7 @@ import { chileDateString } from '@/lib/dates'
 import { addDays, balanceOf, invoiceCode } from '@/lib/cobranza'
 import { formatCLP } from '@/lib/format'
 import { notifyServiceExpirations } from '@/lib/service-checks'
+import { runCollectionReminders } from '@/lib/cobranza-recordatorios'
 
 // Cron diario de cobranza (pg_cron 12:30 UTC, migración 038).
 // Avisa en la app, a quien corresponde, de dos hechos del día:
@@ -72,12 +73,16 @@ export async function GET(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Recordatorios automáticos al cliente (orgs que los activaron).
+  let reminders: unknown = null
+  try { reminders = await runCollectionReminders(supabase) } catch (e) { console.error('collection reminders', e); reminders = { status: 'error' } }
+
   // Vencimientos de servicios (plataforma): nunca debe tumbar la cobranza.
   let serviceAlerts = 0
   try { serviceAlerts = await notifyServiceExpirations(supabase) } catch (e) { console.error('service checks', e) }
 
   return NextResponse.json({
-    status: 'ok', newlyOverdue: newlyOverdue?.length ?? 0, promisesToday: promisesToday?.length ?? 0, notified: notifications.length, serviceAlerts,
+    status: 'ok', newlyOverdue: newlyOverdue?.length ?? 0, promisesToday: promisesToday?.length ?? 0, notified: notifications.length, serviceAlerts, reminders,
   })
 }
 

@@ -3,6 +3,7 @@ import { getCurrentProfile } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Building2 } from 'lucide-react'
 import NewOrganizationForm from '@/components/platform/new-organization-form'
+import { systemMailConfigured } from '@/lib/email/system-mail'
 
 export default async function NuevaOrganizacionPage() {
   const { user, supabase } = await getCurrentProfile()
@@ -27,7 +28,7 @@ export default async function NuevaOrganizacionPage() {
             Crea un cliente nuevo con su primer usuario administrador. Solo visible para el dueño de la plataforma.
           </p>
         </div>
-        <NewOrganizationForm />
+        <NewOrganizationForm canInvite={systemMailConfigured()} />
       </div>
     </div>
   )

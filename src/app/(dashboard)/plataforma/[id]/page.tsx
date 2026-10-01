@@ -7,12 +7,15 @@ import { ArrowLeft, Building2 } from 'lucide-react'
 import { getAllStages, getPipelines } from '@/lib/stages'
 import { getFieldDefinitions, type FieldEntity } from '@/lib/fields'
 import { NAV_SECTIONS } from '@/lib/roles'
+import { chileDateString } from '@/lib/dates'
 import PipelinesManager from '@/components/platform/pipelines-manager'
 import FieldsEditor from '@/components/platform/fields-editor'
 import ModulesEditor from '@/components/platform/modules-editor'
 import UserLimitEditor from '@/components/platform/user-limit-editor'
 import RequireMfaToggle from '@/components/platform/require-mfa-toggle'
 import IntegrationsEditor from '@/components/platform/integrations-editor'
+import PlanSelector from '@/components/platform/plan-selector'
+import { isPlanKey } from '@/lib/plans'
 
 export default async function OrganizationConfigPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -23,7 +26,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   if (!owner) redirect('/dashboard')
 
   const { data: org } = await supabase
-    .from('organizations').select('id, name, is_active, max_users, require_mfa').eq('id', id).maybeSingle()
+    .from('organizations').select('id, name, is_active, max_users, require_mfa, plan').eq('id', id).maybeSingle()
   if (!org) notFound()
 
   // profiles_select no tiene bypass de is_platform_owner() (a diferencia de
@@ -41,7 +44,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     getFieldDefinitions(supabase, 'deal', id),
     getFieldDefinitions(supabase, 'company', id),
     getFieldDefinitions(supabase, 'contact', id),
-    supabase.from('organization_modules').select('module_key, enabled').eq('organization_id', id),
+    supabase.from('organization_modules').select('module_key, enabled, expires_at').eq('organization_id', id),
     svc.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
     supabase.from('platform_integrations')
       .select('id, organization_id, provider, external_id, access_token, label, is_active, config')
@@ -49,7 +52,11 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   ])
 
   const enabledByKey: Record<string, boolean> = {}
-  for (const row of modulesRes.data ?? []) enabledByKey[row.module_key] = row.enabled
+  const expiresByKey: Record<string, string | null> = {}
+  for (const row of modulesRes.data ?? []) {
+    enabledByKey[row.module_key] = row.enabled
+    expiresByKey[row.module_key] = row.expires_at ? chileDateString(new Date(row.expires_at)) : null
+  }
 
   return (
     <div className="p-4 md:p-6 min-h-full bg-slate-50">
@@ -67,6 +74,8 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
           </p>
         </div>
 
+        <PlanSelector orgId={org.id} plan={isPlanKey(org.plan) ? org.plan : 'personalizado'} />
+
         <UserLimitEditor orgId={org.id} currentUsers={usersRes.count ?? 0} maxUsers={org.max_users} />
 
         <RequireMfaToggle orgId={org.id} requireMfa={org.require_mfa ?? false} />
@@ -77,7 +86,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
         <FieldsEditor orgId={org.id} entity="company" label="Campos de Empresas" fields={companyFields} />
         <FieldsEditor orgId={org.id} entity="contact" label="Campos de Contactos" fields={contactFields} />
 
-        <ModulesEditor orgId={org.id} sections={NAV_SECTIONS} enabledByKey={enabledByKey} />
+        <ModulesEditor orgId={org.id} sections={NAV_SECTIONS} enabledByKey={enabledByKey} expiresByKey={expiresByKey} />
 
         <IntegrationsEditor orgId={org.id} integrations={(integrationsRes.data ?? []) as any} />
       </div>

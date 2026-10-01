@@ -11,7 +11,7 @@ export type CheckStatus = 'ok' | 'aviso' | 'urgente' | 'vencido' | 'desconocido'
 
 export interface ServiceCheck {
   id: string
-  group: 'Infraestructura' | 'Procesos automáticos' | 'Correo' | 'Meta (WhatsApp / Leads)' | 'Recordatorios'
+  group: 'Infraestructura' | 'Procesos automáticos' | 'Correo' | 'Meta (WhatsApp / Leads)' | 'Módulos de clientes' | 'Recordatorios'
   name: string
   detail: string
   /** Días que faltan; null cuando no vence o no se sabe. */
@@ -76,17 +76,18 @@ async function metaTokenExpiry(token: string): Promise<{ valid: boolean; expires
  */
 export async function runServiceChecks(userClient: SupabaseClient, svc: SupabaseClient): Promise<{ checks: ServiceCheck[]; health: Health | null }> {
   const now = Date.now()
-  const [healthRes, remindersRes, accountsRes, integrationsRes] = await Promise.all([
+  const [healthRes, remindersRes, accountsRes, integrationsRes, modulesRes] = await Promise.all([
     userClient.rpc('platform_service_health'),
     userClient.from('service_reminders').select('id, name, category, expires_on, url, notes').order('expires_on', { ascending: true, nullsFirst: true }),
     svc.from('email_accounts').select('id, provider, email_address, is_active, connected_at, subscription_expires_at, organizations(name)').eq('is_active', true),
     svc.from('platform_integrations').select('id, provider, label, access_token, is_active, organizations(name)').in('provider', ['whatsapp', 'meta_leads']).eq('is_active', true),
+    svc.from('organization_modules').select('id, module_key, expires_at, organizations(name)').eq('enabled', true).not('expires_at', 'is', null),
   ])
   const health = (healthRes.data ?? null) as Health | null
-  return { checks: await buildChecks(now, health, remindersRes.data ?? [], accountsRes.data ?? [], integrationsRes.data ?? []), health }
+  return { checks: await buildChecks(now, health, remindersRes.data ?? [], accountsRes.data ?? [], integrationsRes.data ?? [], modulesRes.data ?? []), health }
 }
 
-async function buildChecks(now: number, health: Health | null, reminders: any[], accounts: any[], integrations: any[]): Promise<ServiceCheck[]> {
+async function buildChecks(now: number, health: Health | null, reminders: any[], accounts: any[], integrations: any[], modules: any[]): Promise<ServiceCheck[]> {
   const checks: ServiceCheck[] = []
 
   // ── Supabase: el plan Free pausa el proyecto tras 7 días sin actividad.
@@ -159,6 +160,17 @@ async function buildChecks(now: number, health: Health | null, reminders: any[],
       daysLeft: left,
       status: !r ? 'desconocido' : !r.valid ? 'vencido' : r.expiresAt ? statusFor(left) : 'ok',
       url: 'https://business.facebook.com/settings/system-users',
+    })
+  }
+
+  // ── Módulos contratados por plazo (se apagan solos al vencer).
+  for (const m of modules) {
+    const left = daysUntil(m.expires_at, now)
+    checks.push({
+      id: `mod-${m.id}`, group: 'Módulos de clientes',
+      name: `${m.module_key.charAt(0).toUpperCase()}${m.module_key.slice(1)} · ${m.organizations?.name ?? 'Organización'}`,
+      detail: left < 0 ? 'Vencido: el módulo ya no está disponible para el cliente.' : 'Se apaga solo al vencer. Renueva la fecha en la ficha de la organización.',
+      daysLeft: left, status: statusFor(left),
     })
   }
 

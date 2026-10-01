@@ -170,3 +170,81 @@ export function addDays(date: string, days: number): string {
 export function invoiceCode(inv: Pick<Invoice, 'invoice_number'>): string {
   return `COB-${String(inv.invoice_number).padStart(4, '0')}`
 }
+
+// ── Cola de cobro del día ─────────────────────────────────────
+// Agrupa por cliente (se llama a la empresa, no al documento) y ordena
+// por urgencia; dentro de cada nivel, por saldo vencido.
+
+export type QueueReason = 'promesa_hoy' | 'promesa_incumplida' | 'mora_alta' | 'vencido' | 'vence_hoy' | 'por_vencer'
+
+export const QUEUE_REASON: Record<QueueReason, { label: string; tier: number; chip: string }> = {
+  promesa_hoy:        { label: 'Compromiso vence hoy',  tier: 6, chip: 'bg-accent-50 text-accent-800 ring-1 ring-accent-200' },
+  promesa_incumplida: { label: 'Compromiso incumplido', tier: 5, chip: 'bg-red-50 text-red-700 ring-1 ring-red-200' },
+  mora_alta:          { label: 'Mora sobre 30 días',    tier: 4, chip: 'bg-red-50 text-red-700 ring-1 ring-red-200' },
+  vencido:            { label: 'Vencido',               tier: 3, chip: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200' },
+  vence_hoy:          { label: 'Vence hoy',             tier: 2, chip: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200' },
+  por_vencer:         { label: 'Vence pronto',          tier: 1, chip: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' },
+}
+
+export interface QueueItem {
+  companyId: string
+  companyName: string
+  reason: QueueReason
+  balance: number
+  overdue: number
+  maxDaysLate: number
+  documents: number
+  /** Documento que motiva el cobro (para abrir su ficha). */
+  leadInvoiceId: string
+  promiseDate: string | null
+  lastActivityAt: string | null
+  handledToday: boolean
+}
+
+export function buildCollectionQueue(invoices: Invoice[], today: string, soonDays = 3): QueueItem[] {
+  const byCompany = new Map<string, Invoice[]>()
+  for (const inv of invoices) {
+    if (!isOpen(inv) || balanceOf(inv) <= 0) continue
+    const list = byCompany.get(inv.company_id) ?? []
+    list.push(inv)
+    byCompany.set(inv.company_id, list)
+  }
+
+  const items: QueueItem[] = []
+  for (const [companyId, list] of byCompany) {
+    const candidates: { reason: QueueReason; inv: Invoice }[] = []
+    for (const inv of list) {
+      const late = daysOverdue(inv, today)
+      const until = daysBetween(today, inv.due_date)
+      if (inv.next_promise_date === today) candidates.push({ reason: 'promesa_hoy', inv })
+      else if (inv.next_promise_date && inv.next_promise_date < today) candidates.push({ reason: 'promesa_incumplida', inv })
+      if (late > 30) candidates.push({ reason: 'mora_alta', inv })
+      else if (late > 0) candidates.push({ reason: 'vencido', inv })
+      else if (until === 0) candidates.push({ reason: 'vence_hoy', inv })
+      else if (until > 0 && until <= soonDays) candidates.push({ reason: 'por_vencer', inv })
+    }
+    if (candidates.length === 0) continue
+    const top = candidates.reduce((best, c) => QUEUE_REASON[c.reason].tier > QUEUE_REASON[best.reason].tier ? c : best)
+
+    const lastActivityAt = list.map(i => i.last_activity_at).filter(Boolean).sort().at(-1) ?? null
+    items.push({
+      companyId,
+      companyName: list[0].companies?.name ?? 'Cliente',
+      reason: top.reason,
+      balance: list.reduce((s, i) => s + balanceOf(i), 0),
+      overdue: list.filter(i => daysOverdue(i, today) > 0).reduce((s, i) => s + balanceOf(i), 0),
+      maxDaysLate: Math.max(0, ...list.map(i => daysOverdue(i, today))),
+      documents: list.length,
+      leadInvoiceId: top.inv.id,
+      promiseDate: list.map(i => i.next_promise_date).filter(Boolean).sort()[0] ?? null,
+      lastActivityAt,
+      handledToday: !!lastActivityAt && chileDateString(new Date(lastActivityAt)) === today,
+    })
+  }
+
+  return items.sort((a, b) =>
+    Number(a.handledToday) - Number(b.handledToday)
+    || QUEUE_REASON[b.reason].tier - QUEUE_REASON[a.reason].tier
+    || b.overdue - a.overdue
+    || b.balance - a.balance)
+}

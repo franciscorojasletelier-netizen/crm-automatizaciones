@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { friendlyError } from '@/lib/pg-error'
+import { applyPlan, isPlanKey } from '@/lib/plans'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,6 +26,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const body = await request.json()
   const updates: Record<string, any> = {}
+
+  // Plan: aplica límite y módulos de una vez (y nada más en esta llamada).
+  if ('plan' in body) {
+    if (!isPlanKey(body.plan)) return NextResponse.json({ error: 'Plan inválido' }, { status: 400 })
+    const err = await applyPlan(supabase, id, body.plan)
+    if (err) return NextResponse.json({ error: friendlyError(err) }, { status: 400 })
+    return NextResponse.json({ ok: true })
+  }
 
   if (typeof body.isActive === 'boolean') {
     updates.is_active = body.isActive

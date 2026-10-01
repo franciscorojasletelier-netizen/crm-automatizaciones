@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
+import crypto from 'node:crypto'
+import { applyPlan, isPlanKey, PLANS, type PlanKey } from '@/lib/plans'
+import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 
 // Crea una organización (cliente) nueva + su primer usuario super_admin.
 // Solo accesible para quienes están en la tabla platform_owners —
@@ -29,15 +32,22 @@ export async function POST(request: NextRequest) {
   const orgName = (body.orgName ?? '').trim()
   const fullName = (body.fullName ?? '').trim()
   const email = (body.email ?? '').trim().toLowerCase()
-  const password = body.password ?? ''
+  const plan: PlanKey = isPlanKey(body.plan) ? body.plan : 'profesional'
+  // Invitación: el admin define su propia contraseña desde un enlace por
+  // correo. Sin correo del sistema se exige contraseña temporal.
+  const invite = body.invite === true
+  if (invite && !systemMailConfigured()) {
+    return NextResponse.json({ error: 'Para invitar por correo hay que activar el correo del sistema (Resend). Usa una contraseña temporal.' }, { status: 400 })
+  }
+  const password = invite ? crypto.randomBytes(24).toString('base64url') : (body.password ?? '')
 
   if (!orgName) return NextResponse.json({ error: 'El nombre de la organización es requerido' }, { status: 400 })
   if (!fullName) return NextResponse.json({ error: 'El nombre del admin es requerido' }, { status: 400 })
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
   }
-  if (password.length < 6) {
-    return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+  if (password.length < 8) {
+    return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
   }
 
   const admin = createClient(
@@ -103,5 +113,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Error creando el perfil: ${profErr.message}` }, { status: 400 })
   }
 
-  return NextResponse.json({ ok: true, organizationId: org.id, userId: created.user.id })
+  // 4. Plan: límite de usuarios y módulos. Un fallo acá no deshace el alta
+  // (se corrige desde la ficha de la organización).
+  const planErr = await applyPlan(admin, org.id, plan)
+
+  // 5. Invitación por correo con enlace para definir la contraseña.
+  let invited = false
+  if (invite) {
+    const { data: link } = await admin.auth.admin.generateLink({
+      type: 'recovery', email,
+      options: { redirectTo: `${request.nextUrl.origin}/restablecer-password` },
+    })
+    if (link?.properties?.action_link) {
+      const first = fullName.split(/\s+/)[0]
+      const sent = await sendSystemMail({
+        to: email,
+        subject: `Tu cuenta en el CRM de ${orgName}`,
+        fromName: 'CRM Automatizaciones',
+        body: [
+          `Hola ${first}:`,
+          '',
+          `Ya está lista la cuenta de ${orgName} en el CRM (plan ${PLANS[plan].label}). Eres su administrador.`,
+          '',
+          'Para entrar, define tu contraseña con este enlace (vence en 1 hora; si expira, usa "¿La olvidaste?" en la pantalla de ingreso):',
+          link.properties.action_link,
+          '',
+          `Después ingresa en ${request.nextUrl.origin}/login con ${email}.`,
+          '',
+          'Si no esperabas este correo, puedes ignorarlo.',
+        ].join('\n'),
+      })
+      invited = sent.ok
+    }
+  }
+
+  return NextResponse.json({ ok: true, organizationId: org.id, userId: created.user.id, invited, planWarning: planErr ?? undefined })
 }
+

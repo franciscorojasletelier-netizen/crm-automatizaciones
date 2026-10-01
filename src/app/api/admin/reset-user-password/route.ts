@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: process.env.EMAIL_FROM?.trim() || `${orgName} <onboarding@resend.dev>`,
       to: target.email,
-      subject: 'Restablecé tu contraseña',
+      subject: 'Restablece tu contraseña',
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
           <h2 style="color:#111">Hola${target.full_name ? ` ${target.full_name.split(' ')[0]}` : ''}</h2>
