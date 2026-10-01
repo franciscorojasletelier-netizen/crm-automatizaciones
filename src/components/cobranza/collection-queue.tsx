@@ -10,13 +10,14 @@ import { cn } from '@/lib/utils'
 import { QUEUE_REASON, type Invoice, type QueueItem } from '@/lib/cobranza'
 import { buildStatement } from '@/lib/cobranza-mensajes'
 import type { Contact } from '@/lib/cobranza-server'
+import type { EmailOrg } from '@/lib/cobranza-email'
 
 interface Props {
   queue: QueueItem[]
   invoices: Invoice[]
   today: string
   contacts: Map<string, Contact>
-  sender: { senderName: string | null; orgName: string | null; canSendEmail: boolean; emailFrom: string | null }
+  sender: { senderName: string | null; orgName: string | null; canSendEmail: boolean; emailFrom: string | null; emailOrg: EmailOrg }
   showAll: boolean
   limit?: number
 }

@@ -10,7 +10,8 @@ import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { chileDateString } from '@/lib/dates'
 import { clp } from '@/lib/format'
 import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
-import { buildStatement } from '@/lib/cobranza-mensajes'
+import { buildStatement, suggestedTone, TONE_META, type Tone } from '@/lib/cobranza-mensajes'
+import { renderCollectionEmail } from '@/lib/cobranza-email'
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 
@@ -49,12 +50,22 @@ export async function POST(request: NextRequest) {
     if (!EMAIL_RE.test(to)) return NextResponse.json({ error: 'Correo de destino no válido' }, { status: 400 })
     if (!subject) return NextResponse.json({ error: 'Falta el asunto' }, { status: 400 })
 
+    // Versión con diseño + texto, con los datos de la empresa (logo, contacto, cómo pagar).
+    const [{ data: account }, { data: org }] = await Promise.all([
+      supabase.from('email_accounts').select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle(),
+      supabase.from('organizations').select('name, display_name, logo_url, email, phone, address, payment_instructions').eq('id', organizationId).maybeSingle(),
+    ])
+    const orgName = org?.display_name || org?.name || 'Tu proveedor'
+    const tone: Tone = payload.tone in TONE_META ? payload.tone : suggestedTone(statement)
+    const mail = renderCollectionEmail({
+      body, subject, statement, tone,
+      org: { name: orgName, logoUrl: org?.logo_url, email: org?.email, phone: org?.phone, address: org?.address, paymentInstructions: org?.payment_instructions },
+    })
+
     // 1° la cuenta conectada del ejecutivo; 2° el correo del sistema (Resend).
-    const { data: account } = await supabase.from('email_accounts')
-      .select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle()
 
     if (account) {
-      const sent = await sendAsUser(supabase, user.id, { to, subject, body })
+      const sent = await sendAsUser(supabase, user.id, { to, subject, body: mail.text, html: mail.html })
       if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: sent.status })
 
       // Historial de correos (enlazado al contacto si existe en la empresa).
@@ -63,19 +74,16 @@ export async function POST(request: NextRequest) {
       await sent.svc.from('email_messages').insert({
         organization_id: organizationId, deal_id: null, contact_id: contact?.id ?? null,
         email_account_id: sent.accountId, direction: 'outbound',
-        subject, body_text: body, body_html: null,
+        subject, body_text: mail.text, body_html: mail.html,
         from_address: sent.fromAddress, to_addresses: [to],
         provider_message_id: sent.messageId, thread_id: sent.threadId,
         sent_at: new Date().toISOString(),
       })
     } else if (systemMailConfigured()) {
-      const [{ data: me }, { data: org }] = await Promise.all([
-        supabase.from('profiles').select('full_name, email').eq('id', user.id).maybeSingle(),
-        supabase.from('organizations').select('name, display_name').eq('id', organizationId).maybeSingle(),
-      ])
+      const { data: me } = await supabase.from('profiles').select('email').eq('id', user.id).maybeSingle()
       const sent = await sendSystemMail({
-        to, subject, body,
-        fromName: org?.display_name || org?.name || null,
+        to, subject, body: mail.text, html: mail.html,
+        fromName: orgName,
         replyTo: me?.email ?? null,
       })
       if (!sent.ok) return NextResponse.json({ error: `No se pudo enviar: ${sent.error}` }, { status: 502 })

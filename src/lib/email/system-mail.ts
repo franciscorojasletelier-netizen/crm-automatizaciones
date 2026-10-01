@@ -23,7 +23,7 @@ export function systemMailAddress(): string | null {
   return systemMailConfigured() ? fromAddress() : null
 }
 
-export async function sendSystemMail(msg: { to: string; subject: string; body: string; fromName?: string | null; replyTo?: string | null }) {
+export async function sendSystemMail(msg: { to: string; subject: string; body: string; html?: string; fromName?: string | null; replyTo?: string | null }) {
   const key = process.env.RESEND_API_KEY?.trim()
   const address = fromAddress()
   if (!key || !address) return { ok: false as const, error: 'El correo del sistema no está configurado' }
@@ -34,6 +34,7 @@ export async function sendSystemMail(msg: { to: string; subject: string; body: s
     to: [msg.to],
     subject: msg.subject.replace(/[\r\n]+/g, ' '),
     text: msg.body,
+    ...(msg.html ? { html: msg.html } : {}),
     ...(msg.replyTo ? { replyTo: msg.replyTo } : {}),
   })
   if (error) return { ok: false as const, error: error.message }

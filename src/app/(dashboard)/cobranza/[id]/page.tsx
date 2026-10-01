@@ -201,12 +201,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     <SendCollection
                       companyId={invoice.company_id} companyName={invoice.companies?.name ?? 'Cliente'}
                       contact={collection.contact} statement={collection.statement}
-                      senderName={collection.senderName} orgName={collection.orgName} canSendEmail={collection.canSendEmail} emailFrom={collection.emailFrom}
+                      senderName={collection.senderName} orgName={collection.orgName} canSendEmail={collection.canSendEmail} emailFrom={collection.emailFrom} emailOrg={collection.emailOrg}
                       initialChannel="email" label="Correo" />
                     <SendCollection
                       companyId={invoice.company_id} companyName={invoice.companies?.name ?? 'Cliente'}
                       contact={collection.contact} statement={collection.statement}
-                      senderName={collection.senderName} orgName={collection.orgName} canSendEmail={collection.canSendEmail} emailFrom={collection.emailFrom}
+                      senderName={collection.senderName} orgName={collection.orgName} canSendEmail={collection.canSendEmail} emailFrom={collection.emailFrom} emailOrg={collection.emailOrg}
                       initialChannel="whatsapp" variant="secondary" label="WhatsApp" />
                   </div>
                 </>

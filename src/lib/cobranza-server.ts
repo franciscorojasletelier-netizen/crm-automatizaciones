@@ -5,14 +5,18 @@ import { chileDateString } from '@/lib/dates'
 import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
 import { buildStatement } from '@/lib/cobranza-mensajes'
 import { systemMailAddress, systemMailConfigured } from '@/lib/email/system-mail'
+import type { EmailOrg } from '@/lib/cobranza-email'
 
-export type OrgInfo = { name: string; display_name: string | null; email: string | null; phone: string | null; address: string | null }
+export type OrgInfo = {
+  name: string; display_name: string | null; email: string | null; phone: string | null; address: string | null
+  logo_url: string | null; payment_instructions: string | null
+}
 
 /** Quién envía: nombre del ejecutivo, organización y por dónde sale el correo. */
 export async function loadSenderContext(supabase: SupabaseClient, userId: string, organizationId: string | null) {
   const [orgRes, meRes, mailRes] = await Promise.all([
     organizationId
-      ? supabase.from('organizations').select('name, display_name, email, phone, address').eq('id', organizationId).maybeSingle()
+      ? supabase.from('organizations').select('name, display_name, email, phone, address, logo_url, payment_instructions').eq('id', organizationId).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from('profiles').select('full_name, email').eq('id', userId).maybeSingle(),
     supabase.from('email_accounts').select('id').eq('user_id', userId).eq('is_active', true).limit(1).maybeSingle(),
@@ -21,6 +25,12 @@ export async function loadSenderContext(supabase: SupabaseClient, userId: string
   return {
     org,
     orgName: org?.display_name || org?.name || null,
+    /** Datos de la empresa para el correo con diseño (logo, contacto, cómo pagar). */
+    emailOrg: {
+      name: org?.display_name || org?.name || 'Tu proveedor',
+      logoUrl: org?.logo_url ?? null, email: org?.email ?? null, phone: org?.phone ?? null,
+      address: org?.address ?? null, paymentInstructions: org?.payment_instructions ?? null,
+    } satisfies EmailOrg,
     senderName: (meRes.data as { full_name: string | null } | null)?.full_name ?? null,
     // Puede enviar con su cuenta conectada o, si no, con el correo del sistema.
     canSendEmail: !!mailRes.data || systemMailConfigured(),

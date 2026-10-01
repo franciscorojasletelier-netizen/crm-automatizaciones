@@ -12,6 +12,7 @@ import { chileDateString } from '@/lib/dates'
 import { INVOICE_SELECT, daysBetween, type Invoice } from '@/lib/cobranza'
 import { buildStatement, emailMessage, suggestedTone, type Tone } from '@/lib/cobranza-mensajes'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
+import { renderCollectionEmail } from '@/lib/cobranza-email'
 
 export interface ReminderSettings {
   organization_id: string
@@ -116,7 +117,7 @@ export async function runCollectionReminders(svc: SupabaseClient, today = chileD
   for (const s of (settingsRows ?? []) as ReminderSettings[]) {
     const [{ plan, invoices }, { data: org }] = await Promise.all([
       planReminders(svc, s.organization_id, s, today),
-      svc.from('organizations').select('name, display_name, email, notification_email, is_active').eq('id', s.organization_id).maybeSingle(),
+      svc.from('organizations').select('name, display_name, email, phone, address, logo_url, payment_instructions, notification_email, is_active').eq('id', s.organization_id).maybeSingle(),
     ])
     if (!org?.is_active) continue
     const orgName = org.display_name || org.name
@@ -132,7 +133,11 @@ export async function runCollectionReminders(svc: SupabaseClient, today = chileD
       const replyTo = resp?.email || org.notification_email || org.email || null
 
       const msg = emailMessage({ statement, tone: p.tone, companyName: p.companyName, contactName: p.contactName, senderName: null, orgName })
-      const res = await sendSystemMail({ to: p.to, subject: msg.subject, body: msg.body, fromName: orgName, replyTo })
+      const mail = renderCollectionEmail({
+        body: msg.body, subject: msg.subject, statement, tone: p.tone,
+        org: { name: orgName, logoUrl: org.logo_url, email: org.email, phone: org.phone, address: org.address, paymentInstructions: org.payment_instructions },
+      })
+      const res = await sendSystemMail({ to: p.to, subject: msg.subject, body: mail.text, html: mail.html, fromName: orgName, replyTo })
       if (!res.ok) { failed++; continue }
       sent++
 
