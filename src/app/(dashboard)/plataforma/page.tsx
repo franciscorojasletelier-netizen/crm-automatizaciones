@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Building2, Plus } from 'lucide-react'
 import OrganizationsTable from '@/components/platform/organizations-table'
+import { serviceClient } from '@/lib/supabase/service'
 
 export default async function PlataformaPage() {
   const { user, supabase } = await getCurrentProfile()
@@ -16,7 +17,9 @@ export default async function PlataformaPage() {
 
   if (!owner) redirect('/dashboard')
 
-  const { data: orgs } = await supabase
+  // Conteo con service_role (ya verificado que es dueño): la RLS de profiles
+  // solo deja ver la propia organización y las demás aparecían con 0 usuarios.
+  const { data: orgs } = await serviceClient()
     .from('organizations')
     .select('id, name, is_active, created_at, profiles(count)')
     .order('created_at', { ascending: false })
