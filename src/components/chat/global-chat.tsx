@@ -149,7 +149,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
                 <p className="text-[11px] text-slate-400">En vivo</p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)}
+            <button type="button" onClick={() => setOpen(false)} aria-label="Minimizar chat"
               className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
               <Minimize2 className="w-4 h-4" />
             </button>
@@ -185,7 +185,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
                     )}
                     <div className="flex items-end gap-1 group/msg">
                       {isMe && !isTemp && (
-                        <button onClick={() => deleteMessage(msg.id)}
+                        <button type="button" onClick={() => deleteMessage(msg.id)} aria-label="Eliminar mensaje"
                           className="opacity-0 group-hover/msg:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-400">
                           <Trash2 className="w-2.5 h-2.5" />
                         </button>
@@ -234,7 +234,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
         </div>
       )}
 
-      <button onClick={() => { setOpen(!open); setUnread(0) }}
+      <button type="button" onClick={() => { setOpen(!open); setUnread(0) }} aria-label={open ? "Cerrar chat del equipo" : "Abrir chat del equipo"} aria-expanded={open}
         className="w-12 h-12 md:w-14 md:h-14 rounded-full shadow-lg flex items-center justify-center relative transition-colors"
         style={{ background: open ? 'var(--color-slate-900)' : 'var(--color-accent-600)' }}>
         {open ? <X className="w-6 h-6 text-white" /> : <MessageCircle className="w-6 h-6 text-white" />}

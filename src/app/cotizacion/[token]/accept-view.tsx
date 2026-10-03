@@ -28,6 +28,12 @@ export default function QuoteAcceptView({ token }: { token: string }) {
       .finally(() => setLoading(false))
   }, [token])
 
+  // La pestaña del cliente muestra la empresa que cotiza, no el nombre del CRM.
+  useEffect(() => {
+    if (!data) return
+    document.title = `Cotización #${data.quote.quote_number} · ${data.org?.display_name || data.org?.name || 'Cotización'}`
+  }, [data])
+
   async function decide(decision: 'accepted' | 'rejected') {
     if (decision === 'accepted' && !name.trim()) { setDecisionError('Ingresa tu nombre'); return }
     setDeciding(decision)
