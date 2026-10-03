@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { CHILE_TZ, chileDayStart } from '@/lib/dates'
 import { escapeHtml } from '@/lib/html'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
@@ -55,9 +56,7 @@ export async function GET(request: NextRequest) {
   // Falla cerrado: si CRON_SECRET no está seteada, el endpoint queda
   // público en vez de protegido — mismo guard que los otros 3 crons
   // (antes este era el único que no lo tenía).
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

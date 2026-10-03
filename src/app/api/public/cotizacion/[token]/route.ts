@@ -25,5 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     supabase.from('organizations').select('name, display_name, phone, email, address').eq('id', quote.organization_id).maybeSingle(),
   ])
 
-  return NextResponse.json({ quote, deal, org })
+  // Al cliente final no se le exponen ids internos (organización, deal, cotización).
+  const { id: _id, organization_id: _org, deal_id: _deal, ...publicQuote } = quote
+  void _id; void _org; void _deal
+  return NextResponse.json({ quote: publicQuote, deal, org })
 }

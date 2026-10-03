@@ -4,6 +4,7 @@ import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { watchGmail } from '@/lib/email/gmail'
 import { renewOutlookSubscription, subscribeOutlook } from '@/lib/email/outlook'
 import crypto from 'crypto'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 // El watch de Gmail vence a los 7 días y la suscripción de Outlook a
 // los pocos (acá se crean con 4). Se renuevan con margen para no
@@ -22,9 +23,7 @@ function serviceClient() {
 }
 
 async function handle(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -5,6 +5,7 @@ import { addDays, balanceOf, invoiceCode } from '@/lib/cobranza'
 import { formatCLP } from '@/lib/format'
 import { notifyServiceExpirations } from '@/lib/service-checks'
 import { runCollectionReminders } from '@/lib/cobranza-recordatorios'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 // Cron diario de cobranza (pg_cron 12:30 UTC, migración 038).
 // Avisa en la app, a quien corresponde, de dos hechos del día:
@@ -22,8 +23,7 @@ type Row = {
 }
 
 export async function GET(request: NextRequest) {
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

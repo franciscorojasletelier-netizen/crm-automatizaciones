@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CHILE_TZ, chileDayStart } from '@/lib/dates'
 import { escapeHtml } from '@/lib/html'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 // Cron: 8:00 AM Chile (UTC-3) = 11:00 UTC
 // vercel.json: "schedule": "0 11 * * *"
@@ -9,9 +10,7 @@ import { escapeHtml } from '@/lib/html'
 export async function GET(request: NextRequest) {
   // Falla cerrado: si CRON_SECRET no está seteada, el endpoint queda
   // público en vez de protegido — antes el chequeo se saltaba entero.
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
