@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MessageCircle, X, Send, Minimize2, Trash2, AlertCircle } from 'lucide-react'
 import { timeAgo, getInitials } from '@/lib/format'
+import { useFloatingDock, dockHiddenClass } from '@/components/providers/floating-dock'
 
 interface Message {
   id: string
@@ -36,6 +37,10 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [unread, setUnread] = useState(0)
+  const dock = useFloatingDock()
+  const { report } = dock
+  // Mensajes sin leer → punto en la pestaña lateral del celular.
+  useEffect(() => { report('team', open ? 0 : unread) }, [report, open, unread])
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const supabase = createClient()
@@ -132,7 +137,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
   }))
 
   return (
-    <div className="fixed bottom-[76px] md:bottom-6 right-3 md:right-6 z-40 flex flex-col items-end gap-3">
+    <div className={`fixed bottom-[76px] md:bottom-6 right-3 md:right-6 z-40 flex flex-col items-end gap-3 transition-all duration-200 ${!open && !dock.open ? dockHiddenClass : ''}`}>
       {open && (
         <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
           style={{ height: 'min(500px, calc(100dvh - 10rem))' }}>
@@ -235,9 +240,9 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
       )}
 
       <button type="button" onClick={() => { setOpen(!open); setUnread(0) }} aria-label={open ? "Cerrar chat del equipo" : "Abrir chat del equipo"} aria-expanded={open}
-        className="w-12 h-12 md:w-14 md:h-14 rounded-full shadow-lg flex items-center justify-center relative transition-colors"
+        className="w-11 h-11 md:w-14 md:h-14 rounded-full shadow-lg flex items-center justify-center relative transition-colors"
         style={{ background: open ? 'var(--color-slate-900)' : 'var(--color-accent-600)' }}>
-        {open ? <X className="w-6 h-6 text-white" /> : <MessageCircle className="w-6 h-6 text-white" />}
+        {open ? <X className="w-5 h-5 md:w-6 md:h-6 text-white" /> : <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />}
         {!open && unread > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] bg-red-500 text-white text-xs font-black rounded-full flex items-center justify-center border-2 border-white px-1">
             {unread > 9 ? '9+' : unread}

@@ -180,7 +180,9 @@
 
 /* Pantallas táctiles: zona de toque mínima de 44 px en controles de ícono
    (botones y enlaces con aria-label o con un solo ícono), sin cambiar su
-   tamaño visual ni el layout. */
+   tamaño visual ni el layout. En la capa base: las utilidades (fixed,
+   absolute) de un botón flotante o posicionado tienen que poder ganarle. */
+@layer base {
 @media (pointer: coarse) {
   :is(button, a):is([aria-label], :has(> svg:only-child)) {
     position: relative;
@@ -194,6 +196,7 @@
     height: max(100%, 44px);
     transform: translate(-50%, -50%);
   }
+}
 }
 
 /* Barras de desplazamiento del sistema, no las del navegador. */

@@ -6,6 +6,7 @@ import { getStages } from '@/lib/stages'
 import { getDisabledModules } from '@/lib/modules'
 import { chileDateString } from '@/lib/dates'
 import { CurrencyProvider } from '@/components/providers/currency-provider'
+import { FloatingDockProvider } from '@/components/providers/floating-dock'
 
 export interface NavCounts {
   leads: number
@@ -110,9 +111,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <CurrencyProvider currency={currency}>
+    <FloatingDockProvider>
     <div className="flex h-screen bg-background print:block print:h-auto">
       <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} organizationName={organizationName} />
-      <main className="flex-1 overflow-auto pt-[52px] pb-[148px] md:pt-0 md:pb-36 print:p-0 print:overflow-visible">
+      <main className="flex-1 overflow-auto pt-[52px] pb-[88px] md:pt-0 md:pb-36 print:p-0 print:overflow-visible">
         {children}
       </main>
 
@@ -127,6 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       )}
     </div>
+    </FloatingDockProvider>
     </CurrencyProvider>
   )
 }
