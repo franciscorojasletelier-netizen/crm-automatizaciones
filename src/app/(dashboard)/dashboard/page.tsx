@@ -134,7 +134,7 @@ export default async function DashboardPage() {
         )}
       </StatStrip>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <Panel title="Requiere atención" padded={false}
           description={attentionCount > 0 ? 'Lo que conviene resolver hoy' : undefined}>
           {attentionCount === 0 ? (

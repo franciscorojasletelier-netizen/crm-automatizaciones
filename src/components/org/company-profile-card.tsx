@@ -132,14 +132,14 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
             </select>
             <p className="mt-1 text-xs text-slate-500">Con ella se muestran deals, reportes y cobranza. No se puede cambiar una vez que hay documentos por cobrar.</p>
           </div>
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className={labelClass}>Impuestos por defecto <span className="font-normal text-slate-500">(cotizaciones)</span></legend>
             <div className="space-y-2">
               {taxes.length === 0 && <p className="text-xs text-slate-500">Sin impuestos.</p>}
               {taxes.map((t, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <input aria-label={`Nombre del impuesto ${i + 1}`} value={t.label} maxLength={40} placeholder="IVA"
-                    onChange={e => setTaxes(p => p.map((x, k) => k === i ? { ...x, label: e.target.value } : x))} className={cn(inputClass, 'flex-1')} />
+                    onChange={e => setTaxes(p => p.map((x, k) => k === i ? { ...x, label: e.target.value } : x))} className={cn(inputClass, 'flex-1 min-w-0')} />
                   <div className="relative w-24 shrink-0">
                     <input aria-label={`Tasa del impuesto ${i + 1} (%)`} inputMode="decimal" value={t.rate} placeholder="19"
                       onChange={e => setTaxes(p => p.map((x, k) => k === i ? { ...x, rate: e.target.value.replace(/[^\d,.]/g, '') } : x))} className={cn(inputClass, 'pr-6 tabular-nums')} />

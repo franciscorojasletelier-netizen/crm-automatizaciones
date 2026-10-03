@@ -203,7 +203,7 @@ export async function GET() {
       sc(ws, r, 0, '📊 REPORTE CRM AUTOMATIZACIONES', hStyle(DARK, WHITE, true, 14))
       sc(ws, r, 1, '', hStyle(DARK))
       sc(ws, r, 2, '', hStyle(DARK))
-      sc(ws, r, 3, `Generado: ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' })}`, hStyle(DARK, 'c7d2fe', false, 10))
+      sc(ws, r, 3, `Generado: ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'long', year: 'numeric' })}`, hStyle(DARK, 'c7d2fe', false, 10))
       sc(ws, r, 4, '', hStyle(DARK))
       merge(ws, { r, c: 0 }, { r, c: 2 })
       merge(ws, { r, c: 3 }, { r, c: 4 })

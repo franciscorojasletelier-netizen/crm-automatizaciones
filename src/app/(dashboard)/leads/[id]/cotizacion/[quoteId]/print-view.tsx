@@ -61,7 +61,7 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
     <div className="min-h-full bg-slate-100">
       {/* Barra de acciones — no se imprime */}
       <div className="print:hidden sticky top-0 z-10 bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between">
-        <Link href={`/leads/${dealId}`} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors">
+        <Link href={`/leads/${dealId}`} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-accent-600 transition-colors whitespace-nowrap shrink-0">
           <ArrowLeft className="w-4 h-4" /> Volver al deal
         </Link>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -93,7 +93,7 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
       {error && <p role="alert" className="print:hidden max-w-2xl mx-auto mt-4 mx-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
 
       <div className="max-w-2xl mx-auto p-6 md:p-10 print:p-0">
-        <div className="bg-white rounded-lg print:rounded-none print:shadow-none shadow-sm border border-slate-200 print:border-none p-8">
+        <div className="bg-white rounded-lg print:rounded-none print:shadow-none shadow-sm border border-slate-200 print:border-none p-5 sm:p-8">
           {/* Encabezado */}
           <div className="flex items-start justify-between mb-8 pb-6 border-b border-slate-100">
             <div>
@@ -129,18 +129,18 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
             <thead>
               <tr className="text-xs font-medium text-slate-500 border-b border-slate-200">
                 <th className="text-left py-2">Descripción</th>
-                <th className="text-right py-2">Cant.</th>
-                <th className="text-right py-2">Precio</th>
-                <th className="text-right py-2">Total{cur !== 'CLP' ? ` (${cur})` : ''}</th>
+                <th className="text-right py-2 pl-3 whitespace-nowrap">Cant.</th>
+                <th className="text-right py-2 pl-3 whitespace-nowrap hidden sm:table-cell print:table-cell">Precio</th>
+                <th className="text-right py-2 pl-3 whitespace-nowrap">Total{cur !== 'CLP' ? ` (${cur})` : ''}</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, i) => (
                 <tr key={i} className="border-b border-slate-50">
-                  <td className="py-2.5 text-slate-700">{item.description}</td>
-                  <td className="py-2.5 text-right text-slate-500">{item.quantity}</td>
-                  <td className="py-2.5 text-right text-slate-500">{formatMoney(item.unit_price, cur)}</td>
-                  <td className="py-2.5 text-right font-medium text-slate-800">{formatMoney(item.quantity * item.unit_price, cur)}</td>
+                  <td className="py-2.5 text-slate-700">{item.description}<span className="block sm:hidden print:hidden text-xs text-slate-400">{item.quantity} × {formatMoney(item.unit_price, cur)}</span></td>
+                  <td className="py-2.5 pl-3 text-right text-slate-500 whitespace-nowrap">{item.quantity}</td>
+                  <td className="py-2.5 pl-3 text-right text-slate-500 whitespace-nowrap hidden sm:table-cell print:table-cell">{formatMoney(item.unit_price, cur)}</td>
+                  <td className="py-2.5 pl-3 text-right font-medium text-slate-800 whitespace-nowrap">{formatMoney(item.quantity * item.unit_price, cur)}</td>
                 </tr>
               ))}
             </tbody>
@@ -172,13 +172,13 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
 
           {quote.status === 'accepted' && (
             <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
-              Aceptada por <b>{quote.accepted_by_name}</b> el {quote.accepted_at ? new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+              Aceptada por <b>{quote.accepted_by_name}</b> el {quote.accepted_at ? new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
               {quote.accepted_ip && <span className="text-emerald-600"> · IP {quote.accepted_ip}</span>}
             </div>
           )}
           {quote.status === 'rejected' && (
             <div className="mt-4 print:mt-6 bg-slate-100 print:bg-transparent border border-slate-200 rounded-lg p-3 text-xs text-slate-600">
-              Rechazada el {quote.rejected_at ? new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
+              Rechazada el {quote.rejected_at ? new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
             </div>
           )}
         </div>

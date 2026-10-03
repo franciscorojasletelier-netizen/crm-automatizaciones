@@ -110,7 +110,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           context={!open ? '—' : late > 0 ? `${late} ${late === 1 ? 'día' : 'días'} de mora` : until === 0 ? 'Vence hoy' : `Faltan ${until} ${until === 1 ? 'día' : 'días'}`} />
       </StatStrip>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4 min-w-0">
           <Panel title="Pagos" description={payments.length ? `${money(invoice.paid_amount, currency)} recibidos` : 'Aún no hay pagos registrados'} padded={false}>
             {payments.length > 0 && (

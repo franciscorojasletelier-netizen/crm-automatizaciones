@@ -155,7 +155,7 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
             <button type="button" onClick={() => setItems(prev => [...prev, emptyItem()])} className="text-xs font-semibold text-accent-600 hover:text-accent-800">+ Agregar ítem</button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label htmlFor="quote-currency" className="block text-[11px] font-semibold text-slate-500 mb-1">Moneda</label>
               <select id="quote-currency" value={currency} onChange={e => setCurrency(e.target.value)} className={`${fieldClass} w-full`}>
@@ -173,13 +173,13 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
             </p>
           )}
 
-          <fieldset className="space-y-2">
+          <fieldset className="space-y-2 min-w-0">
             <legend className="text-[11px] font-semibold text-slate-500 mb-1">Impuestos <span className="font-normal">(cada uno sobre el subtotal)</span></legend>
             {taxes.length === 0 && <p className="text-xs text-slate-500">Sin impuestos (p. ej. exportación).</p>}
             {taxes.map((t, i) => (
               <div key={i} className="flex gap-2 items-center">
                 <input aria-label={`Nombre del impuesto ${i + 1}`} value={t.label} onChange={e => updateTax(i, { label: e.target.value })}
-                  placeholder="IVA" maxLength={40} className={`${fieldClass} flex-1`} />
+                  placeholder="IVA" maxLength={40} className={`${fieldClass} flex-1 min-w-0`} />
                 <div className="relative w-24">
                   <input aria-label={`Tasa del impuesto ${i + 1} (%)`} inputMode="decimal" value={t.rate}
                     onChange={e => updateTax(i, { rate: e.target.value.replace(/[^\d,.]/g, '') })}
