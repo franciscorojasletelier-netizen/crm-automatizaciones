@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare, Download, GitBranch } from 'lucide-react'
 import DealOwnerSelector, { type Profile as TeamUser } from '@/components/deals/deal-owner-selector'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 import { changeDealStage } from '@/lib/deal-stage-change'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 /** Fila de /leads (misma forma que el select de la página). */
 export interface LeadRow {
@@ -68,6 +69,7 @@ function toCsvValue(v: string | number | null | undefined): string {
 }
 
 export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false, stages = [] }: { deals: LeadRow[]; teamUsers?: TeamUser[]; canReassign?: boolean; stages?: Stage[] }) {
+  const currency = useCurrency()
   const [deals, setDeals]   = useState(initialDeals)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
@@ -157,7 +159,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     const failed: string[] = []
     for (const d of selectedDeals) {
       if (d.stage === newStageKey) { moved.push(d.id); continue }
-      const res = await changeDealStage(supabase, { dealId: d.id, fromStage: d.stage, toStage: newStageKey, stages })
+      const res = await changeDealStage(supabase, { dealId: d.id, fromStage: d.stage, toStage: newStageKey, stages, currency })
       if (res.ok) moved.push(d.id)
       else failed.push(`${d.companies?.name ?? 'Lead'}: ${res.error}`)
     }
@@ -413,7 +415,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                 </td>
                 <td className="px-4 py-3.5 text-right whitespace-nowrap tabular-nums">
                   <span className="font-semibold text-slate-700">
-                    {deal.estimated_value ? formatCLP(deal.estimated_value) : <span className="text-slate-300">—</span>}
+                    {deal.estimated_value ? formatMoney(deal.estimated_value, currency) : <span className="text-slate-300">—</span>}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 hidden 2xl:table-cell">
@@ -480,7 +482,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <p className="text-sm text-slate-600 font-medium">{deal.contacts?.full_name ?? '—'}</p>
             {deal.contacts?.email && <p className="text-xs text-slate-400">{deal.contacts.email}</p>}
             <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              {deal.estimated_value ? <span className="font-semibold text-slate-700 tabular-nums">{formatCLP(deal.estimated_value)}</span> : null}
+              {deal.estimated_value ? <span className="font-semibold text-slate-700 tabular-nums">{formatMoney(deal.estimated_value, currency)}</span> : null}
               {deal.source && <span className="bg-slate-100 px-2 py-0.5 rounded-md">{deal.source}</span>}
               <ScoreBadge score={deal.score} />
               <div className="relative z-10 ml-auto min-w-[150px] max-w-[200px]">

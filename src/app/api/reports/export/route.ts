@@ -107,7 +107,10 @@ function merge(ws: XLSX.WorkSheet, s: {r:number,c:number}, e: {r:number,c:number
 
 export async function GET() {
   try {
-    const { supabase, organizationId } = await requirePermission('reportes')
+    const { supabase, organizationId, currency } = await requirePermission('reportes')
+    // Formato Excel de la moneda de la organización.
+    const moneyFmt = currency === 'USD' ? '"US$"#,##0.00' : currency === 'EUR' ? '"€"#,##0.00' : '"$"#,##0'
+    const mStyle = (bg?: string): CellStyle => ({ ...moneyStyle(bg), numFmt: moneyFmt })
     // getAllStages: un export histórico puede incluir deals en etapas
     // que ya se desactivaron.
     const stages = await getAllStages(supabase, organizationId ?? undefined)
@@ -217,10 +220,10 @@ export async function GET() {
       r++
 
       // KPI values
-      sc(ws, r, 0, totalRevenue, { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
+      sc(ws, r, 0, totalRevenue, { ...mStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: moneyFmt, fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
       sc(ws, r, 1, `${winRate}%`, { ...pctStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
       sc(ws, r, 2, totalWon,     { ...dStyle('eef2ff', PURPLE, true, 'center'), font: { color: { rgb: PURPLE }, sz: 14, bold: true } })
-      sc(ws, r, 3, avgDealSize,  { ...moneyStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: '"$"#,##0', fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
+      sc(ws, r, 3, avgDealSize,  { ...mStyle('eef2ff'), font: { color: { rgb: PURPLE }, sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, numFmt: moneyFmt, fill: { fgColor: { rgb: 'eef2ff' }, patternType: 'solid' } })
       sc(ws, r, 4, allDeals.filter(d => d.status === 'open').length, { ...dStyle('eef2ff', PURPLE, true, 'center'), font: { color: { rgb: PURPLE }, sz: 14, bold: true } })
       ;(ws['!rows'] ??= []).push({ hpt: 36 })
       r++
@@ -237,7 +240,7 @@ export async function GET() {
       r++
 
       sc(ws, r, 0, 'Mes',            hStyle('334155', WHITE, true, 10))
-      sc(ws, r, 1, 'Revenue (CLP)',     hStyle('334155', WHITE, true, 10))
+      sc(ws, r, 1, `Revenue (${currency})`,     hStyle('334155', WHITE, true, 10))
       sc(ws, r, 2, 'Barra visual',    hStyle('334155', WHITE, true, 10))
       sc(ws, r, 3, '', hStyle('334155'))
       sc(ws, r, 4, '', hStyle('334155'))
@@ -249,7 +252,7 @@ export async function GET() {
         const barLen = Math.round((m.revenue / maxRev) * 20)
         const bar = '█'.repeat(barLen) + '░'.repeat(20 - barLen)
         sc(ws, r, 0, m.label,       dStyle(bg, SLATE700))
-        sc(ws, r, 1, m.revenue,     { ...moneyStyle(bg), alignment: { horizontal: 'right' } })
+        sc(ws, r, 1, m.revenue,     { ...mStyle(bg), alignment: { horizontal: 'right' } })
         sc(ws, r, 2, bar,           { ...dStyle(bg, m.revenue > 0 ? PURPLE : SLATE500), font: { color: { rgb: m.revenue > 0 ? PURPLE : SLATE500 }, sz: 9 } })
         sc(ws, r, 3, '',            dStyle(bg))
         sc(ws, r, 4, '',            dStyle(bg))
@@ -303,7 +306,7 @@ export async function GET() {
       let r = 0
 
       // Título
-      const HEADERS = ['Empresa','Industria','Etapa','Estado','Valor Estimado (CLP)','Responsable','Fuente','Score','Próxima Acción','Actualización']
+      const HEADERS = ['Empresa','Industria','Etapa','Estado',`Valor Estimado (${currency})`,'Responsable','Fuente','Score','Próxima Acción','Actualización']
       sc(ws, r, 0, '🗂️ TODOS LOS DEALS', hStyle(PURPLE, WHITE, true, 12))
       for (let c = 1; c < HEADERS.length; c++) sc(ws, r, c, '', hStyle(PURPLE))
       merge(ws, { r, c: 0 }, { r, c: HEADERS.length - 1 })
@@ -326,7 +329,7 @@ export async function GET() {
         sc(ws, r, 1, d.companies?.industry ?? '',                dStyle(bg))
         sc(ws, r, 2, stageLabel(stages, d.stage),               dStyle(bg))
         sc(ws, r, 3, statusLabel,                                statusStyle)
-        sc(ws, r, 4, Number(d.estimated_value) || 0,            moneyStyle(bg))
+        sc(ws, r, 4, Number(d.estimated_value) || 0,            mStyle(bg))
         sc(ws, r, 5, d.profiles?.full_name ?? '',                dStyle(bg))
         sc(ws, r, 6, d.source ?? '',                             dStyle(bg, SLATE500))
         sc(ws, r, 7, d.score ?? 0,                              dStyle(bg, PURPLE, true, 'center'))
@@ -355,7 +358,7 @@ export async function GET() {
       r++
 
       sc(ws, r, 0, 'Empresa',        hStyle(SLATE700, WHITE, true, 10))
-      sc(ws, r, 1, 'Valor (CLP)',      hStyle(SLATE700, WHITE, true, 10))
+      sc(ws, r, 1, `Valor (${currency})`,      hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 2, 'Responsable',    hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 3, 'Fecha de Cierre',hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 4, '',               hStyle(SLATE700))
@@ -364,7 +367,7 @@ export async function GET() {
       wonData.forEach((d, i) => {
         const bg = i % 2 === 0 ? WHITE : 'f0fdf4'
         sc(ws, r, 0, d.companies?.name ?? '', dStyle(bg, DARK, true))
-        sc(ws, r, 1, Number(d.estimated_value) || 0, moneyStyle(bg))
+        sc(ws, r, 1, Number(d.estimated_value) || 0, mStyle(bg))
         sc(ws, r, 2, d.profiles?.full_name ?? '', dStyle(bg))
         sc(ws, r, 3, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ }) : '', dStyle(bg, SLATE500, false, 'center'))
         sc(ws, r, 4, '', dStyle(bg))
@@ -373,7 +376,7 @@ export async function GET() {
 
       const totalWonRev = wonData.reduce((s, d) => s + (Number(d.estimated_value) || 0), 0)
       sc(ws, r, 0, 'TOTAL', hStyle(GREEN))
-      sc(ws, r, 1, totalWonRev, { ...moneyStyle(GREEN), font: { color: { rgb: WHITE }, sz: 11, bold: true }, alignment: { horizontal: 'right' } })
+      sc(ws, r, 1, totalWonRev, { ...mStyle(GREEN), font: { color: { rgb: WHITE }, sz: 11, bold: true }, alignment: { horizontal: 'right' } })
       sc(ws, r, 2, `${wonData.length} deals`, hStyle(GREEN))
       sc(ws, r, 3, '', hStyle(GREEN))
       sc(ws, r, 4, '', hStyle(GREEN))
@@ -388,7 +391,7 @@ export async function GET() {
       r++
 
       sc(ws, r, 0, 'Empresa',        hStyle(SLATE700, WHITE, true, 10))
-      sc(ws, r, 1, 'Valor (CLP)',      hStyle(SLATE700, WHITE, true, 10))
+      sc(ws, r, 1, `Valor (${currency})`,      hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 2, 'Motivo',         hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 3, 'Fecha',          hStyle(SLATE700, WHITE, true, 10))
       sc(ws, r, 4, '',               hStyle(SLATE700))
@@ -397,7 +400,7 @@ export async function GET() {
       lostData.forEach((d, i) => {
         const bg = i % 2 === 0 ? WHITE : 'fff1f2'
         sc(ws, r, 0, d.companies?.name ?? '', dStyle(bg, DARK, true))
-        sc(ws, r, 1, Number(d.estimated_value) || 0, moneyStyle(bg))
+        sc(ws, r, 1, Number(d.estimated_value) || 0, mStyle(bg))
         sc(ws, r, 2, d.lost_reason ?? '', dStyle(bg, RED))
         sc(ws, r, 3, d.updated_at ? new Date(d.updated_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ }) : '', dStyle(bg, SLATE500, false, 'center'))
         sc(ws, r, 4, '', dStyle(bg))
@@ -422,7 +425,7 @@ export async function GET() {
       merge(ws, { r, c: 0 }, { r, c: 6 })
       r++
 
-      const LHEADERS = ['#', 'Ejecutivo', 'Revenue (CLP)', 'Ganados', 'Perdidos', 'En Curso', 'Win Rate']
+      const LHEADERS = ['#', 'Ejecutivo', `Revenue (${currency})`, 'Ganados', 'Perdidos', 'En Curso', 'Win Rate']
       LHEADERS.forEach((h, c) => sc(ws, r, c, h, hStyle(SLATE700, WHITE, true, 10)))
       r++
 
@@ -434,7 +437,7 @@ export async function GET() {
         const medal  = medals[i] ?? `${i + 1}`
         sc(ws, r, 0, medal,     dStyle(bg, SLATE700, false, 'center'))
         sc(ws, r, 1, exec.name, dStyle(bg, DARK, i < 3))
-        sc(ws, r, 2, exec.revenue, moneyStyle(bg))
+        sc(ws, r, 2, exec.revenue, mStyle(bg))
         sc(ws, r, 3, exec.won,  dStyle(bg, GREEN, true, 'center'))
         sc(ws, r, 4, exec.lost, dStyle(bg, RED, true, 'center'))
         sc(ws, r, 5, exec.open, dStyle(bg, PURPLE, true, 'center'))

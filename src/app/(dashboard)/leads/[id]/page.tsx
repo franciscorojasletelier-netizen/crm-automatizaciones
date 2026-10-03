@@ -21,7 +21,7 @@ import DealAiInsights from '@/components/deals/deal-ai-insights'
 import DealTimeline, { type TimelineSources } from '@/components/deals/deal-timeline'
 import QuotesPanel from '@/components/deals/quotes-panel'
 import EmailThread from '@/components/deals/email-thread'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
 import { CHILE_TZ, DATE_ONLY_TZ, chileDateString } from '@/lib/dates'
 import DealInvoicesPanel from '@/components/cobranza/deal-invoices-panel'
@@ -30,7 +30,7 @@ import { canAccessSection } from '@/lib/roles'
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, profile, sectionAccess, organizationId, supabase } = await getCurrentProfile()
+  const { user, role, profile, sectionAccess, organizationId, supabase, currency, taxes } = await getCurrentProfile()
   // getAllStages y no getStages: el historial puede referenciar etapas
   // que ya se desactivaron, y hay que poder mostrar su nombre igual.
   const stages = await getAllStages(supabase, organizationId ?? undefined)
@@ -111,7 +111,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       ? supabase.from('invoices').select(INVOICE_SELECT).eq('deal_id', id).order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ])
-  const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number }[])
+  const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number; taxes?: unknown; currency?: string | null }[])
     .find(q => q.status === 'accepted') ?? null
 
   // profiles:created_by es a-uno; sin tipos de base se infiere como arreglo.
@@ -172,7 +172,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg shadow-xs overflow-hidden [&>*]:bg-card">
           <div className="px-4 py-3.5">
             <p className="text-[13px] text-slate-500">Valor estimado</p>
-            <p className="mt-1 text-xl font-semibold tracking-[-0.02em] tabular-nums text-slate-900">{formatCLP(deal.estimated_value)}</p>
+            <p className="mt-1 text-xl font-semibold tracking-[-0.02em] tabular-nums text-slate-900">{formatMoney(deal.estimated_value, currency)}</p>
             {deal.source && <p className="mt-0.5 text-xs text-slate-500">Fuente: {deal.source}</p>}
           </div>
           <div className="px-4 py-3.5">
@@ -253,7 +253,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 : (
                   <div className="space-y-2 divide-y divide-slate-100">
                     {[
-                      { label: 'Valor estimado', value: formatCLP(deal.estimated_value) },
+                      { label: 'Valor estimado', value: formatMoney(deal.estimated_value, currency) },
                       { label: 'Probabilidad',   value: deal.probability ? `${deal.probability}%` : '—' },
                       { label: 'Próxima acción', value: deal.next_action ?? '—' },
                       { label: 'Fuente',         value: deal.source ?? '—' },
@@ -335,7 +335,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               estimatedValue={deal.estimated_value ?? null}
             />
           )}
-            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} />
+            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} defaultTaxes={taxes} />
             {seesCobranza && (
               <DealInvoicesPanel
                 invoices={(dealInvoices ?? []) as unknown as Invoice[]}

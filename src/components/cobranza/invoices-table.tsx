@@ -4,9 +4,10 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Search, Handshake, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { clp, formatCLP } from '@/lib/format'
+import { money, formatMoney } from '@/lib/format'
 import { DATE_ONLY_TZ } from '@/lib/dates'
 import { EmptyState, inputClass } from '@/components/ui/page'
+import { useCurrency } from '@/components/providers/currency-provider'
 import {
   type Invoice, STATUS_META, DOCUMENT_TYPE_LABEL, balanceOf, daysOverdue, effectiveStatus, invoiceCode, isOpen, daysBetween,
 } from '@/lib/cobranza'
@@ -30,6 +31,7 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
   initialFilter?: Filter
   canManage: boolean
 }) {
+  const currency = useCurrency()
   const [filter, setFilter] = useState<Filter>(initialFilter)
   const [query, setQuery] = useState('')
 
@@ -106,7 +108,7 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
                     </p>
                   </div>
                   <p className={cn('text-sm font-semibold tabular-nums whitespace-nowrap', balance > 0 ? (late > 0 ? 'text-red-700' : 'text-slate-900') : 'text-slate-400')}>
-                    {balance > 0 ? formatCLP(balance) : 'Pagado'}
+                    {balance > 0 ? formatMoney(balance, currency) : 'Pagado'}
                   </p>
                 </Link>
               </li>
@@ -114,7 +116,7 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
           })}
           <li className="flex justify-between px-4 py-2.5 text-xs text-slate-500 bg-slate-50/60">
             <span>{rows.length} {rows.length === 1 ? 'documento' : 'documentos'}</span>
-            <span className="font-semibold text-slate-900 tabular-nums">{clp(total)}</span>
+            <span className="font-semibold text-slate-900 tabular-nums">{money(total, currency)}</span>
           </li>
         </ul>
         <div className="hidden md:block overflow-x-auto">
@@ -166,9 +168,9 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{formatCLP(inv.amount)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{formatMoney(inv.amount, currency)}</td>
                     <td className={cn('px-4 py-2.5 text-right tabular-nums font-medium', balance > 0 ? (late > 0 ? 'text-red-700' : 'text-slate-900') : 'text-slate-400')}>
-                      {balance > 0 ? formatCLP(balance) : '—'}
+                      {balance > 0 ? formatMoney(balance, currency) : '—'}
                     </td>
                   </tr>
                 )
@@ -179,7 +181,7 @@ export default function InvoicesTable({ invoices, today, initialFilter = 'abiert
                 <td colSpan={5} className="px-4 py-2.5 text-xs text-slate-500">
                   {rows.length} {rows.length === 1 ? 'documento' : 'documentos'}
                 </td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-slate-900">{clp(total)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-slate-900">{money(total, currency)}</td>
               </tr>
             </tfoot>
           </table>

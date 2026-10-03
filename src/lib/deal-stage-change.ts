@@ -12,7 +12,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { runAutomationsForStageChange } from '@/lib/automations'
 import { type Stage, stageByKey, statusForStage } from '@/lib/stages'
 import { notifyManagers } from '@/lib/notify'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { CHILE_TZ, chileDateString } from '@/lib/dates'
 
 export const PROPOSAL_MAX_MB = 15
@@ -47,7 +47,7 @@ export type StageChangeResult =
 export async function changeDealStage(
   supabase: SupabaseClient,
   {
-    dealId, fromStage, toStage, stages, reason = null, comment = null, extraUpdates,
+    dealId, fromStage, toStage, stages, reason = null, comment = null, extraUpdates, currency,
   }: {
     dealId: string
     fromStage: string
@@ -56,6 +56,8 @@ export async function changeDealStage(
     reason?: string | null
     comment?: string | null
     extraUpdates?: Record<string, unknown>
+    /** Moneda de la organización (para el monto del aviso de deal ganado). */
+    currency?: string
   }
 ): Promise<StageChangeResult> {
   const target = stageByKey(stages, toStage)
@@ -110,7 +112,7 @@ export async function changeDealStage(
       entity_type: 'deal', entity_id: dealId,
     }, { exclude: [me] })
   } else if (target?.isWon) {
-    const value = deal.estimated_value ? ` · ${formatCLP(deal.estimated_value)}` : ''
+    const value = deal.estimated_value ? ` · ${formatMoney(deal.estimated_value, currency)}` : ''
     await notifyManagers(supabase, {
       type: 'stage_changed', title: `🎉 Deal GANADO: ${companyName}${value}`,
       body: 'Cerrado exitosamente', entity_type: 'deal', entity_id: dealId,

@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { X, Check, Flame, PenLine, Paperclip, Trophy } from 'lucide-react'
 import { StageIcon } from '@/lib/stage-icons'
 import { type Stage, stageByKey, colorOf, boardStages, terminalStages } from '@/lib/stages'
 import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
 import { useDialog } from '@/lib/use-dialog'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 // ── Tipos ──────────────────────────────────────────────────────
 export type KanbanDeal = {
@@ -84,6 +85,7 @@ function MobileStagePickerModal({ deal, currentStage, stages, onSelect, onCancel
 
 // ── Componente principal ───────────────────────────────────────
 export default function KanbanBoard({ initialDeals, readOnly, organizationId, stages }: { initialDeals: KanbanDeal[]; readOnly?: boolean; organizationId: string; stages: Stage[] }) {
+  const currency = useCurrency()
   const columnStages = boardStages(stages)   // no terminales → columnas
   const trayStages   = terminalStages(stages) // terminales → bandeja de cierre
 
@@ -197,7 +199,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
     setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: targetStage } : d))
 
     const result = await changeDealStage(supabase, {
-      dealId: deal.id, fromStage: prevStage, toStage: targetStage, stages, reason, comment, extraUpdates,
+      dealId: deal.id, fromStage: prevStage, toStage: targetStage, stages, reason, comment, extraUpdates, currency,
     })
 
     if (!result.ok) {
@@ -285,7 +287,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-medium text-slate-900 tabular-nums text-right">
-                      {deal.estimated_value ? formatCLP(deal.estimated_value) : '—'}
+                      {deal.estimated_value ? formatMoney(deal.estimated_value, currency) : '—'}
                     </td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs font-bold ${(deal.score ?? 0) >= 60 ? 'text-emerald-600' : (deal.score ?? 0) >= 30 ? 'text-amber-600' : 'text-slate-400'}`}>
@@ -343,7 +345,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                   {stageDeals.length}
                 </span>
               </div>
-              <p className="mt-0.5 pl-3.5 text-xs tabular-nums text-slate-500">{stageValue > 0 ? formatCLP(stageValue) : '—'}</p>
+              <p className="mt-0.5 pl-3.5 text-xs tabular-nums text-slate-500">{stageValue > 0 ? formatMoney(stageValue, currency) : '—'}</p>
               </div>
 
               {/* Drop zone */}
@@ -394,7 +396,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                         <p className="text-xs text-slate-500 truncate">{deal.contacts.full_name}</p>
                       )}
                       {deal.estimated_value ? (
-                        <p className="mt-2 text-[13px] font-medium tabular-nums text-slate-900">{formatCLP(deal.estimated_value)}</p>
+                        <p className="mt-2 text-[13px] font-medium tabular-nums text-slate-900">{formatMoney(deal.estimated_value, currency)}</p>
                       ) : null}
                       {deal.next_action && (
                         <p className="mt-1 text-xs text-slate-500 leading-snug line-clamp-2">{deal.next_action}</p>
@@ -505,7 +507,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
                     <span className="text-xs font-medium text-slate-800">{deal.companies?.name ?? 'Deal'}</span>
                     {deal.estimated_value && (
                       <span className="text-[11px] font-semibold text-slate-400">
-                        {formatCLP(deal.estimated_value)}
+                        {formatMoney(deal.estimated_value, currency)}
                       </span>
                     )}
                     <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${c.light} ${c.text}`}>{st?.label ?? deal.stage}</span>

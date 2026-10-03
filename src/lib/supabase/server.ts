@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPermissions, normalizeRole, canEditSection, type SectionAccess } from '@/lib/roles'
 import { getDisabledModules } from '@/lib/modules'
+import { normalizeCurrency, normalizeTaxes, DEFAULT_TAXES, type Currency, type Tax } from '@/lib/money'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -44,19 +45,24 @@ export async function getCurrentProfile() {
   const sectionAccess = (profile?.section_access ?? null) as SectionAccess
   const organizationId: string | null = profile?.organization_id ?? null
 
+  // Moneda base e impuestos por defecto de la organización (para mostrar montos).
+  let currency: Currency = 'CLP'
+  let taxes: Tax[] = DEFAULT_TAXES
   if (organizationId) {
     const { data: org } = await supabase
       .from('organizations')
-      .select('is_active')
+      .select('is_active, currency, taxes')
       .eq('id', organizationId)
       .maybeSingle()
     if (org && org.is_active === false) {
       await supabase.auth.signOut()
       redirect('/organizacion-suspendida')
     }
+    currency = normalizeCurrency(org?.currency)
+    if (org?.taxes) taxes = normalizeTaxes(org.taxes)
   }
 
-  return { user, profile, role, sectionAccess, organizationId, supabase }
+  return { user, profile, role, sectionAccess, organizationId, supabase, currency, taxes }
 }
 
 // Guard de permiso — redirige si el rol no tiene acceso.
@@ -64,7 +70,7 @@ export async function getCurrentProfile() {
 export async function requirePermission(
   permission: keyof ReturnType<typeof getPermissions>
 ) {
-  const { profile, role, sectionAccess, organizationId, supabase, user } = await getCurrentProfile()
+  const { profile, role, sectionAccess, organizationId, supabase, user, currency, taxes } = await getCurrentProfile()
 
   // Techo de organización: si el módulo está apagado para esta org, nadie
   // pasa, sin importar el rol. organizationId explícito: un platform_owner
@@ -85,5 +91,5 @@ export async function requirePermission(
 
   const canEdit = canEditSection(role, sectionAccess, permission as string, disabledModules)
 
-  return { role, perms, profile, sectionAccess, organizationId, canEdit, supabase, user, disabledModules }
+  return { role, perms, profile, sectionAccess, organizationId, canEdit, supabase, user, disabledModules, currency, taxes }
 }

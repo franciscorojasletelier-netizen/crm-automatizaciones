@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useCurrency } from '@/components/providers/currency-provider'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -31,6 +32,7 @@ const inputCls = "w-full h-9 px-3 border border-slate-300 rounded-md text-sm sha
 export default function NuevoLeadForm({ dealFields = [], pipelines = [], initialPipelineId = '' }: {
   dealFields?: FieldDefinition[]; pipelines?: Pipeline[]; initialPipelineId?: string
 }) {
+  const currency = useCurrency()
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
@@ -207,8 +209,8 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
                   {sources.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="Valor estimado (CLP)">
-                <input aria-label="5.000.000" type="number" value={form.estimated_value} onChange={e => set('estimated_value', e.target.value)} className={inputCls} placeholder="5.000.000" />
+              <Field label={`Valor estimado (${currency})`}>
+                <input aria-label={`Valor estimado (${currency})`} type="number" min={0} step={currency === 'CLP' ? 1 : 0.01} value={form.estimated_value} onChange={e => set('estimated_value', e.target.value)} className={inputCls} placeholder="5.000.000" />
               </Field>
               <div className="col-span-2">
                 <Field label="Próxima acción">

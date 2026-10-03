@@ -4,13 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Pencil, Check, X } from 'lucide-react'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix, emptyText }: {
   label: string; value: string | null; fieldKey: string; dealId: string; type?: string; prefix?: string
   /** Texto cuando no hay valor (p. ej. la probabilidad que se toma de la etapa). */
   emptyText?: string
 }) {
+  const currency = useCurrency()
   const [editing, setEditing] = useState(false)
   const [val, setVal] = useState(value ?? '')
   const [saving, setSaving] = useState(false)
@@ -58,7 +60,7 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix, 
         <p className="text-sm font-semibold text-slate-800 mt-0.5">
           {value
             ? (prefix === '$' && type === 'number'
-                ? formatCLP(value)
+                ? formatMoney(value, currency)
                 : `${prefix ?? ''}${type === 'number' ? Number(value).toLocaleString('es-CL') : value}`)
             : <span className="text-slate-500 font-normal text-xs">{emptyText ?? 'Sin valor'}</span>
           }

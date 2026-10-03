@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { data: quote } = await supabase
     .from('quotes')
-    .select('id, quote_number, status, currency, items, tax_rate, notes, valid_until, created_at, accepted_at, rejected_at, organization_id, deal_id')
+    .select('id, quote_number, status, currency, items, tax_rate, taxes, notes, valid_until, created_at, accepted_at, rejected_at, organization_id, deal_id')
     .eq('public_token', token)
     .maybeSingle()
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const [{ data: deal }, { data: org }] = await Promise.all([
     supabase.from('deals').select('companies(name), contacts:primary_contact_id(full_name, email)').eq('id', quote.deal_id).maybeSingle(),
-    supabase.from('organizations').select('name, display_name, phone, email, address').eq('id', quote.organization_id).maybeSingle(),
+    supabase.from('organizations').select('name, display_name, phone, email, address, logo_url').eq('id', quote.organization_id).maybeSingle(),
   ])
 
   // Al cliente final no se le exponen ids internos (organización, deal, cotización).

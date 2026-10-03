@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
 import { getVisibleProjectIds } from '@/lib/visibility'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import Link from 'next/link'
 import { FolderOpen, ChevronRight, AlertTriangle, Clock } from 'lucide-react'
 import { DATE_ONLY_TZ } from '@/lib/dates'
@@ -40,7 +40,7 @@ function isDueSoon(due: string | null) {
 }
 
 export default async function ProyectosPage() {
-  const { role, supabase, user } = await requirePermission('proyectos')
+  const { role, supabase, user, currency } = await requirePermission('proyectos')
 
   const visibleIds = await getVisibleProjectIds(supabase, user?.id ?? '', role)
 
@@ -168,7 +168,7 @@ export default async function ProyectosPage() {
                   <div className="flex items-center justify-between text-xs mt-3">
                     <div className="flex items-center gap-3">
                       {project.budget && (
-                        <span className="font-semibold text-slate-700">{formatCLP(project.budget)}</span>
+                        <span className="font-semibold text-slate-700">{formatMoney(project.budget, currency)}</span>
                       )}
                       {project.profiles?.full_name && (
                         <div className="flex items-center gap-1.5">

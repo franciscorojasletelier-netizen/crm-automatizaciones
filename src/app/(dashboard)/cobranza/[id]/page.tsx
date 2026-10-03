@@ -6,7 +6,7 @@ import { Phone, Mail, MessageCircle, Users, Handshake, StickyNote, ExternalLink,
 import { requirePermission } from '@/lib/supabase/server'
 import { canAccessSection } from '@/lib/roles'
 import { CHILE_TZ, DATE_ONLY_TZ, chileDateString } from '@/lib/dates'
-import { clp, getInitials } from '@/lib/format'
+import { money, getInitials } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { PageContainer, PageHeader, Panel, Stat, StatStrip, EmptyState, buttonClass } from '@/components/ui/page'
 import InvoiceForm from '@/components/cobranza/invoice-form'
@@ -35,7 +35,7 @@ type Activity = { id: string; kind: ActivityKind; notes: string; promise_date: s
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { role, canEdit, supabase, organizationId, sectionAccess, disabledModules, user } = await requirePermission('cobranza')
+  const { role, canEdit, supabase, organizationId, sectionAccess, disabledModules, user, currency } = await requirePermission('cobranza')
   const canManage = canEdit && COLLECTION_MANAGERS.includes(role)
   const today = chileDateString()
 
@@ -101,10 +101,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
       )}
 
       <StatStrip>
-        <Stat label="Monto" value={clp(invoice.amount)} context={`Emitido el ${fmtDay(invoice.issue_date)}`} />
-        <Stat label="Pagado" value={clp(invoice.paid_amount)} tone={Number(invoice.paid_amount) > 0 ? 'success' : 'neutral'}
+        <Stat label="Monto" value={money(invoice.amount, currency)} context={`Emitido el ${fmtDay(invoice.issue_date)}`} />
+        <Stat label="Pagado" value={money(invoice.paid_amount, currency)} tone={Number(invoice.paid_amount) > 0 ? 'success' : 'neutral'}
           context={`${paidPct}% · ${payments.length} ${payments.length === 1 ? 'pago' : 'pagos'}`} />
-        <Stat label="Saldo" value={clp(balance)} tone={late > 0 ? 'danger' : balance > 0 ? 'neutral' : 'success'}
+        <Stat label="Saldo" value={money(balance, currency)} tone={late > 0 ? 'danger' : balance > 0 ? 'neutral' : 'success'}
           context={balance === 0 && invoice.status === 'pagada' ? 'Documento pagado' : invoice.next_promise_date && open ? `Compromiso: ${fmtDay(invoice.next_promise_date)}` : 'Pendiente de pago'} />
         <Stat label="Vencimiento" value={fmtDay(invoice.due_date)} tone={late > 0 ? 'danger' : open && until <= 7 ? 'warning' : 'neutral'}
           context={!open ? '—' : late > 0 ? `${late} ${late === 1 ? 'día' : 'días'} de mora` : until === 0 ? 'Vence hoy' : `Faltan ${until} ${until === 1 ? 'día' : 'días'}`} />
@@ -112,19 +112,19 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4 min-w-0">
-          <Panel title="Pagos" description={payments.length ? `${clp(invoice.paid_amount)} recibidos` : 'Aún no hay pagos registrados'} padded={false}>
+          <Panel title="Pagos" description={payments.length ? `${money(invoice.paid_amount, currency)} recibidos` : 'Aún no hay pagos registrados'} padded={false}>
             {payments.length > 0 && (
               <ul className="divide-y divide-slate-100">
                 {payments.map(p => (
                   <li key={p.id} className="group flex items-center gap-3 px-4 py-2.5">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-900 tabular-nums font-medium">{clp(p.amount)}</p>
+                      <p className="text-sm text-slate-900 tabular-nums font-medium">{money(p.amount, currency)}</p>
                       <p className="text-xs text-slate-500 truncate">
                         {fmtDay(p.paid_on)} · {PAYMENT_METHOD_LABEL[p.method]}{p.reference ? ` · ${p.reference}` : ''}
                         {p.author?.full_name ? ` · registró ${p.author.full_name}` : ''}
                       </p>
                     </div>
-                    {canManage && <DeletePaymentButton paymentId={p.id} label={clp(p.amount)} />}
+                    {canManage && <DeletePaymentButton paymentId={p.id} label={money(p.amount, currency)} />}
                   </li>
                 ))}
               </ul>
@@ -162,7 +162,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                         </p>
                         {a.kind === 'compromiso' && a.promise_date && (
                           <p className="mt-1 text-[13px] font-medium text-accent-800">
-                            Pagará {a.promise_amount ? clp(a.promise_amount) : 'el saldo'} el {fmtDay(a.promise_date)}
+                            Pagará {a.promise_amount ? money(a.promise_amount, currency) : 'el saldo'} el {fmtDay(a.promise_date)}
                           </p>
                         )}
                         <p className="mt-0.5 text-sm text-slate-700 whitespace-pre-line break-words">{a.notes}</p>
@@ -194,7 +194,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               {collection && collection.statement.lines.length > 0 && (
                 <>
                   <p className="text-xs text-slate-500">
-                    Deuda total del cliente: <span className="font-medium text-slate-900 tabular-nums">{clp(collection.statement.total)}</span>
+                    Deuda total del cliente: <span className="font-medium text-slate-900 tabular-nums">{money(collection.statement.total, currency)}</span>
                     {' '}en {collection.statement.lines.length} {collection.statement.lines.length === 1 ? 'documento' : 'documentos'}
                   </p>
                   <div className="grid grid-cols-2 gap-2">

@@ -7,7 +7,7 @@
 //  reemplaza por el resumen y la tabla de documentos.
 // ============================================================
 import { DATE_ONLY_TZ, CHILE_TZ } from '@/lib/dates'
-import { clp } from '@/lib/format'
+import { money } from '@/lib/format'
 import { escapeHtml } from '@/lib/html'
 import { DETAIL_MARKER, detailText, type Statement, type Tone } from '@/lib/cobranza-mensajes'
 
@@ -53,15 +53,15 @@ function detailHtml(st: Statement) {
         <div style="font:400 13px/1.4 ${FONT};color:${C.text};">${late ? 'Venció' : 'Vence'} el ${escapeHtml(fmtDay(l.dueDate))}</div>
         ${late ? `<div style="font:600 12px/1.4 ${FONT};color:${C.red};">${l.daysLate} ${l.daysLate === 1 ? 'día' : 'días'} de atraso</div>` : ''}
       </td>
-      <td align="right" style="padding:12px 0;border-bottom:1px solid ${C.border};white-space:nowrap;font:600 14px/1.4 ${FONT};color:${late ? C.red : C.ink};" valign="top">${escapeHtml(clp(l.balance))}</td>
+      <td align="right" style="padding:12px 0;border-bottom:1px solid ${C.border};white-space:nowrap;font:600 14px/1.4 ${FONT};color:${late ? C.red : C.ink};" valign="top">${escapeHtml(money(l.balance, st.currency))}</td>
     </tr>`
   }).join('')
 
   const gap = '<td width="2%" style="font-size:0;line-height:0;">&nbsp;</td>'
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 20px;border-collapse:separate;">
     <tr>
-      ${summaryCell('Total adeudado', clp(st.total))}${gap}
-      ${summaryCell('Vencido', clp(st.overdue), st.overdue > 0 ? C.red : C.ink)}${gap}
+      ${summaryCell('Total adeudado', money(st.total, st.currency))}${gap}
+      ${summaryCell('Vencido', money(st.overdue, st.currency), st.overdue > 0 ? C.red : C.ink)}${gap}
       ${summaryCell(st.maxDaysLate > 0 ? 'Mayor atraso' : 'Documentos', st.maxDaysLate > 0 ? `${st.maxDaysLate} días` : String(st.lines.length))}
     </tr>
   </table>
@@ -74,7 +74,7 @@ function detailHtml(st: Statement) {
     ${rows}
     <tr>
       <td colspan="2" style="padding:14px 0 0;font:600 14px/1.4 ${FONT};color:${C.ink};">Total adeudado</td>
-      <td align="right" style="padding:14px 0 0;font:700 16px/1.4 ${FONT};color:${C.ink};white-space:nowrap;">${escapeHtml(clp(st.total))}</td>
+      <td align="right" style="padding:14px 0 0;font:700 16px/1.4 ${FONT};color:${C.ink};white-space:nowrap;">${escapeHtml(money(st.total, st.currency))}</td>
     </tr>
   </table>`
 }
@@ -112,7 +112,7 @@ export function renderCollectionEmail({ body, subject, statement, tone, org }: {
     ? `<img src="${escapeHtml(org.logoUrl)}" alt="${escapeHtml(org.name)}" height="36" style="display:block;height:36px;max-width:180px;border:0;">`
     : `<div style="font:700 18px/1.3 ${FONT};color:${C.ink};">${escapeHtml(org.name)}</div>`
   const contact = [org.email, org.phone, org.address].filter(Boolean).map(v => escapeHtml(v)).join(' · ')
-  const preheader = `Total adeudado ${clp(statement.total)} · ${statement.lines.length} ${statement.lines.length === 1 ? 'documento' : 'documentos'}`
+  const preheader = `Total adeudado ${money(statement.total, statement.currency)} · ${statement.lines.length} ${statement.lines.length === 1 ? 'documento' : 'documentos'}`
 
   const html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>

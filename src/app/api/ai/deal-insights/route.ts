@@ -12,13 +12,14 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  let userId: string, role: string, supabase, organizationId: string | null
+  let userId: string, role: string, supabase, organizationId: string | null, currency: string
   try {
     const ctx = await getCurrentProfile()
     userId = ctx.user.id
     role = ctx.role
     supabase = ctx.supabase
     organizationId = ctx.organizationId
+    currency = ctx.currency
   } catch {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
   const systemPrompt =
     `Eres un analista comercial senior de ${orgDisplayName}. ` +
     'Analizas deals del CRM y entregas diagnósticos accionables en español chileno profesional. ' +
-    'Todos los valores monetarios están en pesos chilenos (CLP). ' +
+    `Todos los valores monetarios están en ${currency}. ` +
     'IMPORTANTE: usa la búsqueda web para investigar a la empresa del deal (busca su nombre, su sitio web si está disponible, ' +
     'y su industria en Chile) antes de dar tu diagnóstico. El objetivo es que el vendedor sepa con quién está tratando: ' +
     'a qué se dedica la empresa, su tamaño aproximado, y qué dolores de negocio probablemente tiene que la automatización pueda resolver. ' +

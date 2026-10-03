@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { requirePermission } from '@/lib/supabase/server'
 import { chileDateString } from '@/lib/dates'
-import { clp, formatCLP } from '@/lib/format'
+import { money, formatMoney } from '@/lib/format'
 import { PageContainer, PageHeader, Stat, StatStrip, Panel, buttonClass } from '@/components/ui/page'
 import { BellRing } from 'lucide-react'
 import InvoicesTable from '@/components/cobranza/invoices-table'
@@ -19,7 +19,7 @@ export default async function CobranzaPage({ searchParams }: {
   searchParams: Promise<{ nuevo?: string; empresa?: string; deal?: string; proyecto?: string; cotizacion?: string; monto?: string; concepto?: string; filtro?: string; cola?: string }>
 }) {
   const params = await searchParams
-  const { role, canEdit, supabase, organizationId, user } = await requirePermission('cobranza')
+  const { role, canEdit, supabase, organizationId, user, currency } = await requirePermission('cobranza')
   const canManage = canEdit && COLLECTION_MANAGERS.includes(role)
   const today = chileDateString()
 
@@ -73,18 +73,18 @@ export default async function CobranzaPage({ searchParams }: {
       />
 
       <StatStrip>
-        <Stat label="Por cobrar" value={clp(summary.receivable)}
+        <Stat label="Por cobrar" value={money(summary.receivable, currency)}
           context={`${summary.openCount} ${summary.openCount === 1 ? 'documento' : 'documentos'}`} />
         <Stat label="Vencido" tone={summary.overdue > 0 ? 'danger' : 'neutral'}
-          value={clp(summary.overdue)}
+          value={money(summary.overdue, currency)}
           context={summary.overdue > 0
             ? `${summary.overdueCount} docs · mora prom. ${summary.weightedDaysOverdue} días`
             : 'Sin mora'} />
         <Stat label="Vence en 7 días" tone={summary.dueSoon > 0 ? 'warning' : 'neutral'}
-          value={clp(summary.dueSoon)}
+          value={money(summary.dueSoon, currency)}
           context={`${summary.dueSoonCount} ${summary.dueSoonCount === 1 ? 'documento' : 'documentos'}`} />
         <Stat label="Cobrado este mes" tone={summary.collectedThisMonth > 0 ? 'success' : 'neutral'}
-          value={clp(summary.collectedThisMonth)}
+          value={money(summary.collectedThisMonth, currency)}
           context="Pagos registrados desde el día 1" />
       </StatStrip>
 
@@ -99,7 +99,7 @@ export default async function CobranzaPage({ searchParams }: {
       {summary.receivable > 0 && (
         <Panel className="mt-4" title="Antigüedad de la deuda" description="Saldo por cobrar según días de mora">
           <div className="flex h-2.5 rounded-full overflow-hidden bg-slate-100" role="img"
-            aria-label={AGING_BUCKETS.map(b => `${b.label}: ${formatCLP(summary.aging[b.key].amount)}`).join(', ')}>
+            aria-label={AGING_BUCKETS.map(b => `${b.label}: ${formatMoney(summary.aging[b.key].amount, currency)}`).join(', ')}>
             {AGING_BUCKETS.map(b => {
               const pct = (summary.aging[b.key].amount / agingTotal) * 100
               return pct > 0 ? <div key={b.key} className={b.bar} style={{ width: `${pct}%` }} /> : null
@@ -114,7 +114,7 @@ export default async function CobranzaPage({ searchParams }: {
                     <span className={cn('w-2 h-2 rounded-sm', b.bar)} aria-hidden /> {b.label}
                   </dt>
                   <dd className={cn('mt-0.5 text-sm font-semibold tabular-nums', bucket.amount > 0 ? (b.key === 'al_dia' ? 'text-slate-900' : b.text) : 'text-slate-400')}>
-                    {clp(bucket.amount)}
+                    {money(bucket.amount, currency)}
                   </dd>
                   <dd className="text-xs text-slate-500 tabular-nums">{bucket.count} {bucket.count === 1 ? 'doc.' : 'docs.'}</dd>
                 </div>

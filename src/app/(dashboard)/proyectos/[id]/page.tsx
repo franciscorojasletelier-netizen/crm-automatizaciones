@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canEditSection } from '@/lib/roles'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2, User, DollarSign, Calendar, AlertTriangle } from 'lucide-react'
@@ -26,7 +26,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, supabase, sectionAccess } = await getCurrentProfile()
+  const { user, role, supabase, sectionAccess, currency } = await getCurrentProfile()
   const canEditProyectos = canEditSection(role, sectionAccess, 'proyectos')
 
   // Query principal sin aliases complejos
@@ -114,7 +114,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             {[
               { label: 'Fase',         value: phaseLabels[project.phase] ?? project.phase, icon: Building2, color: 'text-accent-600 bg-accent-50' },
-              { label: 'Presupuesto',  value: formatCLP(project.budget), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
+              { label: 'Presupuesto',  value: formatMoney(project.budget, currency), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
               { label: 'Responsable',  value: proj.profiles?.full_name ?? '—', icon: User, color: 'text-accent-600 bg-accent-50' },
               { label: 'Fecha límite', value: project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ }) : '—', icon: Calendar, color: 'text-amber-600 bg-amber-50' },
             ].map(({ label, value, icon: Icon, color }) => (

@@ -6,7 +6,7 @@
 //  el texto antes de enviarlo.
 // ============================================================
 import { DATE_ONLY_TZ } from '@/lib/dates'
-import { clp } from '@/lib/format'
+import { money } from '@/lib/format'
 import { DOCUMENT_TYPE_LABEL, balanceOf, daysOverdue, type Invoice } from '@/lib/cobranza'
 
 export type Tone = 'recordatorio' | 'vencido' | 'firme'
@@ -33,6 +33,8 @@ export interface StatementLine {
 }
 
 export interface Statement {
+  /** Moneda de los documentos (la de la organización). */
+  currency: string
   lines: StatementLine[]
   total: number
   overdue: number
@@ -61,10 +63,12 @@ export function buildStatement(invoices: Invoice[], today: string): Statement {
       balance: balanceOf(inv),
       daysLate: daysOverdue(inv, today),
     }))
+  const cents = (n: number) => Math.round(n * 100) / 100
   return {
+    currency: invoices.find(i => i.currency)?.currency ?? 'CLP',
     lines,
-    total: lines.reduce((s, l) => s + l.balance, 0),
-    overdue: lines.filter(l => l.daysLate > 0).reduce((s, l) => s + l.balance, 0),
+    total: cents(lines.reduce((s, l) => s + l.balance, 0)),
+    overdue: cents(lines.filter(l => l.daysLate > 0).reduce((s, l) => s + l.balance, 0)),
     maxDaysLate: lines.reduce((m, l) => Math.max(m, l.daysLate), 0),
   }
 }
@@ -75,11 +79,11 @@ export function suggestedTone(st: Statement): Tone {
   return 'recordatorio'
 }
 
-function lineText(l: StatementLine) {
+function lineText(l: StatementLine, currency: string) {
   const when = l.daysLate > 0
     ? `venció el ${fmtDay(l.dueDate)} (${l.daysLate} ${l.daysLate === 1 ? 'día' : 'días'} de atraso)`
     : `vence el ${fmtDay(l.dueDate)}`
-  return `• ${l.document} — ${l.description}: saldo ${clp(l.balance)}, ${when}`
+  return `• ${l.document} — ${l.description}: saldo ${money(l.balance, currency)}, ${when}`
 }
 
 interface MessageInput {
@@ -105,9 +109,9 @@ export const DETAIL_MARKER = '{detalle}'
 /** Detalle en texto plano (versión sin diseño y WhatsApp largo). */
 export function detailText(statement: Statement) {
   return [
-    ...statement.lines.map(lineText),
+    ...statement.lines.map(l => lineText(l, statement.currency)),
     '',
-    `Total adeudado: ${clp(statement.total)}${statement.overdue > 0 && statement.overdue !== statement.total ? ` (vencido: ${clp(statement.overdue)})` : ''}`,
+    `Total adeudado: ${money(statement.total, statement.currency)}${statement.overdue > 0 && statement.overdue !== statement.total ? ` (vencido: ${money(statement.overdue, statement.currency)})` : ''}`,
   ].join('\n')
 }
 
@@ -171,9 +175,9 @@ export function whatsappMessage({ statement, tone, contactName, senderName, orgN
   return [
     `${greeting(contactName)}${who}: ${head}.`,
     '',
-    ...statement.lines.map(l => `• ${l.document}: ${clp(l.balance)}${l.daysLate > 0 ? ` (vencido hace ${l.daysLate} d)` : ` (vence ${fmtDay(l.dueDate)})`}`),
+    ...statement.lines.map(l => `• ${l.document}: ${money(l.balance, statement.currency)}${l.daysLate > 0 ? ` (vencido hace ${l.daysLate} d)` : ` (vence ${fmtDay(l.dueDate)})`}`),
     '',
-    `Total: ${clp(statement.total)}`,
+    `Total: ${money(statement.total, statement.currency)}`,
     '',
     close,
   ].join('\n')

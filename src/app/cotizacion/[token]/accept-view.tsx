@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { CheckCircle2, XCircle, Loader2, AlertCircle, Zap } from 'lucide-react'
-import { formatCLP } from '@/lib/format'
+import { formatMoney, money } from '@/lib/format'
 import { DATE_ONLY_TZ } from '@/lib/dates'
-import { quoteTotals, type QuoteDoc, type QuoteDeal, type QuoteOrg } from '@/lib/quotes'
+import { quoteTotals, quoteTaxes, type QuoteDoc, type QuoteDeal, type QuoteOrg } from '@/lib/quotes'
 
 interface Item { description: string; quantity: number; unit_price: number }
 
@@ -64,16 +64,21 @@ export default function QuoteAcceptView({ token }: { token: string }) {
   const { quote, deal, org } = data
   const orgName = org?.display_name || org?.name || 'Nuestra empresa'
   const items: Item[] = quote.items ?? []
-  const { subtotal, tax, total } = quoteTotals(items, quote.tax_rate)
+  const cur = quote.currency ?? 'CLP'
+  const { subtotal, taxLines, total } = quoteTotals(items, quoteTaxes(quote), cur)
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center gap-2.5 mb-6">
-          <div className="bg-accent-600 w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-             >
-            <Zap className="w-4 h-4 text-white" />
-          </div>
+          {org?.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- logo externo de Storage
+            <img src={org.logo_url} alt={orgName} className="h-9 max-w-[160px] object-contain" />
+          ) : (
+            <div className="bg-accent-600 w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+          )}
           <span className="font-bold text-slate-900">{orgName}</span>
         </div>
 
@@ -92,15 +97,17 @@ export default function QuoteAcceptView({ token }: { token: string }) {
             {items.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="text-slate-700">{item.description} <span className="text-slate-400">× {item.quantity}</span></span>
-                <span className="font-medium text-slate-800">{formatCLP(item.quantity * item.unit_price)}</span>
+                <span className="font-medium text-slate-800">{formatMoney(item.quantity * item.unit_price, cur)}</span>
               </div>
             ))}
           </div>
 
           <div className="pt-3 border-t border-slate-100 space-y-1 mb-6">
-            <div className="flex justify-between text-xs text-slate-500"><span>Subtotal</span><span>{formatCLP(subtotal)}</span></div>
-            <div className="flex justify-between text-xs text-slate-500"><span>IVA ({quote.tax_rate}%)</span><span>{formatCLP(tax)}</span></div>
-            <div className="flex justify-between text-base font-bold text-slate-900 pt-1"><span>Total</span><span>{formatCLP(total)}</span></div>
+            <div className="flex justify-between text-xs text-slate-500"><span>Subtotal</span><span>{money(subtotal, cur)}</span></div>
+            {taxLines.map((t, i) => (
+              <div key={i} className="flex justify-between text-xs text-slate-500"><span>{t.label} ({t.rate.toLocaleString('es-CL')} %)</span><span>{money(t.amount, cur)}</span></div>
+            ))}
+            <div className="flex justify-between text-base font-bold text-slate-900 pt-1"><span>Total{cur !== 'CLP' ? ` (${cur})` : ''}</span><span>{money(total, cur)}</span></div>
           </div>
 
           {quote.notes && <p className="text-xs text-slate-500 mb-6 whitespace-pre-wrap">{quote.notes}</p>}

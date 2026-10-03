@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { Plus, AlertTriangle } from 'lucide-react'
 import LeadsTable, { type LeadRow } from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { getStages } from '@/lib/stages'
 import { PageContainer, PageHeader, Panel, Badge, buttonClass } from '@/components/ui/page'
 
 export default async function LeadsPage() {
-  const { role, perms, supabase, canEdit, organizationId } = await requirePermission('leads')
+  const { role, perms, supabase, canEdit, organizationId, currency } = await requirePermission('leads')
   const stages = await getStages(supabase, organizationId ?? undefined)
 
   // La visibilidad por rol (propios + compartidos para comercial) la aplica
@@ -66,7 +66,7 @@ export default async function LeadsPage() {
         title="Leads"
         description={<>
           <span className="font-medium text-slate-700 tabular-nums">{total}</span> {total === 1 ? 'deal' : 'deals'} {isFiltered ? (total === 1 ? 'asignado a ti' : 'asignados a ti') : (total === 1 ? 'activo' : 'activos')}
-          {totalValue > 0 && <> · <span className="font-medium text-slate-700 tabular-nums">{formatCLP(totalValue)}</span> en valor estimado</>}
+          {totalValue > 0 && <> · <span className="font-medium text-slate-700 tabular-nums">{formatMoney(totalValue, currency)}</span> en valor estimado</>}
         </>}
         actions={canCreate && <>
           <ImportLeadsButton />

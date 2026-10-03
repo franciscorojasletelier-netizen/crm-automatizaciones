@@ -1,7 +1,7 @@
 'use client'
 
 // Datos de la empresa que aparecen en correos de cobranza, estados de
-// cuenta y cotizaciones. Lo editan gerentes y administradores de la
+// cuenta y cotizaciones, más la moneda base y los impuestos por defecto. Lo editan gerentes y administradores de la
 // organización (Configuración) y el dueño de la plataforma (su ficha).
 
 import { useRef, useState } from 'react'
@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { cn } from '@/lib/utils'
 import { uploadOrgLogo } from '@/lib/org-logo'
+import { CURRENCIES, MAX_TAXES, normalizeTaxes, DEFAULT_TAXES, type Tax } from '@/lib/money'
 
 export interface CompanyProfile {
   id: string
@@ -21,6 +22,8 @@ export interface CompanyProfile {
   phone: string | null
   address: string | null
   payment_instructions: string | null
+  currency?: string | null
+  taxes?: Tax[] | null
 }
 
 export default function CompanyProfileCard({ org, description = 'Aparecen en los correos de cobranza, estados de cuenta y cotizaciones.' }: { org: CompanyProfile; description?: string }) {
@@ -28,6 +31,8 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
     display_name: org.display_name ?? '', email: org.email ?? '', phone: org.phone ?? '',
     address: org.address ?? '', payment_instructions: org.payment_instructions ?? '',
   })
+  const [currency, setCurrency] = useState(org.currency ?? 'CLP')
+  const [taxes, setTaxes] = useState(() => (org.taxes ? normalizeTaxes(org.taxes) : DEFAULT_TAXES).map(t => ({ label: t.label, rate: String(t.rate).replace('.', ',') })))
   const [logo, setLogo] = useState(org.logo_url)
   const [busy, setBusy] = useState<'save' | 'logo' | null>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -38,11 +43,16 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
   async function save(e: React.FormEvent) {
     e.preventDefault()
     if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) { setMsg({ ok: false, text: 'El correo no es válido.' }); return }
+    const parsedTaxes = taxes.map(t => ({ label: t.label.trim(), rate: Number(t.rate.replace(',', '.')) }))
+    if (parsedTaxes.some(t => !t.label || !Number.isFinite(t.rate) || t.rate < 0 || t.rate > 100)) {
+      setMsg({ ok: false, text: 'Cada impuesto necesita un nombre y una tasa entre 0 y 100 %.' }); return
+    }
     setBusy('save'); setMsg(null)
     const clean = (s: string) => s.trim() || null
     const { error } = await createClient().from('organizations').update({
       display_name: clean(v.display_name), email: clean(v.email), phone: clean(v.phone),
       address: clean(v.address), payment_instructions: clean(v.payment_instructions),
+      currency, taxes: parsedTaxes,
     }).eq('id', org.id)
     setBusy(null)
     setMsg(error ? { ok: false, text: error.message } : { ok: true, text: 'Guardado. Se usa en los próximos correos y documentos.' })
@@ -110,6 +120,38 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
             <label htmlFor="cp-address" className={labelClass}>Dirección</label>
             <input id="cp-address" value={v.address} onChange={set('address')} placeholder="Av. Providencia 1234, Santiago" className={inputClass} />
           </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 pt-1">
+          <div>
+            <label htmlFor="cp-currency" className={labelClass}>Moneda</label>
+            <select id="cp-currency" value={currency} onChange={e => setCurrency(e.target.value)} className={inputClass}>
+              {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">Con ella se muestran deals, reportes y cobranza. No se puede cambiar una vez que hay documentos por cobrar.</p>
+          </div>
+          <fieldset>
+            <legend className={labelClass}>Impuestos por defecto <span className="font-normal text-slate-500">(cotizaciones)</span></legend>
+            <div className="space-y-2">
+              {taxes.length === 0 && <p className="text-xs text-slate-500">Sin impuestos.</p>}
+              {taxes.map((t, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input aria-label={`Nombre del impuesto ${i + 1}`} value={t.label} maxLength={40} placeholder="IVA"
+                    onChange={e => setTaxes(p => p.map((x, k) => k === i ? { ...x, label: e.target.value } : x))} className={cn(inputClass, 'flex-1')} />
+                  <div className="relative w-24 shrink-0">
+                    <input aria-label={`Tasa del impuesto ${i + 1} (%)`} inputMode="decimal" value={t.rate} placeholder="19"
+                      onChange={e => setTaxes(p => p.map((x, k) => k === i ? { ...x, rate: e.target.value.replace(/[^\d,.]/g, '') } : x))} className={cn(inputClass, 'pr-6 tabular-nums')} />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                  </div>
+                  <button type="button" onClick={() => setTaxes(p => p.filter((_, k) => k !== i))} aria-label={`Quitar impuesto ${t.label || i + 1}`}
+                    className="text-slate-400 hover:text-red-600 shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+              ))}
+              {taxes.length < MAX_TAXES && (
+                <button type="button" onClick={() => setTaxes(p => [...p, { label: '', rate: '' }])} className="text-xs font-semibold text-accent-700 hover:underline">+ Agregar impuesto</button>
+              )}
+            </div>
+          </fieldset>
         </div>
 
         <div>

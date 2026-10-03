@@ -8,7 +8,7 @@ import { getDisabledModules } from '@/lib/modules'
 import { sendAsUser } from '@/lib/email/send-as-user'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { chileDateString } from '@/lib/dates'
-import { clp } from '@/lib/format'
+import { money } from '@/lib/format'
 import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
 import { buildStatement, suggestedTone, TONE_META, type Tone } from '@/lib/cobranza-mensajes'
 import { renderCollectionEmail } from '@/lib/cobranza-email'
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     destino = to
   }
 
-  const resumen = `${statement.lines.length} ${statement.lines.length === 1 ? 'documento' : 'documentos'}, total ${clp(statement.total)}`
+  const resumen = `${statement.lines.length} ${statement.lines.length === 1 ? 'documento' : 'documentos'}, total ${money(statement.total, statement.currency)}`
   const notes = channel === 'email'
     ? `Envió estado de cuenta por correo a ${destino} (${resumen}).\nAsunto: ${subject}`
     : `Envió cobro por WhatsApp${destino ? ` al ${destino}` : ''} (${resumen}).`
