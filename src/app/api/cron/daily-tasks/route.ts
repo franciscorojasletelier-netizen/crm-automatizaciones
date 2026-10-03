@@ -60,7 +60,8 @@ export async function GET(request: NextRequest) {
     for (const profile of profiles) {
       const orgId = orgIdByProfile.get(profile.id)
       const orgName = (orgId && orgNameById.get(orgId)) || 'CRM'
-      if (!profile.email) continue
+      // Usuarios desactivados no reciben el resumen.
+      if (!profile.email || profile.is_active === false) continue
 
       // Tareas para hoy/mañana via función SECURITY DEFINER
       const { data: tasks } = await supabase
