@@ -154,7 +154,7 @@ export default async function DashboardPage() {
               ))}
               {overdueTasks.map(t => (
                 <li key={t.id}>
-                  <Link href="/tareas" className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                  <Link href={`/tareas?tarea=${t.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
                     <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                     <span className="min-w-0 flex-1 text-[13px] text-slate-800 truncate">
                       Tarea vencida · <span className="font-medium">{t.title}</span>

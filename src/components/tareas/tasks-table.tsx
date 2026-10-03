@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, AlertTriangle, Clock, CheckCircle2, Circle, CheckSquare, Building2, User, X } from 'lucide-react'
 import TaskCheck from './task-check'
@@ -29,7 +31,7 @@ function getStatus(task: Task): 'overdue' | 'soon' | 'pending' | 'completed' {
 
 function formatDate(date: string | null) {
   if (!date) return null
-  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
+  return new Date(date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' })
 }
 
 function formatTime(date: string | null) {
@@ -56,13 +58,40 @@ const FILTERS = [
 
 type FilterKey = typeof FILTERS[number]['key']
 
-export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: Task[]; readOnly?: boolean }) {
+export default function TasksTable({ tasks: initialTasks, readOnly, initialTaskId }: { tasks: Task[]; readOnly?: boolean; initialTaskId?: string }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  // ?tarea=<id> (desde el dashboard o una notificación) abre esa tarea de entrada.
+  const [selectedTask, setSelectedTask] = useState<Task | null>(() => initialTasks.find(t => t.id === initialTaskId) ?? null)
+  const router = useRouter()
+
+  // Completar/reabrir es optimista: la fila cambia en el clic y se revierte
+  // si la base rechaza el cambio. Los datos nuevos del servidor reemplazan
+  // los cambios locales.
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({})
+  const [toggleError, setToggleError] = useState('')
+  const [prevTasks, setPrevTasks] = useState(initialTasks)
+  if (initialTasks !== prevTasks) { setPrevTasks(initialTasks); setOverrides({}) }
+  const allTasks = useMemo(
+    () => initialTasks.map(t => (t.id in overrides ? { ...t, is_completed: overrides[t.id] } : t)),
+    [initialTasks, overrides],
+  )
+
+  async function toggleTask(id: string, next: boolean) {
+    if (readOnly) return
+    setToggleError('')
+    setOverrides(o => ({ ...o, [id]: next }))
+    const { error } = await createClient().from('tasks').update({ is_completed: next }).eq('id', id)
+    if (error) {
+      setOverrides(o => { const c = { ...o }; delete c[id]; return c })
+      setToggleError(`No se pudo actualizar la tarea: ${error.message}`)
+      return
+    }
+    router.refresh()
+  }
 
   const tasks = useMemo(() => {
-    let list = initialTasks.map(t => ({ ...t, status: getStatus(t) }))
+    let list = allTasks.map(t => ({ ...t, status: getStatus(t) }))
 
     if (filter !== 'all') {
       list = list.filter(t => t.status === filter)
@@ -89,14 +118,14 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
     })
 
     return list
-  }, [initialTasks, search, filter])
+  }, [allTasks, search, filter])
 
   const counts = useMemo(() => ({
-    overdue:   initialTasks.filter(t => getStatus(t) === 'overdue').length,
-    soon:      initialTasks.filter(t => getStatus(t) === 'soon').length,
-    pending:   initialTasks.filter(t => getStatus(t) === 'pending').length,
-    completed: initialTasks.filter(t => getStatus(t) === 'completed').length,
-  }), [initialTasks])
+    overdue:   allTasks.filter(t => getStatus(t) === 'overdue').length,
+    soon:      allTasks.filter(t => getStatus(t) === 'soon').length,
+    pending:   allTasks.filter(t => getStatus(t) === 'pending').length,
+    completed: allTasks.filter(t => getStatus(t) === 'completed').length,
+  }), [allTasks])
 
   return (
     <>
@@ -106,9 +135,9 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
     <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
 
       {/* Search + Filters bar */}
-      <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
+      <div className="px-4 py-3 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center gap-3">
         {/* Search */}
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative w-full lg:w-72 shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input aria-label="Buscar por tarea, empresa, responsable"
             value={search}
@@ -147,8 +176,12 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
         </div>
       </div>
 
+      {toggleError && (
+        <p role="alert" className="mx-4 mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">{toggleError}</p>
+      )}
+
       {/* Celular: lista compacta. La tabla de 7 columnas no cabe en 375 px. */}
-      <ul className="md:hidden divide-y divide-slate-100">
+      <ul className="lg:hidden divide-y divide-slate-100">
         {tasks.length === 0 && (
           <li className="px-4 py-12 text-center text-sm text-slate-500">
             {search ? 'Sin resultados para esa búsqueda' : 'No hay tareas en esta categoría'}
@@ -163,7 +196,7 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
           return (
             <li key={task.id} className={`flex items-start gap-3 px-4 py-3 ${isDone ? 'opacity-60' : ''}`}>
               <div className="pt-0.5">
-                <TaskCheck taskId={task.id} isCompleted={isDone} isOverdue={isOv} readOnly={readOnly} />
+                <TaskCheck isCompleted={isDone} isOverdue={isOv} readOnly={readOnly} onToggle={() => toggleTask(task.id, !isDone)} />
               </div>
               <button onClick={() => setSelectedTask(task)} className="min-w-0 flex-1 text-left">
                 <p className={`text-sm font-medium leading-snug ${isDone ? 'line-through text-slate-500' : 'text-slate-900'}`}>{task.title}</p>
@@ -179,7 +212,7 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
       </ul>
 
       {/* Table */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70">
@@ -188,11 +221,11 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
               <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">
                 <div className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />Empresa</div>
               </th>
-              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left hidden xl:table-cell">
                 <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Responsable</div>
               </th>
               <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Fecha</th>
-              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Hora</th>
+              <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left hidden xl:table-cell">Hora</th>
               <th className="text-xs font-medium text-slate-500 px-4 py-3 text-left">Estado</th>
             </tr>
           </thead>
@@ -227,11 +260,11 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
                 >
                   {/* Check */}
                   <td className="px-4 py-3.5 text-center">
-                    <TaskCheck taskId={task.id} isCompleted={isDone} isOverdue={isOv} readOnly={readOnly} />
+                    <TaskCheck isCompleted={isDone} isOverdue={isOv} readOnly={readOnly} onToggle={() => toggleTask(task.id, !isDone)} />
                   </td>
 
                   {/* Tarea */}
-                  <td className="px-4 py-3.5 max-w-xs">
+                  <td className="px-4 py-3.5 min-w-[220px] max-w-sm">
                     <button
                       onClick={() => setSelectedTask(task)}
                       className="text-left group/title"
@@ -260,7 +293,7 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
                   </td>
 
                   {/* Responsable */}
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 hidden xl:table-cell">
                     {task.profiles?.full_name ? (
                       <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
                         {task.profiles.full_name}
@@ -273,18 +306,22 @@ export default function TasksTable({ tasks: initialTasks, readOnly }: { tasks: T
                   {/* Fecha */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     {dateStr ? (
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
-                        isOv  ? 'bg-red-50 text-red-600 border border-red-100' :
-                        task.status === 'soon' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>{dateStr}</span>
+                      <>
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
+                          isOv  ? 'bg-red-50 text-red-600 border border-red-100' :
+                          task.status === 'soon' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>{dateStr}</span>
+                        {/* Sin columna Hora (pantallas medianas): la hora va bajo la fecha. */}
+                        {timeStr && <span className="xl:hidden block mt-1.5 text-[11px] text-slate-500">{timeStr}</span>}
+                      </>
                     ) : (
                       <span className="text-xs text-slate-300">Sin fecha</span>
                     )}
                   </td>
 
                   {/* Hora */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
+                  <td className="px-4 py-3.5 whitespace-nowrap hidden xl:table-cell">
                     {timeStr ? (
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-accent-50 text-accent-600 border border-accent-100 flex items-center gap-1 w-fit">
                         <Clock className="w-3 h-3" />{timeStr}

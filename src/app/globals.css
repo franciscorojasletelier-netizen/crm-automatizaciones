@@ -9,10 +9,9 @@
    Un solo acento azul para acción y selección; neutros limpios;
    verde/ámbar/rojo solo para estado.
 
-   Las escalas indigo/violet/purple se redefinen al acento y slate a
-   un neutro de bajo croma: así toda la app (que usaba esas clases a
-   mano) cambia de identidad desde un solo lugar, sin degradés
-   índigo-violeta ni grises azulados.
+   La interfaz usa accent-* (nunca indigo/violet/purple, que quedan con
+   su valor de Tailwind para la paleta de etapas configurable) y slate
+   redefinido a un neutro de bajo croma, sin grises azulados.
    ============================================================ */
 @theme {
   --color-accent-50:  oklch(0.97 0.014 258);
@@ -26,40 +25,6 @@
   --color-accent-800: oklch(0.385 0.145 258);
   --color-accent-900: oklch(0.33 0.11 258);
   --color-accent-950: oklch(0.24 0.08 258);
-
-  --color-indigo-50:  var(--color-accent-50);
-  --color-indigo-100: var(--color-accent-100);
-  --color-indigo-200: var(--color-accent-200);
-  --color-indigo-300: var(--color-accent-300);
-  --color-indigo-400: var(--color-accent-400);
-  --color-indigo-500: var(--color-accent-500);
-  --color-indigo-600: var(--color-accent-600);
-  --color-indigo-700: var(--color-accent-700);
-  --color-indigo-800: var(--color-accent-800);
-  --color-indigo-900: var(--color-accent-900);
-  --color-indigo-950: var(--color-accent-950);
-
-  --color-violet-50:  var(--color-accent-50);
-  --color-violet-100: var(--color-accent-100);
-  --color-violet-200: var(--color-accent-200);
-  --color-violet-300: var(--color-accent-300);
-  --color-violet-400: var(--color-accent-400);
-  --color-violet-500: var(--color-accent-500);
-  --color-violet-600: var(--color-accent-600);
-  --color-violet-700: var(--color-accent-700);
-  --color-violet-800: var(--color-accent-800);
-  --color-violet-900: var(--color-accent-900);
-
-  --color-purple-50:  var(--color-accent-50);
-  --color-purple-100: var(--color-accent-100);
-  --color-purple-200: var(--color-accent-200);
-  --color-purple-300: var(--color-accent-300);
-  --color-purple-400: var(--color-accent-400);
-  --color-purple-500: var(--color-accent-500);
-  --color-purple-600: var(--color-accent-600);
-  --color-purple-700: var(--color-accent-700);
-  --color-purple-800: var(--color-accent-800);
-  --color-purple-900: var(--color-accent-900);
 
   /* Neutro de trabajo. 400 y 500 más oscuros que el default: se usan como
      texto secundario en toda la app y el default no llegaba a 4.5:1. */

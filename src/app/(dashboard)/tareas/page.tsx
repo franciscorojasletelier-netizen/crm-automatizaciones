@@ -15,7 +15,8 @@ function isDueSoon(due: string | null) {
   return diff > 0 && diff < 1000 * 60 * 60 * 48
 }
 
-export default async function TareasPage() {
+export default async function TareasPage({ searchParams }: { searchParams: Promise<{ tarea?: string }> }) {
+  const { tarea } = await searchParams
   const { user, role, supabase, canEdit } = await requirePermission('tareas')
 
   // Gerente/admin ven todas las tareas; el resto solo las suyas
@@ -67,7 +68,7 @@ export default async function TareasPage() {
       </StatStrip>
 
       {/* Tabla con búsqueda y filtros */}
-      <TasksTable tasks={all as unknown as React.ComponentProps<typeof TasksTable>['tasks']} readOnly={!canEdit} />
+      <TasksTable tasks={all as unknown as React.ComponentProps<typeof TasksTable>['tasks']} readOnly={!canEdit} initialTaskId={tarea} />
     </div>
   )
 }

@@ -40,7 +40,7 @@ function entityLink(type: string | null, id: string | null): string | null {
   if (type === 'service') return '/plataforma/servicios'
   if (!type || !id) return null
   if (type === 'deal')    return `/leads/${id}`
-  if (type === 'task')    return `/tareas`
+  if (type === 'task')    return `/tareas?tarea=${id}`
   if (type === 'project') return `/proyectos/${id}`
   if (type === 'invoice') return `/cobranza/${id}`
   return null

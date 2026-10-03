@@ -12,7 +12,7 @@ export function timeAgo(date: string | Date, style: 'short' | 'long' = 'long', w
     return style === 'short' ? v : `Hace ${v}`
   }
   return new Date(date).toLocaleDateString('es-CL', {
-    timeZone: CHILE_TZ, day: '2-digit', month: 'short', ...(withYear ? { year: '2-digit' } : {}),
+    timeZone: CHILE_TZ, day: 'numeric', month: 'short', ...(withYear ? { year: '2-digit' } : {}),
   })
 }
 
