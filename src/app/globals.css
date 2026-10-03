@@ -395,3 +395,13 @@ html.dark :is(.bg-slate-900, .bg-slate-800, .bg-slate-700) .text-white {
 
 /* Velos de modal un poco más densos sobre fondo oscuro. */
 html.dark :where([class*="bg-slate-900/"]) { background-color: oklch(0 0 0 / 0.6); }
+
+/* Controles que solo aparecen al pasar el mouse (opacity-0 + group-hover):
+   en pantallas táctiles no hay hover, así que se muestran siempre; con
+   teclado aparecen al recibir foco. Sin esto, en el celular no se podía
+   editar campos, borrar mensajes ni quitar miembros. */
+@media (hover: none) {
+  .opacity-0[class*="group-hover"] { opacity: 1; }
+}
+.opacity-0[class*="group-hover"]:focus-visible,
+.opacity-0[class*="group-hover"]:focus-within { opacity: 1; }

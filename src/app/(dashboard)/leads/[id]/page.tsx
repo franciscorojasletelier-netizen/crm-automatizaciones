@@ -249,7 +249,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <div className="bg-white rounded-lg border border-slate-200 shadow-xs p-4">
               <h2 className="text-sm font-semibold text-slate-900 mb-3">Detalles</h2>
               {canEdit
-                ? <DealEditFields deal={deal} />
+                ? <DealEditFields stageProbability={stage?.defaultProbability ?? null} deal={deal} />
                 : (
                   <div className="space-y-2 divide-y divide-slate-100">
                     {[

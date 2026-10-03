@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronDown, Check, Loader2 } from 'lucide-react'
 import { getInitials } from '@/lib/format'
+import { getRoleMeta } from '@/lib/roles'
 
 export interface Profile {
   id: string
@@ -25,10 +26,6 @@ interface Props {
   compact?: boolean
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin', admin: 'Super Admin', gerente: 'Gerente',
-  comercial: 'Ejecutivo', produccion: 'Producción', soporte: 'Soporte',
-}
 
 
 function getAvatarColor(id: string) {
@@ -174,7 +171,7 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name ?? u.email}</p>
-                  <p className="text-[11px] text-slate-400">{ROLE_LABELS[u.role] ?? u.role}</p>
+                  <p className="text-[11px] text-slate-400">{getRoleMeta(u.role).label}</p>
                 </div>
                 {u.id === owner?.id && (
                   <Check className="w-4 h-4 text-accent-500 shrink-0" />

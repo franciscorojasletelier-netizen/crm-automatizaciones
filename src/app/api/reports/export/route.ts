@@ -3,6 +3,7 @@ import { requirePermission } from '@/lib/supabase/server'
 import { getAllStages, stageLabel } from '@/lib/stages'
 import * as XLSX from 'xlsx-js-style'
 import { CHILE_TZ, chileMonthStart } from '@/lib/dates'
+import { getRoleMeta } from '@/lib/roles'
 
 // ── Tipos locales ──────────────────────────────────────────────
 type CellStyle = {
@@ -103,10 +104,6 @@ function merge(ws: XLSX.WorkSheet, s: {r:number,c:number}, e: {r:number,c:number
 }
 
 
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin', admin: 'Super Admin', gerente: 'Gerente',
-  comercial: 'Ejecutivo de Ventas', produccion: 'Producción', soporte: 'Soporte',
-}
 
 export async function GET() {
   try {
@@ -509,7 +506,7 @@ export async function GET() {
                        : p.role === 'gerente' ? AMBER : SLATE700
         sc(ws, r, 0, p.full_name ?? '',                 dStyle(bg, DARK, true))
         sc(ws, r, 1, p.email ?? '',                     dStyle(bg, SLATE500))
-        sc(ws, r, 2, ROLE_LABELS[p.role] ?? p.role,    { ...dStyle(bg, rolColor, true, 'center') })
+        sc(ws, r, 2, getRoleMeta(p.role).label,    { ...dStyle(bg, rolColor, true, 'center') })
         sc(ws, r, 3, p.is_active ? '✅ Activo' : '❌ Inactivo', dStyle(bg, p.is_active ? GREEN : RED, false, 'center'))
         r++
       })

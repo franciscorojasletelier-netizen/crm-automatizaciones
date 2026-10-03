@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Users, UserPlus, X, Crown, Loader2, Check } from 'lucide-react'
 import { getInitials } from '@/lib/format'
+import { getRoleMeta } from '@/lib/roles'
 
 interface Member {
   id: string
@@ -28,13 +29,6 @@ interface Props {
   canManage: boolean     // solo gerente/super_admin
 }
 
-const roleLabel: Record<string, string> = {
-  comercial:   'Ejecutivo de Ventas',
-  produccion:  'Producción',
-  soporte:     'Soporte',
-  gerente:     'Gerente',
-  super_admin: 'Super Admin',
-}
 
 
 export default function DealMembers({ dealId, ownerId, members, teamUsers, currentUserId, canManage }: Props) {
@@ -112,7 +106,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-800">{owner.full_name ?? owner.email}</p>
-                  <p className="text-[11px] text-slate-400">{roleLabel[owner.role] ?? owner.role}</p>
+                  <p className="text-[11px] text-slate-400">{getRoleMeta(owner.role).label}</p>
                 </div>
                 <Crown className="w-3 h-3 text-amber-500 ml-auto shrink-0" />
               </div>
@@ -125,7 +119,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-800">{m.profiles.full_name ?? m.profiles.email}</p>
-                <p className="text-[11px] text-slate-400">{roleLabel[m.profiles.role] ?? m.profiles.role}</p>
+                <p className="text-[11px] text-slate-400">{getRoleMeta(m.profiles.role).label}</p>
               </div>
             </div>
           ))}
@@ -172,7 +166,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800 truncate">{user.full_name ?? user.email}</p>
-                <p className="text-xs text-slate-400">{roleLabel[user.role] ?? user.role}</p>
+                <p className="text-xs text-slate-400">{getRoleMeta(user.role).label}</p>
               </div>
               {adding === user.id
                 ? <Loader2 className="w-4 h-4 animate-spin text-accent-500 shrink-0" />
@@ -195,7 +189,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">{owner.full_name ?? owner.email}</p>
-                <p className="text-xs text-slate-400">{roleLabel[owner.role] ?? owner.role}</p>
+                <p className="text-xs text-slate-400">{getRoleMeta(owner.role).label}</p>
               </div>
               <div className="flex items-center gap-1.5">
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
@@ -215,7 +209,7 @@ export default function DealMembers({ dealId, ownerId, members, teamUsers, curre
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-800 truncate">{m.profiles.full_name ?? m.profiles.email}</p>
-              <p className="text-xs text-slate-400">{roleLabel[m.profiles.role] ?? m.profiles.role}</p>
+              <p className="text-xs text-slate-400">{getRoleMeta(m.profiles.role).label}</p>
             </div>
             <div className="flex items-center gap-1.5">
               {/* Hacer responsable principal */}
