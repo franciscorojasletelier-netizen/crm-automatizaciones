@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 import { Panel, buttonClass } from '@/components/ui/page'
 import { STATUS_META, balanceOf, effectiveStatus, invoiceCode, type Invoice } from '@/lib/cobranza'
 import { quoteTotals, quoteTaxes, type QuoteItem } from '@/lib/quotes'
-import { useCurrency } from '@/components/providers/currency-provider'
 
 type AcceptedQuote = { id: string; quote_number: number; items: QuoteItem[]; tax_rate: number; taxes?: unknown; currency?: string | null }
 
@@ -15,7 +14,7 @@ type AcceptedQuote = { id: string; quote_number: number; items: QuoteItem[]; tax
  * cliente, deal y monto ya cargados (la cotización aceptada manda sobre el
  * valor estimado).
  */
-export default function DealInvoicesPanel({ invoices, today, canCreate, companyId, companyName, dealId, estimatedValue, acceptedQuote }: {
+export default function DealInvoicesPanel({ invoices, today, canCreate, companyId, companyName, dealId, estimatedValue, acceptedQuote, currency }: {
   invoices: Invoice[]
   today: string
   canCreate: boolean
@@ -24,8 +23,9 @@ export default function DealInvoicesPanel({ invoices, today, canCreate, companyI
   dealId: string
   estimatedValue: number | null
   acceptedQuote: AcceptedQuote | null
+  /** Moneda de la organización. */
+  currency: string
 }) {
-  const currency = useCurrency()
   const billed = invoices.filter(i => i.status !== 'anulada').reduce((s, i) => s + Number(i.amount), 0)
   const pending = invoices.reduce((s, i) => s + balanceOf(i), 0)
 

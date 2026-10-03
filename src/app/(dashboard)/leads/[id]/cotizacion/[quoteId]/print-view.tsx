@@ -148,7 +148,7 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
 
           {/* Totales */}
           <div className="flex justify-end mb-6">
-            <div className="w-56 space-y-1.5 text-sm">
+            <div className="w-full max-w-xs space-y-1.5 text-sm">
               <div className="flex justify-between text-slate-500">
                 <span>Subtotal</span><span>{money(subtotal, cur)}</span>
               </div>

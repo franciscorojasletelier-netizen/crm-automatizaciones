@@ -55,6 +55,8 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
       currency, taxes: parsedTaxes,
     }).eq('id', org.id)
     setBusy(null)
+    // Si la base rechaza el cambio de moneda (ya hay cobranza), el selector vuelve a la guardada.
+    if (error && error.message.includes('moneda')) setCurrency(org.currency ?? 'CLP')
     setMsg(error ? { ok: false, text: error.message } : { ok: true, text: 'Guardado. Se usa en los próximos correos y documentos.' })
     if (!error) router.refresh()
   }

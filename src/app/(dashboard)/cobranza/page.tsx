@@ -92,7 +92,7 @@ export default async function CobranzaPage({ searchParams }: {
         <div className="mt-4">
           <CollectionQueue queue={queue} invoices={invoices} today={today} contacts={queueContacts}
             sender={{ senderName: sender.senderName, orgName: sender.orgName, canSendEmail: sender.canSendEmail, emailFrom: sender.emailFrom, emailOrg: sender.emailOrg }}
-            showAll={params.cola === 'todos'} />
+            showAll={params.cola === 'todos'} currency={currency} />
         </div>
       )}
 

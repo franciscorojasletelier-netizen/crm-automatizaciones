@@ -11,7 +11,6 @@ import { QUEUE_REASON, type Invoice, type QueueItem } from '@/lib/cobranza'
 import { buildStatement } from '@/lib/cobranza-mensajes'
 import type { Contact } from '@/lib/cobranza-server'
 import type { EmailOrg } from '@/lib/cobranza-email'
-import { useCurrency } from '@/components/providers/currency-provider'
 
 interface Props {
   queue: QueueItem[]
@@ -21,10 +20,11 @@ interface Props {
   sender: { senderName: string | null; orgName: string | null; canSendEmail: boolean; emailFrom: string | null; emailOrg: EmailOrg }
   showAll: boolean
   limit?: number
+  /** Moneda de la organización. */
+  currency: string
 }
 
-export default function CollectionQueue({ queue, invoices, today, contacts, sender, showAll, limit = 8 }: Props) {
-  const currency = useCurrency()
+export default function CollectionQueue({ queue, invoices, today, contacts, sender, showAll, limit = 8, currency }: Props) {
   const pending = queue.filter(q => !q.handledToday)
   const handled = queue.filter(q => q.handledToday)
   const visible = showAll ? pending : pending.slice(0, limit)

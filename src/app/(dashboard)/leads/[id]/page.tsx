@@ -338,6 +338,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} defaultTaxes={taxes} />
             {seesCobranza && (
               <DealInvoicesPanel
+                currency={currency}
                 invoices={(dealInvoices ?? []) as unknown as Invoice[]}
                 today={chileDateString()}
                 canCreate={canManage && (deal.status === 'won' || !!acceptedQuote)}
