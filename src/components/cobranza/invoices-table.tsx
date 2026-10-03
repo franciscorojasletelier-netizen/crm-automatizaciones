@@ -22,7 +22,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 ]
 
 const fmtDate = (d: string) =>
-  new Date(`${d}T00:00:00Z`).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: '2-digit', month: 'short', year: '2-digit' })
+  new Date(`${d}T00:00:00Z`).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short', year: '2-digit' })
 
 export default function InvoicesTable({ invoices, today, initialFilter = 'abiertos', canManage }: {
   invoices: Invoice[]

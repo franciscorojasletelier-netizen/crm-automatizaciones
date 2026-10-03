@@ -51,7 +51,7 @@ export default async function NotificacionesPage() {
   for (const task of (overdueTasks ?? []) as unknown as TaskRow[]) {
     if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
     const company = task.deals?.companies?.name
-    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
+    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' })
     newNotifs.push({
       user_id:     user.id,
       type:        'task_overdue',

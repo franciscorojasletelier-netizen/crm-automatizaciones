@@ -6,7 +6,7 @@ import { escapeHtml } from '@/lib/html'
 import { isCronAuthorized } from '@/lib/secure-compare'
 
 const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
+  new Date(d).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' })
 
 type ReminderTask = { title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }
 

@@ -55,7 +55,7 @@ export async function executeAutomationAction(
 
       const assignedTo = ownerId ?? userId
       if (newTask && assignedTo && assignedTo !== userId) {
-        const dueDateStr = dueDate.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
+        const dueDateStr = dueDate.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' })
         await supabase.from('notifications').insert({
           user_id:     assignedTo,
           type:        'task_due',

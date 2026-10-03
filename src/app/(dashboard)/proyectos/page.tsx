@@ -188,7 +188,7 @@ export default async function ProyectosPage() {
                         'bg-slate-100 text-slate-500'
                       }`}>
                         {overdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        {new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: '2-digit', month: 'short' })}
+                        {new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short' })}
                       </span>
                     )}
                   </div>
@@ -231,7 +231,7 @@ export default async function ProyectosPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 hidden lg:table-cell text-sm text-slate-500">
-                      {project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      {project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                     </td>
                     <td className="px-5 py-3.5">
                       <Link href={`/proyectos/${project.id}`}>

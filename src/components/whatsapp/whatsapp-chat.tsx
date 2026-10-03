@@ -25,7 +25,7 @@ interface Props {
 
 function timeStr(date: string) {
   return new Date(date).toLocaleString('es-CL', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
   })
 }
 

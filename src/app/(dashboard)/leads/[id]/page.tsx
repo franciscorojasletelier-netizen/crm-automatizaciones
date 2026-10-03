@@ -207,7 +207,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               </p>
               {deal.proposal_uploaded_at && (
                 <p className="text-xs text-slate-500">
-                  Subida el {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  Subida el {new Date(deal.proposal_uploaded_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               )}
             </div>

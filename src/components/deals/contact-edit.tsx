@@ -98,7 +98,7 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
           <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" /> Contacto
           </h2>
-          <button onClick={() => setEditing(true)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 transition-colors">
+          <button type="button" aria-label="Editar contacto" onClick={() => setEditing(true)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 transition-colors">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -131,7 +131,7 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
           <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5" /> Empresa
           </h2>
-          <button onClick={() => setEditing(true)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 transition-colors">
+          <button type="button" aria-label="Editar empresa" onClick={() => setEditing(true)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 transition-colors">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         </div>

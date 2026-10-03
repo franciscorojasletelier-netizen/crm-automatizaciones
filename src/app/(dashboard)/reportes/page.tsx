@@ -387,7 +387,7 @@ export default async function ReportesPage() {
                     </span>
                   )}
                   <span className="text-xs text-slate-400">
-                    {deal.closed_at ? new Date(deal.closed_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' }) : '—'}
+                    {deal.closed_at ? new Date(deal.closed_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' }) : '—'}
                   </span>
                 </div>
               </Link>

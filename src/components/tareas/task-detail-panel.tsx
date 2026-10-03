@@ -43,7 +43,7 @@ function formatDt(dt: string | null) {
   const d = new Date(dt)
   const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
   return d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
-    day: '2-digit', month: 'short', year: 'numeric',
+    day: 'numeric', month: 'short', year: 'numeric',
     ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
   })
 }
@@ -310,7 +310,7 @@ export default function TaskDetailPanel({
                           </p>
                           <span className="text-[11px] text-slate-400 whitespace-nowrap shrink-0">
                             {new Date(entry.created_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
-                              day: '2-digit', month: 'short',
+                              day: 'numeric', month: 'short',
                               hour: '2-digit', minute: '2-digit'
                             })}
                           </span>

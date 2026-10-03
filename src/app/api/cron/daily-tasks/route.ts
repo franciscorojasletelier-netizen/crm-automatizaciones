@@ -144,7 +144,7 @@ function buildEmailHtml(
   const row = (t: Record<string, unknown>, isOverdue: boolean) => {
     const title = escapeHtml(t.title)
     const d = t.due_date ? new Date(String(t.due_date)) : null
-    const dateStr = d ? d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' }) : ''
+    const dateStr = d ? d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' }) : ''
     // Hora en Chile (getHours() sería la del servidor, UTC): 00:00 = tarea sin hora.
     const chileTime = d ? d.toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : null
     const timeStr = chileTime && chileTime !== '00:00' ? chileTime : null

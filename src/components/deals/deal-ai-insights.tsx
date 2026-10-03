@@ -169,7 +169,7 @@ export default function DealAiInsights({ dealId, initialInsights, initialCreated
 
             {createdAt && (
               <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-100">
-                Analizado el {new Date(createdAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                Analizado el {new Date(createdAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 {createdByName ? ` por ${createdByName}` : ''} · queda guardado en el deal
               </p>
             )}
