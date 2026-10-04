@@ -55,3 +55,21 @@ export function chileMonthStart(offsetMonths = 0, now: Date = new Date()): Date 
   const today = Date.UTC(y, m - 1, Number(chileDateString(now).slice(8, 10)))
   return chileDayStart(Math.round((first.getTime() - today) / 86_400_000), now)
 }
+
+// Vencimiento "en las próximas horas hábiles" (lun–vie, 9:00–18:00 de
+// Chile): dentro del horario, 2 horas después; fuera de él, el siguiente
+// día hábil a las 10:00.
+export function nextBusinessDue(now: Date = new Date()): Date {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: CHILE_TZ, weekday: 'short', hour: 'numeric', hour12: false }).formatToParts(now)
+  const weekday = parts.find(p => p.type === 'weekday')?.value ?? 'Mon'
+  const hour = Number(parts.find(p => p.type === 'hour')?.value ?? 12) % 24
+  const isWeekday = !['Sat', 'Sun'].includes(weekday)
+  if (isWeekday && hour >= 9 && hour < 16) return new Date(now.getTime() + 2 * 3600_000)
+  // Primer día hábil a partir de hoy (si aún no son las 9) o de mañana.
+  for (let offset = isWeekday && hour < 9 ? 0 : 1; offset < 8; offset++) {
+    const day = chileDayStart(offset, now)
+    const wd = new Intl.DateTimeFormat('en-US', { timeZone: CHILE_TZ, weekday: 'short' }).format(new Date(day.getTime() + 12 * 3600_000))
+    if (!['Sat', 'Sun'].includes(wd)) return new Date(day.getTime() + 10 * 3600_000)
+  }
+  return new Date(now.getTime() + 2 * 3600_000)
+}

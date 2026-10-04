@@ -8,6 +8,7 @@ import {
 } from '@/lib/quote-acceptance'
 import { renderAcceptanceCertificateEmail } from '@/lib/quote-email'
 import { money } from '@/lib/money'
+import { nextBusinessDue } from '@/lib/dates'
 
 // Respuesta del cliente a una cotización desde el link público.
 // Aceptar = firma electrónica simple reforzada (Ley 19.799): código de un
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       organization_id: quote.organization_id, deal_id: quote.deal_id, assigned_to: assignee, created_by: assignee,
       title: `Emitir factura cuota 1 — Cotización #${quote.quote_number}${company ? ` (${company})` : ''}`,
       description: `${invoiceNote}.\nEl cliente aceptó la cotización y se le informó que la factura se emitirá en las próximas horas hábiles.`,
-      due_date: new Date(Date.now() + 2 * 3600_000).toISOString(),
+      due_date: nextBusinessDue().toISOString(),
     })
   }
 
