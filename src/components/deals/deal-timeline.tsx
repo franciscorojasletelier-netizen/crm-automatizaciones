@@ -108,7 +108,7 @@ export default function DealTimeline({
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-slate-700 leading-tight break-words">{e.content}</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  {new Date(e.date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(e.date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   {e.authorName && ` · ${e.authorName}`}
                 </p>
               </div>

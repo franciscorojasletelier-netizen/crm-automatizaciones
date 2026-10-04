@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare, Download, GitBranch } from 'lucide-react'
 import DealOwnerSelector, { type Profile as TeamUser } from '@/components/deals/deal-owner-selector'
-import { formatCLP } from '@/lib/format'
-import { type Stage, stageByKey, colorOf, statusForStage } from '@/lib/stages'
+import { formatMoney } from '@/lib/format'
+import { type Stage, stageByKey, colorOf } from '@/lib/stages'
+import { changeDealStage } from '@/lib/deal-stage-change'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 /** Fila de /leads (misma forma que el select de la página). */
 export interface LeadRow {
@@ -41,7 +43,7 @@ function StaleBadge({ deal, stages }: { deal: LeadRow; stages: Stage[] }) {
   if (days < 3) return null
   const isUrgent = days >= 7
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-1.5 py-0.5 rounded-md ${
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-bold px-1.5 py-0.5 rounded-md ${
       isUrgent ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
     }`} title={deal.last_contacted_at ? 'Días desde el último contacto' : 'Días desde la creación, sin contacto registrado'}>
       {days}d sin contacto
@@ -67,6 +69,7 @@ function toCsvValue(v: string | number | null | undefined): string {
 }
 
 export default function LeadsTable({ deals: initialDeals, teamUsers = [], canReassign = false, stages = [] }: { deals: LeadRow[]; teamUsers?: TeamUser[]; canReassign?: boolean; stages?: Stage[] }) {
+  const currency = useCurrency()
   const [deals, setDeals]   = useState(initialDeals)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
@@ -94,6 +97,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
   // ── Selección múltiple y acciones masivas ──────────────────
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkSaving, setBulkSaving] = useState(false)
+  const [bulkError, setBulkError] = useState('')
   const router = useRouter()
 
   function toggleSelect(id: string) {
@@ -107,9 +111,11 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
   async function bulkReassign(targetUserId: string) {
     if (selected.size === 0 || bulkSaving) return
     setBulkSaving(true)
+    setBulkError('')
     const supabase = createClient()
     const ids = [...selected]
     const { error } = await supabase.from('deals').update({ owner_id: targetUserId }).in('id', ids)
+    if (error) setBulkError(`No se pudo reasignar: ${error.message}`)
     if (!error) {
       const target = teamUsers.find(u => u.id === targetUserId)
       // Notificar al nuevo responsable (una sola notificación resumida)
@@ -145,16 +151,22 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     const pipelineIds = new Set(selectedDeals.map(d => d.pipeline_id))
     if (pipelineIds.size > 1) return
     setBulkSaving(true)
+    setBulkError('')
     const supabase = createClient()
-    const ids = [...selected]
-    const { error } = await supabase.from('deals')
-      .update({ stage: newStageKey, status: statusForStage(targetStage) })
-      .in('id', ids)
-    if (!error) {
-      setDeals(prev => prev.map(d => selected.has(d.id) ? { ...d, stage: newStageKey } : d))
-      setSelected(new Set())
-      router.refresh()
+    // Mismo camino que el kanban y el detalle: historial, automatizaciones y
+    // avisos. Uno por uno para saber cuáles fallan.
+    const moved: string[] = []
+    const failed: string[] = []
+    for (const d of selectedDeals) {
+      if (d.stage === newStageKey) { moved.push(d.id); continue }
+      const res = await changeDealStage(supabase, { dealId: d.id, fromStage: d.stage, toStage: newStageKey, stages, currency })
+      if (res.ok) moved.push(d.id)
+      else failed.push(`${d.companies?.name ?? 'Lead'}: ${res.error}`)
     }
+    setDeals(prev => prev.map(d => moved.includes(d.id) ? { ...d, stage: newStageKey } : d))
+    setSelected(new Set(selectedDeals.filter(d => !moved.includes(d.id)).map(d => d.id)))
+    if (failed.length) setBulkError(`No se pudieron mover ${failed.length}: ${failed.join(' · ')}`)
+    router.refresh()
     setBulkSaving(false)
   }
 
@@ -315,7 +327,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
       </div>
 
       {/* Tabla — desktop */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden hidden md:block">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-x-auto hidden lg:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100">
@@ -332,19 +344,20 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                         return next
                       })
                     }}
+                    aria-label="Seleccionar todos los de esta página"
                     className="w-4 h-4 rounded border-slate-300 text-accent-600 focus:ring-accent-500 cursor-pointer accent-accent-600"
                   />
                 </th>
               )}
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Empresa</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Contacto</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Etapa</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Score</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Valor est.</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Fuente</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Responsable</th>
-              <th className="text-xs font-medium text-slate-500 text-left px-5 py-3.5">Próxima acción</th>
-              <th className="px-5 py-3.5" />
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5">Empresa</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5 hidden xl:table-cell">Contacto</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5">Etapa</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5">Score</th>
+              <th className="text-xs font-medium text-slate-500 text-right px-4 py-3.5">Valor est.</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5 hidden 2xl:table-cell">Fuente</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5">Responsable</th>
+              <th className="text-xs font-medium text-slate-500 text-left px-4 py-3.5 hidden 2xl:table-cell">Próxima acción</th>
+              <th className="px-4 py-3.5 hidden 2xl:table-cell"><span className="sr-only">Abrir</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -364,11 +377,12 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                       type="checkbox"
                       checked={selected.has(deal.id)}
                       onChange={() => toggleSelect(deal.id)}
+                      aria-label={`Seleccionar ${deal.companies?.name ?? 'lead'}`}
                       className="w-4 h-4 rounded border-slate-300 text-accent-600 focus:ring-accent-500 cursor-pointer accent-accent-600"
                     />
                   </td>
                 )}
-                <td className="px-5 py-3.5">
+                <td className="px-4 py-3.5 min-w-[180px]">
                   <Link href={`/leads/${deal.id}`} className="block">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-900 group-hover:text-accent-700 transition-colors">
@@ -379,48 +393,52 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
                     {deal.companies?.industry && (
                       <p className="text-xs text-slate-400 mt-0.5">{deal.companies.industry}</p>
                     )}
+                    {deal.contacts?.full_name && (
+                      <p className="xl:hidden text-xs text-slate-500 mt-0.5">{deal.contacts.full_name}</p>
+                    )}
                   </Link>
                 </td>
-                <td className="px-5 py-3.5">
-                  <p className="text-slate-700 font-medium">{deal.contacts?.full_name ?? '—'}</p>
+                <td className="px-4 py-3.5 hidden xl:table-cell max-w-[200px]">
+                  <p className="text-slate-700 font-medium truncate">{deal.contacts?.full_name ?? '—'}</p>
                   {deal.contacts?.email && (
-                    <p className="text-xs text-slate-400 mt-0.5">{deal.contacts.email}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 truncate" title={deal.contacts.email}>{deal.contacts.email}</p>
                   )}
                 </td>
-                <td className="px-5 py-3.5">
-                  <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
+                <td className="px-4 py-3.5">
+                  <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs px-2.5 py-1 rounded-full font-semibold ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stageByKey(stages, deal.stage)).dot}`} />
                     {stageByKey(stages, deal.stage)?.label ?? deal.stage}
                   </span>
                 </td>
-                <td className="px-5 py-3.5">
+                <td className="px-4 py-3.5">
                   <ScoreBadge score={deal.score} />
                 </td>
-                <td className="px-5 py-3.5">
+                <td className="px-4 py-3.5 text-right whitespace-nowrap tabular-nums">
                   <span className="font-semibold text-slate-700">
-                    {deal.estimated_value ? formatCLP(deal.estimated_value) : <span className="text-slate-300">—</span>}
+                    {deal.estimated_value ? formatMoney(deal.estimated_value, currency) : <span className="text-slate-300">—</span>}
                   </span>
                 </td>
-                <td className="px-5 py-3.5">
+                <td className="px-4 py-3.5 hidden 2xl:table-cell">
                   {deal.source
-                    ? <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{deal.source}</span>
+                    ? <span className="whitespace-nowrap text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{deal.source}</span>
                     : <span className="text-slate-300">—</span>
                   }
                 </td>
-                <td className="px-3 py-2.5 min-w-[160px]" onClick={e => e.stopPropagation()}>
+                <td className="px-3 py-2.5 min-w-[150px] max-w-[190px]" onClick={e => e.stopPropagation()}>
                   <DealOwnerSelector
                     dealId={deal.id}
                     currentOwner={deal.profiles ? { id: deal.profiles.id, full_name: deal.profiles.full_name } : null}
                     teamUsers={teamUsers}
                     canReassign={canReassign}
                     onReassigned={handleReassigned}
+                    compact
                   />
                 </td>
-                <td className="px-5 py-3.5 text-slate-500 max-w-[180px] truncate text-xs">
+                <td className="px-4 py-3.5 text-slate-500 max-w-[180px] truncate text-xs hidden 2xl:table-cell">
                   {deal.next_action ?? <span className="text-slate-300">—</span>}
                 </td>
-                <td className="px-5 py-3.5">
-                  <Link href={`/leads/${deal.id}`}
+                <td className="px-4 py-3.5 hidden 2xl:table-cell">
+                  <Link href={`/leads/${deal.id}`} aria-label={`Abrir ${deal.companies?.name ?? 'lead'}`}
                     className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-accent-100 flex items-center justify-center transition-colors group-hover:bg-accent-100">
                     <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-accent-600" />
                   </Link>
@@ -432,7 +450,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
       </div>
 
       {/* Cards — móvil */}
-      <div className="md:hidden space-y-2.5">
+      <div className="lg:hidden space-y-2.5">
         {filtered.length === 0 && (
           <div className="text-center py-12">
             <Search className="w-8 h-8 text-slate-200 mx-auto mb-2" />
@@ -440,12 +458,22 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
           </div>
         )}
         {paginated.map(deal => (
-          <Link key={deal.id} href={`/leads/${deal.id}`}
-            className="flex flex-col bg-white rounded-lg border border-slate-200 p-4 hover:border-accent-300 hover:shadow-md transition-all">
+          <div key={deal.id}
+            className={`relative flex flex-col bg-white rounded-lg border p-4 transition-colors ${selected.has(deal.id) ? 'border-accent-300 bg-accent-50/40' : 'border-slate-200 hover:border-accent-300'}`}>
             <div className="flex items-start justify-between gap-2 mb-2">
-              <div>
-                <p className="font-bold text-slate-900">{deal.companies?.name ?? '—'}</p>
-                <StaleBadge deal={deal} stages={stages} />
+              <div className="flex items-start gap-3 min-w-0">
+                {canReassign && (
+                  <input type="checkbox" checked={selected.has(deal.id)} onChange={() => toggleSelect(deal.id)}
+                    aria-label={`Seleccionar ${deal.companies?.name ?? 'lead'}`}
+                    className="relative z-10 mt-1 w-4 h-4 rounded border-slate-300 cursor-pointer accent-accent-600" />
+                )}
+                <div className="min-w-0">
+                  {/* Enlace extendido: toda la tarjeta abre el lead; casilla y responsable quedan encima. */}
+                  <Link href={`/leads/${deal.id}`} className="font-semibold text-slate-900 hover:text-accent-700 after:absolute after:inset-0 after:content-['']">
+                    {deal.companies?.name ?? '—'}
+                  </Link>
+                  <div><StaleBadge deal={deal} stages={stages} /></div>
+                </div>
               </div>
               <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${colorOf(stageByKey(stages, deal.stage)).chip}`}>
                 {stageByKey(stages, deal.stage)?.label ?? deal.stage}
@@ -453,12 +481,22 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             </div>
             <p className="text-sm text-slate-600 font-medium">{deal.contacts?.full_name ?? '—'}</p>
             {deal.contacts?.email && <p className="text-xs text-slate-400">{deal.contacts.email}</p>}
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              {deal.estimated_value && <span className="font-bold text-slate-700">{formatCLP(deal.estimated_value)}</span>}
+            <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+              {deal.estimated_value ? <span className="font-semibold text-slate-700 tabular-nums">{formatMoney(deal.estimated_value, currency)}</span> : null}
               {deal.source && <span className="bg-slate-100 px-2 py-0.5 rounded-md">{deal.source}</span>}
               <ScoreBadge score={deal.score} />
+              <div className="relative z-10 ml-auto min-w-[150px] max-w-[200px]">
+                <DealOwnerSelector
+                  dealId={deal.id}
+                  currentOwner={deal.profiles ? { id: deal.profiles.id, full_name: deal.profiles.full_name } : null}
+                  teamUsers={teamUsers}
+                  canReassign={canReassign}
+                  onReassigned={handleReassigned}
+                  compact
+                />
+              </div>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 
@@ -485,6 +523,9 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
       {/* ── Barra flotante de acciones masivas ── */}
       {canReassign && selected.size > 0 && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
+          {bulkError && (
+            <p role="alert" className="mb-2 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 shadow-lg">{bulkError}</p>
+          )}
           <div className="flex items-center gap-2 sm:gap-3 bg-slate-900 text-white rounded-lg shadow-2xl pl-4 sm:pl-5 pr-3 py-3 flex-wrap justify-center">
             <div className="flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-accent-400" />
@@ -494,7 +535,7 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
             <div className="flex items-center gap-2">
               <Users className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-xs text-slate-400 font-medium">Reasignar a:</span>
-              <select aria-label="Cambiar etapa de los seleccionados"
+              <select aria-label="Reasignar los seleccionados a"
                 disabled={bulkSaving}
                 defaultValue=""
                 onChange={e => { if (e.target.value) bulkReassign(e.target.value) }}
@@ -514,13 +555,17 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
               {(() => {
                 const selectedPipelineIds = new Set(deals.filter(d => selected.has(d.id)).map(d => d.pipeline_id))
                 const mixedPipelines = selectedPipelineIds.size > 1
-                const stageOptions = mixedPipelines ? [] : stages.filter(s => s.isActive && (selectedPipelineIds.size === 0 || s.pipelineId === [...selectedPipelineIds][0]))
+                // Solo etapas sin requisitos: las que piden motivo, adjunto o crean
+                // proyecto se mueven de a una (kanban o detalle) con su ventana.
+                const stageOptions = mixedPipelines ? [] : stages.filter(s => s.isActive
+                  && !s.requiresReason && !s.requiresAttachment && !s.isWon && !s.createsProject
+                  && (selectedPipelineIds.size === 0 || s.pipelineId === [...selectedPipelineIds][0]))
                 return mixedPipelines ? (
                   <span className="text-xs text-amber-400 font-medium" title="Seleccionaste deals de más de un pipeline — no se puede mover en bloque a una sola etapa">
                     Pipelines mezclados
                   </span>
                 ) : (
-                  <select aria-label="Asignar responsable a los seleccionados"
+                  <select aria-label="Mover los seleccionados a la etapa"
                     disabled={bulkSaving}
                     defaultValue=""
                     onChange={e => { if (e.target.value) bulkChangeStage(e.target.value) }}

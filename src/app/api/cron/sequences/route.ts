@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppText } from '@/lib/whatsapp'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 // Ejecuta los pasos pendientes de las secuencias de follow-up (Fase 8.1).
 // La inscripción y la detención por cambio de estado del deal ya las
@@ -21,9 +22,7 @@ async function mapWithConcurrency<T>(items: T[], limit: number, fn: (item: T) =>
 }
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

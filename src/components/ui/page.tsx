@@ -47,7 +47,7 @@ export function Panel({ title, description, actions, children, className, padded
   padded?: boolean
 }) {
   return (
-    <section className={cn('bg-white border border-slate-200 rounded-lg shadow-xs', className)}>
+    <section className={cn('min-w-0 bg-white border border-slate-200 rounded-lg shadow-xs', className)}>
       {(title || actions) && (
         <header className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-3 border-b border-slate-100">
           <div className="min-w-0">

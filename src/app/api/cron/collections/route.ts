@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { chileDateString } from '@/lib/dates'
 import { addDays, balanceOf, invoiceCode } from '@/lib/cobranza'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { notifyServiceExpirations } from '@/lib/service-checks'
 import { runCollectionReminders } from '@/lib/cobranza-recordatorios'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 // Cron diario de cobranza (pg_cron 12:30 UTC, migración 038).
 // Avisa en la app, a quien corresponde, de dos hechos del día:
@@ -17,13 +18,12 @@ const COLLECTION_ROLES = ['super_admin', 'admin', 'gerente', 'finanzas']
 
 type Row = {
   id: string; invoice_number: number; organization_id: string; responsible_id: string | null
-  amount: number; paid_amount: number; status: 'pendiente' | 'parcial' | 'pagada' | 'anulada'
+  amount: number; paid_amount: number; status: 'pendiente' | 'parcial' | 'pagada' | 'anulada'; currency: string
   due_date: string; next_promise_date: string | null; companies: { name: string } | null
 }
 
 export async function GET(request: NextRequest) {
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   const today = chileDateString()
   const yesterday = addDays(today, -1)
-  const select = 'id, invoice_number, organization_id, responsible_id, amount, paid_amount, status, due_date, next_promise_date, companies(name)'
+  const select = 'id, invoice_number, organization_id, responsible_id, amount, paid_amount, currency, status, due_date, next_promise_date, companies(name)'
 
   const [{ data: newlyOverdue, error: e1 }, { data: promisesToday, error: e2 }] = await Promise.all([
     supabase.from('invoices').select(select).in('status', ['pendiente', 'parcial']).eq('due_date', yesterday),
@@ -59,12 +59,12 @@ export async function GET(request: NextRequest) {
     ...((newlyOverdue ?? []) as unknown as Row[]).flatMap(r => recipients(r).map(user_id => ({
       user_id, type: 'automation', entity_type: 'invoice', entity_id: r.id,
       title: `⏰ Venció ${invoiceCode(r)} · ${r.companies?.name ?? 'Cliente'}`,
-      body: `Saldo pendiente ${formatCLP(balanceOf(r))}. Registra una gestión de cobranza.`,
+      body: `Saldo pendiente ${formatMoney(balanceOf(r), r.currency)}. Registra una gestión de cobranza.`,
     }))),
     ...((promisesToday ?? []) as unknown as Row[]).flatMap(r => recipients(r).map(user_id => ({
       user_id, type: 'automation', entity_type: 'invoice', entity_id: r.id,
       title: `🤝 Hoy vence un compromiso de pago · ${r.companies?.name ?? 'Cliente'}`,
-      body: `${invoiceCode(r)} — saldo ${formatCLP(balanceOf(r))}. Confirma si se pagó.`,
+      body: `${invoiceCode(r)} — saldo ${formatMoney(balanceOf(r), r.currency)}. Confirma si se pagó.`,
     }))),
   ]
 

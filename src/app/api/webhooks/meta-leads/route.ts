@@ -1,8 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { renderNewLeadAlert } from '@/lib/system-emails'
 import crypto from 'crypto'
-import { escapeHtml } from '@/lib/html'
 
 // Sin fallback: un token público en el repo permitiría verificar un
 // endpoint de webhook falso si la env var no está seteada en producción.
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         const orgId = resolved.orgId
         const { data: org } = await supabase
           .from('organizations')
-          .select('name, display_name, notification_email')
+          .select('name, display_name, email, phone, address, logo_url, notification_email')
           .eq('id', orgId)
           .maybeSingle()
         const orgDisplayName = org?.display_name || org?.name || 'nuestro equipo'
@@ -225,22 +225,11 @@ export async function POST(request: NextRequest) {
         await resend.emails.send({
           from: process.env.EMAIL_FROM?.trim() || `CRM ${orgDisplayName} <onboarding@resend.dev>`,
           to: org.notification_email,
-          subject: `Nuevo lead de Facebook Ads: ${contact_name}`,
-          html: `
-            <h2>Nuevo lead desde Facebook Ads</h2>
-            <table style="border-collapse:collapse;width:100%;max-width:500px">
-              <tr><td style="padding:8px;color:#666">Nombre</td><td style="padding:8px;font-weight:bold">${escapeHtml(contact_name)}</td></tr>
-              ${email ? `<tr><td style="padding:8px;color:#666">Email</td><td style="padding:8px">${escapeHtml(email)}</td></tr>` : ''}
-              ${phone ? `<tr><td style="padding:8px;color:#666">Telefono</td><td style="padding:8px">${escapeHtml(phone)}</td></tr>` : ''}
-              <tr><td style="padding:8px;color:#666">Empresa</td><td style="padding:8px">${escapeHtml(company_name)}</td></tr>
-              <tr><td style="padding:8px;color:#666">Fuente</td><td style="padding:8px">Facebook Ads (Lead Form)</td></tr>
-            </table>
-            <br>
-            <a href="https://crm-automatizaciones.vercel.app/leads/${deal.id}"
-               style="background:#111;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">
-              Ver en CRM
-            </a>
-          `,
+          ...renderNewLeadAlert({
+            contactName: contact_name, email, phone, company: company_name, source: 'Facebook Ads (formulario)',
+            brand: { name: orgDisplayName, logoUrl: org?.logo_url, email: org?.email, phone: org?.phone, address: org?.address },
+            link: `${process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://crm-automatizaciones.vercel.app'}/leads/${deal.id}`,
+          }),
         })
       }
     })

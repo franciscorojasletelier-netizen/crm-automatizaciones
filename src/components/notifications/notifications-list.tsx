@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Bell, CheckCheck, Trash2, TrendingUp, CheckSquare, FolderOpen, Zap, Info } from 'lucide-react'
+import { Bell, CheckCheck, Trash2, TrendingUp, CheckSquare, FolderOpen, Zap, Info, FileCheck2, FileX2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { timeAgo } from '@/lib/format'
@@ -32,6 +32,8 @@ function notifIcon(type: string) {
     case 'stage_changed':  return { icon: TrendingUp, color: 'bg-accent-100 text-accent-600' }
     case 'automation':     return { icon: Zap, color: 'bg-accent-100 text-accent-600' }
     case 'project':        return { icon: FolderOpen, color: 'bg-emerald-100 text-emerald-600' }
+    case 'quote_accepted': return { icon: FileCheck2, color: 'bg-emerald-100 text-emerald-600' }
+    case 'quote_rejected': return { icon: FileX2, color: 'bg-slate-100 text-slate-600' }
     default:               return { icon: Info, color: 'bg-slate-100 text-slate-600' }
   }
 }
@@ -40,7 +42,7 @@ function entityLink(type: string | null, id: string | null): string | null {
   if (type === 'service') return '/plataforma/servicios'
   if (!type || !id) return null
   if (type === 'deal')    return `/leads/${id}`
-  if (type === 'task')    return `/tareas`
+  if (type === 'task')    return `/tareas?tarea=${id}`
   if (type === 'project') return `/proyectos/${id}`
   if (type === 'invoice') return `/cobranza/${id}`
   return null
@@ -146,7 +148,7 @@ export default function NotificationsList({ initialNotifications, userId }: Prop
                     </div>
                     {n.body && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{n.body}</p>}
                   </div>
-                  <button
+                  <button type="button" aria-label="Eliminar notificación"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); deleteNotif(n.id) }}
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-400 shrink-0"
                   >

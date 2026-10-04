@@ -1,33 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Circle, CheckCircle, AlertCircle } from 'lucide-react'
 
-export default function TaskCheck({ taskId, isCompleted, isOverdue, readOnly }: {
-  taskId: string
+// Check de tarea sin estado propio: la tabla aplica el cambio al instante
+// (optimista) y lo revierte si la base lo rechaza.
+export default function TaskCheck({ isCompleted, isOverdue, readOnly, onToggle }: {
   isCompleted: boolean
   isOverdue: boolean
   readOnly?: boolean
+  onToggle: () => void
 }) {
-  const [done, setDone] = useState(isCompleted)
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-
-  async function toggle() {
-    if (readOnly) return
-    setLoading(true)
-    const supabase = createClient()
-    await supabase.from('tasks').update({ is_completed: !done }).eq('id', taskId)
-    setDone(!done)
-    setLoading(false)
-    router.refresh()
-  }
-
   return (
-    <button aria-label={done ? 'Marcar como pendiente' : 'Marcar como completada'} aria-pressed={done} onClick={toggle} disabled={loading || readOnly} className={`mt-0.5 shrink-0 transition-transform disabled:opacity-50 ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
-      {done
+    <button type="button" aria-label={isCompleted ? 'Marcar como pendiente' : 'Marcar como completada'} aria-pressed={isCompleted}
+      onClick={onToggle} disabled={readOnly}
+      className={`mt-0.5 shrink-0 transition-transform ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
+      {isCompleted
         ? <CheckCircle className="w-4 h-4 text-green-500" />
         : isOverdue
           ? <AlertCircle className="w-4 h-4 text-red-500" />

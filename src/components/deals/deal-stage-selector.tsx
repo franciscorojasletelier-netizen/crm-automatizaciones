@@ -7,6 +7,7 @@ import { Loader2, FileText, Eye, Upload, Paperclip, PenLine } from 'lucide-react
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 // Las etapas, sus razones y sus semánticas las define cada organización en
 // pipeline_stages. La lógica del cambio vive en src/lib/deal-stage-change.ts,
@@ -31,6 +32,7 @@ type Pending =
 export default function DealStageSelector({
   dealId, currentStage, proposalFilename, proposalUrl, organizationId, stages, companyName, estimatedValue,
 }: Props) {
+  const currency = useCurrency()
   const [stage, setStage] = useState(currentStage)
   // Si el servidor trae otra etapa (router.refresh, otra pestaña), se adopta.
   const [lastServerStage, setLastServerStage] = useState(currentStage)
@@ -58,7 +60,7 @@ export default function DealStageSelector({
     setBusy(true)
     setError('')
     const result = await changeDealStage(supabase, {
-      dealId, fromStage: stage, toStage: newStage, stages, ...opts,
+      dealId, fromStage: stage, toStage: newStage, stages, currency, ...opts,
     })
     setBusy(false)
     if (!result.ok) { setError(result.error); return }

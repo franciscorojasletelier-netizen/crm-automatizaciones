@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { listNewMessageIds, getGmailMessage } from '@/lib/email/gmail'
+import { safeEqual } from '@/lib/secure-compare'
 import { associateEmailToDeal } from '@/lib/email/associate'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
   // pero descarta cualquier llamada que no conozca este endpoint
   // específico (mismo nivel de rigor que CRON_SECRET en /api/cron/*).
   const token = request.nextUrl.searchParams.get('token')
-  if (!token || token !== process.env.GMAIL_WEBHOOK_TOKEN) {
+  if (!safeEqual(token, process.env.GMAIL_WEBHOOK_TOKEN)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

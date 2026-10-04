@@ -152,7 +152,7 @@ export default function CompanyRow({ company, dealId, canEdit = true, fields = [
             {data.is_existing_client ? 'Cliente' : 'Prospecto'}
           </span>
           {canEdit && (
-            <button onClick={() => setEditing(true)}
+            <button type="button" onClick={() => setEditing(true)} aria-label={`Editar ${company.name}`}
               className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-accent-100 text-slate-400 hover:text-accent-600">
               <Pencil className="w-3.5 h-3.5" />
             </button>

@@ -51,7 +51,7 @@ export default async function NotificacionesPage() {
   for (const task of (overdueTasks ?? []) as unknown as TaskRow[]) {
     if (alreadyNotified.has(`task_overdue:${task.id}`)) continue
     const company = task.deals?.companies?.name
-    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
+    const dueStr  = new Date(task.due_date!).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' })
     newNotifs.push({
       user_id:     user.id,
       type:        'task_overdue',
@@ -125,6 +125,7 @@ export default async function NotificacionesPage() {
             'Automatizaciones configuradas con "Notificar"',
             'Deals ganados',
             'Documentos de cobranza que vencen y compromisos de pago del día',
+            'Cotizaciones que el cliente acepta o rechaza desde el link',
           ].map(text => (
             <div key={text} className="flex items-center gap-2 text-xs text-slate-600">
               <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0" aria-hidden />

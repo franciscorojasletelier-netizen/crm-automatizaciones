@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { AlertTriangle, Clock, Wallet, ArrowRight, TrendingUp } from 'lucide-react'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import DashboardDonut from '@/components/dashboard/donut-chart'
-import { clp, timeAgo } from '@/lib/format'
+import { money, timeAgo } from '@/lib/format'
 import { getStages, defaultStage, stageByKey, colorOf, funnelStages as funnelOf, probabilityForStage } from '@/lib/stages'
 import { CHILE_TZ, chileDateString, chileMonthStart } from '@/lib/dates'
 import { canAccessSection } from '@/lib/roles'
@@ -23,7 +23,7 @@ type OpenDeal = {
 }
 
 export default async function DashboardPage() {
-  const { supabase, organizationId, role, sectionAccess, profile } = await getCurrentProfile()
+  const { supabase, organizationId, role, sectionAccess, profile, currency } = await getCurrentProfile()
   const now = new Date()
   const today = chileDateString(now)
   const monthStart = chileMonthStart(0, now).toISOString()
@@ -116,25 +116,25 @@ export default async function DashboardPage() {
 
       <StatStrip>
         {seesPipeline ? (
-          <Stat label="Pipeline abierto" value={clp(pipelineValue)} href="/pipeline"
+          <Stat label="Pipeline abierto" value={money(pipelineValue, currency)} href="/pipeline"
             context={`${open.length} ${open.length === 1 ? 'deal' : 'deals'} · ${newLeadsRes.count ?? 0} nuevos`} />
         ) : (
           <Stat label="Tareas vencidas" value={tasksOverdue} tone={tasksOverdue > 0 ? 'danger' : 'neutral'} href="/tareas" context="Asignadas a ti" />
         )}
-        <Stat label="Ganado este mes" value={clp(wonMonth)} tone={wonMonth > 0 ? 'success' : 'neutral'} href={seesPipeline ? '/reportes' : undefined}
+        <Stat label="Ganado este mes" value={money(wonMonth, currency)} tone={wonMonth > 0 ? 'success' : 'neutral'} href={seesPipeline ? '/reportes' : undefined}
           context={<span>{wonMonthCount} {wonMonthCount === 1 ? 'cierre' : 'cierres'} · <Delta value={wonDelta} suffix="%" /> vs. mes anterior</span>} />
-        <Stat label="Forecast ponderado" value={clp(forecast)} href={seesPipeline ? '/reportes' : undefined}
+        <Stat label="Forecast ponderado" value={money(forecast, currency)} href={seesPipeline ? '/reportes' : undefined}
           context="Valor × probabilidad de cada etapa" />
         {seesCobranza ? (
-          <Stat label="Cobranza vencida" value={clp(overdueAmount)} tone={overdueAmount > 0 ? 'danger' : 'neutral'} href="/cobranza?filtro=vencidos"
-            context={`De ${clp(receivable)} por cobrar`} />
+          <Stat label="Cobranza vencida" value={money(overdueAmount, currency)} tone={overdueAmount > 0 ? 'danger' : 'neutral'} href="/cobranza?filtro=vencidos"
+            context={`De ${money(receivable, currency)} por cobrar`} />
         ) : (
           <Stat label="Tareas vencidas" value={tasksOverdue} tone={tasksOverdue > 0 ? 'danger' : 'neutral'} href="/tareas"
             context={tasksOverdue > 0 ? 'Requieren acción' : 'Al día'} />
         )}
       </StatStrip>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <Panel title="Requiere atención" padded={false}
           description={attentionCount > 0 ? 'Lo que conviene resolver hoy' : undefined}>
           {attentionCount === 0 ? (
@@ -148,13 +148,13 @@ export default async function DashboardPage() {
                     <span className="min-w-0 flex-1 text-[13px] text-slate-800 truncate">
                       Cobro vencido · <span className="font-medium">{inv.companies?.name}</span> <span className="text-slate-500">{invoiceCode(inv)}</span>
                     </span>
-                    <span className="text-xs font-medium text-red-700 tabular-nums whitespace-nowrap">{daysOverdue(inv, today)} días · {clp(balanceOf(inv))}</span>
+                    <span className="text-xs font-medium text-red-700 tabular-nums whitespace-nowrap">{daysOverdue(inv, today)} días · {money(balanceOf(inv), currency)}</span>
                   </Link>
                 </li>
               ))}
               {overdueTasks.map(t => (
                 <li key={t.id}>
-                  <Link href="/tareas" className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                  <Link href={`/tareas?tarea=${t.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
                     <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                     <span className="min-w-0 flex-1 text-[13px] text-slate-800 truncate">
                       Tarea vencida · <span className="font-medium">{t.title}</span>
@@ -203,7 +203,7 @@ export default async function DashboardPage() {
                       <div className="flex items-baseline justify-between gap-2 text-[13px] mb-1">
                         <span className="text-slate-700 truncate">{stage.label}</span>
                         <span className="tabular-nums text-slate-500 whitespace-nowrap">
-                          <span className="text-slate-900 font-medium">{row.count}</span>{row.amount > 0 && ` · ${clp(row.amount)}`}
+                          <span className="text-slate-900 font-medium">{row.count}</span>{row.amount > 0 && ` · ${money(row.amount, currency)}`}
                         </span>
                       </div>
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -260,7 +260,7 @@ export default async function DashboardPage() {
                             </span>
                           </td>
                           <td className="px-3 py-2.5 text-slate-600 max-w-[260px] truncate hidden lg:table-cell">{d.next_action ?? '—'}</td>
-                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">{d.estimated_value ? clp(d.estimated_value) : '—'}</td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">{d.estimated_value ? money(d.estimated_value, currency) : '—'}</td>
                           <td className="px-4 py-2.5 text-right text-slate-500 whitespace-nowrap hidden sm:table-cell">{timeAgo(d.updated_at)}</td>
                         </tr>
                       )

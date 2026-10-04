@@ -1,63 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
-import { CHILE_TZ, chileDayStart } from '@/lib/dates'
-import { escapeHtml } from '@/lib/html'
-
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' })
-
-type ReminderTask = { title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }
-
-function buildEmailHtml(orgName: string, now: Date, todayTasks: ReminderTask[], overdueTasks: ReminderTask[]) {
-  const todayHtml = todayTasks.length > 0 ? `
-    <h3 style="color:#111;font-size:14px;margin:0 0 8px;">📋 Tareas para hoy (${todayTasks.length})</h3>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-      ${todayTasks.map(t => `
-        <tr style="border-bottom:1px solid #f0f0f0;">
-          <td style="padding:8px 0;font-size:13px;color:#111;">${escapeHtml(t.title)}</td>
-          <td style="padding:8px 0;font-size:12px;color:#888;text-align:right;">${escapeHtml(t.deals?.companies?.name)}</td>
-        </tr>
-      `).join('')}
-    </table>
-  ` : ''
-
-  const overdueHtml = overdueTasks.length > 0 ? `
-    <h3 style="color:#dc2626;font-size:14px;margin:0 0 8px;">⚠️ Tareas vencidas (${overdueTasks.length})</h3>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-      ${overdueTasks.map(t => `
-        <tr style="border-bottom:1px solid #f0f0f0;">
-          <td style="padding:8px 0;font-size:13px;color:#111;">${escapeHtml(t.title)}</td>
-          <td style="padding:8px 0;font-size:12px;color:#dc2626;text-align:right;">${formatDate(t.due_date)}</td>
-        </tr>
-      `).join('')}
-    </table>
-  ` : ''
-
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
-      <h2 style="color:#111;margin:0 0 4px;">Buenos días 👋</h2>
-      <p style="color:#666;font-size:14px;margin:0 0 24px;">
-        ${escapeHtml(orgName)} — ${now.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-      </p>
-      ${todayHtml}
-      ${overdueHtml}
-      <a href="https://crm-automatizaciones.vercel.app/tareas"
-         style="display:inline-block;background:#111;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:bold;">
-        Ver tareas en el CRM →
-      </a>
-      <p style="color:#ccc;font-size:11px;margin-top:24px;">Este email se envía automáticamente cada día a las 8:00 AM</p>
-    </div>
-  `
-}
+import { chileDayStart } from '@/lib/dates'
+import { renderOrgDigest, type TaskLine } from '@/lib/task-emails'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 export async function GET(request: NextRequest) {
   // Falla cerrado: si CRON_SECRET no está seteada, el endpoint queda
   // público en vez de protegido — mismo guard que los otros 3 crons
   // (antes este era el único que no lo tenía).
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -72,7 +24,7 @@ export async function GET(request: NextRequest) {
   // recibe SU PROPIO resumen, acotado a sus propias tareas.
   const { data: orgs } = await supabase
     .from('organizations')
-    .select('id, name, display_name, notification_email')
+    .select('id, name, display_name, notification_email, logo_url, email, phone, address')
     .eq('is_active', true)
     .not('notification_email', 'is', null)
 
@@ -103,13 +55,16 @@ export async function GET(request: NextRequest) {
 
     if ((!todayTasks || todayTasks.length === 0) && (!overdueTasks || overdueTasks.length === 0)) continue
 
-    const orgName = org.display_name || org.name
+    const brand = { name: org.display_name || org.name, logoUrl: org.logo_url, email: org.email, phone: org.phone, address: org.address }
+    // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
+    const toLines = (rows: unknown[] | null): TaskLine[] => ((rows ?? []) as { title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }[])
+      .map(t => ({ title: t.title, due_date: t.due_date, company: t.deals?.companies?.name ?? null }))
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://crm-automatizaciones.vercel.app'
+    const { subject, html } = renderOrgDigest({ today: toLines(todayTasks), overdue: toLines(overdueTasks), appUrl, brand })
     await resend.emails.send({
       from: process.env.EMAIL_FROM?.trim() || 'CRM Automatizaciones <onboarding@resend.dev>',
       to: org.notification_email!,
-      subject: `📅 ${todayTasks?.length ?? 0} tarea${(todayTasks?.length ?? 0) !== 1 ? 's' : ''} para hoy — ${orgName}`,
-      // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
-      html: buildEmailHtml(orgName, now, (todayTasks ?? []) as unknown as ReminderTask[], (overdueTasks ?? []) as unknown as ReminderTask[]),
+      subject, html,
     })
     sent++
   }

@@ -122,7 +122,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
               {d.due_date && (
                 <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(d.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: '2-digit', month: 'short' })}
+                  {new Date(d.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short' })}
                 </p>
               )}
             </div>

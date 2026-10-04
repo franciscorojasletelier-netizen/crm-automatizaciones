@@ -8,6 +8,7 @@ import { uploadOrgLogo, validateLogo } from '@/lib/org-logo'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { PLANS, type PlanKey } from '@/lib/plans'
 import { cn } from '@/lib/utils'
+import { CURRENCIES } from '@/lib/money'
 
 function genPassword() {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -27,10 +28,10 @@ export default function NewOrganizationForm({ canInvite }: { canInvite: boolean 
   const [done, setDone] = useState<{ orgId: string; invited: boolean; planWarning?: string; profileWarning?: string } | null>(null)
   // Datos de la empresa (opcionales): van en correos, estados de cuenta y cotizaciones.
   const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [profile, setProfile] = useState({ email: '', phone: '', address: '', payment_instructions: '' })
+  const [profile, setProfile] = useState({ email: '', phone: '', address: '', payment_instructions: '', currency: 'CLP' })
   const fileRef = useRef<HTMLInputElement>(null)
   const logoPreview = useObjectUrl(logoFile)
-  const setP = (k: keyof typeof profile) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setProfile(p => ({ ...p, [k]: e.target.value }))
+  const setP = (k: keyof typeof profile) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setProfile(p => ({ ...p, [k]: e.target.value }))
 
   function pickLogo(file: File | undefined) {
     if (!file) return
@@ -41,7 +42,7 @@ export default function NewOrganizationForm({ canInvite }: { canInvite: boolean 
 
   function reset() {
     setOrgName(''); setFullName(''); setEmail(''); setPassword(genPassword()); setPlan('profesional')
-    setLogoFile(null); setProfile({ email: '', phone: '', address: '', payment_instructions: '' })
+    setLogoFile(null); setProfile({ email: '', phone: '', address: '', payment_instructions: '', currency: 'CLP' })
     setError(''); setDone(null)
   }
 
@@ -71,8 +72,8 @@ export default function NewOrganizationForm({ canInvite }: { canInvite: boolean 
     const warnings: string[] = []
     const clean = (v: string) => v.trim() || null
     const fields = { email: clean(profile.email), phone: clean(profile.phone), address: clean(profile.address), payment_instructions: clean(profile.payment_instructions) }
-    if (Object.values(fields).some(Boolean)) {
-      const { error: upErr } = await sb.from('organizations').update(fields).eq('id', orgId)
+    if (Object.values(fields).some(Boolean) || profile.currency !== 'CLP') {
+      const { error: upErr } = await sb.from('organizations').update({ ...fields, currency: profile.currency }).eq('id', orgId)
       if (upErr) warnings.push(`datos de contacto (${upErr.message})`)
     }
     if (logoFile) {
@@ -175,6 +176,12 @@ export default function NewOrganizationForm({ canInvite }: { canInvite: boolean 
             <label htmlFor="no-caddr" className={labelClass}>Dirección</label>
             <input id="no-caddr" value={profile.address} onChange={setP('address')} className={inputClass} />
           </div>
+        </div>
+        <div className="sm:w-1/3">
+          <label htmlFor="no-ccur" className={labelClass}>Moneda</label>
+          <select id="no-ccur" value={profile.currency} onChange={setP('currency')} className={inputClass}>
+            {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+          </select>
         </div>
         <div>
           <label htmlFor="no-cpay" className={labelClass}>Cómo pagar</label>

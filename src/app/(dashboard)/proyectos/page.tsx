@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
 import { getVisibleProjectIds } from '@/lib/visibility'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import Link from 'next/link'
 import { FolderOpen, ChevronRight, AlertTriangle, Clock } from 'lucide-react'
 import { DATE_ONLY_TZ } from '@/lib/dates'
@@ -40,7 +40,7 @@ function isDueSoon(due: string | null) {
 }
 
 export default async function ProyectosPage() {
-  const { role, supabase, user } = await requirePermission('proyectos')
+  const { role, supabase, user, currency } = await requirePermission('proyectos')
 
   const visibleIds = await getVisibleProjectIds(supabase, user?.id ?? '', role)
 
@@ -168,7 +168,7 @@ export default async function ProyectosPage() {
                   <div className="flex items-center justify-between text-xs mt-3">
                     <div className="flex items-center gap-3">
                       {project.budget && (
-                        <span className="font-semibold text-slate-700">{formatCLP(project.budget)}</span>
+                        <span className="font-semibold text-slate-700">{formatMoney(project.budget, currency)}</span>
                       )}
                       {project.profiles?.full_name && (
                         <div className="flex items-center gap-1.5">
@@ -188,7 +188,7 @@ export default async function ProyectosPage() {
                         'bg-slate-100 text-slate-500'
                       }`}>
                         {overdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        {new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: '2-digit', month: 'short' })}
+                        {new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short' })}
                       </span>
                     )}
                   </div>
@@ -231,7 +231,7 @@ export default async function ProyectosPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 hidden lg:table-cell text-sm text-slate-500">
-                      {project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      {project.due_date ? new Date(project.due_date).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                     </td>
                     <td className="px-5 py-3.5">
                       <Link href={`/proyectos/${project.id}`}>

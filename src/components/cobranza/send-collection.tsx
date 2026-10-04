@@ -10,7 +10,7 @@ import { Loader2, Mail, MessageCircle, Send, X, CheckCircle2, Eye } from 'lucide
 import { renderCollectionEmail, type EmailOrg } from '@/lib/cobranza-email'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { useDialog } from '@/lib/use-dialog'
-import { clp } from '@/lib/format'
+import { money } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   TONE_META, DETAIL_MARKER, emailMessage, whatsappMessage, suggestedTone, waPhone, waLink,
@@ -129,7 +129,7 @@ export default function SendCollection({
               <div className="min-w-0">
                 <h2 id="send-collection-title" className="text-base font-semibold text-slate-900">Enviar cobro</h2>
                 <p className="text-xs text-slate-500 truncate">
-                  {companyName} · {statement.lines.length} {statement.lines.length === 1 ? 'documento' : 'documentos'} · <span className="tabular-nums">{clp(statement.total)}</span>
+                  {companyName} · {statement.lines.length} {statement.lines.length === 1 ? 'documento' : 'documentos'} · <span className="tabular-nums">{money(statement.total, statement.currency)}</span>
                 </p>
               </div>
               <button type="button" onClick={() => setOpen(false)} disabled={busy} aria-label="Cerrar"

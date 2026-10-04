@@ -191,13 +191,50 @@ async function main() {
   await oc.auth.signInWithPassword({ email: orphanEmail, password: PASS })
   const { error: selfIns } = await oc.from('profiles').insert({ id: orphan.user.id, full_name: 'x', email: orphanEmail, role: 'super_admin', is_active: true, organization_id: orgA })
   assert('Un usuario sin perfil NO puede crearse un perfil super_admin', !!selfIns, selfIns?.message)
+
+  // ── Monedas e impuestos (migraciones 050–051) ──
+  const gB = gerenteB.client
+  const companyB = must('empresa B', await admin.from('companies').insert({ name: `Cliente USD ${stamp}`, organization_id: orgB }).select('id').single())
+  const { error: toUsd } = await gB.from('organizations').update({ currency: 'USD' }).eq('id', orgB)
+  assert('Sin cobranza, la organización puede cambiar su moneda', !toUsd, toUsd?.message)
+  const { data: usdInv, error: usdErr } = await gB.from('invoices')
+    .insert({ company_id: companyB.id, description: 'Servicio', amount: 1234.56, currency: 'CLP', due_date: '2026-10-15', issue_date: '2026-09-30' })
+    .select('id, currency, amount').single()
+  assert('La factura toma la moneda de la organización (no la que envía la app)', usdInv?.currency === 'USD', usdErr?.message ?? usdInv?.currency)
+  assert('Los montos USD guardan centavos', Number(usdInv?.amount) === 1234.56, String(usdInv?.amount))
+  const { error: payUsd } = await gB.from('invoice_payments').insert({ invoice_id: usdInv?.id, amount: 0.56, paid_on: '2026-10-01' })
+  const { data: usdAfter } = await gB.from('invoices').select('paid_amount, status').eq('id', usdInv?.id).single()
+  assert('Un pago con centavos actualiza saldo y estado', !payUsd && Number(usdAfter?.paid_amount) === 0.56 && usdAfter?.status === 'parcial', payUsd?.message ?? JSON.stringify(usdAfter))
+  await gB.from('invoices').update({ currency: 'EUR' }).eq('id', usdInv?.id)
+  const { data: usdKept } = await gB.from('invoices').select('currency').eq('id', usdInv?.id).single()
+  assert('La moneda de una factura no se puede cambiar', usdKept?.currency === 'USD', usdKept?.currency)
+  const { error: toEur } = await gB.from('organizations').update({ currency: 'EUR' }).eq('id', orgB)
+  assert('Con cobranza, la moneda de la organización no cambia', !!toEur, toEur?.message)
+
+  const { data: q1, error: q1Err } = await g.from('quotes')
+    .insert({ deal_id: dealG.id, items: [{ description: 'Consultoría', quantity: 1, unit_price: 100 }], taxes: [{ label: 'IVA', rate: 19 }, { label: 'Impuesto adicional', rate: 10 }], currency: 'USD' })
+    .select('id, tax_rate, created_by, currency').single()
+  assert('Una cotización guarda varios impuestos (tax_rate = suma)', Number(q1?.tax_rate) === 29, q1Err?.message ?? String(q1?.tax_rate))
+  assert('La cotización registra a su autor automáticamente', q1?.created_by === gerenteA.id, q1?.created_by ?? 'null')
+  const { error: badTax } = await g.from('quotes').insert({ deal_id: dealG.id, items: [], taxes: [{ label: 'IVA', rate: 150 }] })
+  assert('Un impuesto fuera de 0–100 % es rechazado', !!badTax, badTax?.message)
+  const { error: badCur } = await g.from('quotes').insert({ deal_id: dealG.id, items: [], currency: 'ARS' })
+  assert('Una moneda no soportada es rechazada', !!badCur, badCur?.message)
+  await g.from('quotes').update({ status: 'sent', public_token: crypto.randomUUID() }).eq('id', q1?.id)
+  const { data: delSent } = await g.from('quotes').delete().eq('id', q1?.id).select('id')
+  assert('Una cotización enviada no se puede eliminar', (delSent ?? []).length === 0)
+  const q2 = must('cotización borrador', await g.from('quotes').insert({ deal_id: dealG.id, items: [] }).select('id').single())
+  const { data: delOther } = await comercialA.client.from('quotes').delete().eq('id', q2.id).select('id')
+  assert('Un comercial no elimina borradores ajenos', (delOther ?? []).length === 0)
+  const { data: delDraft } = await g.from('quotes').delete().eq('id', q2.id).select('id')
+  assert('Un borrador sí se puede eliminar', (delDraft ?? []).length === 1)
 }
 
 async function cleanup() {
   try {
     const orgs = state.orgs
     if (orgs.length) {
-      for (const t of ['invoices', 'deals', 'companies']) {
+      for (const t of ['quotes', 'invoices', 'deals', 'companies']) {
         const { error } = await admin.from(t).delete().in('organization_id', orgs)
         if (error) throw new Error(`${t}: ${error.message}`)
       }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { executeAutomationAction } from '@/lib/automations'
+import { isCronAuthorized } from '@/lib/secure-compare'
 
 // Techo por regla: con orgs grandes, "deals abiertos sin cambios hace
 // N días" puede ser miles de filas — no tiene sentido procesarlas todas
@@ -28,9 +29,7 @@ async function mapWithConcurrency<T>(items: T[], limit: number, fn: (item: T) =>
 export async function GET(request: NextRequest) {
   // Falla cerrado: si CRON_SECRET no está seteada, el endpoint queda
   // público en vez de protegido — antes el chequeo se saltaba entero.
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = (process.env.CRON_SECRET ?? '').trim()
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

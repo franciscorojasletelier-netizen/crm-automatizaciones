@@ -12,7 +12,7 @@ export function timeAgo(date: string | Date, style: 'short' | 'long' = 'long', w
     return style === 'short' ? v : `Hace ${v}`
   }
   return new Date(date).toLocaleDateString('es-CL', {
-    timeZone: CHILE_TZ, day: '2-digit', month: 'short', ...(withYear ? { year: '2-digit' } : {}),
+    timeZone: CHILE_TZ, day: 'numeric', month: 'short', ...(withYear ? { year: '2-digit' } : {}),
   })
 }
 
@@ -29,21 +29,5 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Como formatCLP, pero un cero se muestra "$0": en totales y saldos el
-// cero es un dato, no un campo vacío.
-export function clp(value: number | string | null | undefined): string {
-  const n = Number(value)
-  return (Number.isFinite(n) ? n : 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })
-}
-
-// Formato de moneda del CRM: pesos chilenos (CLP)
-// CLP no usa decimales; separador de miles con puntos. Ej: $5.000.000
-export function formatCLP(value: number | string | null | undefined): string {
-  const n = Number(value)
-  if (!value || isNaN(n)) return '—'
-  return n.toLocaleString('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,
-  })
-}
+// Montos: ver src/lib/money.ts (moneda de la organización o del documento).
+export { formatMoney, money } from '@/lib/money'

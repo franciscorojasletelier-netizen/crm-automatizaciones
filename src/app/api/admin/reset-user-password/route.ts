@@ -4,7 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { normalizeRole } from '@/lib/roles'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { Resend } from 'resend'
-import { escapeHtml } from '@/lib/html'
+import { renderPasswordReset } from '@/lib/system-emails'
 
 // El admin/gerente nunca ve ni define la contraseña de otro usuario —
 // solo dispara un enlace de recuperación real de Supabase Auth, igual
@@ -77,24 +77,16 @@ export async function POST(request: NextRequest) {
 
   const resendKey = process.env.RESEND_API_KEY?.trim()
   if (resendKey) {
-    const { data: org } = await admin.from('organizations').select('name, display_name').eq('id', organizationId).maybeSingle()
+    const { data: org } = await admin.from('organizations').select('name, display_name, logo_url, email, phone, address').eq('id', organizationId).maybeSingle()
     const orgName = org?.display_name || org?.name || 'tu organización'
     const resend = new Resend(resendKey)
     await resend.emails.send({
       from: process.env.EMAIL_FROM?.trim() || `${orgName} <onboarding@resend.dev>`,
       to: target.email,
-      subject: 'Restablece tu contraseña',
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
-          <h2 style="color:#111">Hola${target.full_name ? ` ${escapeHtml(target.full_name.split(' ')[0])}` : ''}</h2>
-          <p style="color:#444;line-height:1.6">Un administrador de ${escapeHtml(orgName)} generó un enlace para que restablezcas tu contraseña de acceso al CRM.</p>
-          <a href="${linkData.properties.action_link}"
-             style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
-            Restablecer contraseña
-          </a>
-          <p style="color:#999;font-size:12px;">Si no lo esperabas, puedes ignorar este correo.</p>
-        </div>
-      `,
+      ...renderPasswordReset({
+        name: target.full_name, link: linkData.properties.action_link,
+        brand: { name: orgName, logoUrl: org?.logo_url, email: org?.email, phone: org?.phone, address: org?.address },
+      }),
     }).catch(e => console.warn('Error enviando email de reset:', e))
   }
 

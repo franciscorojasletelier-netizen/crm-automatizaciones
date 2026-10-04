@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { requirePermission } from '@/lib/supabase/server'
 import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Download } from 'lucide-react'
 import Link from 'next/link'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { type Stage, getStages, colorOf, funnelStages as funnelOf, probabilityForStage } from '@/lib/stages'
 import { CHILE_TZ, chileMonthStart } from '@/lib/dates'
 
@@ -100,7 +100,7 @@ async function getReportData(supabase: SupabaseClient, stages: Stage[]) {
 }
 
 export default async function ReportesPage() {
-  const { supabase, organizationId } = await requirePermission('reportes')
+  const { supabase, organizationId, currency } = await requirePermission('reportes')
   const stages = await getStages(supabase, organizationId ?? undefined)
   const data = await getReportData(supabase, stages)
 
@@ -142,7 +142,7 @@ export default async function ReportesPage() {
         {[
           {
             label: 'Ingresos cerrados',
-            value: formatCLP(data.totalRevenue),
+            value: formatMoney(data.totalRevenue, currency),
             sub: 'Deals cerrados ganados',
             icon: DollarSign,
             color: 'text-emerald-600 bg-emerald-50',
@@ -158,7 +158,7 @@ export default async function ReportesPage() {
           },
           {
             label: 'Valor promedio',
-            value: formatCLP(data.avgDealSize),
+            value: formatMoney(data.avgDealSize, currency),
             sub: 'Por deal ganado',
             icon: TrendingUp,
             color: 'text-amber-600 bg-amber-50',
@@ -166,7 +166,7 @@ export default async function ReportesPage() {
           },
           {
             label: 'Forecast ponderado',
-            value: formatCLP(data.forecast),
+            value: formatMoney(data.forecast, currency),
             sub: `${data.openCount} deals abiertos × probabilidad`,
             icon: Award,
             color: 'text-accent-600 bg-accent-50',
@@ -319,7 +319,7 @@ export default async function ReportesPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3.5 text-right font-bold text-emerald-700">
-                      {exec.revenue > 0 ? formatCLP(exec.revenue) : '—'}
+                      {exec.revenue > 0 ? formatMoney(exec.revenue, currency) : '—'}
                     </td>
                     <td className="px-3 py-3.5 text-right">
                       <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
@@ -383,11 +383,11 @@ export default async function ReportesPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   {deal.estimated_value && (
                     <span className="text-sm font-bold text-emerald-700">
-                      {formatCLP(deal.estimated_value)}
+                      {formatMoney(deal.estimated_value, currency)}
                     </span>
                   )}
                   <span className="text-xs text-slate-400">
-                    {deal.closed_at ? new Date(deal.closed_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short' }) : '—'}
+                    {deal.closed_at ? new Date(deal.closed_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' }) : '—'}
                   </span>
                 </div>
               </Link>

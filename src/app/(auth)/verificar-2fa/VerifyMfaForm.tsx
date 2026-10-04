@@ -52,11 +52,16 @@ export default function VerifyMfaForm() {
       setCode('')
       return
     }
+    // Recarga completa a propósito: el proxy debe leer la sesión ya en AAL2 y
+    // no puede quedar en caché nada renderizado con la sesión anterior.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/dashboard'
   }
 
   async function handleLogout() {
     await supabase.auth.signOut()
+    // Igual que arriba: recarga completa para descartar el estado de la sesión cerrada.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/login'
   }
 

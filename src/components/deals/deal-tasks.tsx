@@ -175,7 +175,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: De
           const overdue = isOverdue(task.due_date)
           return (
             <div key={task.id} className={`px-5 py-3.5 flex items-start gap-3.5 transition-colors ${overdue ? 'hover:bg-red-50/30' : 'hover:bg-slate-50/50'}`}>
-              <button onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0 transition-transform hover:scale-110">
+              <button type="button" aria-label={task.is_completed ? `Reabrir: ${task.title}` : `Completar: ${task.title}`} onClick={() => handleToggle(task.id, task.is_completed)} className="mt-0.5 shrink-0 transition-transform hover:scale-110">
                 {overdue
                   ? <AlertTriangle className="w-4.5 h-4.5 text-red-500" />
                   : <Circle className="w-4.5 h-4.5 text-slate-400 hover:text-accent-500 transition-colors" />
@@ -187,7 +187,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: De
                   <p className={`text-xs mt-0.5 font-medium flex items-center gap-1 ${overdue ? 'text-red-500' : 'text-slate-400'}`}>
                     <Calendar className="w-3 h-3" />
                     {overdue ? 'Vencida · ' : ''}
-                    {new Date(task.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(task.due_date).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>

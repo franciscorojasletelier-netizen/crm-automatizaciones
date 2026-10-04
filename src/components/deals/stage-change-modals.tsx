@@ -8,9 +8,10 @@ import { useRef, useState } from 'react'
 import { X, AlertTriangle, MessageSquare, Loader2, CheckCircle2, Paperclip, Upload, FileText, AlertCircle, Check, Trophy } from 'lucide-react'
 import { type Stage, colorOf } from '@/lib/stages'
 import { StageIcon } from '@/lib/stage-icons'
-import { formatBytes, formatCLP } from '@/lib/format'
+import { formatBytes, formatMoney } from '@/lib/format'
 import { PROPOSAL_ACCEPT, PROPOSAL_MAX_MB } from '@/lib/deal-stage-change'
 import { useDialog } from '@/lib/use-dialog'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 const MIN_COMMENT = 10
 
@@ -241,13 +242,14 @@ export function WonModal({ companyName, value, createsProject, onConfirm, onCanc
   onCancel: () => void
   busy: boolean
 }) {
+  const currency = useCurrency()
   return (
     <ModalShell onClose={onCancel} busy={busy} size="sm">
       <div className="px-6 py-5 bg-emerald-50 border-b border-emerald-200 text-center">
         <Trophy className="w-8 h-8 text-emerald-600 mx-auto mb-2" aria-hidden />
         <h2 className="text-base font-bold text-slate-900">¡Deal ganado!</h2>
         <p className="text-xs text-slate-500 mt-0.5">{companyName ?? 'Deal'}</p>
-        {!!value && <p className="text-lg font-bold text-emerald-700 mt-2 tabular-nums">{formatCLP(value)}</p>}
+        {!!value && <p className="text-lg font-bold text-emerald-700 mt-2 tabular-nums">{formatMoney(value, currency)}</p>}
       </div>
       <div className="p-6">
         <p className="text-sm text-slate-600 text-center leading-relaxed">

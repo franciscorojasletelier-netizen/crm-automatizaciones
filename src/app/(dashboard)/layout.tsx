@@ -5,6 +5,8 @@ import { type Role } from '@/lib/roles'
 import { getStages } from '@/lib/stages'
 import { getDisabledModules } from '@/lib/modules'
 import { chileDateString } from '@/lib/dates'
+import { CurrencyProvider } from '@/components/providers/currency-provider'
+import { FloatingDockProvider } from '@/components/providers/floating-dock'
 
 export interface NavCounts {
   leads: number
@@ -30,7 +32,7 @@ async function getLayoutData() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null }
+    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null, currency: 'CLP' }
 
     const now = new Date().toISOString()
 
@@ -65,7 +67,7 @@ async function getLayoutData() {
         .eq('is_read', false),
       supabase.from('platform_owners').select('user_id').eq('user_id', user.id).maybeSingle(),
       getStages(supabase, orgId),
-      orgId ? supabase.from('organizations').select('name, display_name').eq('id', orgId).maybeSingle() : Promise.resolve({ data: null }),
+      orgId ? supabase.from('organizations').select('name, display_name, currency').eq('id', orgId).maybeSingle() : Promise.resolve({ data: null }),
       getDisabledModules(supabase, orgId),
       // RLS acota a lo que el usuario puede ver de cobranza (0 si no ve nada).
       supabase.from('invoices').select('id', { count: 'exact', head: true })
@@ -77,6 +79,7 @@ async function getLayoutData() {
     return {
       profile,
       isPlatformOwner: !!platformOwner.data,
+      currency: (org.data as { currency?: string } | null)?.currency ?? 'CLP',
       organizationName: (org.data as { display_name?: string | null; name?: string } | null)?.display_name || (org.data as { name?: string } | null)?.name || null,
       stages,
       disabledModules,
@@ -95,7 +98,7 @@ async function getLayoutData() {
       userName: profile?.full_name ?? profile?.email ?? 'Usuario',
     }
   } catch {
-    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null }
+    return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null, currency: 'CLP' }
   }
 }
 
@@ -104,12 +107,14 @@ function emptyNavCounts(): NavCounts {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages, disabledModules, organizationName } = await getLayoutData()
+  const { counts, profile, chatMessages, userId, userName, isPlatformOwner, stages, disabledModules, organizationName, currency } = await getLayoutData()
 
   return (
+    <CurrencyProvider currency={currency}>
+    <FloatingDockProvider>
     <div className="flex h-screen bg-background print:block print:h-auto">
       <Sidebar counts={counts} profile={profile} isPlatformOwner={isPlatformOwner} stages={stages} disabledModules={disabledModules} organizationName={organizationName} />
-      <main className="flex-1 overflow-auto pt-[52px] pb-[132px] md:pt-0 md:pb-16 print:p-0 print:overflow-visible">
+      <main className="flex-1 overflow-auto pt-[52px] pb-[88px] md:pt-0 md:pb-36 print:p-0 print:overflow-visible">
         {children}
       </main>
 
@@ -124,5 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       )}
     </div>
+    </FloatingDockProvider>
+    </CurrencyProvider>
   )
 }

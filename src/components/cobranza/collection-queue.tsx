@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Phone, FileText, CheckCircle2 } from 'lucide-react'
 import { Panel, buttonClass } from '@/components/ui/page'
 import SendCollection from '@/components/cobranza/send-collection'
-import { clp, timeAgo } from '@/lib/format'
+import { money, timeAgo } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { QUEUE_REASON, type Invoice, type QueueItem } from '@/lib/cobranza'
 import { buildStatement } from '@/lib/cobranza-mensajes'
@@ -20,9 +20,11 @@ interface Props {
   sender: { senderName: string | null; orgName: string | null; canSendEmail: boolean; emailFrom: string | null; emailOrg: EmailOrg }
   showAll: boolean
   limit?: number
+  /** Moneda de la organización. */
+  currency: string
 }
 
-export default function CollectionQueue({ queue, invoices, today, contacts, sender, showAll, limit = 8 }: Props) {
+export default function CollectionQueue({ queue, invoices, today, contacts, sender, showAll, limit = 8, currency }: Props) {
   const pending = queue.filter(q => !q.handledToday)
   const handled = queue.filter(q => q.handledToday)
   const visible = showAll ? pending : pending.slice(0, limit)
@@ -68,8 +70,8 @@ export default function CollectionQueue({ queue, invoices, today, contacts, send
                     </div>
                     <p className="mt-0.5 text-xs text-slate-500 tabular-nums">
                       {q.overdue > 0
-                        ? <><span className="font-medium text-red-700">{clp(q.overdue)} vencido</span> de {clp(q.balance)}</>
-                        : <>{clp(q.balance)} por cobrar</>}
+                        ? <><span className="font-medium text-red-700">{money(q.overdue, currency)} vencido</span> de {money(q.balance, currency)}</>
+                        : <>{money(q.balance, currency)} por cobrar</>}
                       {' · '}{q.documents} {q.documents === 1 ? 'documento' : 'documentos'}
                       {' · '}{q.lastActivityAt ? `última gestión ${timeAgo(q.lastActivityAt)}` : 'sin gestiones'}
                       {contact?.full_name ? ` · ${contact.full_name}` : ''}

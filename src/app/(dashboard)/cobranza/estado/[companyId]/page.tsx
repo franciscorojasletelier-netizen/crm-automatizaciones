@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requirePermission } from '@/lib/supabase/server'
 import { DATE_ONLY_TZ, chileDateString } from '@/lib/dates'
-import { clp } from '@/lib/format'
+import { money } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { loadCollectionContext } from '@/lib/cobranza-server'
 import { EmptyState, buttonClass } from '@/components/ui/page'
@@ -75,12 +75,12 @@ export default async function EstadoDeCuentaPage({ params }: { params: Promise<{
           <div className="grid grid-cols-2 gap-3 sm:text-right">
             <div>
               <p className="text-xs text-slate-500">Total adeudado</p>
-              <p className="mt-0.5 text-xl font-semibold tabular-nums">{clp(statement.total)}</p>
+              <p className="mt-0.5 text-xl font-semibold tabular-nums">{money(statement.total, statement.currency)}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Vencido</p>
               <p className={cn('mt-0.5 text-xl font-semibold tabular-nums', statement.overdue > 0 ? 'text-red-700' : 'text-slate-900')}>
-                {clp(statement.overdue)}
+                {money(statement.overdue, statement.currency)}
               </p>
             </div>
           </div>
@@ -114,9 +114,9 @@ export default async function EstadoDeCuentaPage({ params }: { params: Promise<{
                       {fmtDay(l.dueDate)}
                       {l.daysLate > 0 && <p className="text-xs text-red-700">{l.daysLate} {l.daysLate === 1 ? 'día' : 'días'} de atraso</p>}
                     </td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums hidden sm:table-cell print:table-cell">{clp(l.amount)}</td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums hidden sm:table-cell print:table-cell">{l.paid > 0 ? clp(l.paid) : '—'}</td>
-                    <td className="py-2.5 text-right tabular-nums font-medium">{clp(l.balance)}</td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums hidden sm:table-cell print:table-cell">{money(l.amount, statement.currency)}</td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums hidden sm:table-cell print:table-cell">{l.paid > 0 ? money(l.paid, statement.currency) : '—'}</td>
+                    <td className="py-2.5 text-right tabular-nums font-medium">{money(l.balance, statement.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -125,7 +125,7 @@ export default async function EstadoDeCuentaPage({ params }: { params: Promise<{
                   <td className="pt-3 font-semibold" colSpan={1}>Total adeudado</td>
                   <td className="hidden sm:table-cell print:table-cell" colSpan={4} />
                   <td className="sm:hidden print:hidden" />
-                  <td className="pt-3 text-right tabular-nums font-semibold">{clp(statement.total)}</td>
+                  <td className="pt-3 text-right tabular-nums font-semibold">{money(statement.total, statement.currency)}</td>
                 </tr>
               </tfoot>
             </table>

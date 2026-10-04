@@ -25,6 +25,8 @@ export interface Invoice {
   description: string
   amount: number
   paid_amount: number
+  /** Siempre la moneda de la organización (la fija la base al crear). */
+  currency?: string
   issue_date: string   // YYYY-MM-DD
   due_date: string     // YYYY-MM-DD
   status: InvoiceStatus
@@ -41,7 +43,7 @@ export interface Invoice {
 
 export const INVOICE_SELECT = `
   id, invoice_number, company_id, deal_id, project_id, quote_id, document_type, document_folio,
-  description, amount, paid_amount, issue_date, due_date, status, responsible_id, notes,
+  description, amount, paid_amount, currency, issue_date, due_date, status, responsible_id, notes,
   next_promise_date, last_activity_at, cancelled_reason, cancelled_at, created_at,
   companies(id, name), responsible:responsible_id(full_name)
 `
@@ -75,7 +77,8 @@ export function daysBetween(a: string, b: string): number {
 
 export function balanceOf(inv: Pick<Invoice, 'amount' | 'paid_amount' | 'status'>): number {
   if (inv.status === 'anulada') return 0
-  return Math.max(0, Number(inv.amount) - Number(inv.paid_amount))
+  // Al centavo: con USD/EUR la resta en coma flotante deja residuos.
+  return Math.max(0, Math.round((Number(inv.amount) - Number(inv.paid_amount)) * 100) / 100)
 }
 
 export function isOpen(inv: Pick<Invoice, 'status'>): boolean {

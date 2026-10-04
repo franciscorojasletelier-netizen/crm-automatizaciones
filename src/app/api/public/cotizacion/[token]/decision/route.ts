@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const { data: quote } = await supabase
-    .from('quotes').select('id, status').eq('public_token', token).maybeSingle()
+    .from('quotes').select('id, status, quote_number, deal_id, created_by').eq('public_token', token).maybeSingle()
   if (!quote) return NextResponse.json({ error: 'Cotización no encontrada' }, { status: 404 })
   if (quote.status !== 'sent') {
     return NextResponse.json({ error: 'Esta cotización ya fue respondida o no está disponible para responder.' }, { status: 409 })
@@ -43,6 +43,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { error } = await supabase.from('quotes').update(updates).eq('id', quote.id)
   if (error) return NextResponse.json({ error: 'No se pudo registrar la respuesta' }, { status: 500 })
+
+  // Aviso al responsable del deal y a quien hizo la cotización: sin esto el
+  // vendedor solo se enteraba si volvía a abrir la ficha. Un fallo acá no
+  // deshace la respuesta del cliente.
+  const { data: deal } = await supabase.from('deals').select('owner_id, companies(name)').eq('id', quote.deal_id).maybeSingle()
+  const company = (deal?.companies as unknown as { name: string } | null)?.name ?? 'El cliente'
+  const recipients = [...new Set([deal?.owner_id, quote.created_by].filter(Boolean))] as string[]
+  if (recipients.length) {
+    const accepted = decision === 'accepted'
+    await supabase.from('notifications').insert(recipients.map(user_id => ({
+      user_id,
+      type: accepted ? 'quote_accepted' : 'quote_rejected',
+      title: accepted ? `✅ Cotización #${quote.quote_number} aceptada` : `Cotización #${quote.quote_number} rechazada`,
+      body: accepted ? `${company} — aceptada por ${name!.trim()}` : `${company} la rechazó desde el link`,
+      entity_type: 'deal', entity_id: quote.deal_id,
+    })))
+  }
 
   return NextResponse.json({ ok: true })
 }

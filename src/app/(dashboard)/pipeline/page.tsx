@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import KanbanBoard from '@/components/pipeline/kanban-board'
 import PipelineSwitcher from '@/components/pipeline/pipeline-switcher'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { getStages, getPipelines, defaultPipeline, stageByKey } from '@/lib/stages'
 
 export default async function PipelinePage({ searchParams }: { searchParams: Promise<{ pipeline?: string }> }) {
   const { pipeline: pipelineParam } = await searchParams
-  const { supabase, canEdit, organizationId } = await requirePermission('pipeline')
+  const { supabase, canEdit, organizationId, currency } = await requirePermission('pipeline')
 
   const pipelines = await getPipelines(supabase, organizationId ?? undefined)
   const selectedPipeline = (pipelineParam && pipelines.find(p => p.id === pipelineParam)) || defaultPipeline(pipelines)
@@ -65,7 +65,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
               <>
                 <span className="text-sm text-slate-400">·</span>
                 <p className="text-sm text-slate-500">
-                  <span className="font-semibold text-slate-700">{formatCLP(totalValue)}</span> en pipeline
+                  <span className="font-semibold text-slate-700">{formatMoney(totalValue, currency)}</span> en pipeline
                 </p>
               </>
             )}

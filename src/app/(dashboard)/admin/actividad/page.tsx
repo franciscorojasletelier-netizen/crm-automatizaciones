@@ -110,7 +110,7 @@ export default async function ActividadPage() {
               if (!v) return 'Sin fecha'
               const d = new Date(v)
               if (isNaN(d.getTime())) return v
-              return d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+              return d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
             }
             return (
               <div key={h.id} className="px-5 py-3.5 hover:bg-slate-50/50 transition-colors">

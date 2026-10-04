@@ -7,9 +7,10 @@ import {
   Search, Building2, Users, TrendingUp, ArrowRight, Loader2, Plus, LayoutDashboard, CheckSquare,
   CalendarDays, Bell, BarChart3, GitBranch, FolderOpen, UserCog, Wallet,
 } from 'lucide-react'
-import { formatCLP, getInitials } from '@/lib/format'
+import { formatMoney, getInitials } from '@/lib/format'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
 import { useDialog } from '@/lib/use-dialog'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 type Command = { icon: React.ComponentType<{ className?: string }>; label: string; keywords: string; href: string }
 
@@ -45,6 +46,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
   allowedHrefs?: string[]
   variant?: 'sidebar' | 'compact'
 }) {
+  const currency = useCurrency()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<{ deals: DealHit[]; contacts: ContactHit[] }>({ deals: [], contacts: [] })
@@ -187,7 +189,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
                             <span className={`w-1.5 h-1.5 rounded-full ${colorOf(stage).dot}`} />
                             {stage?.label ?? deal.stage}
                             {deal.contacts?.full_name && ` · ${deal.contacts.full_name}`}
-                            {deal.estimated_value ? ` · ${formatCLP(deal.estimated_value)}` : ''}
+                            {deal.estimated_value ? ` · ${formatMoney(deal.estimated_value, currency)}` : ''}
                           </p>
                         </div>
                       </button>

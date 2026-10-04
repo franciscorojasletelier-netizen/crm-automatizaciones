@@ -19,14 +19,17 @@ interface EmailMessage {
 
 
 export default function EmailThread({
-  dealId, contactId, contactEmail, hasConnectedAccount, emails: initialEmails,
+  dealId, contactId, contactEmail, hasConnectedAccount, systemSender = null, emails: initialEmails,
 }: {
   dealId: string
   contactId: string | null
   contactEmail: string | null
   hasConnectedAccount: boolean
+  /** Dirección del correo del sistema (Resend) si está activo: permite enviar sin cuenta conectada. */
+  systemSender?: string | null
   emails: EmailMessage[]
 }) {
+  const canSend = hasConnectedAccount || !!systemSender
   const [list, setList] = useState(initialEmails)
   const [composing, setComposing] = useState<null | { replyTo?: EmailMessage }>(null)
   const [to, setTo] = useState('')
@@ -79,8 +82,8 @@ export default function EmailThread({
             <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{list.length}</span>
           )}
         </div>
-        {hasConnectedAccount ? (
-          <button onClick={() => composing ? closeCompose() : openCompose()}
+        {canSend ? (
+          <button type="button" onClick={() => composing ? closeCompose() : openCompose()}
             className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
               composing ? 'bg-slate-100 text-slate-600' : 'bg-accent-50 text-accent-600 hover:bg-accent-100'
             }`}>
@@ -88,7 +91,7 @@ export default function EmailThread({
             {composing ? 'Cancelar' : 'Nuevo'}
           </button>
         ) : (
-          <span className="text-[11px] text-slate-400">Conecta tu correo en Configuración para enviar</span>
+          <span className="text-[11px] text-slate-500">Conecta tu correo en Configuración para enviar</span>
         )}
       </div>
 
@@ -100,8 +103,11 @@ export default function EmailThread({
             className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           <textarea aria-label="Escribe el mensaje" value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Escribe el mensaje..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400" />
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          <button onClick={send} disabled={loading || !to.trim() || !subject.trim() || !body.trim()}
+          {!hasConnectedAccount && systemSender && (
+            <p className="text-[11px] text-slate-500">Sale desde {systemSender} con el nombre de tu empresa; las respuestas llegan a tu correo.</p>
+          )}
+          {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+          <button type="button" onClick={send} disabled={loading || !to.trim() || !subject.trim() || !body.trim()}
             className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-all "
              >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}

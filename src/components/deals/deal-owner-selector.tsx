@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronDown, Check, Loader2 } from 'lucide-react'
 import { getInitials } from '@/lib/format'
+import { getRoleMeta } from '@/lib/roles'
 
 export interface Profile {
   id: string
@@ -21,12 +22,10 @@ interface Props {
   teamUsers:    Profile[]
   canReassign:  boolean
   onReassigned?: (dealId: string, newOwner: Profile) => void
+  /** En tablas: sin la etiqueta "Responsable" (ya está en el encabezado) y avatar chico. */
+  compact?: boolean
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin', admin: 'Super Admin', gerente: 'Gerente',
-  comercial: 'Ejecutivo', produccion: 'Producción', soporte: 'Soporte',
-}
 
 
 function getAvatarColor(id: string) {
@@ -35,7 +34,7 @@ function getAvatarColor(id: string) {
   return colors[hash % colors.length]
 }
 
-export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, canReassign, onReassigned }: Props) {
+export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, canReassign, onReassigned, compact = false }: Props) {
   const [open, setOpen]     = useState(false)
   const [saving, setSaving] = useState(false)
   const [owner, setOwner]   = useState(currentOwner)
@@ -99,15 +98,17 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   const initials    = getInitials(owner?.full_name ?? null, null, '?')
   const avatarColor = owner ? getAvatarColor(owner.id) : 'bg-slate-400'
 
+  const avatarSize = compact ? 'w-6 h-6' : 'w-8 h-8'
+
   if (!canReassign) {
     // Solo mostrar, sin dropdown
     return (
       <div className="flex items-center gap-2.5">
-        <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center shrink-0`}>
+        <div className={`${avatarSize} rounded-full ${avatarColor} flex items-center justify-center shrink-0`}>
           <span className="text-[11px] font-bold text-white">{initials}</span>
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] text-slate-500">Responsable</p>
+          {!compact && <p className="text-[13px] text-slate-500">Responsable</p>}
           <p className="text-sm font-semibold text-slate-800 truncate">{owner?.full_name ?? '—'}</p>
         </div>
       </div>
@@ -117,20 +118,23 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={handleOpen}
-        className={`flex items-center gap-2.5 w-full text-left rounded-md transition-colors group -m-1 p-1 ${
+        aria-label={`Responsable: ${owner?.full_name ?? 'sin asignar'}. Cambiar`}
+        aria-expanded={open}
+        className={`flex items-center ${compact ? 'gap-2' : 'gap-2.5'} w-full text-left rounded-md transition-colors group -m-1 p-1 ${
           open ? 'ring-2 ring-accent-200 bg-accent-50' : 'hover:bg-slate-50'
         }`}
       >
-        <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center shrink-0`}>
+        <div className={`${avatarSize} rounded-full ${avatarColor} flex items-center justify-center shrink-0`}>
           {saving
             ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
             : <span className="text-[11px] font-bold text-white">{initials}</span>
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] text-slate-500">Responsable</p>
-          <p className="text-sm font-semibold text-slate-800 truncate">{owner?.full_name ?? 'Sin asignar'}</p>
+          {!compact && <p className="text-[13px] text-slate-500">Responsable</p>}
+          <p className={`${compact ? 'text-[13px] font-medium' : 'text-sm font-semibold'} text-slate-800 truncate`}>{owner?.full_name ?? 'Sin asignar'}</p>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''} group-hover:text-accent-500`} />
       </button>
@@ -167,7 +171,7 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name ?? u.email}</p>
-                  <p className="text-[11px] text-slate-400">{ROLE_LABELS[u.role] ?? u.role}</p>
+                  <p className="text-[11px] text-slate-400">{getRoleMeta(u.role).label}</p>
                 </div>
                 {u.id === owner?.id && (
                   <Check className="w-4 h-4 text-accent-500 shrink-0" />

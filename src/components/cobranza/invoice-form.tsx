@@ -7,8 +7,10 @@ import { createClient } from '@/lib/supabase/client'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { DOCUMENT_TYPE_LABEL, addDays, type DocumentType, type Invoice } from '@/lib/cobranza'
 import { chileDateString } from '@/lib/dates'
-import { formatCLP } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { useDialog } from '@/lib/use-dialog'
+import { useCurrency } from '@/components/providers/currency-provider'
+import { currencyDecimals, moneyInputValue, parseMoneyInput, sanitizeMoneyInput } from '@/lib/money'
 
 export type Option = { id: string; label: string }
 
@@ -32,6 +34,7 @@ type Props = {
 }
 
 export default function InvoiceForm({ companies, people, prefill, invoice, openInitially = false, triggerLabel }: Props) {
+  const currency = useCurrency()
   const editing = !!invoice
   const today = chileDateString()
   const [open, setOpen] = useState(openInitially)
@@ -44,7 +47,7 @@ export default function InvoiceForm({ companies, people, prefill, invoice, openI
     document_type: (invoice?.document_type ?? 'factura') as DocumentType,
     document_folio: invoice?.document_folio ?? '',
     description: invoice?.description ?? prefill?.description ?? '',
-    amount: invoice ? String(invoice.amount) : prefill?.amount ? String(Math.round(prefill.amount)) : '',
+    amount: invoice ? moneyInputValue(invoice.amount, currency) : prefill?.amount ? moneyInputValue(prefill.amount, currency) : '',
     issue_date: invoice?.issue_date ?? today,
     due_date: invoice?.due_date ?? addDays(today, 30),
     responsible_id: invoice?.responsible_id ?? '',
@@ -54,14 +57,14 @@ export default function InvoiceForm({ companies, people, prefill, invoice, openI
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
 
-  const amount = Math.round(Number(form.amount.replace(/\D/g, '')))
-  const minAmount = invoice ? Number(invoice.paid_amount) : 1
+  const amount = parseMoneyInput(form.amount, currency)
+  const minAmount = invoice ? Number(invoice.paid_amount) : 0.01
 
   function validate(): string | null {
     if (!form.company_id) return 'Elige el cliente al que se cobra.'
     if (!form.description.trim()) return 'Describe qué se está cobrando.'
-    if (!amount || amount < 1) return 'Ingresa un monto mayor a cero.'
-    if (amount < minAmount) return `El monto no puede quedar bajo lo ya pagado (${formatCLP(minAmount)}).`
+    if (!amount || amount <= 0) return 'Ingresa un monto mayor a cero.'
+    if (amount < minAmount) return `El monto no puede quedar bajo lo ya pagado (${formatMoney(minAmount, currency)}).`
     if (form.due_date < form.issue_date) return 'El vencimiento no puede ser anterior a la emisión.'
     return null
   }
@@ -153,11 +156,11 @@ export default function InvoiceForm({ companies, people, prefill, invoice, openI
               </div>
 
               <div>
-                <label htmlFor="inv-amount" className={labelClass}>Monto total (CLP, IVA incluido)</label>
-                <input id="inv-amount" inputMode="numeric" value={form.amount}
-                  onChange={e => setForm(f => ({ ...f, amount: e.target.value.replace(/[^\d]/g, '') }))}
+                <label htmlFor="inv-amount" className={labelClass}>Monto total ({currency}, impuestos incluidos)</label>
+                <input id="inv-amount" inputMode={currencyDecimals(currency) ? 'decimal' : 'numeric'} value={form.amount}
+                  onChange={e => setForm(f => ({ ...f, amount: sanitizeMoneyInput(e.target.value, currency) }))}
                   className={`${inputClass} tabular-nums`} placeholder="0" required />
-                {amount > 0 && <p className="mt-1 text-xs text-slate-500 tabular-nums">{formatCLP(amount)}</p>}
+                {amount > 0 && <p className="mt-1 text-xs text-slate-500 tabular-nums">{formatMoney(amount, currency)}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

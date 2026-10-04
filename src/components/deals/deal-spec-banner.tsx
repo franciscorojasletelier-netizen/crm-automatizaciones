@@ -134,7 +134,7 @@ export default function DealSpecBanner({
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {new Date(specRequestedAt).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
-                  day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
+                  day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
                 })}
               </span>
             )}

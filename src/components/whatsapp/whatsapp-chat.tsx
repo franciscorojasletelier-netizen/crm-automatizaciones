@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, MessageCircle, Loader2, RefreshCw, CheckCheck, Clock, AlertCircle, X } from 'lucide-react'
 import TemplatePicker from './template-picker'
+import { useFloatingDock, dockHiddenClass } from '@/components/providers/floating-dock'
 
 interface WaMessage {
   id: string
@@ -25,7 +26,7 @@ interface Props {
 
 function timeStr(date: string) {
   return new Date(date).toLocaleString('es-CL', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
   })
 }
 
@@ -44,6 +45,10 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState('')
   const [unread, setUnread]     = useState(0)
+  const dock = useFloatingDock()
+  const { report } = dock
+  // Mensajes sin leer → punto en la pestaña lateral del celular (se limpia al salir del lead).
+  useEffect(() => { report('whatsapp', open ? 0 : unread); return () => report('whatsapp', 0) }, [report, open, unread])
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevInbound = useRef(0)
   const supabase  = createClient()
@@ -136,7 +141,7 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
   if (!contactPhone) return null
 
   return (
-    <div className="fixed bottom-36 md:bottom-24 right-3 md:right-6 z-50 flex flex-col items-end gap-3">
+    <div className={`fixed bottom-[132px] md:bottom-24 right-3 md:right-6 z-50 flex flex-col items-end gap-3 transition-all duration-200 ${!open && !dock.open ? dockHiddenClass : ''}`}>
       {open && (
         <div className="w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
           style={{ height: 'min(500px, calc(100dvh - 13rem))' }}>
@@ -247,7 +252,8 @@ export default function WhatsAppChat({ dealId, contactName, contactPhone, canSen
       {/* Botón flotante */}
       <button onClick={() => { setOpen(!open); setUnread(0) }}
         title={`WhatsApp · ${contactName}`}
-        className="w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center relative hover:scale-105 transition-all"
+        aria-label={open ? "Cerrar WhatsApp" : `WhatsApp · ${contactName}`}
+        className="w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl shadow-lg flex items-center justify-center relative hover:scale-105 transition-all"
         style={{ background: open ? '#075e54' : 'linear-gradient(135deg, #25d366, #128c7e)' }}>
         {open ? <X className="w-6 h-6 text-white" /> : <MessageCircle className="w-6 h-6 text-white" />}
         {!open && unread > 0 && (

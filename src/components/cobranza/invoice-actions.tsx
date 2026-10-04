@@ -7,8 +7,10 @@ import { createClient } from '@/lib/supabase/client'
 import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { ACTIVITY_LABEL, PAYMENT_METHOD_LABEL, addDays, type ActivityKind, type PaymentMethod } from '@/lib/cobranza'
 import { chileDateString } from '@/lib/dates'
-import { clp } from '@/lib/format'
+import { money } from '@/lib/format'
 import { useDialog } from '@/lib/use-dialog'
+import { useCurrency } from '@/components/providers/currency-provider'
+import { currencyDecimals, moneyInputValue, parseMoneyInput, sanitizeMoneyInput } from '@/lib/money'
 
 function ErrorLine({ message }: { message: string }) {
   if (!message) return null
@@ -17,6 +19,7 @@ function ErrorLine({ message }: { message: string }) {
 
 // ── Registrar pago ────────────────────────────────────────────
 export function PaymentForm({ invoiceId, balance }: { invoiceId: string; balance: number }) {
+  const currency = useCurrency()
   const today = chileDateString()
   const [amount, setAmount] = useState(String(balance))
   const [paidOn, setPaidOn] = useState(today)
@@ -25,12 +28,12 @@ export function PaymentForm({ invoiceId, balance }: { invoiceId: string; balance
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const value = Math.round(Number(amount.replace(/\D/g, '')))
+  const value = parseMoneyInput(amount, currency)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!value || value < 1) { setError('Ingresa el monto pagado.'); return }
-    if (value > balance) { setError(`El pago no puede superar el saldo (${clp(balance)}).`); return }
+    if (!value || value <= 0) { setError('Ingresa el monto pagado.'); return }
+    if (value > balance) { setError(`El pago no puede superar el saldo (${money(balance, currency)}).`); return }
     if (paidOn > today) { setError('La fecha de pago no puede ser futura.'); return }
     setBusy(true); setError('')
     const { error: err } = await createClient().from('invoice_payments').insert({
@@ -47,7 +50,7 @@ export function PaymentForm({ invoiceId, balance }: { invoiceId: string; balance
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="pay-amount" className={labelClass}>Monto</label>
-          <input id="pay-amount" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value.replace(/[^\d]/g, ''))}
+          <input id="pay-amount" inputMode={currencyDecimals(currency) ? 'decimal' : 'numeric'} value={amount} onChange={e => setAmount(sanitizeMoneyInput(e.target.value, currency))}
             className={`${inputClass} tabular-nums`} />
         </div>
         <div>
@@ -68,8 +71,8 @@ export function PaymentForm({ invoiceId, balance }: { invoiceId: string; balance
       </div>
       <ErrorLine message={error} />
       <div className="flex items-center justify-between gap-2">
-        <button type="button" onClick={() => setAmount(String(balance))} className="text-[13px] text-accent-700 hover:underline">
-          Pagar saldo completo ({clp(balance)})
+        <button type="button" onClick={() => setAmount(moneyInputValue(balance, currency))} className="text-[13px] text-accent-700 hover:underline">
+          Pagar saldo completo ({money(balance, currency)})
         </button>
         <button type="submit" disabled={busy} className={buttonClass.primary}>
           {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Registrar pago
@@ -81,6 +84,7 @@ export function PaymentForm({ invoiceId, balance }: { invoiceId: string; balance
 
 // ── Registrar gestión ─────────────────────────────────────────
 export function ActivityForm({ invoiceId, balance }: { invoiceId: string; balance: number }) {
+  const currency = useCurrency()
   const today = chileDateString()
   const [kind, setKind] = useState<ActivityKind>('llamada')
   const [notes, setNotes] = useState('')
@@ -95,10 +99,10 @@ export function ActivityForm({ invoiceId, balance }: { invoiceId: string; balanc
     e.preventDefault()
     if (!notes.trim()) { setError('Describe qué pasó en la gestión.'); return }
     if (isPromise && promiseDate < today) { setError('La fecha comprometida no puede ser pasada.'); return }
-    const committed = Math.round(Number(promiseAmount.replace(/\D/g, '')))
-    if (isPromise && committed > balance) { setError(`El monto comprometido no puede superar el saldo (${clp(balance)}).`); return }
+    const committed = parseMoneyInput(promiseAmount, currency)
+    if (isPromise && committed > balance) { setError(`El monto comprometido no puede superar el saldo (${money(balance, currency)}).`); return }
     setBusy(true); setError('')
-    const amount = Math.round(Number(promiseAmount.replace(/\D/g, '')))
+    const amount = parseMoneyInput(promiseAmount, currency)
     const { error: err } = await createClient().from('invoice_activities').insert({
       invoice_id: invoiceId, kind, notes: notes.trim(),
       promise_date: isPromise ? promiseDate : null,
@@ -133,7 +137,7 @@ export function ActivityForm({ invoiceId, balance }: { invoiceId: string; balanc
           </div>
           <div>
             <label htmlFor="act-amount" className={labelClass}>Monto comprometido</label>
-            <input id="act-amount" inputMode="numeric" value={promiseAmount} onChange={e => setPromiseAmount(e.target.value.replace(/[^\d]/g, ''))}
+            <input id="act-amount" inputMode={currencyDecimals(currency) ? 'decimal' : 'numeric'} value={promiseAmount} onChange={e => setPromiseAmount(sanitizeMoneyInput(e.target.value, currency))}
               className={`${inputClass} tabular-nums`} />
           </div>
         </div>
