@@ -21,6 +21,7 @@ import DealAiInsights from '@/components/deals/deal-ai-insights'
 import DealTimeline, { type TimelineSources } from '@/components/deals/deal-timeline'
 import QuotesPanel from '@/components/deals/quotes-panel'
 import EmailThread from '@/components/deals/email-thread'
+import { systemMailAddress } from '@/lib/email/system-mail'
 import { formatMoney } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
 import { CHILE_TZ, DATE_ONLY_TZ, chileDateString } from '@/lib/dates'
@@ -354,6 +355,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               contactId={deal.contacts?.id ?? null}
               contactEmail={deal.contacts?.email ?? null}
               hasConnectedAccount={!!connectedAccount}
+              systemSender={systemMailAddress()}
               emails={(emails ?? []) as React.ComponentProps<typeof EmailThread>['emails']}
             />
             <DealInteractions dealId={deal.id} interactions={interactions ?? []} />

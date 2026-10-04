@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const creds = await getOAuthAppCredentials(supabase, organizationId, provider)
   if (!creds) {
-    return NextResponse.json({ error: 'Esta organización todavía no tiene configurada la app OAuth de correo. Pedile al administrador de la plataforma que la agregue.' }, { status: 400 })
+    return NextResponse.json({ error: 'Esta organización todavía no tiene configurada la app OAuth de correo. Pide al administrador de la plataforma que la agregue.' }, { status: 400 })
   }
 
   const redirectUri = `${appUrl(request)}/api/email/callback/${slug}`
