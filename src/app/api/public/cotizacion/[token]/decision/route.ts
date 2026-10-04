@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const [{ data: deal }, { data: org }] = await Promise.all([
     supabase.from('deals').select('owner_id, companies(name), contacts:primary_contact_id(full_name)').eq('id', quote.deal_id).maybeSingle(),
-    supabase.from('organizations').select('name, display_name, logo_url, email, phone, address, notification_email').eq('id', quote.organization_id).maybeSingle(),
+    supabase.from('organizations').select('name, display_name, logo_url, email, phone, address, notification_email, currency').eq('id', quote.organization_id).maybeSingle(),
   ])
   const company = (deal?.companies as unknown as { name: string } | null)?.name ?? null
   const contact = (deal?.contacts as unknown as { full_name: string | null } | null)?.full_name ?? null
@@ -109,6 +109,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (error) return NextResponse.json({ error: 'No se pudo registrar la aceptación' }, { status: 500 })
 
   // Lo que sigue no deshace la aceptación si falla.
+  // El valor del negocio pasa a ser lo firmado (dashboard y reportes cuadran con la cotización).
+  if ((org?.currency ?? 'CLP') === snapshot.documento.moneda) {
+    await supabase.from('deals').update({ estimated_value: snapshot.total }).eq('id', quote.deal_id)
+  }
   const firstInstallment = snapshot.plan_de_pagos[0] ?? null
   const cur = snapshot.documento.moneda
   const invoiceNote = firstInstallment

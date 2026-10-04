@@ -9,6 +9,8 @@ import ProjectPhaseSelector from '@/components/projects/project-phase-selector'
 import ProjectDeliverables from '@/components/projects/project-deliverables'
 import ProjectNotes from '@/components/projects/project-notes'
 import ProjectSpecRequest from '@/components/projects/project-spec-request'
+import { inferTriggerAt, triggerLabel } from '@/lib/payment-terms'
+import { money } from '@/lib/money'
 import { DATE_ONLY_TZ } from '@/lib/dates'
 
 const phaseLabels: Record<string, string> = {
@@ -65,6 +67,18 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const completedDeliverables = deliverables?.filter(d => d.is_completed).length ?? 0
   const totalDeliverables = deliverables?.length ?? 0
   const progress = totalDeliverables > 0 ? Math.round((completedDeliverables / totalDeliverables) * 100) : 0
+
+  // Plan de pagos de la cotización aceptada: qué cuota corresponde según el avance.
+  const { data: accepted } = proj.deals?.id
+    ? await supabase.from('quotes').select('id, quote_number, accepted_snapshot').eq('deal_id', proj.deals.id).eq('status', 'accepted')
+      .not('accepted_snapshot', 'is', null).order('accepted_at', { ascending: false }).limit(1).maybeSingle()
+    : { data: null }
+  const { count: issuedCount } = accepted
+    ? await supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('quote_id', accepted.id).neq('status', 'anulada')
+    : { count: 0 }
+  const snapshot = accepted?.accepted_snapshot as { documento?: { moneda?: string }; plan_de_pagos?: { cuota: number; hito: string; porcentaje: number; monto: number; avance?: number | null }[] } | null
+  const plan = snapshot?.plan_de_pagos ?? []
+  const effectiveProgress = project.status === 'entregado' || project.delivered_at ? 100 : progress
 
   const statusInfo = statusConfig[proj.status] ?? { label: proj.status, color: 'bg-slate-100 text-slate-600' }
   const isPending = proj.status === 'pendiente_especificaciones'
@@ -211,6 +225,31 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               currentStatus={project.status}
               readOnly={!canEditProyectos}
             />
+            {plan.length > 0 && (
+              <div className="bg-white rounded-lg border border-slate-200 shadow-xs">
+                <div className="px-4 pt-3.5 pb-3 border-b border-slate-100 flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-slate-900">Plan de pagos · Cotización N° {accepted!.quote_number}</h2>
+                  <span className="text-xs text-slate-500">Avance {effectiveProgress}%</span>
+                </div>
+                <ul className="divide-y divide-slate-100">
+                  {plan.map((c, i) => {
+                    const at = c.avance ?? inferTriggerAt(c.hito, i)
+                    const issued = (issuedCount ?? 0) > i
+                    const due = at != null && effectiveProgress >= at
+                    return (
+                      <li key={c.cuota} className="px-4 py-2.5 flex items-center gap-3 text-[13px]">
+                        <span className="min-w-0 flex-1 text-slate-700">Cuota {c.cuota} · {c.hito} <span className="text-slate-400">({c.porcentaje} %, {triggerLabel(at)})</span></span>
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${issued ? 'bg-emerald-100 text-emerald-700' : due ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
+                          {issued ? 'Cobro creado' : due ? 'Corresponde facturar' : 'Pendiente'}
+                        </span>
+                        <span className="w-28 text-right tabular-nums font-medium text-slate-900">{money(c.monto, snapshot?.documento?.moneda ?? currency)}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                <p className="px-4 py-2.5 text-[11px] text-slate-500 border-t border-slate-100">Al llegar al avance de cada cuota se crea la tarea «Emitir factura» para el responsable del negocio.</p>
+              </div>
+            )}
             <ProjectDeliverables projectId={project.id} deliverables={deliverables ?? []} readOnly={!canEditProyectos} />
             <ProjectNotes projectId={project.id} notes={notes ?? []} readOnly={!canEditProyectos} />
           </div>

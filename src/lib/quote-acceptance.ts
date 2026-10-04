@@ -64,7 +64,7 @@ export function buildAcceptanceSnapshot({ quote, orgName, company, contact, sign
     items: items.map(i => ({ descripcion: i.description, cantidad: i.quantity, precio_unitario: i.unit_price, total: i.quantity * i.unit_price })),
     impuestos: taxLines.map(t => ({ nombre: t.label, tasa: t.rate, monto: t.amount })),
     subtotal, total,
-    plan_de_pagos: terms ? paymentSchedule(terms, total, currency).map((c, i) => ({ cuota: i + 1, hito: c.label, porcentaje: c.pct, monto: c.amount })) : [],
+    plan_de_pagos: terms ? paymentSchedule(terms, total, currency).map((c, i) => ({ cuota: i + 1, hito: c.label, porcentaje: c.pct, monto: c.amount, avance: c.at ?? null })) : [],
     condiciones_de_pago: quote.payment_conditions ?? null,
     notas: quote.notes ?? null,
     aceptacion: {

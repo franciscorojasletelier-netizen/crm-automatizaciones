@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Bell, CheckCheck, Trash2, TrendingUp, CheckSquare, FolderOpen, Zap, Info, FileCheck2, FileX2 } from 'lucide-react'
+import { Bell, CheckCheck, Trash2, TrendingUp, CheckSquare, FolderOpen, Zap, Info, FileCheck2, FileX2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { timeAgo } from '@/lib/format'
@@ -34,6 +34,7 @@ function notifIcon(type: string) {
     case 'project':        return { icon: FolderOpen, color: 'bg-emerald-100 text-emerald-600' }
     case 'quote_accepted': return { icon: FileCheck2, color: 'bg-emerald-100 text-emerald-600' }
     case 'quote_rejected': return { icon: FileX2, color: 'bg-slate-100 text-slate-600' }
+    case 'billing_milestone': return { icon: Wallet, color: 'bg-amber-100 text-amber-700' }
     default:               return { icon: Info, color: 'bg-slate-100 text-slate-600' }
   }
 }

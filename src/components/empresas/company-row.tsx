@@ -21,7 +21,7 @@ export interface CompanyListItem {
   deals: { id: string; status: string }[] | null
 }
 
-export default function CompanyRow({ company, dealId, canEdit = true, fields = [] }: { company: CompanyListItem; dealId?: string; canEdit?: boolean; fields?: FieldDefinition[] }) {
+export default function CompanyRow({ company, canEdit = true, fields = [] }: { company: CompanyListItem; canEdit?: boolean; fields?: FieldDefinition[] }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [data, setData] = useState({
@@ -107,14 +107,10 @@ export default function CompanyRow({ company, dealId, canEdit = true, fields = [
             <Building2 className="w-4 h-4 text-slate-400 group-hover:text-accent-500 transition-colors" />
           </div>
           <div className="min-w-0">
-            {dealId ? (
-              <Link href={`/leads/${dealId}`}
-                className="font-semibold text-slate-900 hover:text-accent-700 transition-colors">
-                {data.name}
-              </Link>
-            ) : (
-              <p className="font-semibold text-slate-900">{data.name}</p>
-            )}
+            <Link href={`/empresas/${company.id}`}
+              className="font-semibold text-slate-900 hover:text-accent-700 transition-colors">
+              {data.name}
+            </Link>
             {data.website && (
               <a href={data.website.startsWith('http') ? data.website : `https://${data.website}`}
                 target="_blank" rel="noopener noreferrer"

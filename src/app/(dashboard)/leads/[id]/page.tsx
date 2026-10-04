@@ -20,6 +20,7 @@ import WhatsAppChat from '@/components/whatsapp/whatsapp-chat'
 import DealAiInsights from '@/components/deals/deal-ai-insights'
 import DealTimeline, { type TimelineSources } from '@/components/deals/deal-timeline'
 import QuotesPanel from '@/components/deals/quotes-panel'
+import { quoteTotals, quoteTaxes } from '@/lib/quotes'
 import EmailThread from '@/components/deals/email-thread'
 import { systemMailAddress } from '@/lib/email/system-mail'
 import { formatMoney } from '@/lib/format'
@@ -335,7 +336,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               proposalUrl={deal.proposal_url ?? null}
               organizationId={organizationId ?? ''}
               companyName={deal.companies?.name ?? null}
-              estimatedValue={deal.estimated_value ?? null}
+              estimatedValue={acceptedQuote && (acceptedQuote.currency ?? 'CLP') === currency ? quoteTotals(acceptedQuote.items, quoteTaxes(acceptedQuote), currency).total : deal.estimated_value ?? null}
             />
           )}
             <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} defaultTaxes={taxes} defaultPaymentTerms={paymentTerms} defaultPaymentConditions={paymentConditions}

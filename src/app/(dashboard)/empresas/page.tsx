@@ -121,7 +121,7 @@ export default async function EmpresasPage({ searchParams }: { searchParams: Pro
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(companies as unknown as CompanyListItem[]).map(company => (
-                <CompanyRow key={company.id} company={company} dealId={dealByCompany[company.id]} canEdit={canEdit} fields={companyFields} />
+                <CompanyRow key={company.id} company={company} canEdit={canEdit} fields={companyFields} />
               ))}
             </tbody>
           </table>

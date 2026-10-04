@@ -4,15 +4,18 @@
 // de condiciones. Lo usan el formulario de cotización y Configuración.
 
 import { Trash2 } from 'lucide-react'
-import { MAX_PAYMENT_TERMS, PAYMENT_PRESETS, paymentTermsError, type PaymentTerm } from '@/lib/payment-terms'
+import { MAX_PAYMENT_TERMS, PAYMENT_PRESETS, inferTriggerAt, paymentTermsError, triggerLabel, type PaymentTerm } from '@/lib/payment-terms'
 
-export interface PaymentTermDraft { label: string; pct: string }
+export interface PaymentTermDraft { label: string; pct: string; at: string }
 
 export const toPaymentDrafts = (terms: PaymentTerm[]): PaymentTermDraft[] =>
-  terms.map(t => ({ label: t.label, pct: String(t.pct).replace('.', ',') }))
+  terms.map((t, i) => {
+    const at = t.at === undefined ? inferTriggerAt(t.label, i) : t.at
+    return { label: t.label, pct: String(t.pct).replace('.', ','), at: at == null ? '' : String(at) }
+  })
 
 export const parsePaymentDrafts = (drafts: PaymentTermDraft[]): PaymentTerm[] =>
-  drafts.map(d => ({ label: d.label.trim(), pct: Number(d.pct.replace(',', '.')) }))
+  drafts.map(d => ({ label: d.label.trim(), pct: Number(d.pct.replace(',', '.')), at: d.at.trim() === '' ? null : Number(d.at.replace(',', '.')) }))
 
 export default function PaymentTermsEditor({ terms, onTerms, conditions, onConditions, idPrefix, fieldClass }: {
   terms: PaymentTermDraft[]
@@ -38,6 +41,7 @@ export default function PaymentTermsEditor({ terms, onTerms, conditions, onCondi
           </button>
         ))}
       </div>
+      <p className="text-[11px] text-slate-500">«Avance» es el % del proyecto que dispara la factura de cada cuota (0 = al aceptar, 100 = a la entrega, vacío = manual).</p>
       {terms.map((t, i) => (
         <div key={i} className="flex gap-2 items-center">
           <input aria-label={`Hito de la cuota ${i + 1}`} value={t.label} maxLength={80} placeholder="Al inicio"
@@ -47,13 +51,18 @@ export default function PaymentTermsEditor({ terms, onTerms, conditions, onCondi
               onChange={e => update(i, { pct: e.target.value.replace(/[^\d,.]/g, '') })} className={`${fieldClass} w-full pr-6 tabular-nums`} />
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
           </div>
+          <div className="relative w-20 shrink-0" title={`Se factura ${triggerLabel(t.at.trim() === '' ? null : Number(t.at))}`}>
+            <input aria-label={`Avance que dispara la cuota ${i + 1} (%)`} inputMode="numeric" value={t.at} placeholder="—"
+              onChange={e => update(i, { at: e.target.value.replace(/[^\d]/g, '').slice(0, 3) })} className={`${fieldClass} w-full pr-6 tabular-nums`} />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">av.</span>
+          </div>
           <button type="button" onClick={() => onTerms(terms.filter((_, k) => k !== i))} aria-label={`Quitar cuota ${i + 1}`}
             className="text-slate-400 hover:text-red-500 shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       ))}
       <div className="flex items-center justify-between gap-2">
         {terms.length < MAX_PAYMENT_TERMS
-          ? <button type="button" onClick={() => onTerms([...terms, { label: '', pct: '' }])} className="text-xs font-semibold text-accent-600 hover:text-accent-800">+ Agregar cuota</button>
+          ? <button type="button" onClick={() => onTerms([...terms, { label: '', pct: '', at: '' }])} className="text-xs font-semibold text-accent-600 hover:text-accent-800">+ Agregar cuota</button>
           : <span />}
         <span className={`text-[11px] tabular-nums ${sum === 100 ? 'text-emerald-700' : 'text-amber-700'}`}>Suma: {sum.toLocaleString('es-CL')} %</span>
       </div>

@@ -241,6 +241,28 @@ async function main() {
   assert('Una cotización aceptada no se puede modificar (ni con service_role)', !!editAccepted, editAccepted?.message)
   const { error: reopen } = await admin.from('quotes').update({ status: 'sent' }).eq('id', q3.id)
   assert('Una cotización aceptada no vuelve a "enviada"', !!reopen, reopen?.message)
+  // ── Avance del proyecto → cuotas (059) ──
+  const dealB = must('deal facturación', await admin.from('deals').insert({ company_id: company.id, owner_id: gerenteA.id, status: 'open', organization_id: orgA }).select('id').single())
+  const snapshot = { documento: { numero: 99, moneda: 'CLP' }, total: 1000000, plan_de_pagos: [
+    { cuota: 1, hito: 'Al inicio', porcentaje: 50, monto: 500000, avance: 0 },
+    { cuota: 2, hito: 'Al 70 % de avance', porcentaje: 30, monto: 300000, avance: 70 },
+    { cuota: 3, hito: 'Entrega final (100 %)', porcentaje: 20, monto: 200000, avance: 100 },
+  ] }
+  must('cotización aceptada', await admin.from('quotes').insert({ deal_id: dealB.id, organization_id: orgA, quote_number: 99, status: 'accepted', items: [], accepted_at: new Date().toISOString(), accepted_snapshot: snapshot, accepted_hash: 'x' }).select('id').single())
+  const proj = must('proyecto', await admin.from('projects').insert({ company_id: company.id, deal_id: dealB.id, owner_id: gerenteA.id, name: 'Proyecto test', phase: 'desarrollo', status: 'activo', organization_id: orgA }).select('id').single())
+  const dels = must('entregables', await admin.from('project_deliverables').insert(Array.from({ length: 10 }, (_, i) => ({ project_id: proj.id, title: `E${i + 1}`, organization_id: orgA }))).select('id'))
+  const billingTasks = async () => (await admin.from('tasks').select('title, description').eq('deal_id', dealB.id).like('title', 'Emitir factura%')).data ?? []
+  for (let i = 0; i < 6; i++) await g.from('project_deliverables').update({ is_completed: true }).eq('id', dels[i].id)
+  assert('Con 60 % de avance aún no corresponde la cuota 2', (await billingTasks()).length === 0)
+  await g.from('project_deliverables').update({ is_completed: true }).eq('id', dels[6].id)
+  const t70 = await billingTasks()
+  assert('Al llegar a 70 % se crea la tarea de la cuota 2 con su monto', t70.length === 1 && /cuota 2/.test(t70[0].title) && /\$300\.000/.test(t70[0].description ?? ''), JSON.stringify(t70))
+  await g.from('project_deliverables').update({ is_completed: true }).eq('id', dels[7].id)
+  assert('Seguir avanzando no duplica la cuota 2', (await billingTasks()).length === 1)
+  await g.from('projects').update({ status: 'entregado', delivered_at: new Date().toISOString() }).eq('id', proj.id)
+  const tEnd = await billingTasks()
+  assert('Al entregar el proyecto se crea la tarea de la cuota 3', tEnd.length === 2 && tEnd.some(t => /cuota 3/.test(t.title) && /\$200\.000/.test(t.description ?? '')), JSON.stringify(tEnd.map(t => t.title)))
+
   const { data: codes, error: codesErr } = await g.from('quote_acceptance_codes').select('id').limit(1)
   assert('Los códigos de aceptación no son visibles para usuarios', !!codesErr || (codes ?? []).length === 0, codesErr?.message)
 }
@@ -249,7 +271,7 @@ async function cleanup() {
   try {
     const orgs = state.orgs
     if (orgs.length) {
-      for (const t of ['quotes', 'invoices', 'deals', 'companies']) {
+      for (const t of ['tasks', 'notifications', 'project_deliverables', 'projects', 'quotes', 'invoices', 'deals', 'companies']) {
         const { error } = await admin.from(t).delete().in('organization_id', orgs)
         if (error) throw new Error(`${t}: ${error.message}`)
       }

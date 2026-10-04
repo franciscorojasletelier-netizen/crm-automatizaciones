@@ -29,8 +29,10 @@ function Field({ label, required, group = false, children }: { label: string; re
 
 const inputCls = "w-full h-9 px-3 border border-slate-300 rounded-md text-sm shadow-xs focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-100 bg-white placeholder:text-slate-400 text-slate-900"
 
-export default function NuevoLeadForm({ dealFields = [], pipelines = [], initialPipelineId = '' }: {
+export default function NuevoLeadForm({ dealFields = [], pipelines = [], initialPipelineId = '', initialCompany = null }: {
   dealFields?: FieldDefinition[]; pipelines?: Pipeline[]; initialPipelineId?: string
+  /** Empresa existente (desde su ficha): el negocio se crea en ella. */
+  initialCompany?: { id: string; name: string; industry: string | null; website: string | null } | null
 }) {
   const currency = useCurrency()
   const router = useRouter()
@@ -39,7 +41,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
   const [error, setError] = useState('')
   const [pipelineId, setPipelineId] = useState(initialPipelineId)
   const [form, setForm] = useState({
-    company_name: '', industry: '', website: '',
+    company_name: initialCompany?.name ?? '', industry: initialCompany?.industry ?? '', website: initialCompany?.website ?? '',
     contact_name: '', contact_email: '', contact_phone: '', contact_job_title: '',
     source: '', estimated_value: '', next_action: '',
   })
@@ -58,6 +60,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
   // useExisting: el negocio nuevo queda en la empresa (y contacto) que ya existe,
   // p. ej. un cliente que vuelve a comprar. force: crear igual, sin preguntar.
   async function submit({ force = false, useExisting = null }: { force?: boolean; useExisting?: NonNullable<typeof duplicate> | null }) {
+    if (initialCompany && !useExisting) useExisting = { label: '', companyId: initialCompany.id, companyName: initialCompany.name, contactId: null }
     setLoading(true)
     setError('')
     setDuplicate(null)
@@ -104,6 +107,12 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
       }
 
       let contactId = useExisting?.contactId ?? null
+      // En una empresa existente, un contacto con el mismo correo se reutiliza.
+      if (!contactId && useExisting?.companyId && form.contact_email.trim()) {
+        const { data: same } = await supabase.from('contacts').select('id')
+          .eq('company_id', useExisting.companyId).ilike('email', form.contact_email.trim()).limit(1).maybeSingle()
+        contactId = same?.id ?? null
+      }
       if (!contactId) {
         const { data: contact, error: contactError } = await supabase
           .from('contacts').insert({ company_id: companyId, full_name: form.contact_name, email: form.contact_email, phone: form.contact_phone, job_title: form.contact_job_title }).select('id').single()
@@ -163,7 +172,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Field label="Nombre" required>
-                  <input required value={form.company_name} onChange={e => set('company_name', e.target.value)} className={inputCls} placeholder="Empresa S.A." />
+                  <input required value={form.company_name} onChange={e => set('company_name', e.target.value)} readOnly={!!initialCompany} className={`${inputCls}${initialCompany ? ' bg-slate-50 text-slate-600' : ''}`} placeholder="Empresa S.A." />
                 </Field>
               </div>
               <Field label="Industria">

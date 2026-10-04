@@ -36,36 +36,43 @@ interface NavItem {
   permission?: keyof ReturnType<typeof getPermissions>
 }
 
+// Menú por áreas de trabajo. Notificaciones no va aquí: es la campana del
+// encabezado (visible en cualquier pantalla). El número de negocios abiertos
+// va solo en Leads (Pipeline es la misma información en tablero).
 const navGroups: { label: string | null; items: NavItem[] }[] = [
   {
     label: null,
     items: [
       { label: 'Dashboard',  href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Pipeline',   href: '/pipeline',  icon: TrendingUp, countKey: 'pipeline', permission: 'pipeline' },
-      { label: 'Leads',      href: '/leads',     icon: Users,      countKey: 'leads',    permission: 'leads' },
-      { label: 'Empresas',   href: '/empresas',  icon: Building2,                         permission: 'empresas' },
+    ],
+  },
+  {
+    label: 'Ventas',
+    items: [
+      { label: 'Pipeline',   href: '/pipeline',  icon: TrendingUp, permission: 'pipeline' },
+      { label: 'Leads',      href: '/leads',     icon: Users,      countKey: 'leads', permission: 'leads' },
+      { label: 'Empresas',   href: '/empresas',  icon: Building2,  permission: 'empresas' },
     ],
   },
   {
     label: 'Operación',
     items: [
       { label: 'Tareas',     href: '/tareas',     icon: CheckSquare,  countKey: 'tareasVencidas', alertKey: 'tareasVencidas', permission: 'tareas' },
+      { label: 'Calendario', href: '/calendario', icon: CalendarDays, permission: 'calendario' },
       { label: 'Proyectos',  href: '/proyectos',  icon: FolderOpen,   countKey: 'proyectos',      permission: 'proyectos' },
       { label: 'Cobranza',   href: '/cobranza',   icon: Wallet,       countKey: 'cobranzaVencida', alertKey: 'cobranzaVencida', permission: 'cobranza' },
-      { label: 'Calendario', href: '/calendario', icon: CalendarDays, permission: 'calendario' },
-      { label: 'Notificaciones', href: '/notificaciones', icon: Bell, countKey: 'notificaciones', permission: 'notificaciones' },
     ],
   },
   {
     label: 'Análisis',
     items: [
-      { label: 'Reportes',         href: '/reportes',         icon: BarChart3, permission: 'reportes' },
-      { label: 'Automatizaciones', href: '/automatizaciones', icon: GitBranch, permission: 'automatizaciones' },
+      { label: 'Reportes',   href: '/reportes',   icon: BarChart3, permission: 'reportes' },
     ],
   },
   {
-    label: 'Organización',
+    label: 'Administración',
     items: [
+      { label: 'Automatizaciones', href: '/automatizaciones', icon: GitBranch, permission: 'automatizaciones' },
       { label: 'Equipo',        href: '/admin/usuarios',  icon: UserCog,  permission: 'usuarios' },
       { label: 'Organigrama',   href: '/organigrama',     icon: Network },
       { label: 'Actividad',     href: '/admin/actividad', icon: Activity, permission: 'actividad' },
@@ -74,12 +81,14 @@ const navGroups: { label: string | null; items: NavItem[] }[] = [
   },
 ]
 
+const NOTIFICATIONS_ITEM: NavItem = { label: 'Notificaciones', href: '/notificaciones', icon: Bell, permission: 'notificaciones' }
+
 const mobileNavBase: NavItem[] = [
   { label: 'Inicio',   href: '/dashboard', icon: LayoutDashboard },
   { label: 'Pipeline', href: '/pipeline',  icon: TrendingUp, permission: 'pipeline' },
   { label: 'Tareas',   href: '/tareas',    icon: CheckSquare, permission: 'tareas', countKey: 'tareasVencidas', alertKey: 'tareasVencidas' },
   { label: 'Cobranza', href: '/cobranza',  icon: Wallet, permission: 'cobranza', countKey: 'cobranzaVencida', alertKey: 'cobranzaVencida' },
-  { label: 'Avisos',   href: '/notificaciones', icon: Bell, permission: 'notificaciones', countKey: 'notificaciones' },
+  { label: 'Leads',    href: '/leads',     icon: Users, permission: 'leads', countKey: 'leads' },
 ]
 
 function CountBadge({ count, alert, active }: { count: number; alert: boolean; active?: boolean }) {
@@ -162,7 +171,24 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
 
   const visibleGroups = navGroups.map(g => ({ ...g, items: g.items.filter(itemVisible) })).filter(g => g.items.length > 0)
   const canCreateLeads = canAccessSection(role, profile?.section_access ?? null, 'leads', disabledModules)
-  const allowedHrefs = [...visibleGroups.flatMap(g => g.items.map(i => i.href)), ...(canCreateLeads ? ['/leads/nuevo'] : [])]
+  const allowedHrefs = [...visibleGroups.flatMap(g => g.items.map(i => i.href)), ...(canCreateLeads ? ['/leads/nuevo'] : []), ...(itemVisible(NOTIFICATIONS_ITEM) ? ['/notificaciones'] : [])]
+
+  const canSeeNotifications = itemVisible(NOTIFICATIONS_ITEM)
+  // Campana del encabezado: lleva a Notificaciones con el número de no leídas.
+  const bell = canSeeNotifications && (
+    <Link href="/notificaciones" onClick={markPending('/notificaciones')}
+      aria-label={notifCount > 0 ? `Notificaciones (${notifCount} sin leer)` : 'Notificaciones'}
+      aria-current={isActive('/notificaciones') ? 'page' : undefined}
+      className={cn('relative w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors',
+        isActive('/notificaciones') ? 'bg-slate-200/70 text-accent-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/50')}>
+      <Bell className="w-[18px] h-[18px]" />
+      {notifCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-semibold tabular-nums flex items-center justify-center">
+          {notifCount > 99 ? '99+' : notifCount}
+        </span>
+      )}
+    </Link>
+  )
 
   const initials = getInitials(profile?.full_name ?? null, profile?.email ?? null, 'U')
   const displayName = profile?.full_name ?? profile?.email ?? 'Usuario'
@@ -227,8 +253,9 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
     <>
       {/* ── Escritorio ─────────────────────────────── */}
       <aside className="hidden md:flex print:hidden w-60 shrink-0 flex-col h-full bg-sidebar border-r border-slate-200">
-        <div className="px-4 h-14 flex items-center">
+        <div className="pl-4 pr-2 h-14 flex items-center justify-between gap-2">
           <Brand organizationName={organizationName} />
+          {bell}
         </div>
         <div className="px-3 pb-3">
           <GlobalSearch stages={stages} allowedHrefs={allowedHrefs} />
@@ -247,6 +274,7 @@ export default function Sidebar({ counts, profile, isPlatformOwner, stages = [],
         <div className="flex-1 min-w-0">
           <GlobalSearch stages={stages} allowedHrefs={allowedHrefs} variant="compact" />
         </div>
+        {bell}
         <button onClick={() => setMoreOpen(true)} aria-label="Abrir menú"
           className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[11px] font-semibold shrink-0">
           {initials}
