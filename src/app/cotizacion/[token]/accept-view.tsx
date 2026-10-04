@@ -176,12 +176,12 @@ export default function QuoteAcceptView({ token }: { token: string }) {
                 <div className="text-sm text-emerald-800">
                   <p className="font-semibold">Cotización aceptada{quote.accepted_by_name ? ` por ${quote.accepted_by_name}` : ''}.</p>
                   {invoiceNote && <p className="mt-1">Emitiremos la factura de la primera cuota en las próximas horas hábiles. {invoiceNote}.</p>}
-                  <p className="mt-1 text-emerald-700">Te enviamos el comprobante de aceptación por correo.</p>
+                  {quote.accepted_hash && <p className="mt-1 text-emerald-700">Te enviamos el comprobante de aceptación por correo.</p>}
                 </div>
               </div>
-              <a href={`/cotizacion/${token}/comprobante`} className="flex items-center justify-center gap-2 text-sm font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 py-2.5 rounded-lg">
+              {quote.accepted_hash && <a href={`/cotizacion/${token}/comprobante`} className="flex items-center justify-center gap-2 text-sm font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 py-2.5 rounded-lg">
                 <FileCheck2 className="w-4 h-4" /> Ver comprobante de aceptación
-              </a>
+              </a>}
             </div>
           ) : quote.status === 'rejected' ? (
             <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200 rounded-lg px-4 py-3">

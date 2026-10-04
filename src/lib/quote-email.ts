@@ -65,6 +65,12 @@ export function renderQuoteEmail({ quote, message, link, brand, subject }: {
   const content = paragraphs.map(emailParagraph).join('')
     + totalBlock
     + emailButton(link, 'Ver y responder la cotización')
+    + emailCallout(emailHeading('Cómo aceptarla') + emailParagraph([
+      '1. Toca el botón «Ver y responder la cotización».',
+      '2. Elige «Aceptar» y completa tu nombre y RUT.',
+      '3. Te enviaremos a este correo un código de 6 dígitos para firmar en línea.',
+      'Al firmar recibirás el comprobante de aceptación.',
+    ].join('\n')))
     + detail
     + payBlock
     + (quote.notes ? emailHeading('Notas') + emailParagraph(quote.notes) : '')
@@ -87,6 +93,7 @@ export function renderQuoteEmail({ quote, message, link, brand, subject }: {
     ...(schedule.length ? ['', 'Forma de pago:', ...schedule.map((c, i) => `• Cuota ${i + 1} (${c.label}, ${c.pct} %): ${money(c.amount, cur)}`), ...(quote.payment_conditions ? [quote.payment_conditions] : [])] : []),
     '',
     `Revisar y responder: ${link}`,
+    'Para aceptar: abre el enlace, elige «Aceptar», completa tu nombre y RUT, y firma con el código de 6 dígitos que te enviaremos a este correo.',
   ].join('\n')
 
   return { html, text }
