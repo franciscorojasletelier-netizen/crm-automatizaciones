@@ -10,6 +10,7 @@ import { DATE_ONLY_TZ, CHILE_TZ } from '@/lib/dates'
 import { money } from '@/lib/format'
 import { escapeHtml } from '@/lib/html'
 import { DETAIL_MARKER, detailText, type Statement, type Tone } from '@/lib/cobranza-mensajes'
+import { EMAIL_MOBILE_CSS } from '@/lib/email-layout'
 
 export interface EmailOrg {
   name: string
@@ -35,7 +36,7 @@ const fmtDay = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString('es-CL', { timeZone: DATE_ONLY_TZ, day: 'numeric', month: 'short', year: 'numeric' })
 
 function summaryCell(label: string, value: string, color = C.ink) {
-  return `<td width="32%" style="padding:12px 12px;background:${C.soft};border:1px solid ${C.border};border-radius:8px;" valign="top">
+  return `<td class="em-cell" width="32%" style="padding:12px 12px;background:${C.soft};border:1px solid ${C.border};border-radius:8px;" valign="top">
     <div style="font:500 12px/1.4 ${FONT};color:${C.muted};">${escapeHtml(label)}</div>
     <div style="font:600 17px/1.3 ${FONT};color:${color};margin-top:4px;">${escapeHtml(value)}</div>
   </td>`
@@ -57,7 +58,7 @@ function detailHtml(st: Statement) {
     </tr>`
   }).join('')
 
-  const gap = '<td width="2%" style="font-size:0;line-height:0;">&nbsp;</td>'
+  const gap = '<td class="em-gap" width="2%" style="font-size:0;line-height:0;">&nbsp;</td>'
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 20px;border-collapse:separate;">
     <tr>
       ${summaryCell('Total adeudado', money(st.total, st.currency))}${gap}
@@ -115,21 +116,21 @@ export function renderCollectionEmail({ body, subject, statement, tone, org }: {
   const preheader = `Total adeudado ${money(statement.total, statement.currency)} · ${statement.lines.length} ${statement.lines.length === 1 ? 'documento' : 'documentos'}`
 
   const html = `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title>${EMAIL_MOBILE_CSS}</head>
 <body style="margin:0;padding:0;background:${C.page};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page};">
-  <tr><td align="center" style="padding:24px 12px;">
+  <tr><td class="em-outer" align="center" style="padding:24px 12px;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.card};border:1px solid ${C.border};border-radius:12px;border-collapse:separate;overflow:hidden;">
       <tr><td style="height:4px;background:${TONE_BAR[tone]};font-size:0;line-height:0;">&nbsp;</td></tr>
-      <tr><td style="padding:22px 24px 18px;border-bottom:1px solid ${C.border};">
+      <tr><td class="em-pad" style="padding:22px 24px 18px;border-bottom:1px solid ${C.border};">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
           <td valign="middle">${brand}</td>
           <td align="right" valign="middle" style="font:400 12px/1.4 ${FONT};color:${C.muted};">Estado de cuenta<br>${escapeHtml(today)}</td>
         </tr></table>
       </td></tr>
-      <tr><td style="padding:24px 24px 8px;">${content}</td></tr>
-      <tr><td style="padding:16px 24px 22px;border-top:1px solid ${C.border};font:400 12px/1.6 ${FONT};color:${C.muted};">
+      <tr><td class="em-pad" style="padding:24px 24px 8px;">${content}</td></tr>
+      <tr><td class="em-pad" style="padding:16px 24px 22px;border-top:1px solid ${C.border};font:400 12px/1.6 ${FONT};color:${C.muted};">
         ${escapeHtml(org.name)}${contact ? `<br>${contact}` : ''}
       </td></tr>
     </table>

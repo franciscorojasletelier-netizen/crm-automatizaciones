@@ -4,6 +4,8 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { CODE_TTL_MINUTES, hashCode, maskEmail, newCode } from '@/lib/quote-acceptance'
 import { renderAcceptanceCodeEmail } from '@/lib/quote-email'
+import { quoteTotals, quoteTaxes, type QuoteItem } from '@/lib/quotes'
+import { money } from '@/lib/money'
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!systemMailConfigured()) return NextResponse.json({ error: 'El envío de códigos no está disponible. Contacta a tu ejecutivo.' }, { status: 503 })
 
   const { data: quote } = await supabase.from('quotes')
-    .select('id, quote_number, status, sent_to_email, organization_id, deal_id').eq('public_token', token).maybeSingle()
+    .select('id, quote_number, status, sent_to_email, organization_id, deal_id, items, taxes, tax_rate, currency').eq('public_token', token).maybeSingle()
   if (!quote) return NextResponse.json({ error: 'Cotización no encontrada' }, { status: 404 })
   if (quote.status !== 'sent') return NextResponse.json({ error: 'Esta cotización ya fue respondida o no está disponible.' }, { status: 409 })
 
@@ -46,7 +48,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   })
   if (insErr) return NextResponse.json({ error: 'No se pudo generar el código' }, { status: 500 })
 
-  const mail = renderAcceptanceCodeEmail({ code, quoteNumber: quote.quote_number, minutes: CODE_TTL_MINUTES, brand })
+  const cur = quote.currency ?? 'CLP'
+  const totalLabel = money(quoteTotals(quote.items as QuoteItem[] | null, quoteTaxes(quote), cur).total, cur)
+  const mail = renderAcceptanceCodeEmail({ code, quoteNumber: quote.quote_number, minutes: CODE_TTL_MINUTES, brand, totalLabel })
   const sent = await sendSystemMail({ to: target, subject: mail.subject, body: mail.text, html: mail.html, fromName: brand.name, replyTo: org?.email ?? null })
   if (!sent.ok) return NextResponse.json({ error: 'No se pudo enviar el código. Intenta de nuevo.' }, { status: 502 })
 

@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const [{ data: account }, { data: org }, { data: me }] = await Promise.all([
     supabase.from('email_accounts').select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle(),
     supabase.from('organizations').select('name, display_name, logo_url, email, phone, address').eq('id', organizationId).maybeSingle(),
-    supabase.from('profiles').select('email').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('email, full_name').eq('id', user.id).maybeSingle(),
   ])
   const orgName = org?.display_name || org?.name || 'Tu proveedor'
   const mail = renderQuoteEmail({
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: sent.status })
     record = { email_account_id: sent.accountId, from_address: sent.fromAddress, provider_message_id: sent.messageId, thread_id: sent.threadId }
   } else if (systemMailConfigured()) {
-    const sent = await sendSystemMail({ to, subject, body: mail.text, html: mail.html, fromName: orgName, replyTo: me?.email ?? null })
+    const sent = await sendSystemMail({ to, subject, body: mail.text, html: mail.html, fromName: me?.full_name ? `${me.full_name} · ${orgName}` : orgName, replyTo: me?.email ?? null })
     if (!sent.ok) return NextResponse.json({ error: `No se pudo enviar: ${sent.error}` }, { status: 502 })
     record = { email_account_id: null, from_address: sent.from, provider_message_id: sent.id, thread_id: null }
   } else {

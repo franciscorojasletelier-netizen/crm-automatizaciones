@@ -17,6 +17,23 @@ export const EMAIL_COLORS = {
   red: '#b91c1c', redSoft: '#fef2f2', amber: '#b45309', green: '#047857',
 }
 export const EMAIL_FONT = `-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`
+
+/**
+ * Ajustes para celular (Gmail, Apple Mail y Outlook móviles respetan
+ * <style> con media queries; los que no, ven el diseño de escritorio):
+ * casillas de resumen apiladas, márgenes menores y botón a todo el ancho.
+ */
+export const EMAIL_MOBILE_CSS = `<style>
+@media only screen and (max-width:520px){
+  .em-outer{padding:12px 6px !important}
+  .em-pad{padding-left:16px !important;padding-right:16px !important}
+  .em-cell{display:block !important;width:auto !important;margin:0 0 8px 0 !important}
+  .em-gap{display:none !important}
+  .em-btn{width:100% !important}
+  .em-btn a{display:block !important;text-align:center !important}
+  .em-kicker{font-size:11px !important}
+}
+</style>`
 const C = EMAIL_COLORS
 const F = EMAIL_FONT
 
@@ -35,7 +52,7 @@ export function emailParagraph(text: string) {
 
 /** Botón principal. */
 export function emailButton(href: string, label: string, color = C.accent) {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 18px;"><tr>
+  return `<table role="presentation" class="em-btn" cellpadding="0" cellspacing="0" style="margin:8px 0 18px;"><tr>
     <td style="background:${color};border-radius:8px;">
       <a href="${escapeHtml(href)}" style="display:inline-block;padding:12px 20px;font:600 15px/1 ${F};color:#ffffff;text-decoration:none;">${escapeHtml(label)}</a>
     </td></tr></table>`
@@ -46,20 +63,45 @@ export function emailHeading(text: string, color = C.ink) {
   return `<div style="font:600 15px/1.4 ${F};color:${color};margin:6px 0 8px;">${escapeHtml(text)}</div>`
 }
 
+// Montos cortos no se parten; textos largos (correos, nombres) sí, para no desbordar en el celular.
+const wrapRight = (v?: string) => (v ?? '').length > 22 ? 'word-break:break-word;max-width:60%;' : 'white-space:nowrap;'
+
 /** Tabla de filas [izquierda, derecha] con separadores (listas de tareas, ítems, totales). */
-export function emailRows(rows: { left: string; sub?: string | null; right?: string; tone?: 'normal' | 'danger' | 'strong' }[]) {
+export function emailRows(rows: { left: string; sub?: string | null; right?: string; tone?: 'normal' | 'danger' | 'strong' | 'muted' }[]) {
   const body = rows.map(r => {
-    const color = r.tone === 'danger' ? C.red : C.ink
-    const weight = r.tone === 'strong' ? 700 : 600
+    const color = r.tone === 'danger' ? C.red : r.tone === 'muted' ? C.muted : C.ink
+    const weight = r.tone === 'strong' ? 700 : r.tone === 'muted' ? 400 : 600
     return `<tr>
       <td style="padding:10px 0;border-bottom:1px solid ${C.border};" valign="top">
         <div style="font:${weight} 14px/1.4 ${F};color:${color};">${escapeHtml(r.left)}</div>
         ${r.sub ? `<div style="font:400 13px/1.4 ${F};color:${C.muted};">${escapeHtml(r.sub)}</div>` : ''}
       </td>
-      <td align="right" style="padding:10px 0 10px 12px;border-bottom:1px solid ${C.border};white-space:nowrap;font:${weight} 14px/1.4 ${F};color:${r.tone === 'danger' ? C.red : C.text};" valign="top">${escapeHtml(r.right ?? '')}</td>
+      <td align="right" style="padding:10px 0 10px 12px;border-bottom:1px solid ${C.border};${wrapRight(r.right)}font:${weight} 14px/1.4 ${F};color:${r.tone === 'danger' ? C.red : C.text};" valign="top">${escapeHtml(r.right ?? '')}</td>
     </tr>`
   }).join('')
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 18px;">${body}</table>`
+}
+
+/** Texto técnico largo sin espacios (huellas): se parte donde sea. */
+export function emailCode(text: string) {
+  return `<p style="margin:0 0 16px;font:400 11px/1.5 ui-monospace,Menlo,Consolas,monospace;color:${C.muted};word-break:break-all;">${escapeHtml(text)}</p>`
+}
+
+/** Fila de casillas de resumen (como el estado de cuenta de cobranza). */
+export function emailSummary(cells: { label: string; value: string; color?: string }[]) {
+  const width = `${Math.floor(98 / cells.length) - 2}%`
+  const gap = '<td class="em-gap" width="2%" style="font-size:0;line-height:0;">&nbsp;</td>'
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 18px;border-collapse:separate;"><tr>
+    ${cells.map(c => `<td class="em-cell" width="${width}" style="padding:12px;background:${C.soft};border:1px solid ${C.border};border-radius:8px;" valign="top">
+      <div style="font:500 12px/1.4 ${F};color:${C.muted};">${escapeHtml(c.label)}</div>
+      <div style="font:600 17px/1.3 ${F};color:${c.color ?? C.ink};margin-top:4px;">${escapeHtml(c.value)}</div>
+    </td>`).join(gap)}
+  </tr></table>`
+}
+
+/** Texto chico y suave (pasos, aclaraciones). */
+export function emailSmall(text: string) {
+  return `<p style="margin:0 0 16px;font:400 13px/1.6 ${F};color:${C.muted};">${escapeHtml(text).replace(/\n/g, '<br>')}</p>`
 }
 
 /** Recuadro destacado (resumen, aviso). */
@@ -87,21 +129,21 @@ export function emailShell({ subject, preheader, brand, kicker, content, footerN
     : `<div style="font:700 18px/1.3 ${F};color:${C.ink};">${escapeHtml(brand.name)}</div>`
   const contact = [brand.email, brand.phone, brand.address].filter(Boolean).map(v => escapeHtml(v)).join(' · ')
   return `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title>${EMAIL_MOBILE_CSS}</head>
 <body style="margin:0;padding:0;background:${C.page};">
 ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>` : ''}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page};">
-  <tr><td align="center" style="padding:24px 12px;">
+  <tr><td class="em-outer" align="center" style="padding:24px 12px;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.card};border:1px solid ${C.border};border-radius:12px;border-collapse:separate;overflow:hidden;">
       <tr><td style="height:4px;background:${bar};font-size:0;line-height:0;">&nbsp;</td></tr>
-      <tr><td style="padding:22px 24px 18px;border-bottom:1px solid ${C.border};">
+      <tr><td class="em-pad" style="padding:22px 24px 18px;border-bottom:1px solid ${C.border};">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
           <td valign="middle">${logo}</td>
-          ${kicker ? `<td align="right" valign="middle" style="font:400 12px/1.4 ${F};color:${C.muted};">${escapeHtml(kicker).replace(/\n/g, '<br>')}</td>` : ''}
+          ${kicker ? `<td class="em-kicker" align="right" valign="middle" style="font:400 12px/1.4 ${F};color:${C.muted};">${escapeHtml(kicker).replace(/\n/g, '<br>')}</td>` : ''}
         </tr></table>
       </td></tr>
-      <tr><td style="padding:24px 24px 8px;">${content}</td></tr>
-      <tr><td style="padding:16px 24px 22px;border-top:1px solid ${C.border};font:400 12px/1.6 ${F};color:${C.muted};">
+      <tr><td class="em-pad" style="padding:24px 24px 8px;">${content}</td></tr>
+      <tr><td class="em-pad" style="padding:16px 24px 22px;border-top:1px solid ${C.border};font:400 12px/1.6 ${F};color:${C.muted};">
         ${escapeHtml(brand.name)}${contact ? `<br>${contact}` : ''}${footerNote ? `<br><span style="color:#94a3b8;">${escapeHtml(footerNote)}</span>` : ''}
       </td></tr>
     </table>

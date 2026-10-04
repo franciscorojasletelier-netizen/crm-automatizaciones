@@ -13,6 +13,8 @@ import {
 } from '@/lib/money'
 import { useCurrency } from '@/components/providers/currency-provider'
 import SendQuoteEmail from '@/components/deals/send-quote-email'
+import { chileDateString } from '@/lib/dates'
+import { addDays } from '@/lib/cobranza'
 import PaymentTermsEditor, { parsePaymentDrafts, toPaymentDrafts, type PaymentTermDraft } from '@/components/quotes/payment-terms-editor'
 import { paymentTermsError, type PaymentTerm } from '@/lib/payment-terms'
 
@@ -78,7 +80,9 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
   const [notes, setNotes] = useState('')
   const [payTerms, setPayTerms] = useState<PaymentTermDraft[]>(toPaymentDrafts(defaultPaymentTerms))
   const [payConditions, setPayConditions] = useState(defaultPaymentConditions)
-  const [validUntil, setValidUntil] = useState('')
+  // Vigencia por defecto: 15 días (editable).
+  const defaultValidUntil = () => addDays(chileDateString(), 15)
+  const [validUntil, setValidUntil] = useState(defaultValidUntil)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -101,7 +105,7 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
 
   function resetForm() {
     setItems([emptyItem()]); setTaxes(toTaxDrafts(defaultTaxes)); setCurrency(orgCurrency)
-    setNotes(''); setValidUntil(''); setError('')
+    setNotes(''); setValidUntil(defaultValidUntil()); setError('')
     setPayTerms(toPaymentDrafts(defaultPaymentTerms)); setPayConditions(defaultPaymentConditions)
   }
 
