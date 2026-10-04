@@ -16,6 +16,7 @@ export interface QuoteDoc {
   created_at: string; valid_until: string | null
   public_token?: string | null
   accepted_at: string | null; rejected_at: string | null
+  rejection_reason?: string | null
   accepted_by_name?: string | null; accepted_ip?: string | null
 }
 export interface QuoteDeal {

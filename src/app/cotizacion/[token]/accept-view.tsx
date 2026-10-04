@@ -8,6 +8,8 @@ import { quoteTotals, quoteTaxes, type QuoteDoc, type QuoteDeal, type QuoteOrg }
 
 interface Item { description: string; quantity: number; unit_price: number }
 
+const REJECT_REASONS = ['Precio', 'Elegí otro proveedor', 'Ya no lo necesito', 'Plazos', 'Alcance no calza']
+
 export default function QuoteAcceptView({ token }: { token: string }) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<{ quote: QuoteDoc; deal: QuoteDeal | null; org: QuoteOrg | null } | null>(null)
@@ -16,6 +18,9 @@ export default function QuoteAcceptView({ token }: { token: string }) {
   const [deciding, setDeciding] = useState<'accepted' | 'rejected' | null>(null)
   const [decisionError, setDecisionError] = useState('')
   const [showAcceptForm, setShowAcceptForm] = useState(false)
+  const [showRejectForm, setShowRejectForm] = useState(false)
+  const [reasonTag, setReasonTag] = useState('')
+  const [reasonText, setReasonText] = useState('')
 
   useEffect(() => {
     fetch(`/api/public/cotizacion/${token}`)
@@ -34,6 +39,11 @@ export default function QuoteAcceptView({ token }: { token: string }) {
     document.title = `Cotización #${data.quote.quote_number} · ${data.org?.display_name || data.org?.name || 'Cotización'}`
   }, [data])
 
+  // Motivo opcional: el rápido elegido y/o el comentario libre.
+  function rejectionReason() {
+    return [reasonTag, reasonText.trim()].filter(Boolean).join(' — ') || undefined
+  }
+
   async function decide(decision: 'accepted' | 'rejected') {
     if (decision === 'accepted' && !name.trim()) { setDecisionError('Ingresa tu nombre'); return }
     setDeciding(decision)
@@ -41,7 +51,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
     try {
       const res = await fetch(`/api/public/cotizacion/${token}/decision`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision, name: name.trim() }),
+        body: JSON.stringify({ decision, name: name.trim(), reason: decision === 'rejected' ? rejectionReason() : undefined }),
       })
       const json = await res.json()
       if (!res.ok) { setDecisionError(json.error ?? 'No se pudo registrar la respuesta'); setDeciding(null); return }
@@ -126,10 +136,33 @@ export default function QuoteAcceptView({ token }: { token: string }) {
           ) : quote.status === 'rejected' ? (
             <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200 rounded-lg px-4 py-3">
               <XCircle className="w-5 h-5 text-slate-500 shrink-0" />
-              <p className="text-sm font-semibold text-slate-600">Cotización rechazada.</p>
+              <p className="text-sm font-semibold text-slate-600">Cotización rechazada. Gracias por avisarnos.</p>
             </div>
           ) : quote.status !== 'sent' ? (
             <p className="text-sm text-slate-400 text-center">Esta cotización todavía no está disponible para responder.</p>
+          ) : showRejectForm ? (
+            <div className="space-y-2.5">
+              <p className="text-sm font-semibold text-slate-700">¿Nos cuentas por qué? <span className="font-normal text-slate-400">(opcional)</span></p>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Motivo del rechazo">
+                {REJECT_REASONS.map(r => (
+                  <button key={r} type="button" onClick={() => setReasonTag(t => t === r ? '' : r)} aria-pressed={reasonTag === r}
+                    className={`text-xs font-medium px-2.5 py-1.5 rounded-full border transition-colors ${reasonTag === r ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                    {r}
+                  </button>
+                ))}
+              </div>
+              <textarea aria-label="Comentario (opcional)" value={reasonText} onChange={e => setReasonText(e.target.value)} rows={3} maxLength={800}
+                placeholder="Comentario (opcional)"
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-slate-300" />
+              {decisionError && <p role="alert" className="text-xs text-red-600">{decisionError}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => decide('rejected')} disabled={deciding !== null}
+                  className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-slate-700 hover:bg-slate-800 py-2.5 rounded-lg disabled:opacity-50 transition-colors">
+                  {deciding === 'rejected' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar rechazo'}
+                </button>
+                <button type="button" onClick={() => setShowRejectForm(false)} className="text-sm font-semibold text-slate-500 px-3">Cancelar</button>
+              </div>
+            </div>
           ) : showAcceptForm ? (
             <div className="space-y-2.5">
               <input aria-label="Tu nombre completo" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre completo"
@@ -150,9 +183,9 @@ export default function QuoteAcceptView({ token }: { token: string }) {
                 className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-lg disabled:opacity-50 transition-colors">
                 <CheckCircle2 className="w-4 h-4" /> Aceptar
               </button>
-              <button onClick={() => decide('rejected')} disabled={deciding !== null}
+              <button type="button" onClick={() => { setDecisionError(''); setShowRejectForm(true) }} disabled={deciding !== null}
                 className="flex-1 flex items-center justify-center gap-2 text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 py-2.5 rounded-lg disabled:opacity-50 transition-colors">
-                {deciding === 'rejected' ? <Loader2 className="w-4 h-4 animate-spin" /> : <><XCircle className="w-4 h-4" /> Rechazar</>}
+                <XCircle className="w-4 h-4" /> Rechazar
               </button>
             </div>
           )}

@@ -170,6 +170,9 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit, send
           {quote.status === 'rejected' && (
             <div className="mt-4 print:mt-6 bg-slate-100 print:bg-transparent border border-slate-200 rounded-lg p-3 text-xs text-slate-600">
               Rechazada el {quote.rejected_at ? new Date(quote.rejected_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+              {quote.rejection_reason
+                ? <p className="mt-1">Motivo: <span className="font-medium text-slate-800 whitespace-pre-wrap">{quote.rejection_reason}</span></p>
+                : <p className="mt-1 text-slate-500">El cliente no indicó motivo.</p>}
             </div>
           )}
         </div>

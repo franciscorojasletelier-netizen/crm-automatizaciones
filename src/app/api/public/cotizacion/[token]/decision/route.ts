@@ -23,6 +23,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const body = await request.json()
   const { decision, name } = body as { decision: 'accepted' | 'rejected'; name?: string }
+  // Motivo opcional del rechazo (texto plano, acotado).
+  const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
   if (!['accepted', 'rejected'].includes(decision)) {
     return NextResponse.json({ error: 'decision inválida' }, { status: 400 })
   }
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const updates = decision === 'accepted'
     ? { status: 'accepted', accepted_at: new Date().toISOString(), accepted_by_name: name!.trim(), accepted_ip: ip }
-    : { status: 'rejected', rejected_at: new Date().toISOString() }
+    : { status: 'rejected', rejected_at: new Date().toISOString(), rejection_reason: reason }
 
   const { error } = await supabase.from('quotes').update(updates).eq('id', quote.id)
   if (error) return NextResponse.json({ error: 'No se pudo registrar la respuesta' }, { status: 500 })
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       user_id,
       type: accepted ? 'quote_accepted' : 'quote_rejected',
       title: accepted ? `✅ Cotización #${quote.quote_number} aceptada` : `Cotización #${quote.quote_number} rechazada`,
-      body: accepted ? `${company} — aceptada por ${name!.trim()}` : `${company} la rechazó desde el link`,
+      body: accepted ? `${company} — aceptada por ${name!.trim()}` : `${company} la rechazó${reason ? `. Motivo: ${reason}` : ' (sin motivo)'}`,
       entity_type: 'deal', entity_id: quote.deal_id,
     })))
   }
