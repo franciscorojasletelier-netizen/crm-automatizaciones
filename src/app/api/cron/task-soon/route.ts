@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { CHILE_TZ } from '@/lib/dates'
-import { escapeHtml } from '@/lib/html'
 import { isCronAuthorized } from '@/lib/secure-compare'
+import { renderTaskSoon } from '@/lib/task-emails'
+import type { EmailBrand } from '@/lib/email-layout'
 
 // Cron cada minuto (pg_cron, migración 053): avisa por correo al
 // responsable de cada tarea con hora unos minutos antes de que venza.
@@ -12,36 +12,7 @@ const MINUTES_BEFORE = 5
 
 type Reminder = {
   task_id: string; title: string; description: string | null; due_date: string; deal_id: string | null
-  user_id: string; email: string; full_name: string | null; org_name: string | null; company_name: string | null
-}
-
-const timeOf = (d: string) => new Date(d).toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit' })
-
-function buildHtml(r: Reminder, appUrl: string) {
-  const first = (r.full_name ?? '').split(' ')[0]
-  const link = `${appUrl}/tareas?tarea=${r.task_id}`
-  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-  return `<!doctype html><html lang="es"><body style="margin:0;background:#f4f5f7;padding:24px 12px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;">
-      <tr><td style="padding:24px 28px 8px;font:500 13px/1.4 ${font};color:#6b7280;">${escapeHtml(r.org_name ?? 'CRM')} · Recordatorio</td></tr>
-      <tr><td style="padding:0 28px;font:600 20px/1.35 ${font};color:#111827;">${first ? `${escapeHtml(first)}, en` : 'En'} ${MINUTES_BEFORE} minutos tienes:</td></tr>
-      <tr><td style="padding:16px 28px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
-          <tr><td style="padding:16px 18px;">
-            <div style="font:700 26px/1.2 ${font};color:#111827;">${timeOf(r.due_date)}</div>
-            <div style="font:600 15px/1.4 ${font};color:#111827;margin-top:6px;">${escapeHtml(r.title)}</div>
-            ${r.company_name ? `<div style="font:400 13px/1.4 ${font};color:#6b7280;margin-top:2px;">${escapeHtml(r.company_name)}</div>` : ''}
-            ${r.description ? `<div style="font:400 13px/1.5 ${font};color:#374151;margin-top:10px;white-space:pre-wrap;">${escapeHtml(r.description.slice(0, 500))}</div>` : ''}
-          </td></tr>
-        </table>
-      </td></tr>
-      <tr><td style="padding:20px 28px 28px;">
-        <a href="${escapeHtml(link)}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font:600 14px/1 ${font};padding:12px 18px;border-radius:8px;">Abrir la tarea</a>
-      </td></tr>
-    </table>
-    <p style="font:400 11px/1.4 ${font};color:#9ca3af;margin:12px 0 0;">Aviso automático ${MINUTES_BEFORE} minutos antes de cada tarea con hora.</p>
-  </td></tr></table></body></html>`
+  user_id: string; email: string; full_name: string | null; organization_id: string | null; company_name: string | null
 }
 
 export async function GET(request: NextRequest) {
@@ -62,18 +33,28 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.rpc('claim_task_reminders', { p_minutes: MINUTES_BEFORE })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const reminders = (data ?? []) as Reminder[]
+  if (reminders.length === 0) return NextResponse.json({ ok: true, sent: 0, failed: 0 })
+
+  // Logo y datos de cada organización para el correo.
+  const orgIds = [...new Set(reminders.map(r => r.organization_id).filter(Boolean))] as string[]
+  const { data: orgs } = await supabase.from('organizations').select('id, name, display_name, logo_url, email, phone, address').in('id', orgIds)
+  const brands = new Map<string, EmailBrand>((orgs ?? []).map(o => [o.id, { name: o.display_name || o.name, logoUrl: o.logo_url, email: o.email, phone: o.phone, address: o.address }]))
 
   let sent = 0
   const failed: string[] = []
   for (const r of reminders) {
+    const brand = (r.organization_id && brands.get(r.organization_id)) || { name: 'CRM' }
+    const { subject, html } = renderTaskSoon({
+      firstName: (r.full_name ?? '').split(' ')[0], minutes: MINUTES_BEFORE,
+      task: { title: r.title, due_date: r.due_date, company: r.company_name },
+      description: r.description, link: `${appUrl}/tareas?tarea=${r.task_id}`, brand,
+    })
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM?.trim() || `${r.org_name ?? 'CRM'} <onboarding@resend.dev>`,
-        to: [r.email],
-        subject: `⏰ ${timeOf(r.due_date)} · ${r.title}`,
-        html: buildHtml(r, appUrl),
+        from: process.env.EMAIL_FROM?.trim() || `${brand.name} <onboarding@resend.dev>`,
+        to: [r.email], subject, html,
       }),
     })
     if (res.ok) { sent++; continue }

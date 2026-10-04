@@ -8,7 +8,7 @@ import type { QuoteDeal, QuoteDoc } from '@/lib/quotes'
 
 export default async function QuotePage({ params }: { params: Promise<{ id: string; quoteId: string }> }) {
   const { id, quoteId } = await params
-  const { user, role, sectionAccess, supabase, organizationId } = await getCurrentProfile()
+  const { user, role, sectionAccess, supabase, organizationId, profile } = await getCurrentProfile()
 
   const hasAccess = await canSeeDeal(supabase, user.id, role, id)
   if (!hasAccess) redirect(`/acceso-denegado?from=/leads/${id}&role=${role}`)
@@ -29,5 +29,5 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
   const canEdit = ['super_admin', 'gerente', 'comercial'].includes(role) && canEditSection(role, sectionAccess, 'leads')
 
   // Relaciones a-uno: sin tipos de base se infieren como arreglo.
-  return <QuotePrintView quote={{ ...(quote as QuoteDoc), id: quote.id }} deal={deal as unknown as QuoteDeal | null} org={org} dealId={id} canEdit={canEdit} />
+  return <QuotePrintView quote={{ ...(quote as QuoteDoc), id: quote.id }} deal={deal as unknown as QuoteDeal | null} org={org} dealId={id} canEdit={canEdit} senderName={profile?.full_name ?? null} />
 }

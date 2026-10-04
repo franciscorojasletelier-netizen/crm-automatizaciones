@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Printer, Send, Trash2, Copy, Check, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
+import SendQuoteEmail from '@/components/deals/send-quote-email'
 import { formatMoney, money } from '@/lib/format'
 import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
 import { quoteTotals, quoteTaxes, type QuoteDoc, type QuoteDeal, type QuoteOrg } from '@/lib/quotes'
@@ -13,8 +14,9 @@ import { quoteTotals, quoteTaxes, type QuoteDoc, type QuoteDeal, type QuoteOrg }
 interface Item { description: string; quantity: number; unit_price: number }
 
 
-export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
+export default function QuotePrintView({ quote, deal, org, dealId, canEdit, senderName }: {
   quote: QuoteDoc & { id: string }; deal: QuoteDeal | null; org: QuoteOrg | null; dealId: string; canEdit: boolean
+  senderName?: string | null
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState<'send' | 'delete' | null>(null)
@@ -77,6 +79,11 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit }: {
                 {busy === 'send' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Marcar como enviada
               </button>
             </>
+          )}
+          {canEdit && (quote.status === 'draft' || quote.status === 'sent') && (
+            <SendQuoteEmail quoteId={quote.id} quoteNumber={quote.quote_number}
+              contactEmail={deal?.contacts?.email} contactName={deal?.contacts?.full_name}
+              senderName={senderName} orgName={org?.display_name || org?.name || 'Nuestra empresa'} />
           )}
           {publicUrl && (
             <button type="button" onClick={copyLink}

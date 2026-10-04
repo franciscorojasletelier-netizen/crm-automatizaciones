@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { CHILE_TZ, chileDayStart } from '@/lib/dates'
-import { escapeHtml } from '@/lib/html'
+import { chileDayStart } from '@/lib/dates'
+import { renderDailyDigest } from '@/lib/task-emails'
 import { isCronAuthorized } from '@/lib/secure-compare'
 
 // Cron: 8:00 AM Chile (UTC-3) = 11:00 UTC
@@ -50,16 +50,17 @@ export async function GET(request: NextRequest) {
     const orgIdByProfile = new Map(((orgLinks ?? []) as { id: string; organization_id: string | null }[]).map(p => [p.id, p.organization_id] as const))
     const orgIds = Array.from(new Set(Array.from(orgIdByProfile.values()).filter(Boolean)))
     const { data: orgs } = orgIds.length > 0
-      ? await supabase.from('organizations').select('id, name, display_name').in('id', orgIds)
+      ? await supabase.from('organizations').select('id, name, display_name, logo_url, email, phone, address').in('id', orgIds)
       : { data: [] }
-    const orgNameById = new Map(((orgs ?? []) as { id: string; name: string; display_name: string | null }[]).map(o => [o.id, o.display_name || o.name || 'CRM'] as const))
+    type OrgRow = { id: string; name: string; display_name: string | null; logo_url: string | null; email: string | null; phone: string | null; address: string | null }
+    const brandById = new Map(((orgs ?? []) as OrgRow[]).map(o => [o.id, { name: o.display_name || o.name || 'CRM', logoUrl: o.logo_url, email: o.email, phone: o.phone, address: o.address }] as const))
 
     let sent = 0
     const errors: string[] = []
 
     for (const profile of profiles) {
       const orgId = orgIdByProfile.get(profile.id)
-      const orgName = (orgId && orgNameById.get(orgId)) || 'CRM'
+      const brand = (orgId && brandById.get(orgId)) || { name: 'CRM' }
       // Usuarios desactivados no reciben el resumen.
       if (!profile.email || profile.is_active === false) continue
 
@@ -84,11 +85,11 @@ export async function GET(request: NextRequest) {
       if (taskList.length === 0 && overdueList.length === 0) continue
 
       const userName = (profile.full_name ?? '').split(' ')[0] || 'equipo'
-      const subject  = overdueList.length > 0
-        ? `⚠️ ${overdueList.length} tarea(s) vencida(s) — ${orgName}`
-        : `📋 Tienes ${taskList.length} tarea(s) para hoy — ${orgName}`
-
-      const html = buildEmailHtml(userName, taskList, overdueList, appUrl, orgName)
+      const { subject, html } = renderDailyDigest({
+        userName, appUrl, brand,
+        overdue: overdueList.map((t: { title: string; due_date: string | null }) => ({ title: t.title, due_date: t.due_date })),
+        upcoming: taskList.map((t: { title: string; due_date: string | null }) => ({ title: t.title, due_date: t.due_date })),
+      })
 
       if (!resendKey) {
         console.log(`[CRON] Would email ${profile.email}: ${subject}`)
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from:    process.env.EMAIL_FROM?.trim() || `${orgName} <onboarding@resend.dev>`,
+          from:    process.env.EMAIL_FROM?.trim() || `${brand.name} <onboarding@resend.dev>`,
           to:      [profile.email],
           subject,
           html,
@@ -131,72 +132,3 @@ export async function GET(request: NextRequest) {
 export const POST = GET
 
 // ── Template HTML ────────────────────────────────────────────────
-function buildEmailHtml(
-  userName: string,
-  tasks: Record<string, unknown>[],
-  overdue: Record<string, unknown>[],
-  appUrl: string,
-  orgName: string
-): string {
-  const today = new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ, 
-    weekday: 'long', day: 'numeric', month: 'long',
-  })
-
-  const row = (t: Record<string, unknown>, isOverdue: boolean) => {
-    const title = escapeHtml(t.title)
-    const d = t.due_date ? new Date(String(t.due_date)) : null
-    const dateStr = d ? d.toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'short' }) : ''
-    // Hora en Chile (getHours() sería la del servidor, UTC): 00:00 = tarea sin hora.
-    const chileTime = d ? d.toLocaleTimeString('es-CL', { timeZone: CHILE_TZ, hour: '2-digit', minute: '2-digit', hour12: false }) : null
-    const timeStr = chileTime && chileTime !== '00:00' ? chileTime : null
-
-    const dateDisplay = timeStr
-      ? `${dateStr} <span style="background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:600">🕐 ${timeStr}</span>`
-      : dateStr
-
-    return `<tr>
-      <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};">
-        <strong style="color:${isOverdue ? '#991b1b' : '#1e293b'}">${title}</strong>
-      </td>
-      <td style="padding:10px 16px;border-bottom:1px solid ${isOverdue ? '#fff1f2' : '#f1f5f9'};font-size:12px;white-space:nowrap;color:${isOverdue ? '#ef4444' : '#64748b'}">
-        ${isOverdue ? `⚠️ Vencida el ${dateDisplay}` : `📅 ${dateDisplay}`}
-      </td>
-    </tr>`
-  }
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,sans-serif;">
-<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
-  <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);border-radius:16px;padding:32px;margin-bottom:24px;">
-    <h1 style="color:white;font-size:22px;font-weight:700;margin:0 0 4px">Buenos días, ${escapeHtml(userName)} 👋</h1>
-    <p style="color:#94a3b8;margin:0;font-size:14px">${today}</p>
-  </div>
-
-  ${overdue.length > 0 ? `
-  <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:12px;padding:4px;margin-bottom:20px">
-    <div style="padding:16px 16px 8px">
-      <p style="margin:0;font-weight:700;color:#991b1b;font-size:14px">⚠️ ${overdue.length} tarea(s) vencida(s)</p>
-    </div>
-    <table style="width:100%;border-collapse:collapse">${overdue.map(t => row(t, true)).join('')}</table>
-  </div>` : ''}
-
-  ${tasks.length > 0 ? `
-  <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:4px;margin-bottom:20px">
-    <div style="padding:16px 16px 8px">
-      <p style="margin:0;font-weight:700;color:#1e293b;font-size:14px">📋 ${tasks.length} tarea(s) para hoy / mañana</p>
-    </div>
-    <table style="width:100%;border-collapse:collapse">${tasks.map(t => row(t, false)).join('')}</table>
-  </div>` : `
-  <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:24px;text-align:center;margin-bottom:20px">
-    <p style="font-size:32px;margin:0">🎉</p>
-    <p style="font-weight:700;color:#1e293b">¡Sin tareas pendientes!</p>
-  </div>`}
-
-  <div style="text-align:center;margin-bottom:24px">
-    <a href="${appUrl}/tareas" style="display:inline-block;background:#2f55d4;color:white;text-decoration:none;padding:11px 24px;border-radius:8px;font-weight:700;font-size:14px">
-      Ver mis tareas en el CRM →
-    </a>
-  </div>
-  <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0">${escapeHtml(orgName)} · Notificación automática diaria</p>
-</div></body></html>`
-}

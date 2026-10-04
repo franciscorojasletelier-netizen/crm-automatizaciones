@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import crypto from 'node:crypto'
 import { applyPlan, isPlanKey, PLANS, type PlanKey } from '@/lib/plans'
+import { renderInvitation } from '@/lib/system-emails'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 
 // Crea una organización (cliente) nueva + su primer usuario super_admin.
@@ -126,9 +127,15 @@ export async function POST(request: NextRequest) {
     })
     if (link?.properties?.action_link) {
       const first = fullName.split(/\s+/)[0]
+      const invitation = renderInvitation({
+        name: fullName, orgName, planLabel: PLANS[plan].label, email,
+        link: link.properties.action_link, loginUrl: `${request.nextUrl.origin}/login`,
+        brand: { name: orgName },
+      })
       const sent = await sendSystemMail({
         to: email,
-        subject: `Tu cuenta en el CRM de ${orgName}`,
+        subject: invitation.subject,
+        html: invitation.html,
         fromName: 'CRM Automatizaciones',
         body: [
           `Hola ${first}:`,
