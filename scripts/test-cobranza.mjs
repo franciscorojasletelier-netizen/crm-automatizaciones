@@ -228,6 +228,21 @@ async function main() {
   assert('Un comercial no elimina borradores ajenos', (delOther ?? []).length === 0)
   const { data: delDraft } = await g.from('quotes').delete().eq('id', q2.id).select('id')
   assert('Un borrador sí se puede eliminar', (delDraft ?? []).length === 1)
+
+  // ── Plan de pagos y firma (058) ──
+  const { error: badPlan } = await g.from('quotes').insert({ deal_id: dealG.id, items: [], payment_terms: [{ label: 'Al inicio', pct: 50 }, { label: 'Final', pct: 40 }] })
+  assert('Un plan de pagos que no suma 100 % es rechazado', !!badPlan, badPlan?.message)
+  const q3 = must('cotización con plan', await g.from('quotes').insert({
+    deal_id: dealG.id, items: [{ description: 'App', quantity: 1, unit_price: 1000 }], status: 'sent', public_token: crypto.randomUUID(),
+    payment_terms: [{ label: 'Al inicio', pct: 50 }, { label: 'Al 70 % de avance', pct: 30 }, { label: 'Entrega final', pct: 20 }],
+  }).select('id').single())
+  await admin.from('quotes').update({ status: 'accepted', accepted_at: new Date().toISOString(), accepted_by_name: 'Cliente', accepted_hash: 'x' }).eq('id', q3.id)
+  const { error: editAccepted } = await admin.from('quotes').update({ items: [{ description: 'Otra cosa', quantity: 1, unit_price: 1 }] }).eq('id', q3.id)
+  assert('Una cotización aceptada no se puede modificar (ni con service_role)', !!editAccepted, editAccepted?.message)
+  const { error: reopen } = await admin.from('quotes').update({ status: 'sent' }).eq('id', q3.id)
+  assert('Una cotización aceptada no vuelve a "enviada"', !!reopen, reopen?.message)
+  const { data: codes, error: codesErr } = await g.from('quote_acceptance_codes').select('id').limit(1)
+  assert('Los códigos de aceptación no son visibles para usuarios', !!codesErr || (codes ?? []).length === 0, codesErr?.message)
 }
 
 async function cleanup() {

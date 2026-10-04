@@ -12,6 +12,8 @@ import { buttonClass, inputClass, labelClass } from '@/components/ui/page'
 import { cn } from '@/lib/utils'
 import { uploadOrgLogo } from '@/lib/org-logo'
 import { CURRENCIES, MAX_TAXES, normalizeTaxes, DEFAULT_TAXES, type Tax } from '@/lib/money'
+import PaymentTermsEditor, { parsePaymentDrafts, toPaymentDrafts } from '@/components/quotes/payment-terms-editor'
+import { DEFAULT_PAYMENT_CONDITIONS, DEFAULT_PAYMENT_TERMS, normalizePaymentTerms, paymentTermsError } from '@/lib/payment-terms'
 
 export interface CompanyProfile {
   id: string
@@ -24,6 +26,8 @@ export interface CompanyProfile {
   payment_instructions: string | null
   currency?: string | null
   taxes?: Tax[] | null
+  payment_terms?: unknown
+  payment_conditions?: string | null
 }
 
 export default function CompanyProfileCard({ org, description = 'Aparecen en los correos de cobranza, estados de cuenta y cotizaciones.' }: { org: CompanyProfile; description?: string }) {
@@ -33,6 +37,8 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
   })
   const [currency, setCurrency] = useState(org.currency ?? 'CLP')
   const [taxes, setTaxes] = useState(() => (org.taxes ? normalizeTaxes(org.taxes) : DEFAULT_TAXES).map(t => ({ label: t.label, rate: String(t.rate).replace('.', ',') })))
+  const [payTerms, setPayTerms] = useState(() => toPaymentDrafts(normalizePaymentTerms(org.payment_terms) ?? DEFAULT_PAYMENT_TERMS))
+  const [payConditions, setPayConditions] = useState(org.payment_conditions ?? DEFAULT_PAYMENT_CONDITIONS)
   const [logo, setLogo] = useState(org.logo_url)
   const [busy, setBusy] = useState<'save' | 'logo' | null>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -47,12 +53,16 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
     if (parsedTaxes.some(t => !t.label || !Number.isFinite(t.rate) || t.rate < 0 || t.rate > 100)) {
       setMsg({ ok: false, text: 'Cada impuesto necesita un nombre y una tasa entre 0 y 100 %.' }); return
     }
+    const parsedPay = parsePaymentDrafts(payTerms)
+    const payErr = paymentTermsError(parsedPay)
+    if (payErr) { setMsg({ ok: false, text: payErr }); return }
     setBusy('save'); setMsg(null)
     const clean = (s: string) => s.trim() || null
     const { error } = await createClient().from('organizations').update({
       display_name: clean(v.display_name), email: clean(v.email), phone: clean(v.phone),
       address: clean(v.address), payment_instructions: clean(v.payment_instructions),
       currency, taxes: parsedTaxes,
+      payment_terms: parsedPay, payment_conditions: payConditions.trim() || DEFAULT_PAYMENT_CONDITIONS,
     }).eq('id', org.id)
     setBusy(null)
     // Si la base rechaza el cambio de moneda (ya hay cobranza), el selector vuelve a la guardada.
@@ -154,6 +164,12 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
               )}
             </div>
           </fieldset>
+        </div>
+
+        <div className="pt-1">
+          <PaymentTermsEditor idPrefix="cp-terms" fieldClass={inputClass}
+            terms={payTerms} onTerms={setPayTerms} conditions={payConditions} onConditions={setPayConditions} />
+          <p className="mt-1 text-xs text-slate-500">Plan por defecto de las cotizaciones nuevas; en cada cotización se puede ajustar.</p>
         </div>
 
         <div>

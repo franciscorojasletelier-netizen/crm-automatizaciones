@@ -27,7 +27,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   if (!owner) redirect('/dashboard')
 
   const { data: org } = await supabase
-    .from('organizations').select('id, name, is_active, max_users, require_mfa, plan, display_name, logo_url, email, phone, address, payment_instructions, currency, taxes').eq('id', id).maybeSingle()
+    .from('organizations').select('id, name, is_active, max_users, require_mfa, plan, display_name, logo_url, email, phone, address, payment_instructions, currency, taxes, payment_terms, payment_conditions').eq('id', id).maybeSingle()
   if (!org) notFound()
 
   // profiles_select no tiene bypass de is_platform_owner() (a diferencia de

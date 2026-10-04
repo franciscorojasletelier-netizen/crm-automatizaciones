@@ -26,7 +26,7 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
   const isManager = ['super_admin', 'admin', 'gerente'].includes(profile?.role ?? '')
   const { data: org } = isManager && profile?.organization_id
     ? await supabase.from('organizations')
-        .select('id, name, display_name, logo_url, email, phone, address, payment_instructions, currency, taxes')
+        .select('id, name, display_name, logo_url, email, phone, address, payment_instructions, currency, taxes, payment_terms, payment_conditions')
         .eq('id', profile.organization_id).maybeSingle()
     : { data: null }
 

@@ -13,6 +13,8 @@ import {
 } from '@/lib/money'
 import { useCurrency } from '@/components/providers/currency-provider'
 import SendQuoteEmail from '@/components/deals/send-quote-email'
+import PaymentTermsEditor, { parsePaymentDrafts, toPaymentDrafts, type PaymentTermDraft } from '@/components/quotes/payment-terms-editor'
+import { paymentTermsError, type PaymentTerm } from '@/lib/payment-terms'
 
 interface Item { description: string; quantity: number; unit_price: number }
 interface Quote {
@@ -56,10 +58,12 @@ function CopyLinkButton({ token }: { token: string }) {
   )
 }
 
-export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, defaultTaxes, contactEmail, contactName, senderName, orgName }: {
+export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, defaultTaxes, defaultPaymentTerms, defaultPaymentConditions, contactEmail, contactName, senderName, orgName }: {
   dealId: string; quotes: Quote[]; canEdit: boolean
   /** Impuestos por defecto de la organización (Configuración → Datos de la empresa). */
   defaultTaxes: Tax[]
+  /** Plan de pagos y condiciones por defecto de la organización. */
+  defaultPaymentTerms: PaymentTerm[]; defaultPaymentConditions: string
   /** Para el correo de la cotización. */
   contactEmail?: string | null; contactName?: string | null; senderName?: string | null; orgName: string
 }) {
@@ -72,6 +76,8 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
   const [currency, setCurrency] = useState<string>(orgCurrency)
   const [taxes, setTaxes] = useState<TaxDraft[]>(toTaxDrafts(defaultTaxes))
   const [notes, setNotes] = useState('')
+  const [payTerms, setPayTerms] = useState<PaymentTermDraft[]>(toPaymentDrafts(defaultPaymentTerms))
+  const [payConditions, setPayConditions] = useState(defaultPaymentConditions)
   const [validUntil, setValidUntil] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -96,6 +102,7 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
   function resetForm() {
     setItems([emptyItem()]); setTaxes(toTaxDrafts(defaultTaxes)); setCurrency(orgCurrency)
     setNotes(''); setValidUntil(''); setError('')
+    setPayTerms(toPaymentDrafts(defaultPaymentTerms)); setPayConditions(defaultPaymentConditions)
   }
 
   // Se guarda como borrador; pasa a "enviada" recién cuando el correo sale.
@@ -105,11 +112,15 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
     if (cleanItems.some(i => i.quantity <= 0)) { setError('La cantidad de cada ítem debe ser mayor a cero.'); return }
     const badTax = parsedTaxes.find(t => !t.label || !Number.isFinite(t.rate) || t.rate < 0 || t.rate > 100)
     if (badTax) { setError('Cada impuesto necesita un nombre y una tasa entre 0 y 100 %.'); return }
+    const paymentTerms = parsePaymentDrafts(payTerms)
+    const payErr = paymentTermsError(paymentTerms)
+    if (payErr) { setError(payErr); return }
     setSaving(true)
     setError('')
     const { data, error: err } = await createClient().from('quotes').insert({
       deal_id: dealId, status: 'draft', items: cleanItems, taxes: parsedTaxes, currency: normalizeCurrency(currency),
       notes: notes.trim() || null, valid_until: validUntil || null,
+      payment_terms: paymentTerms, payment_conditions: payConditions.trim() || null,
     }).select().single()
     setSaving(false)
     if (err) { setError(friendlyError(err.message)); return }
@@ -196,6 +207,9 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
               <button type="button" onClick={() => setTaxes(prev => [...prev, { label: '', rate: '' }])} className="text-xs font-semibold text-accent-600 hover:text-accent-800">+ Agregar impuesto</button>
             )}
           </fieldset>
+
+          <PaymentTermsEditor idPrefix="quote-pay" fieldClass={fieldClass}
+            terms={payTerms} onTerms={setPayTerms} conditions={payConditions} onConditions={setPayConditions} />
 
           <textarea aria-label="Notas (opcional)" value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Notas (opcional)"
             className={`${fieldClass} w-full resize-none`} />

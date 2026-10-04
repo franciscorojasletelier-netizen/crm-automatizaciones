@@ -4,6 +4,7 @@ import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { getPermissions, normalizeRole, canEditSection, type SectionAccess } from '@/lib/roles'
 import { normalizeCurrency, normalizeTaxes, DEFAULT_TAXES, type Currency, type Tax } from '@/lib/money'
+import { normalizePaymentTerms, DEFAULT_PAYMENT_TERMS, DEFAULT_PAYMENT_CONDITIONS, type PaymentTerm } from '@/lib/payment-terms'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -29,7 +30,7 @@ export async function createClient() {
 }
 
 type ModuleRow = { module_key: string; enabled: boolean; expires_at: string | null }
-type OrgRow = { name: string | null; display_name: string | null; is_active: boolean | null; currency: string | null; taxes: unknown; organization_modules: ModuleRow[] | null }
+type OrgRow = { name: string | null; display_name: string | null; is_active: boolean | null; currency: string | null; taxes: unknown; payment_terms: unknown; payment_conditions: string | null; organization_modules: ModuleRow[] | null }
 
 // Helper: obtiene perfil con el rol YA normalizado.
 //
@@ -46,7 +47,7 @@ export const getCurrentProfile = cache(async () => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role, is_active, section_access, organization_id, organizations(name, display_name, is_active, currency, taxes, organization_modules(module_key, enabled, expires_at))')
+    .select('id, full_name, email, role, is_active, section_access, organization_id, organizations(name, display_name, is_active, currency, taxes, payment_terms, payment_conditions, organization_modules(module_key, enabled, expires_at))')
     .eq('id', user.id)
     .single()
 
@@ -71,8 +72,11 @@ export const getCurrentProfile = cache(async () => {
     .map(m => m.module_key))
 
   const organizationName = org ? (org.display_name || org.name) : null
+  // Plan de pagos y condiciones por defecto de las cotizaciones.
+  const paymentTerms: PaymentTerm[] = normalizePaymentTerms(org?.payment_terms) ?? DEFAULT_PAYMENT_TERMS
+  const paymentConditions: string = org?.payment_conditions ?? DEFAULT_PAYMENT_CONDITIONS
 
-  return { user, profile, role, sectionAccess, organizationId, organizationName, supabase, currency, taxes, disabledModules }
+  return { user, profile, role, sectionAccess, organizationId, organizationName, supabase, currency, taxes, disabledModules, paymentTerms, paymentConditions }
 })
 
 // Guard de permiso — redirige si el rol no tiene acceso.

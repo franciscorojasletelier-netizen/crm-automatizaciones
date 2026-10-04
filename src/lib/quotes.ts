@@ -17,6 +17,9 @@ export interface QuoteDoc {
   public_token?: string | null
   accepted_at: string | null; rejected_at: string | null
   rejection_reason?: string | null
+  payment_terms?: unknown; payment_conditions?: string | null
+  accepted_rut?: string | null; accepted_role?: string | null; accepted_email?: string | null
+  accepted_user_agent?: string | null; accepted_hash?: string | null
   accepted_by_name?: string | null; accepted_ip?: string | null
 }
 export interface QuoteDeal {

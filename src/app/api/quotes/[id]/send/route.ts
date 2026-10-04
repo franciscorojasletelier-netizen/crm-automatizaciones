@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // Con el cliente de sesión: la RLS decide si la ve.
   const { data: quote } = await supabase.from('quotes')
-    .select('id, deal_id, quote_number, status, items, taxes, tax_rate, currency, valid_until, notes, public_token')
+    .select('id, deal_id, quote_number, status, items, taxes, tax_rate, currency, valid_until, notes, public_token, payment_terms, payment_conditions')
     .eq('id', id).maybeSingle()
   if (!quote) return NextResponse.json({ error: 'Cotización no encontrada' }, { status: 404 })
   if (!(await canSeeDeal(supabase, user.id, role, quote.deal_id))) return NextResponse.json({ error: 'Sin acceso a este deal' }, { status: 403 })
@@ -49,8 +49,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { error: upErr } = await supabase.from('quotes').update({ public_token: token }).eq('id', quote.id)
     if (upErr) return NextResponse.json({ error: `No se pudo preparar el link: ${upErr.message}` }, { status: 500 })
   }
+  // También guarda a qué correo se envió: ahí llega el código para aceptar.
   const markSent = async () => {
-    if (quote.status === 'draft') await supabase.from('quotes').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', quote.id)
+    await supabase.from('quotes').update(quote.status === 'draft'
+      ? { status: 'sent', sent_at: new Date().toISOString(), sent_to_email: to.toLowerCase() }
+      : { sent_to_email: to.toLowerCase() }).eq('id', quote.id)
   }
   const origin = process.env.NEXT_PUBLIC_APP_URL?.trim() || request.nextUrl.origin
   const link = `${origin}/cotizacion/${token}`

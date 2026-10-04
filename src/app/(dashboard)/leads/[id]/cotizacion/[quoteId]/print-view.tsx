@@ -7,6 +7,8 @@ import { ArrowLeft, Printer, Trash2, Copy, Check, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
 import SendQuoteEmail from '@/components/deals/send-quote-email'
+import PaymentScheduleTable from '@/components/quotes/payment-schedule'
+import { normalizePaymentTerms } from '@/lib/payment-terms'
 import { formatMoney, money } from '@/lib/format'
 import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
 import { quoteTotals, quoteTaxes, type QuoteDoc, type QuoteDeal, type QuoteOrg } from '@/lib/quotes'
@@ -154,6 +156,8 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit, send
             </div>
           </div>
 
+          <PaymentScheduleTable terms={normalizePaymentTerms(quote.payment_terms)} conditions={quote.payment_conditions} total={total} currency={cur} />
+
           {quote.notes && (
             <div className="pt-4 border-t border-slate-100">
               <p className="text-xs font-medium text-slate-500 mb-1">Notas</p>
@@ -162,9 +166,12 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit, send
           )}
 
           {quote.status === 'accepted' && (
-            <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
-              Aceptada por <b>{quote.accepted_by_name}</b> el {quote.accepted_at ? new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-              {quote.accepted_ip && <span className="text-emerald-600"> · IP {quote.accepted_ip}</span>}
+            <div className="mt-4 print:mt-6 bg-emerald-50 print:bg-transparent border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800 space-y-0.5">
+              <p>Aceptada por <b>{quote.accepted_by_name}</b>{quote.accepted_rut && <> (RUT {quote.accepted_rut}{quote.accepted_role ? `, ${quote.accepted_role}` : ''})</>} el {quote.accepted_at ? new Date(quote.accepted_at).toLocaleDateString('es-CL', { timeZone: CHILE_TZ, day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</p>
+              {quote.accepted_email && <p>Correo verificado: {quote.accepted_email}{quote.accepted_ip && <span className="text-emerald-600"> · IP {quote.accepted_ip}</span>}</p>}
+              {quote.accepted_hash && quote.public_token && (
+                <p className="print:hidden"><a href={`/cotizacion/${quote.public_token}/comprobante`} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Ver comprobante de aceptación</a></p>
+              )}
             </div>
           )}
           {quote.status === 'rejected' && (

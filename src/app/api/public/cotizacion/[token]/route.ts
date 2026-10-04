@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { maskEmail } from '@/lib/quote-acceptance'
 
 // Lectura pública de una cotización por su token — sin sesión, pensado
 // para que el cliente final la vea desde el link que le mandaron por
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { data: quote } = await supabase
     .from('quotes')
-    .select('id, quote_number, status, currency, items, tax_rate, taxes, notes, valid_until, created_at, accepted_at, rejected_at, organization_id, deal_id')
+    .select('id, quote_number, status, currency, items, tax_rate, taxes, notes, valid_until, created_at, accepted_at, rejected_at, organization_id, deal_id, payment_terms, payment_conditions, sent_to_email, accepted_by_name, accepted_hash')
     .eq('public_token', token)
     .maybeSingle()
 
@@ -26,7 +27,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   ])
 
   // Al cliente final no se le exponen ids internos (organización, deal, cotización).
-  const { id: _id, organization_id: _org, deal_id: _deal, ...publicQuote } = quote
-  void _id; void _org; void _deal
-  return NextResponse.json({ quote: publicQuote, deal, org })
+  // Correo al que llegará el código (enmascarado), sin exponerlo completo.
+  const knownEmail = quote.sent_to_email || (deal?.contacts as unknown as { email: string | null } | null)?.email || null
+  const { id: _id, organization_id: _org, deal_id: _deal, sent_to_email: _sent, ...publicQuote } = quote
+  void _id; void _org; void _deal; void _sent
+  const contactRow = deal?.contacts as unknown as { full_name: string | null } | null
+  const publicDeal = deal ? { companies: deal.companies, contacts: contactRow ? { full_name: contactRow.full_name, email: null } : null } : null
+  return NextResponse.json({ quote: publicQuote, deal: publicDeal, org, codeTarget: knownEmail ? maskEmail(knownEmail) : null })
 }
