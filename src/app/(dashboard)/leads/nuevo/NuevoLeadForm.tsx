@@ -44,14 +44,20 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
     source: '', estimated_value: '', next_action: '',
   })
   const [customValues, setCustomValues] = useState<Record<string, string | string[] | boolean>>({})
-  const [duplicate, setDuplicate] = useState<string | null>(null)
-  const [forceCreate, setForceCreate] = useState(false)
+  // Posible duplicado: empresa con el mismo nombre o contacto con el mismo correo.
+  const [duplicate, setDuplicate] = useState<{ label: string; companyId: string | null; companyName: string | null; contactId: string | null } | null>(null)
 
   function set(field: string, value: string) { setForm(f => ({ ...f, [field]: value })) }
   function setCustom(key: string, value: string | string[] | boolean) { setCustomValues(v => ({ ...v, [key]: value })) }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    void submit({})
+  }
+
+  // useExisting: el negocio nuevo queda en la empresa (y contacto) que ya existe,
+  // p. ej. un cliente que vuelve a comprar. force: crear igual, sin preguntar.
+  async function submit({ force = false, useExisting = null }: { force?: boolean; useExisting?: NonNullable<typeof duplicate> | null }) {
     setLoading(true)
     setError('')
     setDuplicate(null)
@@ -66,31 +72,44 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
     // Aviso de posible duplicado (no bloqueante): misma empresa por nombre
     // o mismo contacto por email/teléfono, dentro de la propia organización
     // (RLS ya scopea la búsqueda). El comercial decide si igual quiere crearlo.
-    if (!forceCreate) {
-      let dupLabel: string | null = null
+    if (!force && !useExisting) {
+      let found: NonNullable<typeof duplicate> | null = null
       if (form.company_name.trim()) {
-        const { data } = await supabase.from('companies').select('name').ilike('name', form.company_name.trim()).limit(1).maybeSingle()
-        if (data) dupLabel = `Ya existe una empresa llamada "${data.name}"`
+        const { data } = await supabase.from('companies').select('id, name').ilike('name', form.company_name.trim()).limit(1).maybeSingle()
+        if (data) found = { label: `Ya existe una empresa llamada "${data.name}".`, companyId: data.id, companyName: data.name, contactId: null }
       }
-      if (!dupLabel && form.contact_email.trim()) {
-        const { data } = await supabase.from('contacts').select('full_name, email').ilike('email', form.contact_email.trim()).limit(1).maybeSingle()
-        if (data) dupLabel = `Ya existe un contacto con el email ${data.email} (${data.full_name ?? 'sin nombre'})`
+      if (form.contact_email.trim()) {
+        const { data } = await supabase.from('contacts').select('id, full_name, email, company_id, companies(name)').ilike('email', form.contact_email.trim()).limit(1).maybeSingle()
+        if (data) {
+          const cName = (data.companies as unknown as { name: string } | null)?.name ?? null
+          found = found
+            ? { ...found, contactId: data.company_id === found.companyId ? data.id : null }
+            : { label: `Ya existe un contacto con el correo ${data.email} (${data.full_name ?? 'sin nombre'}${cName ? `, ${cName}` : ''}).`, companyId: data.company_id, companyName: cName, contactId: data.id }
+        }
       }
-      if (dupLabel) {
-        setDuplicate(dupLabel)
+      if (found) {
+        setDuplicate(found)
         setLoading(false)
         return
       }
     }
 
     try {
-      const { data: company, error: companyError } = await supabase
-        .from('companies').insert({ name: form.company_name, industry: form.industry, website: form.website }).select('id').single()
-      if (companyError) throw companyError
+      let companyId = useExisting?.companyId ?? null
+      if (!companyId) {
+        const { data: company, error: companyError } = await supabase
+          .from('companies').insert({ name: form.company_name, industry: form.industry, website: form.website }).select('id').single()
+        if (companyError) throw companyError
+        companyId = company.id
+      }
 
-      const { data: contact, error: contactError } = await supabase
-        .from('contacts').insert({ company_id: company.id, full_name: form.contact_name, email: form.contact_email, phone: form.contact_phone, job_title: form.contact_job_title }).select('id').single()
-      if (contactError) throw contactError
+      let contactId = useExisting?.contactId ?? null
+      if (!contactId) {
+        const { data: contact, error: contactError } = await supabase
+          .from('contacts').insert({ company_id: companyId, full_name: form.contact_name, email: form.contact_email, phone: form.contact_phone, job_title: form.contact_job_title }).select('id').single()
+        if (contactError) throw contactError
+        contactId = contact.id
+      }
 
       let score = 0
       if (form.contact_email && !form.contact_email.includes('gmail') && !form.contact_email.includes('hotmail')) score += 15
@@ -101,7 +120,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
       const { data: { user } } = await supabase.auth.getUser()
 
       const { error: dealError } = await supabase.from('deals').insert({
-        company_id: company.id, primary_contact_id: contact.id, source: form.source,
+        company_id: companyId, primary_contact_id: contactId, source: form.source,
         estimated_value: form.estimated_value ? parseFloat(form.estimated_value) : null,
         // `stage` se omite a propósito: el trigger set_default_stage_on_deal
         // asigna la etapa inicial que tenga configurada este pipeline.
@@ -286,11 +305,19 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
             <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-800">{duplicate}</p>
-                <button type="button" onClick={() => { setForceCreate(true); setDuplicate(null) }}
-                  className="text-xs font-semibold text-amber-700 underline mt-1">
-                  Crear de todas formas
-                </button>
+                <p className="text-sm font-medium text-amber-800">{duplicate.label}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {duplicate.companyId && (
+                    <button type="button" disabled={loading} onClick={() => { const d = duplicate; setDuplicate(null); void submit({ useExisting: d }) }}
+                      className="text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                      Crear el negocio en {duplicate.companyName ?? 'la empresa existente'}
+                    </button>
+                  )}
+                  <button type="button" disabled={loading} onClick={() => { setDuplicate(null); void submit({ force: true }) }}
+                    className="text-xs font-semibold text-amber-800 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                    Crear como empresa nueva
+                  </button>
+                </div>
               </div>
             </div>
           )}

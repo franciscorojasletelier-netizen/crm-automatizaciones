@@ -9,6 +9,8 @@ import { canSeeDeal } from '@/lib/visibility'
 import { sendAsUser, emailServiceClient } from '@/lib/email/send-as-user'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { renderQuoteEmail } from '@/lib/quote-email'
+import { getStages, stageByKey } from '@/lib/stages'
+import { changeDealStage } from '@/lib/deal-stage-change'
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 
@@ -84,6 +86,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   await markSent()
+
+  // La cotización enviada ES la propuesta: si el deal está en una etapa
+  // anterior a la de propuesta (la que exige adjunto), avanza solo.
+  const { data: dealRow } = await supabase.from('deals').select('stage, status, pipeline_id').eq('id', quote.deal_id).maybeSingle()
+  if (dealRow?.status === 'open') {
+    const stages = await getStages(supabase, organizationId, dealRow.pipeline_id ?? undefined)
+    const current = stageByKey(stages, dealRow.stage)
+    const proposal = stages.filter(s => s.requiresAttachment && !s.isTerminal).sort((a, b) => a.sortOrder - b.sortOrder)[0]
+    if (proposal && current && !current.isTerminal && current.sortOrder < proposal.sortOrder) {
+      await changeDealStage(supabase, { dealId: quote.deal_id, fromStage: current.key, toStage: proposal.key, stages, currency: ctx.currency })
+    }
+  }
   // Queda en el historial de correos del deal.
   const { data: deal } = await supabase.from('deals').select('primary_contact_id').eq('id', quote.deal_id).maybeSingle()
   await emailServiceClient().from('email_messages').insert({

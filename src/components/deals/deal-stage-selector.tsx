@@ -22,6 +22,10 @@ interface Props {
   stages: Stage[]
   companyName?: string | null
   estimatedValue?: number | null
+  /** Ya hay una cotización enviada o aceptada: cuenta como la propuesta (no se pide adjunto). */
+  hasSentQuote?: boolean
+  /** Número de la cotización aceptada por el cliente (para sugerir marcar ganado). */
+  acceptedQuoteNumber?: number | null
 }
 
 type Pending =
@@ -31,6 +35,7 @@ type Pending =
 
 export default function DealStageSelector({
   dealId, currentStage, proposalFilename, proposalUrl, organizationId, stages, companyName, estimatedValue,
+  hasSentQuote = false, acceptedQuoteNumber = null,
 }: Props) {
   const currency = useCurrency()
   const [stage, setStage] = useState(currentStage)
@@ -51,7 +56,7 @@ export default function DealStageSelector({
     if (newStage === stage || busy) return
     const target = stageByKey(stages, newStage)
     if (target?.isWon)              return setPending({ kind: 'won', stage: newStage })
-    if (target?.requiresAttachment) return setPending({ kind: 'proposal', stage: newStage, replacing: false })
+    if (target?.requiresAttachment && !hasSentQuote) return setPending({ kind: 'proposal', stage: newStage, replacing: false })
     if (target?.requiresReason)     return setPending({ kind: 'reason', stage: newStage })
     void apply(newStage)
   }
@@ -83,6 +88,7 @@ export default function DealStageSelector({
   }
 
   const pendingStage = pending ? stageByKey(stages, pending.stage) : null
+  const wonStage = stages.find(s => s.isWon && s.isActive) ?? null
 
   return (
     <>
@@ -92,11 +98,22 @@ export default function DealStageSelector({
           {busy && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-500" />}
         </div>
 
+        {acceptedQuoteNumber != null && wonStage && !stageByKey(stages, stage)?.isWon && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <p className="text-xs text-emerald-800">El cliente aceptó la cotización N° {acceptedQuoteNumber}.</p>
+            <button type="button" onClick={() => requestChange(wonStage.key)} disabled={busy}
+              className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg disabled:opacity-50">
+              Marcar como ganado
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-1.5">
           {stages.map(s => {
             const isCurrent = stage === s.key
             const c = colorOf(s)
-            const hint = !isCurrent && (s.requiresAttachment ? 'Requiere adjunto' : s.requiresReason ? 'Requiere justificación' : null)
+            const needsFile = s.requiresAttachment && !hasSentQuote
+            const hint = !isCurrent && (needsFile ? 'Requiere adjunto' : s.requiresReason ? 'Requiere justificación' : null)
             return (
               <button key={s.key} onClick={() => requestChange(s.key)} disabled={busy}
                 aria-pressed={isCurrent} title={hint || undefined}
@@ -106,9 +123,9 @@ export default function DealStageSelector({
                 {s.label}
                 {hint && (
                   <span aria-hidden className={`absolute -top-1.5 -right-1.5 w-4 h-4 text-white rounded-full text-[11px] flex items-center justify-center ${
-                    s.requiresAttachment ? 'bg-orange-500' : 'bg-amber-500'
+                    needsFile ? 'bg-orange-500' : 'bg-amber-500'
                   }`}>
-                    {s.requiresAttachment ? <Paperclip className="w-2.5 h-2.5" /> : <PenLine className="w-2.5 h-2.5" />}
+                    {needsFile ? <Paperclip className="w-2.5 h-2.5" /> : <PenLine className="w-2.5 h-2.5" />}
                   </span>
                 )}
               </button>

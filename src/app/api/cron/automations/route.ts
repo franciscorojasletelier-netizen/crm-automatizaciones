@@ -106,6 +106,56 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // ── "Tarea vencida": una vez por cada tarea de un deal que vence ──
+    // (antes la opción se podía elegir en la pantalla pero nunca corría).
+    const nowIso = new Date().toISOString()
+    for (const org of orgs ?? []) {
+      const { data: rules } = await supabase
+        .from('automation_rules').select('*')
+        .eq('organization_id', org.id).eq('is_active', true).eq('trigger_type', 'task_overdue')
+      if (!rules?.length) continue
+
+      const { data: tasks, error: tasksErr } = await supabase
+        .from('tasks')
+        .select('id, due_date, deal_id, deals!inner(owner_id, status, deleted_at)')
+        .eq('organization_id', org.id).eq('is_completed', false)
+        .lt('due_date', nowIso).not('deal_id', 'is', null)
+        .gte('due_date', new Date(Date.now() - 30 * 86400_000).toISOString()) // solo vencidas recientes
+        .order('due_date', { ascending: true })
+        .limit(DEALS_PER_RULE_LIMIT)
+      if (tasksErr) { errors.push(`org ${org.id} tareas vencidas: ${tasksErr.message}`); continue }
+      const open = (tasks ?? []).filter(t => {
+        const d = t.deals as unknown as { status: string; deleted_at: string | null } | null
+        return d?.status === 'open' && !d.deleted_at
+      })
+      if (open.length === 0) continue
+
+      for (const rule of rules) {
+        rulesEvaluated++
+        // Ya disparada para ese deal desde que venció la tarea → no se repite.
+        const { data: logs } = await supabase.from('automation_logs').select('entity_id, executed_at')
+          .eq('rule_id', rule.id).in('entity_id', [...new Set(open.map(t => t.deal_id as string))])
+        const lastRun = new Map<string, string>()
+        for (const log of logs ?? []) {
+          const prev = lastRun.get(log.entity_id)
+          if (!prev || log.executed_at > prev) lastRun.set(log.entity_id, log.executed_at)
+        }
+        const seen = new Set<string>()
+        const pending = open.filter(t => {
+          const dealId = t.deal_id as string
+          const last = lastRun.get(dealId)
+          if (seen.has(dealId) || (last && last >= (t.due_date as string))) return false
+          seen.add(dealId)
+          return true
+        })
+        await mapWithConcurrency(pending, CONCURRENCY, async (t) => {
+          const owner = (t.deals as unknown as { owner_id: string | null } | null)?.owner_id
+          await executeAutomationAction(supabase, rule, { dealId: t.deal_id as string, ownerId: owner ?? undefined })
+          dealsTriggered++
+        })
+      }
+    }
+
     return NextResponse.json({ ok: true, rulesEvaluated, dealsTriggered, errors: errors.length ? errors : undefined })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error'

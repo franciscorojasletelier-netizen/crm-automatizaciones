@@ -112,7 +112,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       ? supabase.from('invoices').select(INVOICE_SELECT).eq('deal_id', id).order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ])
-  const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number; taxes?: unknown; currency?: string | null }[])
+  const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number; taxes?: unknown; currency?: string | null; payment_terms?: unknown }[])
     .find(q => q.status === 'accepted') ?? null
 
   // profiles:created_by es a-uno; sin tipos de base se infiere como arreglo.
@@ -326,6 +326,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
           <div className="lg:col-span-2 space-y-4">
             {canEdit && (
             <DealStageSelector
+              hasSentQuote={((quotes ?? []) as { status: string }[]).some(q => q.status === 'sent' || q.status === 'accepted')}
+              acceptedQuoteNumber={acceptedQuote?.quote_number ?? null}
               stages={stages.filter(s => s.isActive && s.pipelineId === deal.pipeline_id)}
               dealId={deal.id}
               currentStage={deal.stage}

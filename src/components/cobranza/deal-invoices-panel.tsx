@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils'
 import { Panel, buttonClass } from '@/components/ui/page'
 import { STATUS_META, balanceOf, effectiveStatus, invoiceCode, type Invoice } from '@/lib/cobranza'
 import { quoteTotals, quoteTaxes, type QuoteItem } from '@/lib/quotes'
+import { normalizePaymentTerms, paymentSchedule } from '@/lib/payment-terms'
 
-type AcceptedQuote = { id: string; quote_number: number; items: QuoteItem[]; tax_rate: number; taxes?: unknown; currency?: string | null }
+type AcceptedQuote = { id: string; quote_number: number; items: QuoteItem[]; tax_rate: number; taxes?: unknown; currency?: string | null; payment_terms?: unknown }
 
 /**
  * Cobranza desde el deal: qué se ha facturado y cuánto falta. Cierra el
@@ -32,11 +33,22 @@ export default function DealInvoicesPanel({ invoices, today, canCreate, companyI
   // Una cotización en otra moneda no precarga el monto: el cobro va en la
   // moneda de la organización y no hay tipo de cambio que inventar.
   const quoteInOtherCurrency = !!acceptedQuote && (acceptedQuote.currency ?? 'CLP') !== currency
+  const quoteTotal = acceptedQuote && !quoteInOtherCurrency ? quoteTotals(acceptedQuote.items, quoteTaxes(acceptedQuote), currency).total : 0
+
+  // Con plan de pagos, el cobro propuesto es la siguiente cuota sin documento
+  // (los cobros ya creados desde esta cotización cuentan como cuotas emitidas).
+  const terms = acceptedQuote ? normalizePaymentTerms(acceptedQuote.payment_terms) : null
+  const schedule = terms && acceptedQuote && !quoteInOtherCurrency ? paymentSchedule(terms, quoteTotal, currency) : []
+  const issuedForQuote = acceptedQuote ? invoices.filter(i => i.quote_id === acceptedQuote.id && i.status !== 'anulada').length : 0
+  const nextIdx = schedule.length ? issuedForQuote : -1
+  const nextInstallment = nextIdx >= 0 ? schedule[nextIdx] ?? null : null
+  const allInstallmentsIssued = schedule.length > 0 && !nextInstallment
+
   const amount = acceptedQuote
-    ? (quoteInOtherCurrency ? 0 : quoteTotals(acceptedQuote.items, quoteTaxes(acceptedQuote), currency).total)
+    ? (quoteInOtherCurrency ? 0 : nextInstallment ? nextInstallment.amount : schedule.length ? 0 : quoteTotal)
     : estimatedValue ?? 0
   const concept = acceptedQuote
-    ? `Cotización N° ${acceptedQuote.quote_number}${companyName ? ` — ${companyName}` : ''}`
+    ? `Cotización N° ${acceptedQuote.quote_number}${nextInstallment ? ` — Cuota ${nextIdx + 1} de ${schedule.length} (${nextInstallment.label})` : ''}${companyName ? ` — ${companyName}` : ''}`
     : `Servicios${companyName ? ` — ${companyName}` : ''}`
   const params = new URLSearchParams({ nuevo: '1', deal: dealId, concepto: concept })
   if (companyId) params.set('empresa', companyId)
@@ -56,13 +68,22 @@ export default function DealInvoicesPanel({ invoices, today, canCreate, companyI
       )}
       padded={invoices.length === 0}
     >
+      {invoices.length > 0 && acceptedQuote && schedule.length > 0 && (
+        <p className="px-4 pt-3 text-[12px] text-slate-500">
+          {allInstallmentsIssued
+            ? `Ya se crearon los cobros de las ${schedule.length} cuotas de la cotización N° ${acceptedQuote.quote_number}.`
+            : `Siguiente: cuota ${nextIdx + 1} de ${schedule.length} (${nextInstallment!.label}, ${nextInstallment!.pct} %) por ${money(nextInstallment!.amount, currency)}.`}
+        </p>
+      )}
       {invoices.length === 0 ? (
         <p className="flex items-center gap-2 text-[13px] text-slate-500">
           <Wallet className="w-4 h-4 text-slate-400" />
           {acceptedQuote
             ? quoteInOtherCurrency
               ? `La cotización N° ${acceptedQuote.quote_number} fue aceptada en ${acceptedQuote.currency}: crea el cobro e ingresa el monto en ${currency}.`
-              : `La cotización N° ${acceptedQuote.quote_number} fue aceptada: crea el cobro por ${money(amount, currency)}.`
+              : nextInstallment
+                ? `La cotización N° ${acceptedQuote.quote_number} fue aceptada: crea el cobro de la cuota 1 de ${schedule.length} (${nextInstallment.label}, ${nextInstallment.pct} %) por ${money(amount, currency)}.`
+                : `La cotización N° ${acceptedQuote.quote_number} fue aceptada: crea el cobro por ${money(amount, currency)}.`
             : canCreate ? `Deal ganado: crea el documento por cobrar${amount > 0 ? ` por ${money(amount, currency)}` : ''}.` : 'Aún no hay documentos por cobrar para este deal.'}
         </p>
       ) : (

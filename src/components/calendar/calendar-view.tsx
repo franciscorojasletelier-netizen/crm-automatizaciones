@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, CalendarDays } from 'lucide-react'
 import Link from 'next/link'
 
@@ -9,41 +10,34 @@ interface Task {
   title: string
   due_date: string
   is_completed: boolean
-  priority: string | null
   deals: { id: string; companies: { name: string } | null } | null
   profiles: { full_name: string | null } | null
 }
 
 interface Props {
   tasks: Task[]
+  /** Mes visible (0-11); el servidor trae sus tareas. */
+  year: number
+  month: number
 }
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
-const priorityColors: Record<string, string> = {
-  alta:   'bg-red-500',
-  media:  'bg-amber-500',
-  baja:   'bg-blue-500',
-}
-
-export default function CalendarView({ tasks }: Props) {
+export default function CalendarView({ tasks, year, month }: Props) {
   const today = new Date()
-  const [year, setYear] = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth())
-  const [selectedDay, setSelectedDay] = useState<number | null>(today.getDate())
+  const router = useRouter()
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month
+  const [selectedDay, setSelectedDay] = useState<number | null>(isCurrentMonth ? today.getDate() : null)
 
-  function prev() {
-    if (month === 0) { setYear(y => y - 1); setMonth(11) }
-    else setMonth(m => m - 1)
-    setSelectedDay(null)
+  // Cambiar de mes pide sus tareas al servidor (antes solo había 3 meses cargados).
+  function go(offset: number) {
+    const d = new Date(year, month + offset, 1)
+    router.push(`/calendario?mes=${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
   }
-  function next() {
-    if (month === 11) { setYear(y => y + 1); setMonth(0) }
-    else setMonth(m => m + 1)
-    setSelectedDay(null)
-  }
+  const prev = () => go(-1)
+  const next = () => go(1)
 
   // Índice de tareas por día
   const tasksByDay = useMemo(() => {
@@ -151,7 +145,7 @@ export default function CalendarView({ tasks }: Props) {
                       className={`w-1.5 h-1.5 rounded-full ${
                         t.is_completed ? 'bg-emerald-400' :
                         new Date(t.due_date) < today ? 'bg-red-400' :
-                        priorityColors[t.priority ?? ''] ?? 'bg-accent-400'
+                        'bg-accent-400'
                       }`}
                     />
                   ))}
@@ -213,9 +207,6 @@ export default function CalendarView({ tasks }: Props) {
                         )}
                       </div>
                     </div>
-                    {task.priority && (
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${priorityColors[task.priority] ?? 'bg-slate-200'}`} />
-                    )}
                     {task.deals?.id && (
                       <Link href={`/leads/${task.deals.id}`}
                         className="text-[11px] text-accent-600 hover:text-accent-800 font-semibold shrink-0 bg-accent-50 hover:bg-accent-100 px-2.5 py-1 rounded-lg transition-colors">
@@ -235,9 +226,7 @@ export default function CalendarView({ tasks }: Props) {
         {[
           { color: 'bg-emerald-400', label: 'Completada' },
           { color: 'bg-red-400', label: 'Vencida' },
-          { color: 'bg-red-500', label: 'Prioridad alta' },
-          { color: 'bg-amber-500', label: 'Prioridad media' },
-          { color: 'bg-accent-400', label: 'Prioridad baja / sin priority' },
+          { color: 'bg-accent-400', label: 'Pendiente' },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 rounded-full ${color}`} />

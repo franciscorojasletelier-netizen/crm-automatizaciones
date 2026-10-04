@@ -13,7 +13,8 @@ import { runAutomationsForStageChange } from '@/lib/automations'
 import { type Stage, stageByKey, statusForStage } from '@/lib/stages'
 import { notifyManagers } from '@/lib/notify'
 import { formatMoney } from '@/lib/format'
-import { CHILE_TZ, chileDateString } from '@/lib/dates'
+import { quoteTotals, quoteTaxes, type QuoteItem } from '@/lib/quotes'
+import { chileDateString } from '@/lib/dates'
 
 export const PROPOSAL_MAX_MB = 15
 export const PROPOSAL_ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg'
@@ -87,11 +88,22 @@ export async function changeDealStage(
 
   // Traspaso comercial → producción. Si falla no puede quedar en silencio:
   // es justo el paso que se vende como automático.
-  if (target?.createsProject) {
+  // Un deal tiene un solo proyecto: si sale de "ganado" y vuelve, no se duplica.
+  const { data: existingProject } = target?.createsProject
+    ? await supabase.from('projects').select('id').eq('deal_id', dealId).limit(1).maybeSingle()
+    : { data: null }
+  if (target?.createsProject && !existingProject) {
+    // Nombre con el cliente y presupuesto de la cotización aceptada (si la hay).
+    const { data: accepted } = await supabase.from('quotes')
+      .select('quote_number, items, taxes, tax_rate, currency').eq('deal_id', dealId).eq('status', 'accepted')
+      .order('accepted_at', { ascending: false }).limit(1).maybeSingle()
+    const quoteTotal = accepted && (accepted.currency ?? 'CLP') === (currency ?? 'CLP')
+      ? quoteTotals(accepted.items as QuoteItem[] | null, quoteTaxes(accepted), accepted.currency).total
+      : null
     const { error: projectErr } = await supabase.from('projects').insert({
       company_id: deal.company_id, deal_id: dealId, owner_id: ownerId,
-      name: `Proyecto - ${new Date().toLocaleDateString('es-CL', { timeZone: CHILE_TZ })}`,
-      phase: 'discovery', status: 'activo', budget: deal.estimated_value,
+      name: accepted ? `${companyName} — Cotización N° ${accepted.quote_number}` : companyName,
+      phase: 'discovery', status: 'activo', budget: quoteTotal ?? deal.estimated_value,
       start_date: chileDateString(),
     })
     if (projectErr) {

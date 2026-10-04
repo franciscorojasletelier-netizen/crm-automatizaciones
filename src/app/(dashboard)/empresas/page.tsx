@@ -70,8 +70,8 @@ export default async function EmpresasPage({ searchParams }: { searchParams: Pro
         actions={canEdit && (
           <Link href="/leads/nuevo" className={buttonClass.primary}>
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nueva empresa</span>
-            <span className="sm:hidden">Nueva</span>
+            <span className="hidden sm:inline">Nuevo lead</span>
+            <span className="sm:hidden">Nuevo</span>
           </Link>
         )}
       />
