@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccessRouteWithAccess } from '@/lib/roles'
-import { getDisabledModules } from '@/lib/modules'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -25,7 +24,10 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims() renueva la sesión si hace falta y valida el JWT sin ir a
+  // Supabase Auth en cada navegación (con claves asimétricas; si no, cae a getUser).
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub as string } : null
   const pathname = request.nextUrl.pathname
 
   const isAuthRoute   = pathname.startsWith('/login') || pathname.startsWith('/olvide-password')
@@ -86,7 +88,7 @@ export async function proxy(request: NextRequest) {
   if (user && !isPublicRoute && !isPublicPage && !isAuthRoute && !isMfaRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_active, section_access, organization_id, organizations(require_mfa)')
+      .select('role, is_active, section_access, organization_id, organizations(require_mfa, organization_modules(module_key, enabled, expires_at))')
       .eq('id', user.id)
       .single()
 
@@ -103,7 +105,8 @@ export async function proxy(request: NextRequest) {
     // arriba — es "nunca activó nada"). Se lo manda a activarlo antes
     // de dejarlo entrar a cualquier otra pantalla.
     // organizations es a-uno; sin tipos de base se infiere como arreglo.
-    const requiresMfa = !!(profile?.organizations as unknown as { require_mfa: boolean } | null)?.require_mfa
+    const orgRow = (profile?.organizations ?? null) as unknown as { require_mfa: boolean; organization_modules: { module_key: string; enabled: boolean; expires_at: string | null }[] | null } | null
+    const requiresMfa = !!orgRow?.require_mfa
     if (requiresMfa && !mfaEnrolled && !pathname.startsWith('/configuracion')) {
       const url = request.nextUrl.clone()
       url.pathname = '/configuracion'
@@ -113,11 +116,12 @@ export async function proxy(request: NextRequest) {
 
     const role = profile?.role ?? 'soporte'
     const sectionAccess = profile?.section_access ?? null
-    // Explícito: un platform_owner vería los módulos de TODAS las
-    // organizaciones sin este filtro (su policy de SELECT bypasea el
-    // filtro de organización).
-    const orgId: string | undefined = profile?.organization_id ?? undefined
-    const disabledModules = await getDisabledModules(supabase, orgId)
+    // Módulos apagados o vencidos de SU organización, en la misma consulta
+    // del perfil (antes era una consulta aparte en cada navegación).
+    const now = Date.now()
+    const disabledModules = new Set((orgRow?.organization_modules ?? [])
+      .filter(m => !m.enabled || (m.expires_at && Date.parse(m.expires_at) < now))
+      .map(m => m.module_key))
 
     if (!canAccessRouteWithAccess(role, sectionAccess, pathname, disabledModules)) {
       const url = request.nextUrl.clone()

@@ -1,9 +1,9 @@
+import { unstable_rethrow } from 'next/navigation'
 import Sidebar from '@/components/layout/sidebar'
 import GlobalChat from '@/components/chat/global-chat'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/server'
 import { type Role } from '@/lib/roles'
 import { getStages } from '@/lib/stages'
-import { getDisabledModules } from '@/lib/modules'
 import { chileDateString } from '@/lib/dates'
 import { CurrencyProvider } from '@/components/providers/currency-provider'
 import { FloatingDockProvider } from '@/components/providers/floating-dock'
@@ -30,19 +30,18 @@ export interface UserProfile {
 
 async function getLayoutData() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null, currency: 'CLP' }
+    // Sesión, perfil, organización y módulos: el mismo helper (en caché por
+    // petición) que usa la página, así no se consultan dos veces.
+    const ctx = await getCurrentProfile()
+    const { supabase, user } = ctx
 
     const now = new Date().toISOString()
 
     // El rol decide si los contadores son globales (gerente/admin) o propios
-    const profileRes = await supabase.from('profiles')
-      .select('id, full_name, email, role, is_active, section_access, organization_id').eq('id', user.id).single()
-    const seesAll = ['super_admin', 'admin', 'gerente'].includes(profileRes.data?.role ?? '')
+    const seesAll = ['super_admin', 'admin', 'gerente'].includes(ctx.profile?.role ?? '')
     // Explícito: sin esto, un platform_owner vería en su propio sidebar el
-    // embudo y los módulos de TODAS las organizaciones mezclados.
-    const orgId: string | undefined = profileRes.data?.organization_id ?? undefined
+    // embudo de TODAS las organizaciones mezclado.
+    const orgId: string | undefined = ctx.organizationId ?? undefined
 
     const tasksBase = () => {
       let q = supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('is_completed', false)
@@ -50,7 +49,7 @@ async function getLayoutData() {
       return q
     }
 
-    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, org, disabledModules, cobranzaVencida] = await Promise.all([
+    const [leads, tareas, tareasVencidas, empresas, proyectos, chatMessages, notificaciones, platformOwner, stages, cobranzaVencida] = await Promise.all([
       supabase.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       tasksBase(),
       tasksBase().lt('due_date', now),
@@ -67,20 +66,19 @@ async function getLayoutData() {
         .eq('is_read', false),
       supabase.from('platform_owners').select('user_id').eq('user_id', user.id).maybeSingle(),
       getStages(supabase, orgId),
-      orgId ? supabase.from('organizations').select('name, display_name, currency').eq('id', orgId).maybeSingle() : Promise.resolve({ data: null }),
-      getDisabledModules(supabase, orgId),
       // RLS acota a lo que el usuario puede ver de cobranza (0 si no ve nada).
       supabase.from('invoices').select('id', { count: 'exact', head: true })
         .in('status', ['pendiente', 'parcial']).lt('due_date', chileDateString()),
     ])
 
-    const profile = profileRes.data as UserProfile | null
+    const profile = ctx.profile as UserProfile | null
+    const disabledModules = ctx.disabledModules
 
     return {
       profile,
       isPlatformOwner: !!platformOwner.data,
-      currency: (org.data as { currency?: string } | null)?.currency ?? 'CLP',
-      organizationName: (org.data as { display_name?: string | null; name?: string } | null)?.display_name || (org.data as { name?: string } | null)?.name || null,
+      currency: ctx.currency,
+      organizationName: ctx.organizationName,
       stages,
       disabledModules,
       counts: {
@@ -97,7 +95,9 @@ async function getLayoutData() {
       userId: user.id,
       userName: profile?.full_name ?? profile?.email ?? 'Usuario',
     }
-  } catch {
+  } catch (err) {
+    // Redirecciones de Next (sesión vencida, organización suspendida) no se tragan.
+    unstable_rethrow(err)
     return { counts: emptyNavCounts(), profile: null, chatMessages: [], userId: '', userName: '', isPlatformOwner: false, stages: [], disabledModules: new Set<string>(), organizationName: null, currency: 'CLP' }
   }
 }

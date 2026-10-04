@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname),
   },
   poweredByHeader: false,
+  // Caché del navegador para páginas dinámicas: volver a una pestaña vista
+  // hace menos de 30 s es instantáneo (antes: 0 s, siempre al servidor).
+  // Guardar algo llama a router.refresh(), que vacía esta caché.
+  experimental: {
+    staleTimes: { dynamic: 30 },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canEditSection } from '@/lib/roles'
 import { canSeeDeal } from '@/lib/visibility'
-import { sendAsUser } from '@/lib/email/send-as-user'
+import { sendAsUser, emailServiceClient } from '@/lib/email/send-as-user'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { renderQuoteEmail } from '@/lib/quote-email'
 
@@ -41,13 +41,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   if (!(quote.items as unknown[] | null)?.length) return NextResponse.json({ error: 'La cotización no tiene ítems' }, { status: 400 })
 
-  // Link público: se genera al enviar (un borrador no tiene).
+  // Link público: se prepara antes del envío, pero la cotización pasa a
+  // "enviada" solo cuando el correo salió (si falla, sigue en borrador).
   let token = quote.public_token as string | null
-  if (!token || quote.status === 'draft') {
-    token = token ?? crypto.randomUUID()
-    const { error: upErr } = await supabase.from('quotes')
-      .update({ status: 'sent', sent_at: new Date().toISOString(), public_token: token }).eq('id', quote.id)
+  if (!token) {
+    token = crypto.randomUUID()
+    const { error: upErr } = await supabase.from('quotes').update({ public_token: token }).eq('id', quote.id)
     if (upErr) return NextResponse.json({ error: `No se pudo preparar el link: ${upErr.message}` }, { status: 500 })
+  }
+  const markSent = async () => {
+    if (quote.status === 'draft') await supabase.from('quotes').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', quote.id)
   }
   const origin = process.env.NEXT_PUBLIC_APP_URL?.trim() || request.nextUrl.origin
   const link = `${origin}/cotizacion/${token}`
@@ -64,25 +67,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     brand: { name: orgName, logoUrl: org?.logo_url, email: org?.email, phone: org?.phone, address: org?.address },
   })
 
+  let record: { email_account_id: string | null; from_address: string; provider_message_id: string | null; thread_id: string | null }
   if (account) {
     const sent = await sendAsUser(supabase, user.id, { to, subject, body: mail.text, html: mail.html })
     if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: sent.status })
-    // Queda en el historial de correos del deal.
-    const { data: deal } = await supabase.from('deals').select('primary_contact_id').eq('id', quote.deal_id).maybeSingle()
-    await sent.svc.from('email_messages').insert({
-      organization_id: organizationId, deal_id: quote.deal_id, contact_id: deal?.primary_contact_id ?? null,
-      email_account_id: sent.accountId, direction: 'outbound',
-      subject, body_text: mail.text, body_html: mail.html,
-      from_address: sent.fromAddress, to_addresses: [to],
-      provider_message_id: sent.messageId, thread_id: sent.threadId,
-      sent_at: new Date().toISOString(),
-    })
-    return NextResponse.json({ ok: true, via: sent.fromAddress, link })
-  }
-  if (systemMailConfigured()) {
+    record = { email_account_id: sent.accountId, from_address: sent.fromAddress, provider_message_id: sent.messageId, thread_id: sent.threadId }
+  } else if (systemMailConfigured()) {
     const sent = await sendSystemMail({ to, subject, body: mail.text, html: mail.html, fromName: orgName, replyTo: me?.email ?? null })
     if (!sent.ok) return NextResponse.json({ error: `No se pudo enviar: ${sent.error}` }, { status: 502 })
-    return NextResponse.json({ ok: true, via: sent.from, link })
+    record = { email_account_id: null, from_address: sent.from, provider_message_id: sent.id, thread_id: null }
+  } else {
+    return NextResponse.json({ error: 'No hay correo configurado: conecta tu cuenta en Configuración o pide al administrador activar el correo del sistema.' }, { status: 400 })
   }
-  return NextResponse.json({ error: 'No hay correo configurado: conecta tu cuenta en Configuración o pide al administrador activar el correo del sistema.' }, { status: 400 })
+
+  await markSent()
+  // Queda en el historial de correos del deal.
+  const { data: deal } = await supabase.from('deals').select('primary_contact_id').eq('id', quote.deal_id).maybeSingle()
+  await emailServiceClient().from('email_messages').insert({
+    organization_id: organizationId, deal_id: quote.deal_id, contact_id: deal?.primary_contact_id ?? null,
+    direction: 'outbound', subject, body_text: mail.text, body_html: mail.html, to_addresses: [to],
+    sent_at: new Date().toISOString(), ...record,
+  })
+  return NextResponse.json({ ok: true, via: record.from_address, link })
 }

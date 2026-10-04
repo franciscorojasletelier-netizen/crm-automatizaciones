@@ -31,7 +31,7 @@ import { canAccessSection } from '@/lib/roles'
 
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { user, role, profile, sectionAccess, organizationId, supabase, currency, taxes } = await getCurrentProfile()
+  const { user, role, profile, sectionAccess, organizationId, organizationName, supabase, currency, taxes } = await getCurrentProfile()
   // getAllStages y no getStages: el historial puede referenciar etapas
   // que ya se desactivaron, y hay que poder mostrar su nombre igual.
   const stages = await getAllStages(supabase, organizationId ?? undefined)
@@ -336,7 +336,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               estimatedValue={deal.estimated_value ?? null}
             />
           )}
-            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} defaultTaxes={taxes} />
+            <QuotesPanel dealId={deal.id} quotes={(quotes ?? []) as React.ComponentProps<typeof QuotesPanel>['quotes']} canEdit={canEdit} defaultTaxes={taxes}
+              contactEmail={deal.contacts?.email ?? null} contactName={deal.contacts?.full_name ?? null}
+              senderName={profile?.full_name ?? null} orgName={organizationName ?? 'Nuestra empresa'} />
             {seesCobranza && (
               <DealInvoicesPanel
                 currency={currency}

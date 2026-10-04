@@ -12,11 +12,16 @@ import { defaultQuoteMessage } from '@/lib/quote-email'
 
 const field = 'w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-400'
 
-export default function SendQuoteEmail({ quoteId, quoteNumber, contactEmail, contactName, senderName, orgName }: {
+export default function SendQuoteEmail({ quoteId, quoteNumber, contactEmail, contactName, senderName, orgName, autoOpen = false, onClose, onSent }: {
   quoteId: string; quoteNumber: number; contactEmail?: string | null; contactName?: string | null
   senderName?: string | null; orgName: string
+  /** Abre la ventana al montarse y no muestra el botón (recién guardada desde el panel). */
+  autoOpen?: boolean
+  onClose?: () => void
+  onSent?: () => void
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(autoOpen)
+  const setOpen = (v: boolean) => { setOpenState(v); if (!v) onClose?.() }
   const [to, setTo] = useState(contactEmail ?? '')
   const [subject, setSubject] = useState(`Cotización N° ${quoteNumber} — ${orgName}`)
   const [message, setMessage] = useState(() => defaultQuoteMessage({ contactName, senderName, orgName, quoteNumber }))
@@ -36,15 +41,18 @@ export default function SendQuoteEmail({ quoteId, quoteNumber, contactEmail, con
     setBusy(false)
     if (!res.ok) { setResult({ ok: false, text: json.error ?? 'No se pudo enviar' }); return }
     setResult({ ok: true, text: `Enviada a ${to.trim()}${json.via ? ` desde ${json.via}` : ''}.` })
+    onSent?.()
     router.refresh()
   }
 
   return (
     <>
-      <button type="button" onClick={() => { setResult(null); setOpen(true) }}
-        className="flex items-center gap-1.5 text-sm font-semibold text-accent-700 border border-accent-200 hover:bg-accent-50 px-3 py-2 rounded-lg transition-colors">
-        <Mail className="w-4 h-4" /> Enviar por correo
-      </button>
+      {!autoOpen && (
+        <button type="button" onClick={() => { setResult(null); setOpen(true) }}
+          className="flex items-center gap-1.5 text-sm font-semibold text-accent-700 border border-accent-200 hover:bg-accent-50 px-3 py-2 rounded-lg transition-colors">
+          <Mail className="w-4 h-4" /> Enviar por correo
+        </button>
+      )}
 
       {open && (
         <div className="print:hidden fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="send-quote-title">

@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
-import { FileText, Plus, Trash2, Loader2, ExternalLink, Copy, Check, X } from 'lucide-react'
+import { FileText, Plus, Trash2, Loader2, ExternalLink, Copy, Check, X, Mail } from 'lucide-react'
 import { quoteTotals, quoteTaxes } from '@/lib/quotes'
 import {
   CURRENCIES, MAX_TAXES, currencyDecimals, formatMoney, money, normalizeCurrency,
   parseMoneyInput, sanitizeMoneyInput, type Tax,
 } from '@/lib/money'
 import { useCurrency } from '@/components/providers/currency-provider'
+import SendQuoteEmail from '@/components/deals/send-quote-email'
 
 interface Item { description: string; quantity: number; unit_price: number }
 interface Quote {
@@ -55,11 +56,15 @@ function CopyLinkButton({ token }: { token: string }) {
   )
 }
 
-export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, defaultTaxes }: {
+export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, defaultTaxes, contactEmail, contactName, senderName, orgName }: {
   dealId: string; quotes: Quote[]; canEdit: boolean
   /** Impuestos por defecto de la organización (Configuración → Datos de la empresa). */
   defaultTaxes: Tax[]
+  /** Para el correo de la cotización. */
+  contactEmail?: string | null; contactName?: string | null; senderName?: string | null; orgName: string
 }) {
+  // Cotización recién guardada que se está enviando por correo.
+  const [sending, setSending] = useState<Quote | null>(null)
   const orgCurrency = useCurrency()
   const [quotes, setQuotes] = useState(initialQuotes)
   const [showNew, setShowNew] = useState(false)
@@ -93,7 +98,8 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
     setNotes(''); setValidUntil(''); setError('')
   }
 
-  async function save(status: 'draft' | 'sent') {
+  // Se guarda como borrador; pasa a "enviada" recién cuando el correo sale.
+  async function save(thenSend: boolean) {
     const cleanItems = parsedItems.filter(i => i.description)
     if (cleanItems.length === 0) { setError('Agrega al menos un ítem con descripción.'); return }
     if (cleanItems.some(i => i.quantity <= 0)) { setError('La cantidad de cada ítem debe ser mayor a cero.'); return }
@@ -102,20 +108,16 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
     setSaving(true)
     setError('')
     const { data, error: err } = await createClient().from('quotes').insert({
-      deal_id: dealId, status, items: cleanItems, taxes: parsedTaxes, currency: normalizeCurrency(currency),
+      deal_id: dealId, status: 'draft', items: cleanItems, taxes: parsedTaxes, currency: normalizeCurrency(currency),
       notes: notes.trim() || null, valid_until: validUntil || null,
-      sent_at: status === 'sent' ? new Date().toISOString() : null,
-      // El link público (aceptar/rechazar) se genera al enviar: un borrador
-      // es interno. crypto.randomUUID() solo evita que alguien adivine la
-      // URL de otro cliente.
-      public_token: status === 'sent' ? crypto.randomUUID() : null,
     }).select().single()
     setSaving(false)
     if (err) { setError(friendlyError(err.message)); return }
     setQuotes(prev => [data, ...prev])
     setShowNew(false)
     resetForm()
-    router.refresh()
+    if (thenSend) setSending(data)
+    else router.refresh()
   }
 
   return (
@@ -205,17 +207,24 @@ export default function QuotesPanel({ dealId, quotes: initialQuotes, canEdit, de
               <p className="font-bold text-slate-800">Total: {money(total, currency)}</p>
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={() => save('draft')} disabled={saving}
+              <button type="button" onClick={() => save(false)} disabled={saving}
                 className="text-xs font-semibold text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg disabled:opacity-50">
                 Guardar borrador
               </button>
-              <button type="button" onClick={() => save('sent')} disabled={saving}
+              <button type="button" onClick={() => save(true)} disabled={saving}
                 className="flex items-center gap-1.5 text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 px-3 py-1.5 rounded-lg disabled:opacity-50">
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Marcar como enviada'}
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Mail className="w-3.5 h-3.5" /> Guardar y enviar por correo</>}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {sending && (
+        <SendQuoteEmail autoOpen quoteId={sending.id} quoteNumber={sending.quote_number}
+          contactEmail={contactEmail} contactName={contactName} senderName={senderName} orgName={orgName}
+          onSent={() => setQuotes(prev => prev.map(q => q.id === sending.id ? { ...q, status: 'sent' } : q))}
+          onClose={() => { setSending(null); router.refresh() }} />
       )}
 
       {quotes.length === 0 ? (

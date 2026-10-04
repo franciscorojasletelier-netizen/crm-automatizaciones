@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Printer, Send, Trash2, Copy, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Printer, Trash2, Copy, Check, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
 import SendQuoteEmail from '@/components/deals/send-quote-email'
@@ -19,22 +19,11 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit, send
   senderName?: string | null
 }) {
   const router = useRouter()
-  const [busy, setBusy] = useState<'send' | 'delete' | null>(null)
+  const [busy, setBusy] = useState<'delete' | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const items: Item[] = quote.items ?? []
   const publicUrl = quote.public_token && typeof window !== 'undefined' ? `${window.location.origin}/cotizacion/${quote.public_token}` : null
-
-  // Un borrador pasa a "enviada" al generar su link público (aceptar/rechazar).
-  async function markSent() {
-    setBusy('send'); setError('')
-    const { error: err } = await createClient().from('quotes')
-      .update({ status: 'sent', sent_at: new Date().toISOString(), public_token: crypto.randomUUID() })
-      .eq('id', quote.id).eq('status', 'draft')
-    setBusy(null)
-    if (err) { setError(friendlyError(err.message)); return }
-    router.refresh()
-  }
 
   async function removeDraft() {
     if (!confirm(`¿Eliminar el borrador de la cotización #${quote.quote_number}? No se puede deshacer.`)) return
@@ -72,11 +61,6 @@ export default function QuotePrintView({ quote, deal, org, dealId, canEdit, send
               <button type="button" onClick={removeDraft} disabled={!!busy}
                 className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                 {busy === 'delete' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Eliminar
-              </button>
-              <button type="button" onClick={markSent} disabled={!!busy}
-                title="Genera el link para que el cliente la acepte o rechace"
-                className="flex items-center gap-1.5 text-sm font-semibold text-accent-700 border border-accent-200 hover:bg-accent-50 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
-                {busy === 'send' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Marcar como enviada
               </button>
             </>
           )}
