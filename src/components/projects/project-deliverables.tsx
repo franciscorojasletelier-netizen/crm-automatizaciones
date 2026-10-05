@@ -112,7 +112,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
         )}
         {pending.map(d => (
           <div key={d.id} className="px-5 py-3.5 flex items-start gap-3.5 hover:bg-slate-50/50 transition-colors">
-            <button onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly}
+            <button type="button" aria-label={d.is_completed ? `Marcar pendiente: ${d.title}` : `Marcar completado: ${d.title}`} onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly}
               className={`mt-0.5 shrink-0 transition-transform ${readOnly ? 'cursor-default' : 'hover:scale-110'}`}>
               <Circle className="w-4 h-4 text-slate-400 hover:text-accent-500 transition-colors" />
             </button>
@@ -132,7 +132,7 @@ export default function ProjectDeliverables({ projectId, deliverables, readOnly 
           <div className="divide-y divide-slate-50 opacity-50">
             {done.map(d => (
               <div key={d.id} className="px-5 py-3 flex items-center gap-3.5">
-                <button onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly} className="shrink-0">
+                <button type="button" aria-label={d.is_completed ? `Marcar pendiente: ${d.title}` : `Marcar completado: ${d.title}`} onClick={() => handleToggle(d.id, d.is_completed)} disabled={readOnly} className="shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </button>
                 <p className="text-sm text-slate-500 line-through">{d.title}</p>
