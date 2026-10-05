@@ -79,6 +79,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!isValidRut(rut)) return NextResponse.json({ error: 'El RUT no es válido' }, { status: 400 })
   if (body.acceptTerms !== true) return NextResponse.json({ error: 'Debes aceptar las condiciones de pago' }, { status: 400 })
   if (code.length !== 6) return NextResponse.json({ error: 'Ingresa el código de 6 dígitos que te enviamos por correo' }, { status: 400 })
+  // Datos para la factura (razón social y RUT obligatorios).
+  const b = (body.billing ?? {}) as Record<string, unknown>
+  const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '') || null
+  const billing = {
+    legalName: clean(b.legalName, 150) ?? '', taxId: clean(b.taxId, 20) ?? '',
+    activity: clean(b.activity, 150), address: clean(b.address, 250), billingEmail: clean(b.billingEmail, 150),
+  }
+  if (!billing.legalName) return NextResponse.json({ error: 'Ingresa la razón social para la factura' }, { status: 400 })
+  if (!isValidRut(billing.taxId)) return NextResponse.json({ error: 'El RUT de la empresa no es válido' }, { status: 400 })
+  if (billing.billingEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billing.billingEmail)) return NextResponse.json({ error: 'El correo para la factura no es válido' }, { status: 400 })
+  billing.taxId = formatRut(billing.taxId)
 
   const { data: pending } = await supabase.from('quote_acceptance_codes')
     .select('id, email, code_hash, expires_at, attempts')
@@ -98,7 +109,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const acceptedAt = new Date().toISOString()
   const signer = { name, rut: formatRut(rut), role, email: pending.email, ip, userAgent: request.headers.get('user-agent')?.slice(0, 300) ?? null }
-  const snapshot = buildAcceptanceSnapshot({ quote: quote as QuoteRow, orgName, company, contact, signer, acceptedAt })
+  const snapshot = buildAcceptanceSnapshot({ quote: quote as QuoteRow, orgName, company, contact, signer, acceptedAt, billing })
   const hash = sha256Hex(canonicalJson(snapshot))
 
   const { error } = await supabase.from('quotes').update({
@@ -109,6 +120,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (error) return NextResponse.json({ error: 'No se pudo registrar la aceptación' }, { status: 500 })
 
   // Lo que sigue no deshace la aceptación si falla.
+  // Datos de facturación a la ficha de la empresa.
+  const { data: dealCompany } = await supabase.from('deals').select('company_id').eq('id', quote.deal_id).maybeSingle()
+  if (dealCompany?.company_id) {
+    await supabase.from('companies').update({
+      legal_name: billing.legalName, tax_id: billing.taxId, business_activity: billing.activity,
+      billing_address: billing.address, billing_email: billing.billingEmail,
+    }).eq('id', dealCompany.company_id)
+  }
   // El valor del negocio pasa a ser lo firmado (dashboard y reportes cuadran con la cotización).
   if ((org?.currency ?? 'CLP') === snapshot.documento.moneda) {
     await supabase.from('deals').update({ estimated_value: snapshot.total }).eq('id', quote.deal_id)
@@ -126,14 +145,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       entity_type: 'deal', entity_id: quote.deal_id,
     })))
   }
-  // Tarea para emitir la primera factura (con su aviso de 5 minutos).
+  // Tarea para emitir la primera factura (con su aviso de 5 minutos) y
+  // solicitud al contador (la despacha el cron de cada minuto).
   const assignee = deal?.owner_id ?? quote.created_by
   if (assignee) {
-    await supabase.from('tasks').insert({
+    const { data: newTask } = await supabase.from('tasks').insert({
       organization_id: quote.organization_id, deal_id: quote.deal_id, assigned_to: assignee, created_by: assignee,
       title: `Emitir factura cuota 1 — Cotización #${quote.quote_number}${company ? ` (${company})` : ''}`,
       description: `${invoiceNote}.\nEl cliente aceptó la cotización y se le informó que la factura se emitirá en las próximas horas hábiles.`,
       due_date: nextBusinessDue().toISOString(),
+    }).select('id').single()
+    await supabase.from('billing_requests').insert({
+      organization_id: quote.organization_id, deal_id: quote.deal_id, quote_id: quote.id, task_id: newTask?.id ?? null,
+      installment: 1, installments: Math.max(1, snapshot.plan_de_pagos.length),
+      label: firstInstallment?.hito ?? null, amount: firstInstallment?.monto ?? snapshot.total, currency: cur,
     })
   }
 

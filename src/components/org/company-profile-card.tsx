@@ -28,12 +28,14 @@ export interface CompanyProfile {
   taxes?: Tax[] | null
   payment_terms?: unknown
   payment_conditions?: string | null
+  accounting_email?: string | null
 }
 
 export default function CompanyProfileCard({ org, description = 'Aparecen en los correos de cobranza, estados de cuenta y cotizaciones.' }: { org: CompanyProfile; description?: string }) {
   const [v, setV] = useState({
     display_name: org.display_name ?? '', email: org.email ?? '', phone: org.phone ?? '',
     address: org.address ?? '', payment_instructions: org.payment_instructions ?? '',
+    accounting_email: org.accounting_email ?? '',
   })
   const [currency, setCurrency] = useState(org.currency ?? 'CLP')
   const [taxes, setTaxes] = useState(() => (org.taxes ? normalizeTaxes(org.taxes) : DEFAULT_TAXES).map(t => ({ label: t.label, rate: String(t.rate).replace('.', ',') })))
@@ -49,6 +51,7 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
   async function save(e: React.FormEvent) {
     e.preventDefault()
     if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) { setMsg({ ok: false, text: 'El correo no es válido.' }); return }
+    if (v.accounting_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.accounting_email.trim())) { setMsg({ ok: false, text: 'El correo del contador no es válido.' }); return }
     const parsedTaxes = taxes.map(t => ({ label: t.label.trim(), rate: Number(t.rate.replace(',', '.')) }))
     if (parsedTaxes.some(t => !t.label || !Number.isFinite(t.rate) || t.rate < 0 || t.rate > 100)) {
       setMsg({ ok: false, text: 'Cada impuesto necesita un nombre y una tasa entre 0 y 100 %.' }); return
@@ -61,6 +64,7 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
     const { error } = await createClient().from('organizations').update({
       display_name: clean(v.display_name), email: clean(v.email), phone: clean(v.phone),
       address: clean(v.address), payment_instructions: clean(v.payment_instructions),
+      accounting_email: clean(v.accounting_email)?.toLowerCase() ?? null,
       currency, taxes: parsedTaxes,
       payment_terms: parsedPay, payment_conditions: payConditions.trim() || DEFAULT_PAYMENT_CONDITIONS,
     }).eq('id', org.id)
@@ -127,6 +131,11 @@ export default function CompanyProfileCard({ org, description = 'Aparecen en los
           <div>
             <label htmlFor="cp-phone" className={labelClass}>Teléfono</label>
             <input id="cp-phone" value={v.phone} onChange={set('phone')} placeholder="+56 2 2345 6789" className={inputClass} />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="cp-accounting" className={labelClass}>Correo del contador <span className="font-normal text-slate-500">(recibe las solicitudes de factura)</span></label>
+            <input id="cp-accounting" type="email" value={v.accounting_email} onChange={set('accounting_email')} placeholder="contador@estudio.cl" className={inputClass} />
+            <p className="mt-1 text-xs text-slate-500">Si tu contador usa el CRM con rol Finanzas, también le llegan a él. Si no hay ninguno, el vendedor recibe el recordatorio de enviárselas.</p>
           </div>
           <div>
             <label htmlFor="cp-address" className={labelClass}>Dirección</label>

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!quote) return NextResponse.json({ error: 'Cotización no encontrada' }, { status: 404 })
 
   const [{ data: deal }, { data: org }] = await Promise.all([
-    supabase.from('deals').select('companies(name), contacts:primary_contact_id(full_name, email)').eq('id', quote.deal_id).maybeSingle(),
+    supabase.from('deals').select('companies(name, legal_name, tax_id, business_activity, billing_address, billing_email), contacts:primary_contact_id(full_name, email)').eq('id', quote.deal_id).maybeSingle(),
     supabase.from('organizations').select('name, display_name, phone, email, address, logo_url').eq('id', quote.organization_id).maybeSingle(),
   ])
 
@@ -32,6 +32,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id: _id, organization_id: _org, deal_id: _deal, sent_to_email: _sent, ...publicQuote } = quote
   void _id; void _org; void _deal; void _sent
   const contactRow = deal?.contacts as unknown as { full_name: string | null } | null
-  const publicDeal = deal ? { companies: deal.companies, contacts: contactRow ? { full_name: contactRow.full_name, email: null } : null } : null
-  return NextResponse.json({ quote: publicQuote, deal: publicDeal, org, codeTarget: knownEmail ? maskEmail(knownEmail) : null })
+  const companyRow = deal?.companies as unknown as { name: string | null; legal_name: string | null; tax_id: string | null; business_activity: string | null; billing_address: string | null; billing_email: string | null } | null
+  const publicDeal = deal ? { companies: companyRow ? { name: companyRow.name } : null, contacts: contactRow ? { full_name: contactRow.full_name, email: null } : null } : null
+  const billing = companyRow ? { legalName: companyRow.legal_name, taxId: companyRow.tax_id, activity: companyRow.business_activity, address: companyRow.billing_address, billingEmail: companyRow.billing_email } : null
+  return NextResponse.json({ quote: publicQuote, deal: publicDeal, org, codeTarget: knownEmail ? maskEmail(knownEmail) : null, billing })
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { isCronAuthorized } from '@/lib/secure-compare'
 import { renderTaskSoon } from '@/lib/task-emails'
 import type { EmailBrand } from '@/lib/email-layout'
+import { processBillingRequest, type BillingRequestRow } from '@/lib/billing'
 
 // Cron cada minuto (pg_cron, migración 053): avisa por correo al
 // responsable de cada tarea con hora unos minutos antes de que venza.
@@ -29,11 +30,14 @@ export async function GET(request: NextRequest) {
   )
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://crm-automatizaciones.vercel.app'
 
+  // Solicitudes de factura al contador (aceptación o avance del proyecto).
+  const billing = await processPendingBilling(supabase)
+
   // Toma los avisos de forma atómica: dos ejecuciones cruzadas no duplican correos.
   const { data, error } = await supabase.rpc('claim_task_reminders', { p_minutes: MINUTES_BEFORE })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const reminders = (data ?? []) as Reminder[]
-  if (reminders.length === 0) return NextResponse.json({ ok: true, sent: 0, failed: 0 })
+  if (reminders.length === 0) return NextResponse.json({ ok: true, sent: 0, failed: 0, billing })
 
   // Logo y datos de cada organización para el correo.
   const orgIds = [...new Set(reminders.map(r => r.organization_id).filter(Boolean))] as string[]
@@ -63,7 +67,22 @@ export async function GET(request: NextRequest) {
     await supabase.rpc('release_task_reminder', { p_task_id: r.task_id })
   }
 
-  return NextResponse.json({ ok: true, sent, failed: failed.length })
+  return NextResponse.json({ ok: true, sent, failed: failed.length, billing })
+}
+
+async function processPendingBilling(supabase: SupabaseClient) {
+  const { data } = await supabase.from('billing_requests').select('id, organization_id, deal_id, quote_id, task_id, installment, installments, label, amount, currency, status')
+    .eq('status', 'pending').order('created_at').limit(10)
+  const result = { sent: 0, noRecipient: 0, failed: 0 }
+  for (const req of (data ?? []) as BillingRequestRow[]) {
+    // Toma atómica (queda en "failed" si el proceso se corta; el resultado real la sobrescribe).
+    const { data: claimed } = await supabase.from('billing_requests').update({ status: 'failed', processed_at: new Date().toISOString() })
+      .eq('id', req.id).eq('status', 'pending').select('id')
+    if (!claimed?.length) continue
+    const r = await processBillingRequest(supabase, req)
+    if (r === 'sent') result.sent++; else if (r === 'no_recipient') result.noRecipient++; else result.failed++
+  }
+  return result
 }
 
 // pg_cron llama vía POST (net.http_post).

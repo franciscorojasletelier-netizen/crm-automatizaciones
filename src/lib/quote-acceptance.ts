@@ -48,10 +48,12 @@ export interface QuoteRow {
   payment_terms?: unknown; payment_conditions?: string | null
 }
 export interface Signer { name: string; rut: string; role: string | null; email: string; ip: string; userAgent: string | null }
+export interface BillingData { legalName: string; taxId: string; activity: string | null; address: string | null; billingEmail: string | null }
 
 /** Copia exacta de lo aceptado: documento, montos, plan de pagos, condiciones y firmante. */
-export function buildAcceptanceSnapshot({ quote, orgName, company, contact, signer, acceptedAt }: {
+export function buildAcceptanceSnapshot({ quote, orgName, company, contact, signer, acceptedAt, billing = null }: {
   quote: QuoteRow; orgName: string; company: string | null; contact: string | null; signer: Signer; acceptedAt: string
+  billing?: BillingData | null
 }) {
   const currency = quote.currency ?? 'CLP'
   const items = quote.items ?? []
@@ -60,7 +62,7 @@ export function buildAcceptanceSnapshot({ quote, orgName, company, contact, sign
   return {
     documento: { tipo: 'Cotización', numero: quote.quote_number, emitida: quote.created_at, valida_hasta: quote.valid_until, moneda: currency },
     proveedor: orgName,
-    cliente: { empresa: company, contacto: contact },
+    cliente: { empresa: company, contacto: contact, ...(billing ? { facturacion: billing } : {}) },
     items: items.map(i => ({ descripcion: i.description, cantidad: i.quantity, precio_unitario: i.unit_price, total: i.quantity * i.unit_price })),
     impuestos: taxLines.map(t => ({ nombre: t.label, tasa: t.rate, monto: t.amount })),
     subtotal, total,

@@ -15,7 +15,8 @@ interface Item { description: string; quantity: number; unit_price: number }
 const REJECT_REASONS = ['Precio', 'Elegí otro proveedor', 'Ya no lo necesito', 'Plazos', 'Alcance no calza']
 const field = 'w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400'
 
-type Data = { quote: QuoteDoc & { accepted_by_name?: string | null; accepted_hash?: string | null }; deal: QuoteDeal | null; org: QuoteOrg | null; codeTarget: string | null }
+type BillingPrefill = { legalName: string | null; taxId: string | null; activity: string | null; address: string | null; billingEmail: string | null }
+type Data = { quote: QuoteDoc & { accepted_by_name?: string | null; accepted_hash?: string | null }; deal: QuoteDeal | null; org: QuoteOrg | null; codeTarget: string | null; billing: BillingPrefill | null }
 
 export default function QuoteAcceptView({ token }: { token: string }) {
   const [loading, setLoading] = useState(true)
@@ -37,13 +38,20 @@ export default function QuoteAcceptView({ token }: { token: string }) {
   const [sendingCode, setSendingCode] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [invoiceNote, setInvoiceNote] = useState<string | null>(null)
+  // Datos para la factura (se precargan si la empresa ya los tiene).
+  const [bill, setBill] = useState({ legalName: '', taxId: '', activity: '', address: '', billingEmail: '' })
+  const setB = (k: keyof typeof bill) => (e: React.ChangeEvent<HTMLInputElement>) => setBill(p => ({ ...p, [k]: e.target.value }))
 
   useEffect(() => {
     fetch(`/api/public/cotizacion/${token}`)
       .then(res => res.json())
       .then(json => {
         if (json.error) setError(json.error)
-        else setData(json)
+        else {
+          setData(json)
+          const b = json.billing as BillingPrefill | null
+          if (b) setBill({ legalName: b.legalName ?? '', taxId: b.taxId ?? '', activity: b.activity ?? '', address: b.address ?? '', billingEmail: b.billingEmail ?? '' })
+        }
       })
       .catch(() => setError('No se pudo cargar la cotización'))
       .finally(() => setLoading(false))
@@ -75,7 +83,9 @@ export default function QuoteAcceptView({ token }: { token: string }) {
   async function decide(decision: 'accepted' | 'rejected') {
     if (decision === 'accepted') {
       if (!name.trim()) { setDecisionError('Ingresa tu nombre completo'); return }
-      if (!isValidRut(rut)) { setDecisionError('El RUT no es válido'); return }
+      if (!isValidRut(rut)) { setDecisionError('Tu RUT no es válido'); return }
+      if (!bill.legalName.trim()) { setDecisionError('Ingresa la razón social para la factura'); return }
+      if (!isValidRut(bill.taxId)) { setDecisionError('El RUT de la empresa no es válido'); return }
       if (code.length !== 6) { setDecisionError('Ingresa el código de 6 dígitos que te enviamos'); return }
       if (!acceptTerms) { setDecisionError('Debes aceptar las condiciones de pago'); return }
     }
@@ -85,7 +95,7 @@ export default function QuoteAcceptView({ token }: { token: string }) {
       const res = await fetch(`/api/public/cotizacion/${token}/decision`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(decision === 'accepted'
-          ? { decision, name: name.trim(), rut, role: role.trim(), code, acceptTerms }
+          ? { decision, name: name.trim(), rut, role: role.trim(), code, acceptTerms, billing: bill }
           : { decision, reason: rejectionReason() }),
       })
       const json = await res.json()
@@ -232,6 +242,34 @@ export default function QuoteAcceptView({ token }: { token: string }) {
                   <input id="sig-role" value={role} onChange={e => setRole(e.target.value)} maxLength={80} placeholder="Gerente general" className={field} />
                 </div>
               </div>
+
+              <fieldset className="rounded-lg border border-slate-200 p-3 space-y-2.5 min-w-0">
+                <legend className="px-1 text-xs font-semibold text-slate-700">Datos para la factura</legend>
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label htmlFor="bill-legal" className="block text-xs font-semibold text-slate-600 mb-1">Razón social</label>
+                    <input id="bill-legal" value={bill.legalName} onChange={setB('legalName')} maxLength={150} autoComplete="organization" className={field} />
+                  </div>
+                  <div>
+                    <label htmlFor="bill-rut" className="block text-xs font-semibold text-slate-600 mb-1">RUT de la empresa</label>
+                    <input id="bill-rut" value={bill.taxId} onChange={setB('taxId')} onBlur={() => bill.taxId && setBill(p => ({ ...p, taxId: formatRut(p.taxId) }))} placeholder="76.123.456-7"
+                      aria-invalid={!!bill.taxId && !isValidRut(bill.taxId)} className={field} />
+                    {bill.taxId && !isValidRut(bill.taxId) && <p className="mt-1 text-[11px] text-red-600">RUT no válido</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="bill-activity" className="block text-xs font-semibold text-slate-600 mb-1">Giro <span className="font-normal text-slate-400">(opcional)</span></label>
+                    <input id="bill-activity" value={bill.activity} onChange={setB('activity')} maxLength={150} className={field} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="bill-address" className="block text-xs font-semibold text-slate-600 mb-1">Dirección <span className="font-normal text-slate-400">(opcional)</span></label>
+                    <input id="bill-address" value={bill.address} onChange={setB('address')} maxLength={250} autoComplete="street-address" className={field} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="bill-email" className="block text-xs font-semibold text-slate-600 mb-1">Correo para recibir la factura <span className="font-normal text-slate-400">(opcional)</span></label>
+                    <input id="bill-email" type="email" value={bill.billingEmail} onChange={setB('billingEmail')} maxLength={150} className={field} />
+                  </div>
+                </div>
+              </fieldset>
 
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
                 <p className="text-xs font-semibold text-slate-700 flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Verificación por correo</p>

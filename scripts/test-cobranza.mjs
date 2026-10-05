@@ -259,6 +259,10 @@ async function main() {
   assert('Al llegar a 70 % se crea la tarea de la cuota 2 con su monto', t70.length === 1 && /cuota 2/.test(t70[0].title) && /\$300\.000/.test(t70[0].description ?? ''), JSON.stringify(t70))
   await g.from('project_deliverables').update({ is_completed: true }).eq('id', dels[7].id)
   assert('Seguir avanzando no duplica la cuota 2', (await billingTasks()).length === 1)
+  const { data: breqs } = await admin.from('billing_requests').select('installment, amount, status').eq('deal_id', dealB.id)
+  assert('El avance registra la solicitud de factura de la cuota 2 para el contador', (breqs ?? []).length === 1 && breqs[0].installment === 2 && Number(breqs[0].amount) === 300000, JSON.stringify(breqs))
+  const { error: breqWrite } = await g.from('billing_requests').insert({ organization_id: orgA, amount: 1, installment: 9 })
+  assert('Los usuarios no pueden crear solicitudes de factura a mano', !!breqWrite, breqWrite?.message)
   await g.from('projects').update({ status: 'entregado', delivered_at: new Date().toISOString() }).eq('id', proj.id)
   const tEnd = await billingTasks()
   assert('Al entregar el proyecto se crea la tarea de la cuota 3', tEnd.length === 2 && tEnd.some(t => /cuota 3/.test(t.title) && /\$200\.000/.test(t.description ?? '')), JSON.stringify(tEnd.map(t => t.title)))
@@ -271,7 +275,7 @@ async function cleanup() {
   try {
     const orgs = state.orgs
     if (orgs.length) {
-      for (const t of ['tasks', 'notifications', 'project_deliverables', 'projects', 'quotes', 'invoices', 'deals', 'companies']) {
+      for (const t of ['billing_requests', 'tasks', 'notifications', 'project_deliverables', 'projects', 'quotes', 'invoices', 'deals', 'companies']) {
         const { error } = await admin.from(t).delete().in('organization_id', orgs)
         if (error) throw new Error(`${t}: ${error.message}`)
       }

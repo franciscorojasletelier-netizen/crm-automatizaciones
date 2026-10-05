@@ -22,6 +22,7 @@ import DealTimeline, { type TimelineSources } from '@/components/deals/deal-time
 import QuotesPanel from '@/components/deals/quotes-panel'
 import { quoteTotals, quoteTaxes } from '@/lib/quotes'
 import EmailThread from '@/components/deals/email-thread'
+import BillingRequests, { type BillingRequestItem } from '@/components/cobranza/billing-requests'
 import { systemMailAddress } from '@/lib/email/system-mail'
 import { formatMoney } from '@/lib/format'
 import { getAllStages, stageByKey, stageLabel, colorOf } from '@/lib/stages'
@@ -113,6 +114,12 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       ? supabase.from('invoices').select(INVOICE_SELECT).eq('deal_id', id).order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ])
+  // Solicitudes de factura del negocio (y correo del contador externo, si hay).
+  const [{ data: billingRequests }, { data: orgAccounting }] = await Promise.all([
+    supabase.from('billing_requests').select('id, installment, installments, label, amount, currency, status, sent_to').eq('deal_id', id).order('installment'),
+    organizationId ? supabase.from('organizations').select('accounting_email').eq('id', organizationId).maybeSingle() : Promise.resolve({ data: null }),
+  ])
+
   const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number; taxes?: unknown; currency?: string | null; payment_terms?: unknown }[])
     .find(q => q.status === 'accepted') ?? null
 
@@ -354,6 +361,11 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 estimatedValue={deal.estimated_value ?? null}
                 acceptedQuote={acceptedQuote}
               />
+            )}
+            {(billingRequests ?? []).length > 0 && (
+              <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+                <BillingRequests requests={(billingRequests ?? []) as BillingRequestItem[]} defaultEmail={orgAccounting?.accounting_email ?? null} />
+              </div>
             )}
             <EmailThread
               dealId={deal.id}
