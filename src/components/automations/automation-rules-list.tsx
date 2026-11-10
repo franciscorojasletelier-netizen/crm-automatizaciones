@@ -190,7 +190,7 @@ export default function AutomationRulesList({ rules: initialRules, logs, canEdit
                       : <ToggleLeft className="w-5 h-5" />
                     }
                   </button>
-                  <button onClick={() => deleteRule(rule.id)}
+                  <button onClick={() => deleteRule(rule.id)} aria-label={`Eliminar regla ${rule.name}`} title="Eliminar regla"
                     className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-400">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
