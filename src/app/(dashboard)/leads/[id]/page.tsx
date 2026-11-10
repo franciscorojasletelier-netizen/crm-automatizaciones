@@ -22,6 +22,7 @@ import DealTimeline, { type TimelineSources } from '@/components/deals/deal-time
 import QuotesPanel from '@/components/deals/quotes-panel'
 import { quoteTotals, quoteTaxes } from '@/lib/quotes'
 import EmailThread from '@/components/deals/email-thread'
+import { normalizeTemplates } from '@/lib/email-templates'
 import BillingRequests, { type BillingRequestItem } from '@/components/cobranza/billing-requests'
 import { systemMailAddress } from '@/lib/email/system-mail'
 import { formatMoney } from '@/lib/format'
@@ -38,7 +39,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   // que ya se desactivaron, y hay que poder mostrar su nombre igual.
   const stages = await getAllStages(supabase, organizationId ?? undefined)
   const { data: org } = organizationId
-    ? await supabase.from('organizations').select('name, display_name, default_country_code, phone').eq('id', organizationId).maybeSingle()
+    ? await supabase.from('organizations').select('name, display_name, default_country_code, phone, email_templates').eq('id', organizationId).maybeSingle()
     : { data: null }
   const orgDisplayName = org?.display_name || org?.name || 'nuestra empresa'
   const orgCountryCode = org?.default_country_code || '56'
@@ -57,7 +58,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const canSeePhone = ['super_admin', 'admin', 'gerente', 'comercial'].includes(role)
 
   // Si el rol no puede ver teléfonos, excluirlo de la query para que no llegue al cliente
-  const contactSelect = canSeePhone ? '*' : 'id, full_name, email, job_title, custom_fields'
+  const contactSelect = canSeePhone ? '*' : 'id, full_name, email, job_title, treatment, custom_fields'
 
   const { data: deal } = await supabase
     .from('deals')
@@ -372,6 +373,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               contactId={deal.contacts?.id ?? null}
               contactEmail={deal.contacts?.email ?? null}
               contactName={deal.contacts?.full_name ?? null}
+              contactTreatment={deal.contacts?.treatment ?? null}
+              templates={normalizeTemplates(org?.email_templates)}
+              templateVars={{ empresa: deal.companies?.name ?? '', miempresa: orgDisplayName, vendedor: userName }}
               hasConnectedAccount={!!connectedAccount}
               systemSender={systemMailAddress()}
               emails={(emails ?? []) as React.ComponentProps<typeof EmailThread>['emails']}

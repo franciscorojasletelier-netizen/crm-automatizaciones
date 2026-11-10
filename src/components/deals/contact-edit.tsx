@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Pencil, Check, X, User, Building2, Mail, Phone, Briefcase, Globe, type LucideIcon } from 'lucide-react'
+import { Pencil, Check, X, User, Building2, Mail, Phone, Briefcase, Globe, UserRound, type LucideIcon } from 'lucide-react'
 import DynamicFields from '@/components/fields/dynamic-fields'
 import type { FieldDefinition } from '@/lib/fields'
 
@@ -31,7 +31,9 @@ function EditInput({ label, value, onChange }: { label: string; value: string; o
 }
 
 type CustomFields = Record<string, unknown> | null
-export interface ContactInfo { id: string; full_name: string | null; email: string | null; phone?: string | null; job_title: string | null; custom_fields: CustomFields }
+export interface ContactInfo { id: string; full_name: string | null; email: string | null; phone?: string | null; job_title: string | null; treatment?: 'sr' | 'sra' | null; custom_fields: CustomFields }
+
+const TREATMENT_LABEL = { sr: 'Sr. (Estimado)', sra: 'Sra. (Estimada)' } as const
 export interface CompanyInfo { id: string; name: string | null; industry: string | null; website: string | null; custom_fields: CustomFields }
 
 export default function ContactEdit({ contact, company, canSeePhone = false, contactFields = [], companyFields = [] }: {
@@ -40,13 +42,13 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
-  const [contactData, setContactData] = useState({ full_name: contact?.full_name ?? '', email: contact?.email ?? '', phone: contact?.phone ?? '', job_title: contact?.job_title ?? '' })
+  const [contactData, setContactData] = useState({ full_name: contact?.full_name ?? '', email: contact?.email ?? '', phone: contact?.phone ?? '', job_title: contact?.job_title ?? '', treatment: (contact?.treatment ?? '') as '' | 'sr' | 'sra' })
   const [companyData, setCompanyData] = useState({ name: company?.name ?? '', industry: company?.industry ?? '', website: company?.website ?? '' })
 
   async function save() {
     setSaving(true)
     const supabase = createClient()
-    if (contact?.id) await supabase.from('contacts').update(contactData).eq('id', contact.id)
+    if (contact?.id) await supabase.from('contacts').update({ ...contactData, treatment: contactData.treatment || null }).eq('id', contact.id)
     if (company?.id) await supabase.from('companies').update(companyData).eq('id', company.id)
     setSaving(false)
     setEditing(false)
@@ -77,6 +79,16 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
             <EditInput label="Email" value={contactData.email} onChange={v => setContactData(p => ({ ...p, email: v }))} />
             {canSeePhone && <EditInput label="Teléfono" value={contactData.phone} onChange={v => setContactData(p => ({ ...p, phone: v }))} />}
             <EditInput label="Cargo" value={contactData.job_title} onChange={v => setContactData(p => ({ ...p, job_title: v }))} />
+            <div>
+              <p className="text-xs font-medium text-slate-500 mb-1">Trato en correos formales</p>
+              <select aria-label="Trato en correos formales" value={contactData.treatment}
+                onChange={e => setContactData(p => ({ ...p, treatment: e.target.value as '' | 'sr' | 'sra' }))}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white">
+                <option value="">Sin definir (Estimado/a)</option>
+                <option value="sr">{TREATMENT_LABEL.sr}</option>
+                <option value="sra">{TREATMENT_LABEL.sra}</option>
+              </select>
+            </div>
           </div>
         </div>
         <div>
@@ -118,6 +130,7 @@ export default function ContactEdit({ contact, company, canSeePhone = false, con
               : null
           }
           <InfoRow icon={Briefcase} label="Cargo"  value={contact?.job_title} />
+          <InfoRow icon={UserRound} label="Trato"  value={contact?.treatment ? TREATMENT_LABEL[contact.treatment] : null} />
         </div>
         {contactFields.length > 0 && contact?.id && (
           <div className="mt-3 pt-3 border-t border-slate-100">

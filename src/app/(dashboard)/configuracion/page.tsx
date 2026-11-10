@@ -5,6 +5,7 @@ import ChangePasswordCard from './ChangePasswordCard'
 import TwoFactorCard from './TwoFactorCard'
 import EmailAccountsCard from './EmailAccountsCard'
 import CompanyProfileCard, { type CompanyProfile } from '@/components/org/company-profile-card'
+import EmailTemplatesCard from '@/components/org/email-templates-card'
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
@@ -27,7 +28,7 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
   const isManager = ['super_admin', 'admin', 'gerente'].includes(profile?.role ?? '')
   const { data: org } = isManager && profile?.organization_id
     ? await supabase.from('organizations')
-        .select('id, name, display_name, logo_url, email, phone, address, payment_instructions, currency, taxes, payment_terms, payment_conditions, accounting_email')
+        .select('id, name, display_name, logo_url, email, phone, address, payment_instructions, currency, taxes, payment_terms, payment_conditions, accounting_email, email_templates')
         .eq('id', profile.organization_id).maybeSingle()
     : { data: null }
 
@@ -82,6 +83,8 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
         </div>
 
         {org && <CompanyProfileCard org={org as CompanyProfile} />}
+
+        {org && <EmailTemplatesCard orgId={org.id} raw={org.email_templates} />}
 
         {/* Seguridad — flujo real de cambio de contraseña, no un mensaje muerto */}
         <ChangePasswordCard email={user?.email ?? ''} />

@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Mail, Plus, X, Send, Loader2, Reply } from 'lucide-react'
 import { timeAgo } from '@/lib/format'
 import {
-  CLOSINGS, GREETINGS, NAME_PLACEHOLDER, closingText, composeBody, firstName, greetingText,
-  middleOf, middleOffset, swapPart, type ClosingKey, type GreetingKey,
+  CLOSINGS, GREETINGS, closingText, composeBody, fillVars, firstName, greetingText, middleOf, middleOffset,
+  pendingFillIns, replaceMiddle, swapPart, type ClosingKey, type EmailTemplate, type GreetingKey,
+  type TemplateVars, type Treatment,
 } from '@/lib/email-templates'
 
 // Último saludo/despedida elegido: comodidad por navegador, no es crítico.
@@ -32,13 +33,20 @@ interface EmailMessage {
 
 
 export default function EmailThread({
-  dealId, contactId, contactEmail, contactName = null, hasConnectedAccount, systemSender = null, emails: initialEmails,
+  dealId, contactId, contactEmail, contactName = null, contactTreatment = null, templates = [], templateVars = {},
+  hasConnectedAccount, systemSender = null, emails: initialEmails,
 }: {
   dealId: string
   contactId: string | null
   contactEmail: string | null
   /** Nombre del contacto principal, para el saludo. */
   contactName?: string | null
+  /** Trato del contacto (Sr./Sra.) para el saludo formal. */
+  contactTreatment?: Treatment
+  /** Plantillas por situación de la empresa (o las por defecto). */
+  templates?: EmailTemplate[]
+  /** Datos para {empresa} {miempresa} {vendedor} en las plantillas. */
+  templateVars?: TemplateVars
   hasConnectedAccount: boolean
   /** Dirección del correo del sistema (Resend) si está activo: permite enviar sin cuenta conectada. */
   systemSender?: string | null
@@ -57,6 +65,8 @@ export default function EmailThread({
   const [greeting, setGreeting] = useState('')
   const [closing, setClosing] = useState('')
   const [caret, setCaret] = useState<number | null>(null)
+  const [templateId, setTemplateId] = useState<string | null>(null)
+  const [templateSubject, setTemplateSubject] = useState('')
   const bodyRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
@@ -69,20 +79,23 @@ export default function EmailThread({
   }, [caret])
 
   // El nombre solo se conoce si se le escribe al contacto del lead.
-  const nameFor = (address: string) =>
-    contactEmail && address.trim().toLowerCase() === contactEmail.trim().toLowerCase() ? firstName(contactName) : ''
+  const isContact = (address: string) =>
+    !!contactEmail && address.trim().toLowerCase() === contactEmail.trim().toLowerCase()
+  const nameFor = (address: string) => isContact(address) ? firstName(contactName) : ''
+  const treatmentFor = (address: string) => isContact(address) ? contactTreatment : null
 
   function openCompose(replyTo?: EmailMessage) {
     const address = replyTo ? replyTo.from_address : (contactEmail ?? '')
     const pref = readPref()
     const gKey: GreetingKey = replyTo ? 'respuesta' : (pref.greeting && pref.greeting !== 'respuesta' ? pref.greeting : 'cordial')
     const cKey: ClosingKey = pref.closing ?? 'disposicion'
-    const g = greetingText(gKey, nameFor(address))
+    const g = greetingText(gKey, nameFor(address), treatmentFor(address))
     const c = closingText(cKey)
     setComposing({ replyTo })
     setTo(address)
     setSubject(replyTo ? (replyTo.subject?.startsWith('Re:') ? replyTo.subject : `Re: ${replyTo.subject ?? ''}`) : '')
     setGreetingKey(gKey); setClosingKey(cKey); setGreeting(g); setClosing(c)
+    setTemplateId(null); setTemplateSubject('')
     setBody(composeBody(g, '', c))
     setCaret(middleOffset(g))
     setError('')
@@ -90,10 +103,31 @@ export default function EmailThread({
 
   function closeCompose() {
     setComposing(null); setTo(''); setSubject(''); setBody(''); setError(''); setGreeting(''); setClosing('')
+    setTemplateId(null); setTemplateSubject('')
+  }
+
+  function pickTemplate(id: string) {
+    const t = templates.find(x => x.id === id)
+    if (!t) return
+    const middle = middleOf(body, greeting, closing)
+    const current = templates.find(x => x.id === templateId)
+    const currentMiddle = current ? fillVars(current.body, { ...templateVars, nombre: nameFor(to) }) : ''
+    if (middle && middle !== currentMiddle && !window.confirm('¿Reemplazar lo que escribiste por la plantilla?')) return
+    const vars = { ...templateVars, nombre: nameFor(to) }
+    const nextBody = fillVars(t.body, vars)
+    const nextSubject = fillVars(t.subject, vars)
+    setBody(b => replaceMiddle(b, greeting, closing, nextBody))
+    // El asunto solo se pisa si está vacío o sigue siendo el de la plantilla anterior.
+    if (!composing?.replyTo && (!subject.trim() || subject === templateSubject)) {
+      setSubject(nextSubject); setTemplateSubject(nextSubject)
+    }
+    setTemplateId(id)
+    setError('')
+    setCaret(middleOffset(greeting) + nextBody.length)
   }
 
   function pickGreeting(key: GreetingKey) {
-    const next = greetingText(key, nameFor(to))
+    const next = greetingText(key, nameFor(to), treatmentFor(to))
     setBody(b => swapPart(b, greeting, next, 'start'))
     setGreeting(next); setGreetingKey(key)
     setCaret(middleOffset(next))
@@ -107,12 +141,12 @@ export default function EmailThread({
     savePref({ greeting: greetingKey, closing: key })
   }
 
-  const missingName = body.includes(NAME_PLACEHOLDER)
+  const fillIns = pendingFillIns(subject, body)
   const emptyMessage = !middleOf(body, greeting, closing)
 
   async function send() {
     if (!to.trim() || !subject.trim() || !body.trim() || loading) return
-    if (missingName) { setError(`Reemplaza ${NAME_PLACEHOLDER} por el nombre del cliente, o quítalo del saludo.`); return }
+    if (fillIns.length) { setError(`Completa o borra ${fillIns.join(', ')} antes de enviar.`); return }
     if (emptyMessage) { setError('Escribe el mensaje entre el saludo y la despedida.'); return }
     setLoading(true)
     setError('')
@@ -162,12 +196,17 @@ export default function EmailThread({
             className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           <input aria-label="Asunto" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Asunto"
             className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
+          {templates.length > 0 && (
+            <TemplatePicker label="Plantilla" options={templates.map(t => ({ key: t.id, label: t.label }))}value={templateId ?? ''} onPick={pickTemplate} />
+          )}
           <TemplatePicker label="Saludo" options={GREETINGS} value={greetingKey} onPick={k => pickGreeting(k as GreetingKey)} />
           <textarea ref={bodyRef} aria-label="Escribe el mensaje" value={body} onChange={e => { setBody(e.target.value); setError('') }} rows={9} placeholder="Escribe el mensaje..."
             className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm leading-6 resize-y focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400" />
           <TemplatePicker label="Despedida" options={CLOSINGS} value={closingKey} onPick={k => pickClosing(k as ClosingKey)} />
-          {missingName ? (
-            <p className="text-[11px] text-amber-700">No tenemos el nombre de este contacto: reemplaza <span className="font-mono font-semibold">{NAME_PLACEHOLDER}</span> en el saludo antes de enviar.</p>
+          {fillIns.length > 0 ? (
+            <p className="text-[11px] text-amber-700">
+              Completa antes de enviar: {fillIns.map(f => <span key={f} className="font-mono font-semibold mr-1.5">{f}</span>)}
+            </p>
           ) : (
             <p className="text-[11px] text-slate-500">Tu firma (nombre, cargo, teléfono y logo) se agrega sola al enviar.</p>
           )}
