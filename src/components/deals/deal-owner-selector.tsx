@@ -41,12 +41,18 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
   const [pos, setPos]       = useState({ top: 0, left: 0, width: 0, dropUp: false })
   const mounted = useIsClient()
   const ref    = useRef<HTMLDivElement>(null)
+  // La lista se dibuja en un portal (fuera de `ref`): sin su propia ref, el
+  // mousedown sobre un usuario contaba como "clic afuera", cerraba la lista
+  // antes del click y el lead nunca se reasignaba.
+  const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
 
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (ref.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
@@ -141,6 +147,9 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
 
       {open && mounted && createPortal(
         <div
+          ref={menuRef}
+          role="listbox"
+          aria-label="Reasignar lead a"
           style={{
             position: 'fixed',
             top:    pos.dropUp ? 'auto' : pos.top - window.scrollY,
