@@ -73,6 +73,14 @@ function actionSummary(rule: Rule): string {
 
 export default function AutomationRulesList({ rules: initialRules, logs, canEdit = true }: Props) {
   const [rules, setRules] = useState<Rule[]>(initialRules)
+  // El formulario de al lado crea la regla y hace router.refresh(): la lista
+  // recibe las reglas nuevas por props y tiene que adoptarlas (antes la
+  // regla creada no aparecía hasta recargar la página).
+  const [prevInitial, setPrevInitial] = useState(initialRules)
+  if (initialRules !== prevInitial) {
+    setPrevInitial(initialRules)
+    setRules(initialRules)
+  }
   const [tab, setTab] = useState<'rules' | 'logs'>('rules')
   const supabase = createClient()
   const router = useRouter()
