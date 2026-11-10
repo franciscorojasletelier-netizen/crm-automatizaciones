@@ -34,7 +34,7 @@ export default async function UsuariosPage() {
     .select('id, name, color')
     .order('name')
 
-  const currentRole = currentProfile?.role as Role
+  const currentRole = normalizedRole as Role
 
   function getInitials(name: string | null, email: string | null) {
     if (name) return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
@@ -44,7 +44,8 @@ export default async function UsuariosPage() {
 
   // Stats por rol
   const byRole = Object.keys(ROLE_META).reduce((acc, r) => {
-    acc[r] = users?.filter(u => u.role === r).length ?? 0
+    // normalizeRole: roles antiguos ('admin') cuentan como su rol actual.
+    acc[r] = users?.filter(u => normalizeRole(u.role ?? '') === r).length ?? 0
     return acc
   }, {} as Record<string, number>)
 
@@ -110,7 +111,7 @@ export default async function UsuariosPage() {
             const canEdit = currentRole === 'super_admin'
               ? !isSelf  // super_admin puede editar a todos menos a sí mismo
               : currentRole === 'gerente'
-                ? !isSelf && !['super_admin', 'gerente'].includes(u.role)
+                ? !isSelf && !['super_admin', 'gerente'].includes(normalizeRole(u.role ?? ''))
                 : false
 
             return (
