@@ -114,7 +114,10 @@ export default function TwoFactorCard({ mfaRequired = false }: { mfaRequired?: b
         {mfaRequired && status !== 'enrolled' && (
           <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800">Tu organización exige doble factor para poder usar el CRM. Activalo para continuar.</p>
+            <p className="text-xs text-amber-800">
+              <span className="font-semibold">Tu organización exige doble factor para usar el CRM.</span>{' '}
+              Mientras no lo actives, cualquier sección del menú te va a traer de vuelta a esta página. Presiona <span className="font-semibold">Activar</span> y escanea el código con tu app de autenticación.
+            </p>
           </div>
         )}
 

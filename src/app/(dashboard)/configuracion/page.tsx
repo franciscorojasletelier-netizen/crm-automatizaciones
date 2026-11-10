@@ -12,6 +12,7 @@ function getInitials(name: string) {
 
 export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ mfaRequired?: string; emailConnected?: string; emailError?: string }> }) {
   const { mfaRequired, emailConnected, emailError } = await searchParams
+  const mfaGate = mfaRequired === '1'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user?.id).single()
@@ -38,6 +39,10 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
           <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Configuración</h1>
           <p className="text-sm text-slate-500 mt-0.5">Ajustes de tu cuenta{org ? ' y de la empresa' : ''}</p>
         </div>
+
+        {/* Si la organización exige 2FA y falta activarlo, el resto del CRM
+            redirige acá: la tarjeta va primero para que se vea el motivo. */}
+        {mfaGate && <TwoFactorCard mfaRequired />}
 
         {/* Perfil hero */}
         <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
@@ -81,7 +86,7 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
         {/* Seguridad — flujo real de cambio de contraseña, no un mensaje muerto */}
         <ChangePasswordCard email={user?.email ?? ''} />
 
-        <TwoFactorCard mfaRequired={mfaRequired === '1'} />
+        {!mfaGate && <TwoFactorCard />}
 
         <EmailAccountsCard accounts={(emailAccounts ?? []) as unknown as React.ComponentProps<typeof EmailAccountsCard>['accounts']} connectedMessage={emailConnected} errorMessage={emailError} />
 
