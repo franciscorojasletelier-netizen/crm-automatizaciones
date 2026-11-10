@@ -24,8 +24,14 @@ const phaseColors: Record<string, string> = {
   soporte:   'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
 }
 
-const phaseProgress: Record<string, number> = {
-  discovery: 10, diseno: 25, desarrollo: 50, pruebas: 75, entrega: 90, soporte: 100,
+// Avance = entregables completados / total (100 % si ya se entregó): el
+// mismo cálculo que la ficha del proyecto y que check_project_billing, que
+// decide cuándo corresponde facturar cada cuota. Antes la lista lo estimaba
+// por fase (Discovery = 10 %) y no cuadraba con la ficha.
+function projectProgress(p: { status: string; delivered_at: string | null; project_deliverables: { is_completed: boolean }[] | null }) {
+  if (p.status === 'entregado' || p.delivered_at) return 100
+  const all = p.project_deliverables ?? []
+  return all.length ? Math.round(all.filter(d => d.is_completed).length * 100 / all.length) : 0
 }
 
 function isOverdue(due: string | null) {
@@ -47,7 +53,8 @@ export default async function ProyectosPage() {
   let baseQuery = supabase
     .from('projects')
     .select(`
-      id, name, phase, status, budget, due_date, start_date,
+      id, name, phase, status, budget, due_date, start_date, delivered_at,
+      project_deliverables(is_completed),
       companies(name),
       profiles:owner_id(full_name)
     `)
@@ -63,6 +70,7 @@ export default async function ProyectosPage() {
   // Relaciones a-uno: sin tipos de base se infieren como arreglo.
   type ProjectRow = {
     id: string; name: string; phase: string; status: string; budget: number | null; due_date: string | null; start_date: string | null
+    delivered_at: string | null; project_deliverables: { is_completed: boolean }[] | null
     companies: { name: string | null } | null; profiles: { full_name: string | null } | null
   }
   const projects = data as unknown as ProjectRow[] | null
@@ -104,7 +112,7 @@ export default async function ProyectosPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {pending.map(project => {
-              const progress = phaseProgress[project.phase] ?? 0
+              const progress = projectProgress(project)
               return (
                 <Link key={project.id} href={`/proyectos/${project.id}`}
                   className="group bg-amber-50 rounded-lg border-2 border-amber-300 shadow-sm p-5 hover:border-amber-400 hover:shadow-md transition-all overflow-hidden relative">
@@ -145,7 +153,7 @@ export default async function ProyectosPage() {
             {active.map(project => {
               const overdue = isOverdue(project.due_date)
               const soon = isDueSoon(project.due_date)
-              const progress = phaseProgress[project.phase] ?? 0
+              const progress = projectProgress(project)
               return (
                 <Link key={project.id} href={`/proyectos/${project.id}`}
                   className="group bg-white rounded-lg border border-slate-200 shadow-xs p-5 hover:border-accent-300 hover:shadow-md transition-all overflow-hidden relative">
