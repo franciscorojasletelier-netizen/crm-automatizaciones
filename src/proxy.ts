@@ -39,7 +39,7 @@ export async function proxy(request: NextRequest) {
   // sesión temporal — no puede tratarse ni como "sin sesión → login" ni
   // como "con sesión → dashboard", tiene que resolverse sola.
   // /cotizacion/[token]: el cliente acepta/rechaza sin tener cuenta en el CRM.
-  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida') || pathname.startsWith('/restablecer-password') || pathname.startsWith('/cotizacion')
+  const isPublicPage  = pathname.startsWith('/acceso-denegado') || pathname.startsWith('/organizacion-suspendida') || pathname.startsWith('/restablecer-password') || pathname.startsWith('/cotizacion') || pathname === '/privacidad'
   // /verificar-2fa: necesita sesión (AAL1, recién logueado) pero no puede
   // tratarse como ruta protegida normal — el usuario todavía no llegó a
   // AAL2, así que ni el chequeo de perfil/rol ni "con sesión → dashboard"
