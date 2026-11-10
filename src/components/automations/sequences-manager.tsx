@@ -205,11 +205,11 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" checked={sequence.is_active} onChange={onToggle} className="sr-only peer" />
+            <input type="checkbox" aria-label={sequence.is_active ? "Desactivar secuencia" : "Activar secuencia"} checked={sequence.is_active} onChange={onToggle} className="sr-only peer" />
             <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 transition-colors" />
             <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-3.5" />
           </label>
-          <button aria-label="Quitar paso" onClick={onRemove} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+          <button aria-label={`Eliminar secuencia ${sequence.name}`} title="Eliminar secuencia" onClick={onRemove} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
