@@ -151,3 +151,68 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;"
 </table>
 </body></html>`
 }
+
+export interface EmailSender {
+  name?: string | null
+  jobTitle?: string | null
+  email?: string | null
+}
+
+/** Quita lo que no es dígito ni "+" para armar un enlace tel:. */
+const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`
+
+/**
+ * Firma del ejecutivo: línea de acento a la izquierda, nombre, cargo,
+ * empresa y datos de contacto con enlaces (tel:/mailto:). Con logo, va
+ * a la izquierda de la firma.
+ */
+export function emailSignature(sender: EmailSender, brand: EmailBrand) {
+  const link = (href: string, label: string) =>
+    `<a href="${escapeHtml(href)}" style="color:${C.accent};text-decoration:none;">${escapeHtml(label)}</a>`
+  const phone = brand.phone?.trim()
+  const email = (sender.email || brand.email)?.trim()
+  const contact = [phone ? link(telHref(phone), phone) : '', email ? link(`mailto:${email}`, email) : '']
+    .filter(Boolean).join(`<span style="color:${C.border};">&nbsp;&nbsp;|&nbsp;&nbsp;</span>`)
+
+  const lines = [
+    sender.name ? `<div style="font:600 15px/1.4 ${F};color:${C.ink};">${escapeHtml(sender.name)}</div>` : '',
+    sender.jobTitle ? `<div style="font:400 13px/1.5 ${F};color:${C.muted};">${escapeHtml(sender.jobTitle)}</div>` : '',
+    `<div style="font:600 13px/1.5 ${F};color:${C.accent};">${escapeHtml(brand.name)}</div>`,
+    contact ? `<div style="font:400 13px/1.6 ${F};color:${C.text};padding-top:4px;">${contact}</div>` : '',
+    brand.address ? `<div style="font:400 12px/1.5 ${F};color:${C.muted};">${escapeHtml(brand.address)}</div>` : '',
+  ].join('')
+
+  const logo = brand.logoUrl
+    ? `<td valign="top" style="padding:2px 14px 0 0;"><img src="${escapeHtml(brand.logoUrl)}" alt="${escapeHtml(brand.name)}" width="56" style="display:block;width:56px;max-width:56px;height:auto;border:0;border-radius:6px;"></td>`
+    : ''
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 0;border-collapse:collapse;"><tr>
+    ${logo}<td valign="top" style="border-left:3px solid ${C.accent};padding:2px 0 2px 12px;">${lines}</td>
+  </tr></table>`
+}
+
+/**
+ * Correo personal de un ejecutivo a un cliente (desde la ficha del lead):
+ * se ve como un correo escrito a mano, alineado a la izquierda y sin
+ * tarjeta ni fondo, con la firma al final. Las cotizaciones y avisos
+ * automáticos siguen usando emailShell.
+ */
+export function emailPersonal({ subject, preheader, content, sender, brand }: {
+  subject: string
+  preheader?: string
+  content: string
+  sender: EmailSender
+  brand: EmailBrand
+}) {
+  return `<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:#ffffff;">
+${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>` : ''}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
+  <tr><td align="left" style="padding:8px 4px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
+      <tr><td>${content}${emailSignature(sender, brand)}</td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`
+}

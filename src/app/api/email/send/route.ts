@@ -3,7 +3,7 @@ import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
 import { sendAsUser, emailServiceClient } from '@/lib/email/send-as-user'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
-import { emailParagraph, emailShell } from '@/lib/email-layout'
+import { emailParagraph, emailPersonal } from '@/lib/email-layout'
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 
@@ -31,18 +31,24 @@ export async function POST(request: NextRequest) {
     if (!contact) return NextResponse.json({ error: 'Contacto no encontrado' }, { status: 404 })
   }
 
-  const [{ data: org }, { data: account }] = await Promise.all([
+  const [{ data: org }, { data: account }, { data: sender }] = await Promise.all([
     supabase.from('organizations').select('name, display_name, logo_url, email, phone, address').eq('id', organizationId).maybeSingle(),
-    supabase.from('email_accounts').select('id').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle(),
+    supabase.from('email_accounts').select('id, email_address').eq('user_id', user.id).eq('is_active', true).limit(1).maybeSingle(),
+    supabase.from('profiles').select('job_title').eq('id', user.id).maybeSingle(),
   ])
   const orgName = org?.display_name || org?.name || 'CRM'
-  const signature = [profile?.full_name, orgName].filter(Boolean).join('\n')
+  const brand = { name: orgName, logoUrl: org?.logo_url, email: org?.email, phone: org?.phone, address: org?.address }
+  // La firma usa el correo desde el que sale el mensaje (cuenta conectada)
+  // o, si sale por el correo del sistema, el del ejecutivo (va como Reply-To).
+  const senderInfo = { name: profile?.full_name, jobTitle: sender?.job_title, email: account?.email_address ?? profile?.email ?? null }
+  const signature = [senderInfo.name, senderInfo.jobTitle, orgName, [org?.phone, senderInfo.email ?? org?.email].filter(Boolean).join(' | ')]
+    .filter(Boolean).join('\n')
   const paragraphs = String(body).replace(/\r\n/g, '\n').split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
-  const html = emailShell({
-    subject: String(subject), brand: { name: orgName, logoUrl: org?.logo_url, email: org?.email, phone: org?.phone, address: org?.address },
-    content: paragraphs.map(emailParagraph).join('') + emailParagraph(signature),
+  const html = emailPersonal({
+    subject: String(subject), preheader: paragraphs[0]?.slice(0, 120),
+    content: paragraphs.map(emailParagraph).join(''), sender: senderInfo, brand,
   })
-  const text = `${body}\n\n${signature}`
+  const text = `${body}\n\n--\n${signature}`
 
   let record: { email_account_id: string | null; from_address: string; provider_message_id: string | null; thread_id: string | null }
   if (account) {
