@@ -75,7 +75,14 @@ export async function canSeeDeal(
   role: string,
   dealId: string
 ): Promise<boolean> {
-  if (['super_admin', 'gerente'].includes(role)) return true
+  // Gerencia ve todo, pero solo de SU organización: la consulta va con el
+  // cliente del usuario (RLS) y solo encuentra deals de su empresa. Antes
+  // devolvía true sin mirar, y las APIs que siguen con service_role
+  // (WhatsApp, correo, facturas) aceptaban un dealId de otra organización.
+  if (['super_admin', 'gerente'].includes(role)) {
+    const { data } = await supabase.from('deals').select('id').eq('id', dealId).maybeSingle()
+    return !!data
+  }
 
   if (role === 'comercial') {
     // Es owner?
@@ -103,7 +110,11 @@ export async function canSeeProject(
   projectId: string
 ): Promise<boolean> {
   // Soporte es analista de solo lectura: ve todos los proyectos
-  if (['super_admin', 'gerente', 'soporte'].includes(role)) return true
+  // Mismo criterio que canSeeDeal: "ve todo" dentro de su organización.
+  if (['super_admin', 'gerente', 'soporte'].includes(role)) {
+    const { data } = await supabase.from('projects').select('id').eq('id', projectId).maybeSingle()
+    return !!data
+  }
 
   if (role === 'produccion') {
     const { data: project } = await supabase
