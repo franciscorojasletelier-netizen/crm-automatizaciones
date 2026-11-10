@@ -84,7 +84,9 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
 
         {org && <CompanyProfileCard org={org as CompanyProfile} />}
 
-        {org && <EmailTemplatesCard orgId={org.id} raw={org.email_templates} />}
+        {org && <EmailTemplatesCard scope="org" targetId={org.id} raw={org.email_templates} />}
+
+        {user && <EmailTemplatesCard scope="user" targetId={user.id} raw={profile?.email_templates} />}
 
         {/* Seguridad — flujo real de cambio de contraseña, no un mensaje muerto */}
         <ChangePasswordCard email={user?.email ?? ''} />

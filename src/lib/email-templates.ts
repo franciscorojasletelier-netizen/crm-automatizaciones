@@ -65,9 +65,12 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
 
 export const TEMPLATE_LIMITS = { count: 20, label: 40, subject: 150, body: 2000 }
 
-/** Valida y recorta lo guardado en organizations.email_templates; sin datos, las por defecto. */
-export function normalizeTemplates(raw: unknown): EmailTemplate[] {
-  if (!Array.isArray(raw)) return DEFAULT_TEMPLATES
+/**
+ * Valida y recorta lo guardado en email_templates (de la empresa o del
+ * usuario). Sin datos: las por defecto para la empresa, ninguna para el usuario.
+ */
+export function normalizeTemplates(raw: unknown, fallback: EmailTemplate[] = DEFAULT_TEMPLATES): EmailTemplate[] {
+  if (!Array.isArray(raw)) return fallback
   const list = raw
     .filter((t): t is Record<string, unknown> => !!t && typeof t === 'object')
     .map((t, i) => ({
@@ -86,6 +89,19 @@ export interface TemplateVars { nombre?: string; empresa?: string; miempresa?: s
 /** Reemplaza {nombre} {empresa}… ; si falta el dato, deja un espacio para completar. */
 export function fillVars(text: string, vars: TemplateVars) {
   return text.replace(/\{(nombre|empresa|miempresa|vendedor)\}/g, (_, k: keyof TemplateVars) => vars[k]?.trim() || `[${k}]`)
+}
+
+/**
+ * Al guardar un correo como plantilla: vuelve a poner {nombre} y {empresa}
+ * donde aparecen el nombre y la empresa del cliente, para reusarla con otros.
+ */
+export function tokenizeVars(text: string, vars: TemplateVars) {
+  let out = text
+  for (const key of ['empresa', 'nombre'] as const) {
+    const value = vars[key]?.trim()
+    if (value && value.length >= 3) out = out.split(value).join(`{${key}}`)
+  }
+  return out
 }
 
 /** Nombre de pila para el saludo: la primera palabra del nombre completo. */

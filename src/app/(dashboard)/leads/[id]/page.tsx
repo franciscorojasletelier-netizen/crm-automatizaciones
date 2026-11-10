@@ -48,6 +48,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const companyFields = await getFieldDefinitions(supabase, 'company', organizationId ?? undefined)
   const userId = user.id
   const userName = profile?.full_name ?? profile?.email ?? 'Usuario'
+  const { data: ownTemplates } = await supabase.from('profiles').select('email_templates').eq('id', user.id).maybeSingle()
 
   // Verificar acceso a este deal específico
   const hasAccess = await canSeeDeal(supabase, userId, role, id)
@@ -375,6 +376,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               contactName={deal.contacts?.full_name ?? null}
               contactTreatment={deal.contacts?.treatment ?? null}
               templates={normalizeTemplates(org?.email_templates)}
+              personalTemplates={normalizeTemplates(ownTemplates?.email_templates, [])}
+              userId={userId}
               templateVars={{ empresa: deal.companies?.name ?? '', miempresa: orgDisplayName, vendedor: userName }}
               hasConnectedAccount={!!connectedAccount}
               systemSender={systemMailAddress()}

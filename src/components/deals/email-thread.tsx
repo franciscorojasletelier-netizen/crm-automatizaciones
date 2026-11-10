@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Plus, X, Send, Loader2, Reply } from 'lucide-react'
+import { Mail, Plus, X, Send, Loader2, Reply, BookmarkPlus, Check } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { timeAgo } from '@/lib/format'
 import {
   CLOSINGS, GREETINGS, closingText, composeBody, fillVars, firstName, greetingText, middleOf, middleOffset,
-  pendingFillIns, replaceMiddle, swapPart, type ClosingKey, type EmailTemplate, type GreetingKey,
+  pendingFillIns, replaceMiddle, swapPart, tokenizeVars, TEMPLATE_LIMITS, type ClosingKey, type EmailTemplate, type GreetingKey,
   type TemplateVars, type Treatment,
 } from '@/lib/email-templates'
 
@@ -33,7 +34,7 @@ interface EmailMessage {
 
 
 export default function EmailThread({
-  dealId, contactId, contactEmail, contactName = null, contactTreatment = null, templates = [], templateVars = {},
+  dealId, contactId, contactEmail, contactName = null, contactTreatment = null, templates = [], personalTemplates = [], userId = null, templateVars = {},
   hasConnectedAccount, systemSender = null, emails: initialEmails,
 }: {
   dealId: string
@@ -45,6 +46,10 @@ export default function EmailThread({
   contactTreatment?: Treatment
   /** Plantillas por situación de la empresa (o las por defecto). */
   templates?: EmailTemplate[]
+  /** Plantillas propias del usuario (profiles.email_templates). */
+  personalTemplates?: EmailTemplate[]
+  /** Usuario actual: para guardar sus plantillas. */
+  userId?: string | null
   /** Datos para {empresa} {miempresa} {vendedor} en las plantillas. */
   templateVars?: TemplateVars
   hasConnectedAccount: boolean
@@ -67,6 +72,11 @@ export default function EmailThread({
   const [caret, setCaret] = useState<number | null>(null)
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [templateSubject, setTemplateSubject] = useState('')
+  const [mine, setMine] = useState<EmailTemplate[]>(personalTemplates)
+  const [saveName, setSaveName] = useState<string | null>(null)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
+  // Ids propios con prefijo para que no choquen con los de la empresa.
+  const allTemplates = [...templates, ...mine.map(t => ({ ...t, id: `u:${t.id}` }))]
   const bodyRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
@@ -107,10 +117,10 @@ export default function EmailThread({
   }
 
   function pickTemplate(id: string) {
-    const t = templates.find(x => x.id === id)
+    const t = allTemplates.find(x => x.id === id)
     if (!t) return
     const middle = middleOf(body, greeting, closing)
-    const current = templates.find(x => x.id === templateId)
+    const current = allTemplates.find(x => x.id === templateId)
     const currentMiddle = current ? fillVars(current.body, { ...templateVars, nombre: nameFor(to) }) : ''
     if (middle && middle !== currentMiddle && !window.confirm('¿Reemplazar lo que escribiste por la plantilla?')) return
     const vars = { ...templateVars, nombre: nameFor(to) }
@@ -124,6 +134,24 @@ export default function EmailThread({
     setTemplateId(id)
     setError('')
     setCaret(middleOffset(greeting) + nextBody.length)
+  }
+
+  // Guarda el asunto y el texto actuales como plantilla propia, con
+  // {nombre}/{empresa} en vez de los datos de este cliente.
+  async function saveAsTemplate() {
+    const label = (saveName ?? '').trim().slice(0, TEMPLATE_LIMITS.label)
+    const vars = { ...templateVars, nombre: nameFor(to) }
+    const text = tokenizeVars(middleOf(body, greeting, closing), vars).slice(0, TEMPLATE_LIMITS.body)
+    if (!label || !text || !userId) return
+    const next = [...mine, {
+      id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      label, subject: tokenizeVars(subject.trim(), vars).slice(0, TEMPLATE_LIMITS.subject), body: text,
+    }].slice(-TEMPLATE_LIMITS.count)
+    setSaveState('saving')
+    const { error: err } = await createClient().from('profiles').update({ email_templates: next }).eq('id', userId)
+    if (err) { setSaveState('idle'); setError(`No se pudo guardar la plantilla: ${err.message}`); return }
+    setMine(next); setSaveName(null); setSaveState('saved')
+    setTimeout(() => setSaveState('idle'), 2500)
   }
 
   function pickGreeting(key: GreetingKey) {
@@ -197,7 +225,10 @@ export default function EmailThread({
           <input aria-label="Asunto" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Asunto"
             className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           {templates.length > 0 && (
-            <TemplatePicker label="Plantilla" options={templates.map(t => ({ key: t.id, label: t.label }))}value={templateId ?? ''} onPick={pickTemplate} />
+            <TemplatePicker label="Plantilla" options={templates.map(t => ({ key: t.id, label: t.label }))} value={templateId ?? ''} onPick={pickTemplate} />
+          )}
+          {mine.length > 0 && (
+            <TemplatePicker label="Mías" options={mine.map(t => ({ key: `u:${t.id}`, label: t.label }))} value={templateId ?? ''} onPick={pickTemplate} />
           )}
           <TemplatePicker label="Saludo" options={GREETINGS} value={greetingKey} onPick={k => pickGreeting(k as GreetingKey)} />
           <textarea ref={bodyRef} aria-label="Escribe el mensaje" value={body} onChange={e => { setBody(e.target.value); setError('') }} rows={9} placeholder="Escribe el mensaje..."
@@ -212,6 +243,28 @@ export default function EmailThread({
           )}
           {!hasConnectedAccount && systemSender && (
             <p className="text-[11px] text-slate-500">Sale desde {systemSender} con el nombre de tu empresa; las respuestas llegan a tu correo.</p>
+          )}
+          {userId && !emptyMessage && (
+            saveName === null ? (
+              <button type="button" onClick={() => { setSaveName(''); setSaveState('idle') }}
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 hover:text-accent-700">
+                {saveState === 'saved' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
+                {saveState === 'saved' ? 'Guardada en tus plantillas' : 'Guardar como mi plantilla'}
+              </button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <input aria-label="Nombre de la plantilla" autoFocus value={saveName} maxLength={TEMPLATE_LIMITS.label}
+                  onChange={e => setSaveName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); saveAsTemplate() } }}
+                  placeholder="Nombre del botón, ej: Recordatorio de pago"
+                  className="flex-1 min-w-[200px] px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
+                <button type="button" onClick={saveAsTemplate} disabled={!saveName.trim() || saveState === 'saving'}
+                  className="text-xs font-semibold text-white bg-accent-600 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                  {saveState === 'saving' ? 'Guardando…' : 'Guardar'}
+                </button>
+                <button type="button" onClick={() => setSaveName(null)} className="text-xs font-semibold text-slate-500 px-2 py-1.5">Cancelar</button>
+                <p className="w-full text-[11px] text-slate-500">Se guarda el asunto y el texto del medio; el nombre y la empresa del cliente se cambian por {'{nombre}'} y {'{empresa}'}.</p>
+              </div>
+            )
           )}
           {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
           <button type="button" onClick={send} disabled={loading || !to.trim() || !subject.trim() || emptyMessage}

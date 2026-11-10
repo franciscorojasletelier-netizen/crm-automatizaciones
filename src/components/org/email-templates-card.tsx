@@ -10,10 +10,12 @@ import { DEFAULT_TEMPLATES, TEMPLATE_LIMITS, normalizeTemplates, type EmailTempl
 
 const newId = () => `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 
-// Plantillas por situación que el equipo elige al escribir un correo desde
-// la ficha del lead. Las edita gerencia; sin cambios, se usan las del CRM.
-export default function EmailTemplatesCard({ orgId, raw }: { orgId: string; raw: unknown }) {
-  const [list, setList] = useState<EmailTemplate[]>(() => normalizeTemplates(raw))
+// Plantillas por situación que se eligen al escribir un correo desde la
+// ficha del lead. scope 'org': las de la empresa, que edita gerencia (sin
+// cambios se usan las del CRM). scope 'user': las propias de cada usuario.
+export default function EmailTemplatesCard({ scope = 'org', targetId, raw }: { scope?: 'org' | 'user'; targetId: string; raw: unknown }) {
+  const isOrg = scope === 'org'
+  const [list, setList] = useState<EmailTemplate[]>(() => normalizeTemplates(raw, isOrg ? DEFAULT_TEMPLATES : []))
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const router = useRouter()
@@ -24,7 +26,7 @@ export default function EmailTemplatesCard({ orgId, raw }: { orgId: string; raw:
 
   async function persist(next: EmailTemplate[] | null, okText: string) {
     setBusy(true); setMsg(null)
-    const { error } = await createClient().from('organizations').update({ email_templates: next }).eq('id', orgId)
+    const { error } = await createClient().from(isOrg ? 'organizations' : 'profiles').update({ email_templates: next }).eq('id', targetId)
     setBusy(false)
     setMsg(error ? { ok: false, text: error.message } : { ok: true, text: okText })
     if (!error) router.refresh()
@@ -45,15 +47,18 @@ export default function EmailTemplatesCard({ orgId, raw }: { orgId: string; raw:
   return (
     <div className="bg-card rounded-lg border border-slate-200 shadow-xs">
       <div className="px-5 pt-4 pb-3 border-b border-slate-100">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><Mail className="w-4 h-4 text-slate-500" /> Plantillas de correo</h2>
+        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><Mail className="w-4 h-4 text-slate-500" /> {isOrg ? 'Plantillas de correo de la empresa' : 'Mis plantillas de correo'}</h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Aparecen como botones al escribir un correo desde un lead. Puedes usar {'{nombre}'}, {'{empresa}'}, {'{miempresa}'} y {'{vendedor}'};
+          {isOrg
+            ? 'Las ve todo el equipo como botones al escribir un correo desde un lead. '
+            : 'Solo las ves tú, junto a las de la empresa. También puedes crearlas desde un correo con "Guardar como mi plantilla". '}
+          Puedes usar {'{nombre}'}, {'{empresa}'}, {'{miempresa}'} y {'{vendedor}'};
           lo que pongas entre corchetes, como [plazo], el vendedor debe completarlo antes de enviar.
         </p>
       </div>
 
       <div className="p-5 space-y-4">
-        {list.length === 0 && <p className="text-sm text-slate-500">Sin plantillas. Agrega una o restaura las originales.</p>}
+        {list.length === 0 && <p className="text-sm text-slate-500">{isOrg ? 'Sin plantillas. Agrega una o restaura las originales.' : 'Aún no tienes plantillas propias.'}</p>}
         {list.map(t => (
           <div key={t.id} className="rounded-md border border-slate-200 p-3 space-y-2.5">
             <div className="flex items-end gap-2">
@@ -91,9 +96,11 @@ export default function EmailTemplatesCard({ orgId, raw }: { orgId: string; raw:
               onClick={() => { setList(prev => [...prev, { id: newId(), label: '', subject: '', body: '' }]); setMsg(null) }}>
               <Plus className="w-3.5 h-3.5" /> Agregar plantilla
             </button>
-            <button type="button" disabled={busy} onClick={restore} className={buttonClass.ghost}>
-              <RotateCcw className="w-3.5 h-3.5" /> Restaurar originales
-            </button>
+            {isOrg && (
+              <button type="button" disabled={busy} onClick={restore} className={buttonClass.ghost}>
+                <RotateCcw className="w-3.5 h-3.5" /> Restaurar originales
+              </button>
+            )}
           </div>
           <button type="button" disabled={busy} onClick={save} className={buttonClass.primary}>
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Guardar plantillas
