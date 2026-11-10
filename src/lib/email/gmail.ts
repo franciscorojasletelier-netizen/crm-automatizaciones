@@ -70,6 +70,10 @@ export interface GmailMessage {
   bodyText: string
   bodyHtml: string
   internalDate: string
+  /** Etiquetas de Gmail (SENT = lo envió la propia cuenta). */
+  labelIds: string[]
+  /** Trae cabeceras de envío masivo o automático. */
+  automated: boolean
 }
 
 // El push de Pub/Sub solo trae el historyId nuevo — hay que resolverlo
@@ -137,6 +141,10 @@ export async function getGmailMessage(accessToken: string, messageId: string): P
     to: (headers.to ?? '').split(',').map((s: string) => s.trim()).filter(Boolean),
     bodyText: text, bodyHtml: html,
     internalDate: data.internalDate,
+    labelIds: data.labelIds ?? [],
+    automated: !!headers['list-unsubscribe'] || !!headers['list-id']
+      || (!!headers['auto-submitted'] && headers['auto-submitted'].toLowerCase() !== 'no')
+      || /^(bulk|list|junk)$/i.test(headers.precedence ?? ''),
   }
 }
 

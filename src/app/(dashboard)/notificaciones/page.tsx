@@ -127,6 +127,7 @@ export default async function NotificacionesPage() {
             'Documentos de cobranza que vencen y compromisos de pago del día',
             'Cotizaciones que el cliente acepta o rechaza desde el link',
             'Cuotas por facturar cuando un proyecto llega al avance del plan de pagos',
+            'Correos de clientes en tus leads, y correos que no coinciden con ningún lead',
           ].map(text => (
             <div key={text} className="flex items-center gap-2 text-xs text-slate-600">
               <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0" aria-hidden />

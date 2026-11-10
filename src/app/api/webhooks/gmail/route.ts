@@ -3,7 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { listNewMessageIds, getGmailMessage } from '@/lib/email/gmail'
 import { safeEqual } from '@/lib/secure-compare'
-import { associateEmailToDeal } from '@/lib/email/associate'
+import { handleInboundEmail } from '@/lib/email/inbound'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,32 +60,13 @@ export async function POST(request: NextRequest) {
   for (const messageId of ids) {
     const msg = await getGmailMessage(accessToken, messageId)
     if (!msg) continue
-
-    const { data: exists } = await svc.from('email_messages')
-      .select('id').eq('provider_message_id', msg.id).maybeSingle()
-    if (exists) continue
-
-    const fromAddress = extractAddress(msg.from)
-    const { contactId, dealId } = await associateEmailToDeal(svc, account.organization_id, fromAddress)
-
-    await svc.from('email_messages').insert({
-      organization_id: account.organization_id, deal_id: dealId, contact_id: contactId,
-      email_account_id: account.id, direction: 'inbound',
-      subject: msg.subject, body_text: msg.bodyText, body_html: msg.bodyHtml,
-      from_address: fromAddress, to_addresses: msg.to,
-      provider_message_id: msg.id, thread_id: msg.threadId,
-      sent_at: new Date(Number(msg.internalDate)).toISOString(),
+    await handleInboundEmail(svc, account, {
+      providerMessageId: msg.id, threadId: msg.threadId,
+      fromAddress: extractAddress(msg.from), to: msg.to,
+      subject: msg.subject, bodyText: msg.bodyText, bodyHtml: msg.bodyHtml,
+      sentAt: new Date(Number(msg.internalDate)).toISOString(),
+      sentByAccount: msg.labelIds.includes('SENT'), automated: msg.automated,
     })
-
-    if (dealId) {
-      const { data: deal } = await svc.from('deals').select('owner_id').eq('id', dealId).maybeSingle()
-      if (deal?.owner_id) {
-        await svc.from('notifications').insert({
-          user_id: deal.owner_id, type: 'email_message', title: 'Nuevo correo',
-          body: msg.subject, entity_type: 'deal', entity_id: dealId,
-        })
-      }
-    }
   }
 
   if (newHistoryId) {
