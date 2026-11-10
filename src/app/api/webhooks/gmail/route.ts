@@ -56,10 +56,11 @@ export async function POST(request: NextRequest) {
   if (!startHistoryId) return NextResponse.json({ ok: true })
 
   const { ids, newHistoryId } = await listNewMessageIds(accessToken, startHistoryId)
+  console.info(`[email-inbound] gmail history ${startHistoryId}→${newHistoryId ?? '-'}: ${ids.length} mensajes`)
 
   for (const messageId of ids) {
     const msg = await getGmailMessage(accessToken, messageId)
-    if (!msg) continue
+    if (!msg) { console.info(`[email-inbound] ${messageId} no_se_pudo_leer`); continue }
     await handleInboundEmail(svc, account, {
       providerMessageId: msg.id, threadId: msg.threadId,
       fromAddress: extractAddress(msg.from), to: msg.to,

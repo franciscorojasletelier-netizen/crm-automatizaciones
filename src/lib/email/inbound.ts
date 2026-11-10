@@ -20,16 +20,22 @@ type Account = { id: string; organization_id: string; user_id: string; email_add
 
 const AUTOMATED_SENDER = /^(no-?reply|do-?not-?reply|mailer-daemon|postmaster|bounces?|notifications?|notificaciones|alerts?)([+.\-_]|@)/i
 
-/** Correos que nunca son conversación con un cliente. */
-function shouldSkip(account: Account, email: InboundEmail): boolean {
+/** Motivo por el que un correo nunca es conversación con un cliente (null = procesarlo). */
+function skipReason(account: Account, email: InboundEmail): string | null {
   const from = email.fromAddress
   const own = account.email_address.trim().toLowerCase()
-  if (!from || from === own || email.sentByAccount || email.automated) return true
-  if (AUTOMATED_SENDER.test(from)) return true
+  if (!from) return 'sin_remitente'
+  if (from === own || email.sentByAccount) return 'propio'
+  if (email.automated || AUTOMATED_SENDER.test(from)) return 'automatico'
   // Colegas de la propia empresa (mismo dominio corporativo que la cuenta).
   const ownDomain = emailDomain(own)
-  if (ownDomain && !isFreeEmailDomain(ownDomain) && emailDomain(from) === ownDomain) return true
-  return false
+  if (ownDomain && !isFreeEmailDomain(ownDomain) && emailDomain(from) === ownDomain) return 'interno'
+  return null
+}
+
+// Sin direcciones ni contenido: solo el id del mensaje y la decisión.
+function logDecision(email: InboundEmail, decision: string, extra?: string) {
+  console.info(`[email-inbound] ${email.providerMessageId} ${decision}${extra ? ` ${extra}` : ''}`)
 }
 
 function excerpt(value: string, max = 80) {
@@ -44,11 +50,12 @@ function excerpt(value: string, max = 80) {
 //  - si no coincide con nada, NO guarda el contenido y deja una alerta
 //    al dueño de la cuenta (una por remitente cada 24 h).
 export async function handleInboundEmail(svc: SupabaseClient, account: Account, email: InboundEmail) {
-  if (shouldSkip(account, email)) return
+  const reason = skipReason(account, email)
+  if (reason) { logDecision(email, `descartado:${reason}`); return }
 
   const { data: exists } = await svc.from('email_messages')
     .select('id').eq('provider_message_id', email.providerMessageId).maybeSingle()
-  if (exists) return
+  if (exists) { logDecision(email, 'duplicado'); return }
 
   const { contactId, dealId, matchedBy } = await associateEmailToDeal(svc, account.organization_id, email.fromAddress)
 
@@ -60,17 +67,19 @@ export async function handleInboundEmail(svc: SupabaseClient, account: Account, 
       .eq('title', `Correo sin lead: ${email.fromAddress}`)
       .gte('created_at', since)
       .limit(1)
+    logDecision(email, 'sin_lead', recent?.length ? 'alerta_ya_enviada' : 'alerta')
     if (!recent?.length) {
-      await svc.from('notifications').insert({
+      const { error } = await svc.from('notifications').insert({
         user_id: account.user_id, type: 'email_unmatched',
         title: `Correo sin lead: ${email.fromAddress}`,
         body: `"${excerpt(email.subject)}" — no coincide con ningún contacto ni empresa del CRM. Si es un cliente, créale un lead o agrega el correo a un contacto.`,
       })
+      if (error) logDecision(email, 'error_alerta', error.message)
     }
     return
   }
 
-  await svc.from('email_messages').insert({
+  const { error: insertError } = await svc.from('email_messages').insert({
     organization_id: account.organization_id, deal_id: dealId, contact_id: contactId,
     email_account_id: account.id, direction: 'inbound',
     subject: email.subject, body_text: email.bodyText, body_html: email.bodyHtml,
@@ -78,6 +87,8 @@ export async function handleInboundEmail(svc: SupabaseClient, account: Account, 
     provider_message_id: email.providerMessageId, thread_id: email.threadId,
     sent_at: email.sentAt,
   })
+  logDecision(email, insertError ? 'error_guardar' : `guardado:${matchedBy}`, insertError?.message ?? (dealId ? 'con_lead' : 'sin_lead_abierto'))
+  if (insertError) return
 
   if (dealId) {
     const { data: deal } = await svc.from('deals').select('owner_id').eq('id', dealId).maybeSingle()
