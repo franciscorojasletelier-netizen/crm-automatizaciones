@@ -105,7 +105,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <Stat label="Pagado" value={money(invoice.paid_amount, currency)} tone={Number(invoice.paid_amount) > 0 ? 'success' : 'neutral'}
           context={`${paidPct}% · ${payments.length} ${payments.length === 1 ? 'pago' : 'pagos'}`} />
         <Stat label="Saldo" value={money(balance, currency)} tone={late > 0 ? 'danger' : balance > 0 ? 'neutral' : 'success'}
-          context={balance === 0 && invoice.status === 'pagada' ? 'Documento pagado' : invoice.next_promise_date && open ? `Compromiso: ${fmtDay(invoice.next_promise_date)}` : 'Pendiente de pago'} />
+          context={invoice.status === 'anulada' ? 'Documento anulado' : balance === 0 && invoice.status === 'pagada' ? 'Documento pagado' : invoice.next_promise_date && open ? `Compromiso: ${fmtDay(invoice.next_promise_date)}` : 'Pendiente de pago'} />
         <Stat label="Vencimiento" value={fmtDay(invoice.due_date)} tone={late > 0 ? 'danger' : open && until <= 7 ? 'warning' : 'neutral'}
           context={!open ? '—' : late > 0 ? `${late} ${late === 1 ? 'día' : 'días'} de mora` : until === 0 ? 'Vence hoy' : `Faltan ${until} ${until === 1 ? 'día' : 'días'}`} />
       </StatStrip>
