@@ -164,7 +164,7 @@ const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`
 /**
  * Firma del ejecutivo: línea de acento a la izquierda, nombre, cargo,
  * empresa y datos de contacto con enlaces (tel:/mailto:). Con logo, va
- * a la izquierda de la firma.
+ * debajo de la firma.
  */
 export function emailSignature(sender: EmailSender, brand: EmailBrand) {
   const link = (href: string, label: string) =>
@@ -182,11 +182,13 @@ export function emailSignature(sender: EmailSender, brand: EmailBrand) {
     brand.address ? `<div style="font:400 12px/1.5 ${F};color:${C.muted};">${escapeHtml(brand.address)}</div>` : '',
   ].join('')
 
+  // Debajo del texto y por altura: sirve igual para logos cuadrados y
+  // horizontales (los más comunes en firmas).
   const logo = brand.logoUrl
-    ? `<td valign="top" style="padding:2px 14px 0 0;"><img src="${escapeHtml(brand.logoUrl)}" alt="${escapeHtml(brand.name)}" width="56" style="display:block;width:56px;max-width:56px;height:auto;border:0;border-radius:6px;"></td>`
+    ? `<div style="padding-top:10px;"><img src="${escapeHtml(brand.logoUrl)}" alt="${escapeHtml(brand.name)}" height="32" style="display:block;height:32px;width:auto;max-width:200px;border:0;border-radius:4px;"></div>`
     : ''
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 0;border-collapse:collapse;"><tr>
-    ${logo}<td valign="top" style="border-left:3px solid ${C.accent};padding:2px 0 2px 12px;">${lines}</td>
+    <td valign="top" style="border-left:3px solid ${C.accent};padding:2px 0 2px 12px;">${lines}${logo}</td>
   </tr></table>`
 }
 
