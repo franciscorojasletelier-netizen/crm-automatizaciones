@@ -44,7 +44,7 @@ export default function ReminderSettingsForm({ organizationId, initial, canSend 
 
   return (
     <form onSubmit={save} className="space-y-5">
-      <button type="button" role="switch" aria-checked={v.auto_reminders}
+      <button type="button" role="switch" aria-checked={v.auto_reminders} aria-label="Enviar recordatorios automáticos"
         onClick={() => setV(p => ({ ...p, auto_reminders: !p.auto_reminders }))}
         className={cn('w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors',
           v.auto_reminders ? 'border-accent-300 bg-accent-50' : 'border-slate-200 bg-card')}>
@@ -73,7 +73,7 @@ export default function ReminderSettingsForm({ organizationId, initial, canSend 
             <span className="text-[13px] text-slate-600">días antes <span className="text-slate-400">(0 = no avisar)</span></span>
           </div>
           <label className="mt-3 flex items-center gap-2 text-[13px] text-slate-700">
-            <input type="checkbox" checked={v.on_due_date} onChange={e => setV(p => ({ ...p, on_due_date: e.target.checked }))}
+            <input type="checkbox" aria-label="Recordar el día del vencimiento" checked={v.on_due_date} onChange={e => setV(p => ({ ...p, on_due_date: e.target.checked }))}
               className="w-4 h-4 rounded border-slate-300 accent-[var(--color-accent-600)]" />
             Avisar el día del vencimiento
           </label>
