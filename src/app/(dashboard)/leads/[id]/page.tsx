@@ -371,6 +371,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               dealId={deal.id}
               contactId={deal.contacts?.id ?? null}
               contactEmail={deal.contacts?.email ?? null}
+              contactName={deal.contacts?.full_name ?? null}
               hasConnectedAccount={!!connectedAccount}
               systemSender={systemMailAddress()}
               emails={(emails ?? []) as React.ComponentProps<typeof EmailThread>['emails']}

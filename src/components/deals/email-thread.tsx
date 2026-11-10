@@ -1,9 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mail, Plus, X, Send, Loader2, Reply } from 'lucide-react'
 import { timeAgo } from '@/lib/format'
+import {
+  CLOSINGS, GREETINGS, NAME_PLACEHOLDER, closingText, composeBody, firstName, greetingText,
+  middleOf, middleOffset, swapPart, type ClosingKey, type GreetingKey,
+} from '@/lib/email-templates'
+
+// Último saludo/despedida elegido: comodidad por navegador, no es crítico.
+const PREF_KEY = 'crm.email.templates'
+function readPref(): { greeting?: GreetingKey; closing?: ClosingKey } {
+  try { return JSON.parse(localStorage.getItem(PREF_KEY) ?? '{}') } catch { return {} }
+}
+function savePref(pref: { greeting: GreetingKey; closing: ClosingKey }) {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)) } catch { /* sin almacenamiento */ }
+}
 
 interface EmailMessage {
   id: string
@@ -19,11 +32,13 @@ interface EmailMessage {
 
 
 export default function EmailThread({
-  dealId, contactId, contactEmail, hasConnectedAccount, systemSender = null, emails: initialEmails,
+  dealId, contactId, contactEmail, contactName = null, hasConnectedAccount, systemSender = null, emails: initialEmails,
 }: {
   dealId: string
   contactId: string | null
   contactEmail: string | null
+  /** Nombre del contacto principal, para el saludo. */
+  contactName?: string | null
   hasConnectedAccount: boolean
   /** Dirección del correo del sistema (Resend) si está activo: permite enviar sin cuenta conectada. */
   systemSender?: string | null
@@ -37,22 +52,68 @@ export default function EmailThread({
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [greetingKey, setGreetingKey] = useState<GreetingKey>('cordial')
+  const [closingKey, setClosingKey] = useState<ClosingKey>('disposicion')
+  const [greeting, setGreeting] = useState('')
+  const [closing, setClosing] = useState('')
+  const [caret, setCaret] = useState<number | null>(null)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
+  // Al abrir (o cambiar el saludo), el cursor queda en el espacio para escribir.
+  useEffect(() => {
+    if (caret === null || !bodyRef.current) return
+    bodyRef.current.focus()
+    bodyRef.current.setSelectionRange(caret, caret)
+    setCaret(null)
+  }, [caret])
+
+  // El nombre solo se conoce si se le escribe al contacto del lead.
+  const nameFor = (address: string) =>
+    contactEmail && address.trim().toLowerCase() === contactEmail.trim().toLowerCase() ? firstName(contactName) : ''
+
   function openCompose(replyTo?: EmailMessage) {
+    const address = replyTo ? replyTo.from_address : (contactEmail ?? '')
+    const pref = readPref()
+    const gKey: GreetingKey = replyTo ? 'respuesta' : (pref.greeting && pref.greeting !== 'respuesta' ? pref.greeting : 'cordial')
+    const cKey: ClosingKey = pref.closing ?? 'disposicion'
+    const g = greetingText(gKey, nameFor(address))
+    const c = closingText(cKey)
     setComposing({ replyTo })
-    setTo(replyTo ? replyTo.from_address : (contactEmail ?? ''))
+    setTo(address)
     setSubject(replyTo ? (replyTo.subject?.startsWith('Re:') ? replyTo.subject : `Re: ${replyTo.subject ?? ''}`) : '')
-    setBody('')
+    setGreetingKey(gKey); setClosingKey(cKey); setGreeting(g); setClosing(c)
+    setBody(composeBody(g, '', c))
+    setCaret(middleOffset(g))
     setError('')
   }
 
   function closeCompose() {
-    setComposing(null); setTo(''); setSubject(''); setBody(''); setError('')
+    setComposing(null); setTo(''); setSubject(''); setBody(''); setError(''); setGreeting(''); setClosing('')
   }
+
+  function pickGreeting(key: GreetingKey) {
+    const next = greetingText(key, nameFor(to))
+    setBody(b => swapPart(b, greeting, next, 'start'))
+    setGreeting(next); setGreetingKey(key)
+    setCaret(middleOffset(next))
+    savePref({ greeting: key, closing: closingKey })
+  }
+
+  function pickClosing(key: ClosingKey) {
+    const next = closingText(key)
+    setBody(b => swapPart(b, closing, next, 'end'))
+    setClosing(next); setClosingKey(key)
+    savePref({ greeting: greetingKey, closing: key })
+  }
+
+  const missingName = body.includes(NAME_PLACEHOLDER)
+  const emptyMessage = !middleOf(body, greeting, closing)
 
   async function send() {
     if (!to.trim() || !subject.trim() || !body.trim() || loading) return
+    if (missingName) { setError(`Reemplaza ${NAME_PLACEHOLDER} por el nombre del cliente, o quítalo del saludo.`); return }
+    if (emptyMessage) { setError('Escribe el mensaje entre el saludo y la despedida.'); return }
     setLoading(true)
     setError('')
 
@@ -101,13 +162,20 @@ export default function EmailThread({
             className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
           <input aria-label="Asunto" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Asunto"
             className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white" />
-          <textarea aria-label="Escribe el mensaje" value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Escribe el mensaje..."
-            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400" />
+          <TemplatePicker label="Saludo" options={GREETINGS} value={greetingKey} onPick={k => pickGreeting(k as GreetingKey)} />
+          <textarea ref={bodyRef} aria-label="Escribe el mensaje" value={body} onChange={e => { setBody(e.target.value); setError('') }} rows={9} placeholder="Escribe el mensaje..."
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm leading-6 resize-y focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white placeholder:text-slate-400" />
+          <TemplatePicker label="Despedida" options={CLOSINGS} value={closingKey} onPick={k => pickClosing(k as ClosingKey)} />
+          {missingName ? (
+            <p className="text-[11px] text-amber-700">No tenemos el nombre de este contacto: reemplaza <span className="font-mono font-semibold">{NAME_PLACEHOLDER}</span> en el saludo antes de enviar.</p>
+          ) : (
+            <p className="text-[11px] text-slate-500">Tu firma (nombre, cargo, teléfono y logo) se agrega sola al enviar.</p>
+          )}
           {!hasConnectedAccount && systemSender && (
             <p className="text-[11px] text-slate-500">Sale desde {systemSender} con el nombre de tu empresa; las respuestas llegan a tu correo.</p>
           )}
           {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
-          <button type="button" onClick={send} disabled={loading || !to.trim() || !subject.trim() || !body.trim()}
+          <button type="button" onClick={send} disabled={loading || !to.trim() || !subject.trim() || emptyMessage}
             className="bg-accent-600 flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-all "
              >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
@@ -152,6 +220,28 @@ export default function EmailThread({
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** Fila de chips para elegir saludo o despedida. */
+function TemplatePicker({ label, options, value, onPick }: {
+  label: string
+  options: { key: string; label: string }[]
+  value: string
+  onPick: (key: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[11px] font-medium text-slate-500 mr-0.5">{label}:</span>
+      {options.map(o => (
+        <button key={o.key} type="button" onClick={() => onPick(o.key)} aria-pressed={value === o.key}
+          className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+            value === o.key ? 'bg-accent-50 border-accent-200 text-accent-700' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
+          }`}>
+          {o.label}
+        </button>
+      ))}
     </div>
   )
 }
