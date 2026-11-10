@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, Circle, Plus, AlertTriangle, X, Calendar } from 'lucide-react'
 import { checkTaskConflict, formatConflictTime, type ConflictTask } from '@/lib/task-conflict'
-import { CHILE_TZ } from '@/lib/dates'
+import { CHILE_TZ, chileLocalToIso } from '@/lib/dates'
 
 function isOverdue(due: string | null) {
   if (!due) return false
@@ -39,7 +39,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: De
     if (!hasTime) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const found = await checkTaskConflict(supabase, user.id, value)
+    const found = await checkTaskConflict(supabase, user.id, chileLocalToIso(value) ?? value)
     setConflicts(found)
   }
 
@@ -55,7 +55,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: De
     const { data } = await supabase
       .from('tasks')
       .insert({
-        deal_id: dealId, title, due_date: dueDate || null,
+        deal_id: dealId, title, due_date: dueDate ? chileLocalToIso(dueDate) : null,
         assigned_to: user?.id ?? null, created_by: user?.id ?? null,
       })
       .select('*, profiles:assigned_to(full_name)')

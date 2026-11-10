@@ -28,6 +28,32 @@ function chileOffsetMs(date: Date): number {
   return asUtc - Math.floor(date.getTime() / 1000) * 1000
 }
 
+// Campos <input type="datetime-local"> ("2026-11-11T10:00", sin zona):
+// el valor es la hora de Chile que eligió el usuario. Guardarlo tal cual en
+// una columna timestamptz lo interpreta como UTC y la tarea queda 3-4 h
+// corrida; y new Date(valor) depende de la zona del navegador.
+export function chileLocalToIso(value: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(value ?? '')
+  if (!m) return null
+  const asUtc = Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] ?? 0), +(m[5] ?? 0))
+  const first = asUtc - chileOffsetMs(new Date(asUtc))
+  // Segunda pasada por si el offset cambia justo en ese tramo (cambio de horario).
+  return new Date(asUtc - chileOffsetMs(new Date(first))).toISOString()
+}
+
+// Inverso: instante guardado → valor para un datetime-local, en hora de Chile.
+export function isoToChileLocal(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: CHILE_TZ, hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(d)
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '00'
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
+}
+
 // Instante en que empieza el día de Chile ubicado `offsetDays` días después
 // de hoy (0 = hoy, 1 = mañana, -1 = ayer). Sirve para filtrar columnas
 // timestamptz por "día chileno".

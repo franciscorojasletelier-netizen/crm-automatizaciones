@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CHILE_TZ } from '@/lib/dates'
+import { CHILE_TZ, chileLocalToIso, isoToChileLocal } from '@/lib/dates'
 import { useDialog } from '@/lib/use-dialog'
 import {
   X, Calendar, Clock, MessageSquare, History,
@@ -48,12 +48,8 @@ function formatDt(dt: string | null) {
   })
 }
 
-function toDatetimeLocal(iso: string | null) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+// Hora de Chile, no la del navegador (ver chileLocalToIso en lib/dates).
+const toDatetimeLocal = (iso: string | null) => isoToChileLocal(iso)
 
 export default function TaskDetailPanel({
   task,
@@ -100,7 +96,7 @@ export default function TaskDetailPanel({
     setSaveError('')
 
     const oldIso = task.due_date
-    const newIso = newDate ? new Date(newDate).toISOString() : null
+    const newIso = newDate ? chileLocalToIso(newDate) : null
 
     // Get current user id for audit
     const { data: { user } } = await supabase.auth.getUser()

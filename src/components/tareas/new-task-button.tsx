@@ -1,5 +1,6 @@
 'use client'
 
+import { chileLocalToIso } from '@/lib/dates'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -34,7 +35,7 @@ export default function NewTaskButton() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const found = await checkTaskConflict(supabase, user.id, value)
+    const found = await checkTaskConflict(supabase, user.id, chileLocalToIso(value) ?? value)
     setConflicts(found)
   }
 
@@ -54,7 +55,7 @@ export default function NewTaskButton() {
     const { error: err } = await supabase.from('tasks').insert({
       title: title.trim(),
       description: description.trim() || null,
-      due_date: dueDate || null,
+      due_date: dueDate ? chileLocalToIso(dueDate) : null,
       deal_id: null,
       assigned_to: user?.id ?? null,
       created_by: user?.id ?? null,
