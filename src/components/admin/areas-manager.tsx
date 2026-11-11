@@ -68,7 +68,7 @@ export default function AreasManager({ areas }: Props) {
                 <Tags className="w-4 h-4 text-accent-300" />
               </div>
               <h2 className="flex-1 text-sm font-bold text-white">Áreas / Departamentos</h2>
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+              <button type="button" aria-label="Cerrar" onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -83,7 +83,7 @@ export default function AreasManager({ areas }: Props) {
                   <div key={a.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-50 group">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ background: a.color }} />
                     <span className="flex-1 text-sm font-medium text-slate-700">{a.name}</span>
-                    <button onClick={() => removeArea(a.id)}
+                    <button type="button" aria-label={`Eliminar área ${a.name}`} onClick={() => removeArea(a.id)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500"
                       title="Eliminar área">
                       <Trash2 className="w-3.5 h-3.5" />
@@ -101,7 +101,7 @@ export default function AreasManager({ areas }: Props) {
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-accent-300 focus:ring-2 focus:ring-accent-100" />
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {PALETTE.map(c => (
-                    <button key={c} onClick={() => setColor(c)}
+                    <button type="button" key={c} aria-label={`Color ${c}`} aria-pressed={color === c} onClick={() => setColor(c)}
                       className={`w-6 h-6 rounded-lg transition-transform ${color === c ? 'ring-2 ring-offset-1 ring-slate-400 scale-110' : ''}`}
                       style={{ background: c }} />
                   ))}
