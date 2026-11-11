@@ -115,7 +115,12 @@ export default function CalendarView({ tasks, year, month }: Props) {
             return (
               <div
                 key={day}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                aria-label={`${day} de ${MONTHS[month]}${(tasksByDay[day]?.length ?? 0) ? `, ${tasksByDay[day].length} tareas` : ''}`}
                 onClick={() => setSelectedDay(isSelected ? null : day)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDay(isSelected ? null : day) } }}
                 className={`h-16 md:h-20 border-r border-b border-slate-100 last:border-r-0 p-1.5 cursor-pointer transition-all hover:bg-accent-50/50 ${
                   isSelected ? 'bg-accent-50 ring-2 ring-inset ring-accent-300' : ''
                 }`}
