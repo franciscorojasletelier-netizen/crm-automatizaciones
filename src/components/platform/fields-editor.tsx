@@ -119,7 +119,7 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
               <p className="text-[11px] text-slate-400">{f.key} · {TYPE_LABELS[f.fieldType]}{f.isRequired ? ' · obligatorio' : ''}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked={f.isActive} disabled={busy === f.id}
+              <input type="checkbox" aria-label={f.isActive ? `Desactivar campo ${f.label}` : `Activar campo ${f.label}`} checked={f.isActive} disabled={busy === f.id}
                 onChange={e => run(f.id, () => callApi('PATCH', { fieldId: f.id, is_active: e.target.checked }))}
                 className="sr-only peer" />
               <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 peer-disabled:opacity-50 transition-colors" />
