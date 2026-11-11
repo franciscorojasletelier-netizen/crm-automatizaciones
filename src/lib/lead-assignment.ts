@@ -2,18 +2,23 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Asignación automática de leads entrantes (formulario web, Meta Lead Ads):
 // el comercial activo con menos negocios abiertos recibe el lead. Si la
-// organización no tiene comerciales, el lead queda sin asignar y gerencia
-// lo reparte. Gerencia siempre puede reasignarlo o eliminarlo después.
+// organización todavía no tiene comerciales (equipo de una persona), lo
+// recibe gerencia con el mismo criterio, para que ningún lead quede sin
+// dueño. Gerencia siempre puede reasignarlo, quitarle el responsable o
+// eliminarlo después.
 export async function pickLeastLoadedComercial(supabase: SupabaseClient, orgId: string): Promise<string | null> {
-  const { data: comerciales } = await supabase
+  const activeWithRoles = async (roles: string[]) => (await supabase
     .from('profiles')
     .select('id')
     .eq('organization_id', orgId)
-    .eq('role', 'comercial')
-    .eq('is_active', true)
-  if (!comerciales?.length) return null
+    .in('role', roles)
+    .eq('is_active', true)).data ?? []
 
-  const counts = await Promise.all(comerciales.map(async c => {
+  let candidates = await activeWithRoles(['comercial'])
+  if (!candidates.length) candidates = await activeWithRoles(['gerente', 'admin', 'super_admin'])
+  if (!candidates.length) return null
+
+  const counts = await Promise.all(candidates.map(async c => {
     const { count } = await supabase
       .from('deals')
       .select('id', { count: 'exact', head: true })
