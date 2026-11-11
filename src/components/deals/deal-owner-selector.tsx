@@ -5,7 +5,7 @@ import { useIsClient } from '@/lib/use-is-client'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronDown, Check, Loader2 } from 'lucide-react'
+import { ChevronDown, Check, Loader2, UserMinus } from 'lucide-react'
 import { getInitials } from '@/lib/format'
 import { getRoleMeta } from '@/lib/roles'
 
@@ -21,7 +21,8 @@ interface Props {
   currentOwner: { id: string; full_name: string | null } | null
   teamUsers:    Profile[]
   canReassign:  boolean
-  onReassigned?: (dealId: string, newOwner: Profile) => void
+  /** newOwner null = se quitó el responsable. */
+  onReassigned?: (dealId: string, newOwner: Profile | null) => void
   /** En tablas: sin la etiqueta "Responsable" (ya está en el encabezado) y avatar chico. */
   compact?: boolean
 }
@@ -96,6 +97,21 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
       setOwner({ id: user.id, full_name: user.full_name })
       // Callback para eliminación optimista en la tabla
       onReassigned?.(dealId, user)
+      router.refresh()
+    }
+    setSaving(false)
+  }
+
+  // Gerencia puede dejar el lead sin responsable (p. ej. para repartirlo
+  // después). La policy de deals ya permite a gerencia actualizar owner_id.
+  async function unassign() {
+    if (!owner) { setOpen(false); return }
+    setSaving(true)
+    setOpen(false)
+    const { error } = await createClient().from('deals').update({ owner_id: null }).eq('id', dealId)
+    if (!error) {
+      setOwner(null)
+      onReassigned?.(dealId, null)
       router.refresh()
     }
     setSaving(false)
@@ -188,6 +204,16 @@ export default function DealOwnerSelector({ dealId, currentOwner, teamUsers, can
               </button>
             ))}
           </div>
+          {owner && (
+            <button
+              type="button"
+              onClick={unassign}
+              className="w-full flex items-center gap-2 px-3 py-2.5 border-t border-slate-100 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors text-left"
+            >
+              <UserMinus className="w-4 h-4 shrink-0" />
+              Quitar responsable
+            </button>
+          )}
         </div>,
         document.body
       )}

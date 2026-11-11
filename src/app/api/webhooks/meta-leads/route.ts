@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { renderNewLeadAlert } from '@/lib/system-emails'
 import crypto from 'crypto'
+import { pickLeastLoadedComercial, notifyIncomingLead } from '@/lib/lead-assignment'
 
 // Sin fallback: un token público en el repo permitiría verificar un
 // endpoint de webhook falso si la env var no está seteada en producción.
@@ -164,7 +165,12 @@ export async function POST(request: NextRequest) {
         const contact_name = fields['full_name'] ?? fields['nombre'] ?? fields['name'] ?? 'Sin nombre'
         const email = fields['email'] ?? fields['correo'] ?? null
         const phone = fields['phone_number'] ?? fields['telefono'] ?? fields['phone'] ?? null
-        const company_name = fields['company_name'] ?? fields['empresa'] ?? 'Lead Facebook'
+        // La empresa es opcional en el formulario: se acepta la pregunta
+        // predefinida de Meta (company_name) o una personalizada cuya clave
+        // diga "empresa"/"company". Si no viene, la empresa toma el nombre
+        // de la persona (así el lead no queda como "Lead Facebook").
+        const companyKey = Object.keys(fields).find(k => /empresa|company/i.test(k) && fields[k]?.trim())
+        const company_name = (companyKey ? fields[companyKey].trim() : '') || (contact_name !== 'Sin nombre' ? contact_name : 'Lead Facebook')
 
         console.log('[Meta Webhook] Datos parseados:', { nombre: !!contact_name, email: !!email, telefono: !!phone, empresa: !!company_name })
 
@@ -198,12 +204,14 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        // Crear deal
+        // Crear deal, asignado al comercial con menos negocios abiertos
+        const ownerId = await pickLeastLoadedComercial(supabase, orgId)
         const { data: deal, error: dealError } = await supabase
           .from('deals')
           .insert({
             company_id: company.id,
             primary_contact_id: contact.id,
+            owner_id: ownerId,
             // `stage` omitido: lo asigna el trigger según la organización destino.
             status: 'open',
             source: 'meta_ads',
@@ -218,7 +226,12 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        console.log('[Meta Webhook] Lead creado en CRM:', deal.id)
+        console.log('[Meta Webhook] Lead creado en CRM:', deal.id, ownerId ? 'asignado' : 'sin asignar')
+
+        await notifyIncomingLead(supabase, {
+          orgId, dealId: deal.id, ownerId, name: company_name,
+          detail: `Fuente: Facebook Ads${email ? ` · ${email}` : ''}`,
+        })
 
         // Enviar notificacion por email — solo a la organización dueña del lead
         if (!org?.notification_email) return

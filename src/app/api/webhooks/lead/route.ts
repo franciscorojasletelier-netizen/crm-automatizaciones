@@ -4,6 +4,7 @@ import { Resend } from 'resend'
 import { friendlyError } from '@/lib/pg-error'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { renderLeadAutoReply, renderNewLeadAlert } from '@/lib/system-emails'
+import { pickLeastLoadedComercial } from '@/lib/lead-assignment'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -199,26 +200,7 @@ export async function POST(request: NextRequest) {
 
     // ── ASIGNACIÓN AUTOMÁTICA (round-robin por carga) ──────────
     // El comercial activo con menos deals abiertos recibe el lead
-    let assignedOwnerId: string | null = null
-    const { data: comerciales } = await supabase
-      .from('profiles')
-      .select('id, full_name')
-      .eq('organization_id', orgId)
-      .eq('role', 'comercial')
-      .eq('is_active', true)
-
-    if (comerciales && comerciales.length > 0) {
-      const counts = await Promise.all(comerciales.map(async c => {
-        const { count } = await supabase
-          .from('deals')
-          .select('id', { count: 'exact', head: true })
-          .eq('owner_id', c.id)
-          .eq('status', 'open')
-        return { id: c.id, name: c.full_name, count: count ?? 0 }
-      }))
-      counts.sort((a, b) => a.count - b.count)
-      assignedOwnerId = counts[0].id
-    }
+    const assignedOwnerId = await pickLeastLoadedComercial(supabase, orgId)
 
     // Calcular score inicial
     let score = 0

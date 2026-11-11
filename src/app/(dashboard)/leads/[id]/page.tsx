@@ -71,7 +71,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
 
   const canManage = ['super_admin', 'gerente'].includes(role) && canEditSection(role, sectionAccess, 'leads')
   const canEdit   = ['super_admin', 'gerente', 'comercial'].includes(role) && canEditSection(role, sectionAccess, 'leads')
-  const canDelete = ['super_admin'].includes(role) && canEditSection(role, sectionAccess, 'leads')
+  // Gerencia (jefe de ventas) también puede eliminar leads de sus vendedores;
+  // soft_delete_deal lo vuelve a validar con is_manager().
+  const canDelete = ['super_admin', 'admin', 'gerente'].includes(role) && canEditSection(role, sectionAccess, 'leads')
 
   // Buscar proyecto vinculado al deal con specs pendientes
   const { data: linkedProjects } = await supabase

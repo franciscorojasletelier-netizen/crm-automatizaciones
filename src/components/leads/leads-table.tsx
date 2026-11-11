@@ -86,10 +86,10 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
   const [prevInitial, setPrevInitial] = useState(initialDeals)
   if (initialDeals !== prevInitial) { setPrevInitial(initialDeals); setDeals(initialDeals) }
 
-  function handleReassigned(dealId: string, newOwner: TeamUser) {
+  function handleReassigned(dealId: string, newOwner: TeamUser | null) {
     setDeals(prev => prev.map(d =>
       d.id === dealId
-        ? { ...d, profiles: { id: newOwner.id, full_name: newOwner.full_name } }
+        ? { ...d, profiles: newOwner ? { id: newOwner.id, full_name: newOwner.full_name } : null }
         : d
     ))
   }
