@@ -46,8 +46,8 @@ export function FloatingDockProvider({ children }: { children: React.ReactNode }
     <DockContext.Provider value={value}>
       {children}
       <button type="button" onClick={() => setOpen(true)} aria-label={unread ? `Mostrar chats (${unread} sin leer)` : 'Mostrar chats'} aria-expanded={open}
-        className={`md:hidden print:hidden fixed right-0 bottom-36 z-40 w-6 h-14 rounded-l-xl bg-accent-600 text-white shadow-lg flex items-center justify-center transition-transform duration-200 ${open ? 'translate-x-full' : ''}`}>
-        <ChevronLeft className="w-4 h-4" />
+        className={`md:hidden print:hidden fixed right-0 bottom-36 z-40 w-4 h-12 rounded-l-lg bg-accent-600/80 active:bg-accent-600 text-white shadow-md flex items-center justify-center transition-transform duration-200 ${open ? 'translate-x-full' : ''}`}>
+        <ChevronLeft className="w-3.5 h-3.5" />
         {unread > 0 && <span aria-hidden className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-red-500 border-2 border-white" />}
       </button>
     </DockContext.Provider>
