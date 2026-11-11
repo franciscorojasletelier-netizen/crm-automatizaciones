@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
+import { normalizeRole } from '@/lib/roles'
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -14,7 +15,9 @@ export async function GET(req: NextRequest) {
 
   // Rol para la verificación de visibilidad
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const role = profile?.role ?? 'soporte'
+  // Normalizado: el rol heredado "admin" equivale a super_admin; sin esto
+  // un administrador recibía "Sin acceso" al abrir una propuesta.
+  const role = normalizeRole(profile?.role ?? 'soporte')
 
   const allowed = await canSeeDeal(supabase, user.id, role, dealId)
   if (!allowed) return NextResponse.json({ error: 'Sin acceso' }, { status: 403 })
