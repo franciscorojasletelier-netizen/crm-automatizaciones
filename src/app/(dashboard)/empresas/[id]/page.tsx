@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Plus, Mail, Phone, Globe, FileText, FolderOpen, Wallet, TrendingUp, ExternalLink } from 'lucide-react'
 import { requirePermission } from '@/lib/supabase/server'
+import DeleteCompanyButton from '@/components/empresas/delete-company-button'
 import { canAccessSection } from '@/lib/roles'
 import { getAllStages, stageByKey, colorOf } from '@/lib/stages'
 import { money, formatMoney } from '@/lib/money'
@@ -71,6 +72,10 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
         actions={<>
           {seesCobranza && invs.length > 0 && (
             <Link href={`/cobranza/estado/${company.id}`} className={buttonClass.secondary}><Wallet className="w-4 h-4" /> Estado de cuenta</Link>
+          )}
+          {/* Solo gerencia, y solo si la empresa quedó vacía (p. ej. tras borrar su lead). */}
+          {['super_admin', 'gerente'].includes(role) && (deals ?? []).length === 0 && (projects ?? []).length === 0 && invs.length === 0 && (
+            <DeleteCompanyButton companyId={company.id} companyName={company.name} />
           )}
           {canEdit && (
             <Link href={`/leads/nuevo?empresa=${company.id}`} className={buttonClass.primary}><Plus className="w-4 h-4" /> Nuevo negocio</Link>
