@@ -42,9 +42,9 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   const [stages, pipelines, dealFields, companyFields, contactFields, modulesRes, usersRes, integrationsRes] = await Promise.all([
     getAllStages(supabase, id),
     getPipelines(supabase, id),
-    getFieldDefinitions(supabase, 'deal', id),
-    getFieldDefinitions(supabase, 'company', id),
-    getFieldDefinitions(supabase, 'contact', id),
+    getFieldDefinitions(supabase, 'deal', id, { includeInactive: true }),
+    getFieldDefinitions(supabase, 'company', id, { includeInactive: true }),
+    getFieldDefinitions(supabase, 'contact', id, { includeInactive: true }),
     supabase.from('organization_modules').select('module_key, enabled, expires_at').eq('organization_id', id),
     svc.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
     supabase.from('platform_integrations')

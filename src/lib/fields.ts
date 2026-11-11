@@ -59,8 +59,11 @@ const SELECT = `
 // orgId obligatorio si quien consulta puede ser platform_owner — mismo
 // motivo que en getStages/getDisabledModules: su policy de SELECT bypasea
 // el filtro de organización.
-export async function getFieldDefinitions(supabase: SupabaseClient, entity: FieldEntity, orgId?: string): Promise<FieldDefinition[]> {
-  let q = supabase.from('field_definitions').select(SELECT).eq('entity', entity).eq('is_active', true)
+// includeInactive: el editor de Plataforma necesita también los apagados;
+// si no, al desactivar un campo desaparecía y no había cómo reactivarlo.
+export async function getFieldDefinitions(supabase: SupabaseClient, entity: FieldEntity, orgId?: string, { includeInactive = false }: { includeInactive?: boolean } = {}): Promise<FieldDefinition[]> {
+  let q = supabase.from('field_definitions').select(SELECT).eq('entity', entity)
+  if (!includeInactive) q = q.eq('is_active', true)
   if (orgId) q = q.eq('organization_id', orgId)
   const { data } = await q.order('sort_order', { ascending: true })
   return ((data ?? []) as unknown as FieldRow[]).map(toField)
