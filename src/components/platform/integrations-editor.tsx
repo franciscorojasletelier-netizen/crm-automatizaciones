@@ -163,7 +163,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                     : provider === 'whatsapp' ? 'Phone Number ID'
                     : 'Client ID'}
                 </label>
-                <input id="integrations-editor-f3" value={externalId} onChange={e => setExternalId(e.target.value)} required
+                <input id="integrations-editor-f3" autoComplete="off" value={externalId} onChange={e => setExternalId(e.target.value)} required
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
               <div>
@@ -172,7 +172,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                     ? 'Client secret'
                     : 'Access token (opcional — si se deja vacío, usa el global)'}
                 </label>
-                <input aria-label="Token de acceso" value={accessToken} onChange={e => setAccessToken(e.target.value)} type="password"
+                <input aria-label="Token de acceso" autoComplete="new-password" value={accessToken} onChange={e => setAccessToken(e.target.value)} type="password"
                   required={provider === 'google_workspace' || provider === 'microsoft_365'}
                   className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 w-full font-mono" />
               </div>
