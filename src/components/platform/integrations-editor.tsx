@@ -82,6 +82,8 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
       setShowNew(false); setLabel(''); setExternalId(''); setAccessToken(''); setPubsubTopic('')
       startRefresh(() => router.refresh())
+      // La integración se guardó, pero Meta no aceptó suscribir la página.
+      if (data.warning) setError(`Integración guardada, con un aviso: ${data.warning}`)
     } catch (e) {
       setError((e as Error).message)
     } finally {
