@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Copy, Check, Eye, EyeOff } from 'lucide-react'
 
@@ -59,6 +59,8 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
   const router = useRouter()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  // Bloqueo hasta que lleguen los datos nuevos de startRefresh(() => router.refresh()) (ver stages-editor).
+  const [refreshing, startRefresh] = useTransition()
   const [showNew, setShowNew] = useState(false)
   const [provider, setProvider] = useState<Integration['provider']>('meta_leads')
   const [label, setLabel] = useState('')
@@ -79,7 +81,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
       setShowNew(false); setLabel(''); setExternalId(''); setAccessToken(''); setPubsubTopic('')
-      router.refresh()
+      startRefresh(() => router.refresh())
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -97,7 +99,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
-      router.refresh()
+      startRefresh(() => router.refresh())
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -113,7 +115,7 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
       const res = await fetch(`/api/platform/integrations?id=${id}`, { method: 'DELETE' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
-      router.refresh()
+      startRefresh(() => router.refresh())
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -219,12 +221,12 @@ export default function IntegrationsEditor({ orgId, integrations }: { orgId: str
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={i.is_active} disabled={busy === i.id}
+                    <input type="checkbox" checked={i.is_active} disabled={refreshing || busy === i.id}
                       onChange={e => toggle(i.id, e.target.checked)} className="sr-only peer" />
                     <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 peer-disabled:opacity-50 transition-colors" />
                     <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-3.5" />
                   </label>
-                  <button onClick={() => remove(i.id)} disabled={busy === i.id}
+                  <button onClick={() => remove(i.id)} disabled={refreshing || busy === i.id}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

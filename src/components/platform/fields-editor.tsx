@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import type { FieldDefinition, FieldEntity, FieldType } from '@/lib/fields'
@@ -23,6 +23,8 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
   const router = useRouter()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  // Bloqueo hasta que lleguen los datos nuevos de startRefresh(() => router.refresh()) (ver stages-editor).
+  const [refreshing, startRefresh] = useTransition()
   const [showNew, setShowNew] = useState(false)
   const [newKey, setNewKey] = useState('')
   const [newLabel, setNewLabel] = useState('')
@@ -34,7 +36,7 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
     setError('')
     try {
       await fn()
-      router.refresh()
+      startRefresh(() => router.refresh())
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -113,13 +115,13 @@ export default function FieldsEditor({ orgId, entity, label, fields }: {
               <input aria-label="Nombre del campo"
                 defaultValue={f.label}
                 onBlur={e => e.target.value !== f.label && run(f.id, () => callApi('PATCH', { fieldId: f.id, label: e.target.value }))}
-                disabled={busy === f.id}
+                disabled={refreshing || busy === f.id}
                 className="text-sm font-semibold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-accent-300 rounded px-1 -mx-1 w-full"
               />
               <p className="text-[11px] text-slate-400">{f.key} · {TYPE_LABELS[f.fieldType]}{f.isRequired ? ' · obligatorio' : ''}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" aria-label={f.isActive ? `Desactivar campo ${f.label}` : `Activar campo ${f.label}`} checked={f.isActive} disabled={busy === f.id}
+              <input type="checkbox" aria-label={f.isActive ? `Desactivar campo ${f.label}` : `Activar campo ${f.label}`} checked={f.isActive} disabled={refreshing || busy === f.id}
                 onChange={e => run(f.id, () => callApi('PATCH', { fieldId: f.id, is_active: e.target.checked }))}
                 className="sr-only peer" />
               <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 peer-disabled:opacity-50 transition-colors" />

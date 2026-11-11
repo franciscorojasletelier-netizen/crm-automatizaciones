@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { CalendarClock } from 'lucide-react'
 import type { NavSection } from '@/lib/roles'
@@ -16,6 +16,8 @@ export default function ModulesEditor({ orgId, sections, enabledByKey, expiresBy
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
+  // Bloqueo hasta que lleguen los datos nuevos de startRefresh(() => router.refresh()) (ver stages-editor).
+  const [refreshing, startRefresh] = useTransition()
   const [editingDate, setEditingDate] = useState<string | null>(null)
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
@@ -30,7 +32,7 @@ export default function ModulesEditor({ orgId, sections, enabledByKey, expiresBy
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Error desconocido')
-      router.refresh()
+      startRefresh(() => router.refresh())
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -53,7 +55,7 @@ export default function ModulesEditor({ orgId, sections, enabledByKey, expiresBy
               <label className="flex items-center justify-between gap-2 cursor-pointer">
                 <span className="text-[13px] font-medium text-slate-800">{s.label}</span>
                 <span className="relative inline-flex items-center shrink-0">
-                  <input type="checkbox" checked={enabled} disabled={busy === s.key}
+                  <input type="checkbox" checked={enabled} disabled={refreshing || busy === s.key}
                     onChange={e => patch(s.key, { enabled: e.target.checked })}
                     className="sr-only peer" aria-label={`Habilitar ${s.label}`} />
                   <span className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 peer-disabled:opacity-50 transition-colors" />
