@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Star, Trophy, Lock, Paperclip, MessageSquareWarning, AlertTriangle } from 'lucide-react'
 import type { Stage } from '@/lib/stages'
@@ -17,6 +17,10 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
   const router = useRouter()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  // router.refresh() trae las etapas actualizadas por props; mientras llega,
+  // los botones siguen bloqueados. Antes se desbloqueaban antes de tiempo y
+  // un segundo clic enviaba el valor viejo (p. ej. exigir motivo dos veces).
+  const [refreshing, startRefresh] = useTransition()
   const [showNew, setShowNew] = useState(false)
   const [newKey, setNewKey] = useState('')
   const [newLabel, setNewLabel] = useState('')
@@ -27,7 +31,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
     setError('')
     try {
       await fn()
-      router.refresh()
+      startRefresh(() => router.refresh())
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -114,7 +118,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
                 <input aria-label="Nombre de la etapa"
                   defaultValue={s.label}
                   onBlur={e => e.target.value !== s.label && run(s.id, () => callApi('PATCH', { stageId: s.id, label: e.target.value }))}
-                  disabled={busy === s.id}
+                  disabled={refreshing || busy === s.id}
                   className="text-sm font-semibold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-accent-300 rounded px-1 -mx-1 w-full"
                 />
                 <p className="text-[11px] text-slate-400 flex items-center gap-1">
@@ -124,7 +128,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
 
               <button
                 onClick={() => run(s.id, () => callApi('PATCH', { stageId: s.id, organizationId: orgId, action: 'set_default' }))}
-                disabled={busy === s.id || s.isDefault}
+                disabled={refreshing || busy === s.id || s.isDefault}
                 title="Etapa inicial de un lead nuevo"
                 className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${s.isDefault ? 'bg-blue-100 text-blue-600' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'}`}>
                 <Star className="w-3.5 h-3.5" fill={s.isDefault ? 'currentColor' : 'none'} />
@@ -132,7 +136,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
 
               <button
                 onClick={() => run(s.id, () => callApi('PATCH', { stageId: s.id, organizationId: orgId, action: 'set_won' }))}
-                disabled={busy === s.id || s.isWon || s.isLost || !s.isTerminal}
+                disabled={refreshing || busy === s.id || s.isWon || s.isLost || !s.isTerminal}
                 title={s.isLost ? 'Una etapa marcada como perdida no puede ser la de ganado' : 'Etapa de ganado'}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30 ${s.isWon ? 'bg-emerald-100 text-emerald-600' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'}`}>
                 <Trophy className="w-3.5 h-3.5" fill={s.isWon ? 'currentColor' : 'none'} />
@@ -140,7 +144,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
 
               <button
                 onClick={() => run(s.id, () => callApi('PATCH', { stageId: s.id, requires_attachment: !s.requiresAttachment }))}
-                disabled={busy === s.id}
+                disabled={refreshing || busy === s.id}
                 title={s.requiresAttachment ? 'Exige adjuntar un archivo para entrar a esta etapa — clic para quitarlo' : 'No exige adjunto — clic para exigirlo'}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${s.requiresAttachment ? 'bg-orange-100 text-orange-600' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'}`}>
                 <Paperclip className="w-3.5 h-3.5" />
@@ -148,7 +152,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
 
               <button
                 onClick={() => run(s.id, () => callApi('PATCH', { stageId: s.id, requires_reason: !s.requiresReason }))}
-                disabled={busy === s.id}
+                disabled={refreshing || busy === s.id}
                 title={s.requiresReason ? 'Pide un motivo obligatorio al entrar a esta etapa — clic para quitarlo' : 'No pide motivo — clic para exigirlo'}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${s.requiresReason ? 'bg-amber-100 text-amber-600' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'}`}>
                 <MessageSquareWarning className="w-3.5 h-3.5" />
@@ -156,7 +160,7 @@ export default function StagesEditor({ orgId, pipelineId, stages }: { orgId: str
 
               <label className={`relative inline-flex items-center ${(s.isDefault || s.isWon) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 title={s.isDefault ? 'No se puede desactivar la etapa por defecto' : s.isWon ? 'No se puede desactivar la etapa de ganado' : ''}>
-                <input type="checkbox" checked={s.isActive} disabled={busy === s.id || s.isDefault || s.isWon}
+                <input type="checkbox" checked={s.isActive} disabled={refreshing || busy === s.id || s.isDefault || s.isWon}
                   onChange={e => run(s.id, () => callApi('PATCH', { stageId: s.id, is_active: e.target.checked }))}
                   className="sr-only peer" />
                 <div className="w-8 h-4.5 bg-slate-200 rounded-full peer-checked:bg-emerald-500 peer-disabled:opacity-50 transition-colors" />
