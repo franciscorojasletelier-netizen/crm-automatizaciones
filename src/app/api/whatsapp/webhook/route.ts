@@ -101,38 +101,40 @@ export async function POST(request: NextRequest) {
           const timestamp   = new Date(parseInt(msg.timestamp) * 1000).toISOString()
 
           // Buscar el contacto por teléfono → encontrar el deal activo
-          const normalized = fromPhone.startsWith('56') ? fromPhone : `56${fromPhone}`
-          const variants   = [normalized, fromPhone, `+${normalized}`, `+${fromPhone}`]
+          // phone_digits (migración 065) guarda solo dígitos, así calza aunque
+          // el teléfono se haya escrito con espacios, guiones o sin el 56.
+          const digits   = String(fromPhone).replace(/\D/g, '')
+          const local    = digits.startsWith('56') ? digits.slice(2) : digits
+          const variants = [...new Set([digits, `56${local}`, local])]
 
-          let contactQuery = supabase.from('contacts').select('id').in('phone', variants)
+          let contactQuery = supabase.from('contacts').select('id').in('phone_digits', variants)
           if (waOrgId) contactQuery = contactQuery.eq('organization_id', waOrgId)
-          const { data: contacts_found } = await contactQuery.limit(1)
+          const { data: contacts_found } = await contactQuery.limit(20)
 
           if (!contacts_found?.length) {
             console.log(`WhatsApp: contacto no encontrado para …${String(fromPhone).slice(-4)}`)
             continue
           }
 
-          const contactId = contacts_found[0].id
-
-          // Buscar el deal más reciente activo de ese contacto
+          // El mismo número puede estar en varios contactos (un cliente con
+          // más de un negocio). Se prefiere un negocio abierto; si no hay, el
+          // más reciente no eliminado — así un cliente que ya compró y vuelve
+          // a escribir no se pierde.
           const { data: deals } = await supabase
             .from('deals')
-            .select('id')
-            .eq('primary_contact_id', contactId)
-            // Antes esto excluía tres claves de etapa hardcodeadas en SQL
-            // crudo. status='open' es equivalente y no depende del embudo
-            // que tenga configurado cada organización.
-            .eq('status', 'open')
+            .select('id, status')
+            .in('primary_contact_id', contacts_found.map(c => c.id))
+            .is('deleted_at', null)
             .order('created_at', { ascending: false })
-            .limit(1)
+            .limit(20)
 
-          if (!deals?.length) {
-            console.log(`WhatsApp: no hay deal activo para contacto ${contactId}`)
+          const chosen = deals?.find(d => d.status === 'open') ?? deals?.[0]
+          if (!chosen) {
+            console.log(`WhatsApp: sin negocio para …${String(fromPhone).slice(-4)}`)
             continue
           }
 
-          const dealId = deals[0].id
+          const dealId = chosen.id
 
           // Guardar mensaje entrante
           await supabase.from('whatsapp_messages').insert({
