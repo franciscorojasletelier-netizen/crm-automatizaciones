@@ -101,8 +101,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (pending.attempts >= CODE_MAX_ATTEMPTS) {
     return NextResponse.json({ error: 'Demasiados intentos con este código. Pide uno nuevo.' }, { status: 400 })
   }
+  // El intento se cuenta ANTES de comparar y con bloqueo optimista: muchas
+  // peticiones en paralelo ya no pueden probar más códigos que el máximo
+  // (antes todas leían el mismo contador y pasaban a la vez).
+  const { data: counted } = await supabase.from('quote_acceptance_codes')
+    .update({ attempts: pending.attempts + 1 })
+    .eq('id', pending.id).eq('attempts', pending.attempts).is('consumed_at', null).select('id')
+  if (!counted?.length) {
+    return NextResponse.json({ error: 'No se pudo validar el código. Intenta de nuevo.' }, { status: 409 })
+  }
   if (!sameHash(hashCode(quote.id, code), pending.code_hash)) {
-    await supabase.from('quote_acceptance_codes').update({ attempts: pending.attempts + 1 }).eq('id', pending.id)
     return NextResponse.json({ error: 'El código no es correcto' }, { status: 400 })
   }
   await supabase.from('quote_acceptance_codes').update({ consumed_at: new Date().toISOString() }).eq('id', pending.id)

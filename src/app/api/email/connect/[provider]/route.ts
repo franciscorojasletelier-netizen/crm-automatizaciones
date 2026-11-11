@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { getOAuthAppCredentials } from '@/lib/email/oauth'
+import { serviceClient } from '@/lib/supabase/service'
 import { buildGoogleAuthUrl } from '@/lib/email/gmail'
 import { buildMicrosoftAuthUrl } from '@/lib/email/outlook'
 
@@ -16,10 +17,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const provider = PROVIDER_MAP[slug as keyof typeof PROVIDER_MAP]
   if (!provider) return NextResponse.json({ error: 'Proveedor inválido' }, { status: 400 })
 
-  const { organizationId, supabase } = await getCurrentProfile()
+  const { organizationId } = await getCurrentProfile()
   if (!organizationId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const creds = await getOAuthAppCredentials(supabase, organizationId, provider)
+  // El client_secret no es legible con la sesión (migración 066).
+  const creds = await getOAuthAppCredentials(serviceClient(), organizationId, provider)
   if (!creds) {
     return NextResponse.json({ error: 'Esta organización todavía no tiene configurada la app OAuth de correo. Pide al administrador de la plataforma que la agregue.' }, { status: 400 })
   }

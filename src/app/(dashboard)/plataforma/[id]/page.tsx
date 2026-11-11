@@ -47,7 +47,9 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
     getFieldDefinitions(supabase, 'contact', id, { includeInactive: true }),
     supabase.from('organization_modules').select('module_key, enabled, expires_at').eq('organization_id', id),
     svc.from('profiles').select('id', { count: 'exact', head: true }).eq('organization_id', id),
-    supabase.from('platform_integrations')
+    // access_token no es legible con la sesión (migración 066): se lee con
+    // service_role, ya verificado arriba que es dueño de la plataforma.
+    svc.from('platform_integrations')
       .select('id, organization_id, provider, external_id, access_token, label, is_active, config')
       .eq('organization_id', id).order('created_at', { ascending: false }),
   ])

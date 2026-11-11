@@ -3,6 +3,7 @@ import { getCurrentProfile } from '@/lib/supabase/server'
 import { friendlyError } from '@/lib/pg-error'
 import crypto from 'crypto'
 import { META_GRAPH_URL, metaAuthHeaders } from '@/lib/meta'
+import { serviceClient } from '@/lib/supabase/service'
 
 async function requirePlatformOwner() {
   const { user, supabase } = await getCurrentProfile()
@@ -53,7 +54,9 @@ export async function POST(request: NextRequest) {
     warning = sub.warning
   }
 
-  const { data, error } = await supabase.from('platform_integrations')
+  // Con service_role (permiso ya verificado): la sesión no puede leer
+  // access_token de vuelta (migración 066).
+  const { data, error } = await serviceClient().from('platform_integrations')
     .insert({ organization_id: organizationId, provider, external_id: externalId, access_token: accessToken || null, label: label || null, config })
     .select('id, organization_id, provider, external_id, access_token, label, is_active, config, created_at')
     .single()

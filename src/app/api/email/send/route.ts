@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { userRateLimit } from '@/lib/rate-limit'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
 import { sendAsUser, emailServiceClient } from '@/lib/email/send-as-user'
@@ -13,11 +14,14 @@ const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 export async function POST(request: NextRequest) {
   const { user, role, organizationId, supabase, profile } = await getCurrentProfile()
   if (!organizationId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
+  const limited = await userRateLimit('send_email', user.id, 40, 15)
+  if (limited) return limited
 
   const { dealId, contactId, to, subject, body, replyToMessageId, threadId } = await request.json()
   if (!to || !subject || !body) {
     return NextResponse.json({ error: 'to, subject y body son requeridos' }, { status: 400 })
   }
+  if (String(subject).length > 300 || String(body).length > 50_000) return NextResponse.json({ error: 'El correo es demasiado largo' }, { status: 400 })
   if (!EMAIL_RE.test(String(to).trim())) return NextResponse.json({ error: 'Correo de destino no válido' }, { status: 400 })
 
   // El insert del historial va con service_role (salta RLS): sin esto, un

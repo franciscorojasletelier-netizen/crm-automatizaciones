@@ -42,14 +42,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(configUrl('No se pudo validar la solicitud. Prueba de nuevo.', false))
   }
 
-  const { user, organizationId, supabase } = await getCurrentProfile()
+  const { user, organizationId } = await getCurrentProfile()
   if (!organizationId) return NextResponse.redirect(configUrl('Sin organización', false))
 
-  const creds = await getOAuthAppCredentials(supabase, organizationId, provider)
+  // El client_secret no es legible con la sesión (migración 066).
+  const svc = serviceClient()
+  const creds = await getOAuthAppCredentials(svc, organizationId, provider)
   if (!creds) return NextResponse.redirect(configUrl('La organización no tiene configurada esta integración', false))
 
   const redirectUri = `${base}/api/email/callback/${slug}`
-  const svc = serviceClient()
 
   if (provider === 'google_workspace') {
     const tokens = await exchangeGoogleCode(creds, code, redirectUri)

@@ -25,7 +25,15 @@ export async function GET(req: NextRequest) {
   if (!stored) return NextResponse.json({ error: 'Sin propuesta' }, { status: 404 })
 
   // Compatibilidad: propuestas antiguas guardaron la URL pública completa
+  // Solo si apunta al Storage de este proyecto: proposal_url es editable y
+  // un valor arbitrario convertía este endpoint en una redirección abierta
+  // (un enlace del CRM que lleva a un sitio de phishing).
   if (stored.startsWith('http')) {
+    let sameStorage = false
+    try {
+      sameStorage = new URL(stored).host === new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).host
+    } catch { /* URL inválida */ }
+    if (!sameStorage) return NextResponse.json({ error: 'Enlace de propuesta no válido' }, { status: 400 })
     return NextResponse.redirect(stored)
   }
 

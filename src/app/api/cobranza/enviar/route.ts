@@ -2,6 +2,7 @@
 // conectada del ejecutivo) o registro de un WhatsApp abierto con wa.me.
 // En ambos casos deja una gestión en cada documento abierto del cliente.
 import { NextRequest, NextResponse } from 'next/server'
+import { userRateLimit } from '@/lib/rate-limit'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canEditSection } from '@/lib/roles'
 import { getDisabledModules } from '@/lib/modules'
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest) {
   if (!canEditSection(role, sectionAccess, 'cobranza', disabled)) {
     return NextResponse.json({ error: 'Sin permiso para gestionar cobranza' }, { status: 403 })
   }
+
+  const limited = await userRateLimit('send_email', user.id, 40, 15)
+  if (limited) return limited
 
   const payload = await request.json().catch(() => ({}))
   const { companyId, channel } = payload as { companyId?: string; channel?: string }

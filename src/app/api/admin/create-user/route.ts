@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
   }
-  if (password.length < 6) {
-    return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+  if (typeof password !== 'string' || password.length < 8) {
+    return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
   }
   // Un gerente no puede crear administradores
   if (isAdmin && editorRole !== 'super_admin') {
@@ -62,6 +62,17 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SECRET_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
+
+  // El jefe directo y el área tienen que ser de la MISMA organización: con
+  // service_role no hay RLS que lo impida y los ids vienen del navegador.
+  if (managerId) {
+    const { data: mgr } = await admin.from('profiles').select('id').eq('id', managerId).eq('organization_id', organizationId).maybeSingle()
+    if (!mgr) return NextResponse.json({ error: 'El jefe directo no pertenece a tu organización' }, { status: 400 })
+  }
+  if (areaId) {
+    const { data: area } = await admin.from('areas').select('id').eq('id', areaId).eq('organization_id', organizationId).maybeSingle()
+    if (!area) return NextResponse.json({ error: 'El área no pertenece a tu organización' }, { status: 400 })
+  }
 
   // Límite de usuarios por organización (null = sin límite). Se fija desde
   // el panel de plataforma; el conteo cuenta usuarios activos e inactivos

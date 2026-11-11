@@ -3,6 +3,7 @@
 // conectada del ejecutivo (Gmail/Outlook) o, si no tiene, desde el correo
 // del sistema con respuestas al ejecutivo. Un borrador pasa a "enviada".
 import { NextRequest, NextResponse } from 'next/server'
+import { userRateLimit } from '@/lib/rate-limit'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canEditSection } from '@/lib/roles'
 import { canSeeDeal } from '@/lib/visibility'
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!['super_admin', 'gerente', 'comercial'].includes(role) || !canEditSection(role, sectionAccess, 'leads')) {
     return NextResponse.json({ error: 'Sin permiso para enviar cotizaciones' }, { status: 403 })
   }
+
+  const limited = await userRateLimit('send_email', user.id, 40, 15)
+  if (limited) return limited
 
   const payload = await request.json().catch(() => ({}))
   const to = String(payload.to ?? '').trim()

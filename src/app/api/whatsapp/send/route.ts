@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { userRateLimit } from '@/lib/rate-limit'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
@@ -20,9 +21,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
     }
 
+    const limited = await userRateLimit('send_whatsapp', user.id, 60, 15)
+    if (limited) return limited
+
     const { dealId, message } = await request.json()
     if (!dealId || !message?.trim()) {
       return NextResponse.json({ error: 'dealId y message son requeridos' }, { status: 400 })
+    }
+    if (String(message).length > 4096) {
+      return NextResponse.json({ error: 'El mensaje supera los 4.096 caracteres que permite WhatsApp' }, { status: 400 })
     }
 
     // Verificar que el usuario puede ver este deal ANTES de usar el cliente

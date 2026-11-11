@@ -65,7 +65,7 @@ export default function AddUserButton({ editorRole, people, areas }: Props) {
     setError('')
     if (!fullName.trim()) { setError('El nombre es requerido'); return }
     if (!email.trim()) { setError('El email es requerido'); return }
-    if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+    if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
 
     setSaving(true)
     const res = await fetch('/api/admin/create-user', {

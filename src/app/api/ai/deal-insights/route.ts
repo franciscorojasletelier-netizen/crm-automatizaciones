@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { userRateLimit } from '@/lib/rate-limit'
 import Anthropic from '@anthropic-ai/sdk'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
@@ -28,6 +29,10 @@ export async function POST(request: NextRequest) {
     ? await supabase.from('organizations').select('name, display_name').eq('id', organizationId).maybeSingle()
     : { data: null }
   const orgDisplayName = org?.display_name || org?.name || 'la empresa'
+
+  // Cada análisis consume cuota de IA pagada.
+  const limited = await userRateLimit('ai_insights', userId, 20, 60)
+  if (limited) return limited
 
   const { dealId } = await request.json()
   if (!dealId) return NextResponse.json({ error: 'dealId requerido' }, { status: 400 })

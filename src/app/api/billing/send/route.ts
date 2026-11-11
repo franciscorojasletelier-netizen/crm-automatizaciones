@@ -1,5 +1,6 @@
 // Envía una solicitud de factura a un correo (contador externo) desde la ficha del negocio.
 import { NextRequest, NextResponse } from 'next/server'
+import { userRateLimit } from '@/lib/rate-limit'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
 import { emailServiceClient } from '@/lib/email/send-as-user'
@@ -11,6 +12,8 @@ export async function POST(request: NextRequest) {
   let ctx: Awaited<ReturnType<typeof getCurrentProfile>>
   try { ctx = await getCurrentProfile() } catch { return NextResponse.json({ error: 'No autenticado' }, { status: 401 }) }
   const { user, role, supabase, profile } = ctx
+  const limited = await userRateLimit('send_email', user.id, 40, 15)
+  if (limited) return limited
   const body = await request.json().catch(() => ({}))
   const to = String(body.to ?? '').trim().toLowerCase()
   if (!EMAIL_RE.test(to)) return NextResponse.json({ error: 'Correo no válido' }, { status: 400 })
