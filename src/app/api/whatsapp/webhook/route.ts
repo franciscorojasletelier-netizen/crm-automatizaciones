@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           const { data: contacts_found } = await contactQuery.limit(1)
 
           if (!contacts_found?.length) {
-            console.log(`WhatsApp: contacto no encontrado para ${fromPhone}`)
+            console.log(`WhatsApp: contacto no encontrado para …${String(fromPhone).slice(-4)}`)
             continue
           }
 

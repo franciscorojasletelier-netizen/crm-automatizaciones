@@ -5,6 +5,7 @@
 //  (plan Free), accesos OAuth de Gmail en modo Testing, tokens de Meta y
 //  recordatorios manuales. Lo usan /plataforma/servicios y el cron diario.
 // ============================================================
+import { META_GRAPH_URL, metaAuthHeaders } from '@/lib/meta'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type CheckStatus = 'ok' | 'aviso' | 'urgente' | 'vencido' | 'desconocido'
@@ -60,8 +61,8 @@ interface Health {
 /** Token de Meta: el propio token consulta su vencimiento (debug_token). */
 async function metaTokenExpiry(token: string): Promise<{ valid: boolean; expiresAt: number | null } | null> {
   try {
-    const url = `https://graph.facebook.com/v20.0/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000), cache: 'no-store' })
+    const url = `${META_GRAPH_URL}/debug_token?input_token=${encodeURIComponent(token)}`
+    const res = await fetch(url, { headers: metaAuthHeaders(token), signal: AbortSignal.timeout(5000), cache: 'no-store' })
     if (!res.ok) return null
     const d = (await res.json())?.data
     if (!d) return null

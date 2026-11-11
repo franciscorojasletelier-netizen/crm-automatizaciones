@@ -1,6 +1,7 @@
+import { META_GRAPH_URL } from '@/lib/meta'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-const WA_API_URL = 'https://graph.facebook.com/v20.0'
+const WA_API_URL = META_GRAPH_URL
 
 export interface SendWhatsAppResult {
   ok: boolean

@@ -1,4 +1,5 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+﻿import { META_GRAPH_URL, metaAuthHeaders } from '@/lib/meta'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { renderNewLeadAlert } from '@/lib/system-emails'
@@ -144,11 +145,10 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        const graphRes = await fetch(
-          `https://graph.facebook.com/v19.0/${leadId}?access_token=${pageToken}`
-        )
+        const graphRes = await fetch(`${META_GRAPH_URL}/${encodeURIComponent(leadId)}`, { headers: metaAuthHeaders(pageToken) })
         const leadInfo = await graphRes.json()
-        console.log('[Meta Webhook] Datos del lead desde Graph API:', JSON.stringify(leadInfo))
+        // Sin volcar field_data: trae nombre, correo y teléfono del lead.
+        console.log('[Meta Webhook] Lead recibido desde Graph API:', leadId, `${(leadInfo.field_data ?? []).length} campos`)
 
         if (leadInfo.error) {
           console.error('[Meta Webhook] Error al obtener lead:', leadInfo.error)
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
         const phone = fields['phone_number'] ?? fields['telefono'] ?? fields['phone'] ?? null
         const company_name = fields['company_name'] ?? fields['empresa'] ?? 'Lead Facebook'
 
-        console.log('[Meta Webhook] Datos parseados:', { contact_name, email, phone, company_name })
+        console.log('[Meta Webhook] Datos parseados:', { nombre: !!contact_name, email: !!email, telefono: !!phone, empresa: !!company_name })
 
         // Crear empresa
         const { data: company, error: companyError } = await supabase
