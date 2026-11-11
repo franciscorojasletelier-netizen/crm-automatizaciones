@@ -75,7 +75,7 @@ function FieldEditor({ field, entityId, entity, value, onSaved }: {
             {display || <span className="text-slate-300 font-normal italic text-xs">Sin valor</span>}
           </p>
         </div>
-        <button onClick={() => setEditing(true)}
+        <button type="button" onClick={() => setEditing(true)} aria-label={`Editar ${field.label}`}
           className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-accent-50 text-slate-400 hover:text-accent-600 shrink-0 mt-0.5">
           <Pencil className="w-3 h-3" />
         </button>
