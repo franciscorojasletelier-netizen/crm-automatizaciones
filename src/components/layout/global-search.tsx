@@ -38,7 +38,8 @@ function safeTerm(q: string): string {
 }
 
 type DealHit = { id: string; stage: string; estimated_value: number | null; companies: { name: string } | null; contacts: { full_name: string } | null }
-type ContactHit = { id: string; full_name: string | null; email: string | null; companies: { name: string } | null }
+type ContactHit = { id: string; full_name: string | null; email: string | null; companies: { id: string; name: string } | null }
+type CompanyHit = { id: string; name: string; is_existing_client: boolean | null }
 
 export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sidebar' }: {
   stages?: Stage[]
@@ -49,7 +50,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
   const currency = useCurrency()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<{ deals: DealHit[]; contacts: ContactHit[] }>({ deals: [], contacts: [] })
+  const [results, setResults] = useState<{ deals: DealHit[]; contacts: ContactHit[]; companies: CompanyHit[] }>({ deals: [], contacts: [], companies: [] })
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -66,7 +67,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
 
   const paletteRef = useDialog(open, () => setOpen(false))
 
-  function openPalette() { setQuery(''); setResults({ deals: [], contacts: [] }); setSelected(0); setOpen(true) }
+  function openPalette() { setQuery(''); setResults({ deals: [], contacts: [], companies: [] }); setSelected(0); setOpen(true) }
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 30)
@@ -78,17 +79,26 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
     const timer = setTimeout(async () => {
       setLoading(true)
       const supabase = createClient()
-      const [dealsRes, contactsRes] = await Promise.all([
+      const [dealsRes, contactsRes, companiesRes] = await Promise.all([
         // !inner: el filtro sobre la empresa filtra los DEALS. Sin él,
         // PostgREST devolvía cualquier deal abierto con la empresa en null.
         supabase.from('deals')
           .select('id, stage, estimated_value, companies!inner(name), contacts:primary_contact_id(full_name)')
           .eq('status', 'open').ilike('companies.name', `%${term}%`).limit(5),
         supabase.from('contacts')
-          .select('id, full_name, email, companies(name)')
+          .select('id, full_name, email, companies(id, name)')
           .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`).limit(5),
+        // Empresas directo: antes solo se encontraban vía un lead ABIERTO, así
+        // que un cliente con el negocio ya ganado no aparecía en la búsqueda.
+        supabase.from('companies')
+          .select('id, name, is_existing_client')
+          .ilike('name', `%${term}%`).order('name').limit(5),
       ])
-      setResults({ deals: (dealsRes.data ?? []) as unknown as DealHit[], contacts: (contactsRes.data ?? []) as unknown as ContactHit[] })
+      setResults({
+        deals: (dealsRes.data ?? []) as unknown as DealHit[],
+        contacts: (contactsRes.data ?? []) as unknown as ContactHit[],
+        companies: (companiesRes.data ?? []) as unknown as CompanyHit[],
+      })
       setLoading(false)
       setSelected(0)
     }, 220)
@@ -105,10 +115,13 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
   const allItems = [
     ...matchedCommands.map(c => c.href),
     ...(showResults ? results.deals.map(d => `/leads/${d.id}`) : []),
-    ...(showResults ? results.contacts.map(() => '/empresas') : []),
+    ...(showResults ? results.contacts.map(contactHref) : []),
+    ...(showResults ? results.companies.map(c => `/empresas/${c.id}`) : []),
   ]
 
   function go(href: string) { router.push(href); setOpen(false) }
+  // Un contacto abre la ficha de su empresa (antes iba a la lista general).
+  function contactHref(c: ContactHit) { return c.companies?.id ? `/empresas/${c.companies.id}` : '/empresas' }
 
   function onInputKey(e: React.KeyboardEvent) {
     if (!allItems.length) return
@@ -168,7 +181,7 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
                 </div>
               )}
 
-              {showResults && !loading && results.deals.length === 0 && results.contacts.length === 0 && (
+              {showResults && !loading && results.deals.length === 0 && results.contacts.length === 0 && results.companies.length === 0 && (
                 <p className="px-3 py-8 text-center text-sm text-slate-500">
                   Sin resultados para <span className="font-medium text-slate-800">«{query.trim()}»</span>
                 </p>
@@ -204,13 +217,32 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
                   {results.contacts.map((c, i) => {
                     const idx = matchedCommands.length + results.deals.length + i
                     return (
-                      <button key={c.id} onClick={() => go('/empresas')} onMouseEnter={() => setSelected(idx)} className={itemClass(selected === idx)}>
+                      <button key={c.id} onClick={() => go(contactHref(c))} onMouseEnter={() => setSelected(idx)} className={itemClass(selected === idx)}>
                         <span className="w-6 h-6 rounded-full bg-slate-100 text-[11px] font-semibold text-slate-600 flex items-center justify-center shrink-0">
                           {getInitials(c.full_name, c.email)}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm text-slate-900 truncate">{c.full_name}</p>
                           <p className="text-xs text-slate-500 truncate">{c.email}{c.companies?.name && ` · ${c.companies.name}`}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {showResults && results.companies.length > 0 && (
+                <div className="mt-1">
+                  <p className="px-3 pt-2 pb-1.5 text-xs font-medium text-slate-500">Empresas</p>
+                  {results.companies.map((co, i) => {
+                    const idx = matchedCommands.length + results.deals.length + results.contacts.length + i
+                    return (
+                      <button key={co.id} onClick={() => go(`/empresas/${co.id}`)} onMouseEnter={() => setSelected(idx)} className={itemClass(selected === idx)}>
+                        <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                          <Building2 className="w-3.5 h-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-slate-900 truncate">{co.name}</p>
+                          <p className="text-xs text-slate-500">{co.is_existing_client ? 'Cliente' : 'Prospecto'}</p>
                         </div>
                       </button>
                     )
