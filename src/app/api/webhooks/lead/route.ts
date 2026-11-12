@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { Resend } from 'resend'
 import { friendlyError } from '@/lib/pg-error'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
@@ -19,10 +19,7 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   // Cliente creado dentro del handler para que las env vars estén disponibles
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
-    process.env.SUPABASE_SECRET_KEY!.trim()
-  )
+  const supabase = serviceClient()
 
   try {
     // El token de este webhook viaja en el JS público del formulario web,
@@ -175,7 +172,7 @@ export async function POST(request: NextRequest) {
     if (!company) {
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
-        .insert({ name: company_name ?? contact_name, industry, website, organization_id: orgId })
+        .insert({ name: (company_name ?? contact_name)!, industry, website, organization_id: orgId })
         .select('id').single()
       if (companyError) throw companyError
       company = newCompany
@@ -187,7 +184,7 @@ export async function POST(request: NextRequest) {
         .from('contacts')
         .insert({
           company_id: company!.id,
-          full_name: contact_name ?? company_name,
+          full_name: (contact_name ?? company_name)!,
           email: contact_email,
           phone: contact_phone,
           job_title: contact_job_title,

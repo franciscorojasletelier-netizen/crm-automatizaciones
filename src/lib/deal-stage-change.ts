@@ -8,7 +8,7 @@
 //  el detalle volvía a disparar automatizaciones de una etapa que no
 //  había cambiado. Todo cambio de etapa pasa por acá.
 // ============================================================
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db, Update } from '@/lib/supabase/types'
 import { runAutomationsForStageChange } from '@/lib/automations'
 import { type Stage, stageByKey, statusForStage } from '@/lib/stages'
 import { notifyManagers } from '@/lib/notify'
@@ -23,7 +23,7 @@ export const PROPOSAL_ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,
 // referencian. Se guarda el PATH, no una URL: /api/propuestas la sirve con
 // URL firmada tras validar acceso al deal.
 export async function uploadProposal(
-  supabase: SupabaseClient,
+  supabase: Db,
   { organizationId, dealId, file }: { organizationId: string; dealId: string; file: File }
 ) {
   if (file.size > PROPOSAL_MAX_MB * 1024 * 1024) {
@@ -46,7 +46,7 @@ export type StageChangeResult =
   | { ok: true; status: 'won' | 'lost' | 'open'; warning?: string }
 
 export async function changeDealStage(
-  supabase: SupabaseClient,
+  supabase: Db,
   {
     dealId, fromStage, toStage, stages, reason = null, comment = null, extraUpdates, currency,
   }: {
@@ -56,7 +56,7 @@ export async function changeDealStage(
     stages: Stage[]
     reason?: string | null
     comment?: string | null
-    extraUpdates?: Record<string, unknown>
+    extraUpdates?: Update<'deals'>
     /** Moneda de la organización (para el monto del aviso de deal ganado). */
     currency?: string
   }
@@ -65,7 +65,7 @@ export async function changeDealStage(
   const status = statusForStage(target)
 
   // status se recalcula siempre: mover a una etapa activa reabre el deal.
-  const updates: Record<string, unknown> = { stage: toStage, status, ...extraUpdates }
+  const updates: Update<'deals'> = { stage: toStage, status, ...extraUpdates }
   if (reason) updates.lost_reason = reason
   if (comment) updates.lost_comment = comment
 

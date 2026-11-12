@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getRoleMeta } from '@/lib/roles'
 import ChangePasswordCard from './ChangePasswordCard'
@@ -16,7 +17,8 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
   const mfaGate = mfaRequired === '1'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user?.id).single()
+  if (!user) redirect('/login')
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   const { data: emailAccounts } = await supabase
     .from('email_accounts').select('id, provider, email_address, is_active').eq('user_id', user?.id ?? '')
 
@@ -93,7 +95,7 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
 
         {!mfaGate && <TwoFactorCard />}
 
-        <EmailAccountsCard accounts={(emailAccounts ?? []) as unknown as React.ComponentProps<typeof EmailAccountsCard>['accounts']} connectedMessage={emailConnected} errorMessage={emailError} />
+        <EmailAccountsCard accounts={(emailAccounts ?? [])} connectedMessage={emailConnected} errorMessage={emailError} />
 
       </div>
     </div>

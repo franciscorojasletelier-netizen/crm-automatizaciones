@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   const { data: rows, error: qErr } = await supabase.from('invoices').select(INVOICE_SELECT)
     .eq('company_id', companyId).in('status', ['pendiente', 'parcial'])
   if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 })
-  const statement = buildStatement((rows ?? []) as unknown as Invoice[], chileDateString())
+  const statement = buildStatement((rows ?? []) as Invoice[], chileDateString())
   if (statement.lines.length === 0) {
     return NextResponse.json({ error: 'El cliente no tiene documentos con saldo pendiente' }, { status: 400 })
   }

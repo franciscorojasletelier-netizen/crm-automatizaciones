@@ -71,8 +71,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
       if (!data) return
       setMessages(prev => {
         const ids = new Set(prev.map(m => m.id))
-        // profiles es a-uno; sin tipos de base se infiere como arreglo.
-        const incoming = (data as unknown as Message[]).filter(m => !ids.has(m.id) && m.user_id !== currentUserId)
+        const incoming = (data as Message[]).filter(m => !ids.has(m.id) && m.user_id !== currentUserId)
         if (!incoming.length) return prev
         if (!open) setUnread(n => n + incoming.length)
         return [...prev, ...incoming]
@@ -113,7 +112,7 @@ export default function GlobalChat({ currentUserId, currentUserName, initialMess
       setError(`Error: ${err.message}`)
     } else if (data) {
       setMessages(prev => prev.map(m =>
-        m.id === tempId ? { ...m, id: data.id, created_at: data.created_at } : m
+        m.id === tempId ? { ...m, id: data.id, created_at: data.created_at ?? m.created_at } : m
       ))
     }
 

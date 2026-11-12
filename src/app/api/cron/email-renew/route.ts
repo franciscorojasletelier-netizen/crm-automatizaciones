@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { watchGmail } from '@/lib/email/gmail'
 import { renewOutlookSubscription, subscribeOutlook } from '@/lib/email/outlook'
@@ -13,13 +13,6 @@ const RENEWAL_WINDOW_HOURS = 24
 
 function appUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? 'https://crm-automatizaciones.vercel.app'
-}
-
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
 }
 
 async function handle(request: NextRequest) {

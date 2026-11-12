@@ -6,11 +6,11 @@
  * evento de usuario que lo dispare — nadie "hace" que un deal quede quieto.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { CHILE_TZ } from '@/lib/dates'
 
 interface AutomationContext {
-  supabase: SupabaseClient
+  supabase: Db
   dealId: string
   toStage?: string
   status?: 'won' | 'lost' | 'open'
@@ -31,7 +31,7 @@ export interface AutomationRuleRow {
 // notify_team), registra el log y actualiza el contador. Compartido entre
 // el disparador client-side (cambios de etapa) y el cron (days_inactive).
 export async function executeAutomationAction(
-  supabase: SupabaseClient,
+  supabase: Db,
   rule: AutomationRuleRow,
   { dealId, ownerId, userId }: { dealId: string; ownerId?: string; userId?: string }
 ) {

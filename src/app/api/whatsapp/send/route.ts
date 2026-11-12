@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { userRateLimit } from '@/lib/rate-limit'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { canSeeDeal } from '@/lib/visibility'
 import { sendWhatsAppText } from '@/lib/whatsapp'
@@ -41,10 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sin acceso a este deal' }, { status: 403 })
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SECRET_KEY!
-    )
+    const supabase = serviceClient()
 
     // Obtener el teléfono del contacto del deal
     const { data: deal } = await supabase
@@ -55,8 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (!deal) return NextResponse.json({ error: 'Deal no encontrado' }, { status: 404 })
 
-    // contacts es a-uno; sin tipos de base se infiere como arreglo.
-    const phone = (deal.contacts as unknown as { phone: string | null } | null)?.phone
+    const phone = (deal.contacts)?.phone
     if (!phone) return NextResponse.json({ error: 'El contacto no tiene teléfono registrado' }, { status: 400 })
 
     const result = await sendWhatsAppText(supabase, {

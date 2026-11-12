@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { listNewMessageIds, getGmailMessage } from '@/lib/email/gmail'
 import { safeEqual } from '@/lib/secure-compare'
 import { handleInboundEmail } from '@/lib/email/inbound'
 
 export const dynamic = 'force-dynamic'
-
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
 
 function extractAddress(header: string): string {
   const match = header.match(/<([^>]+)>/)

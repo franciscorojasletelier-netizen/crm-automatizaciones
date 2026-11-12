@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { getCurrentProfile } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2 } from 'lucide-react'
@@ -34,10 +34,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
   // pipeline_stages/field_definitions/organization_modules) — con el cliente
   // RLS-bound este conteo siempre daría 0 para una organización ajena a la
   // del dueño de la plataforma. Se usa service_role solo para esta lectura.
-  const svc = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const svc = serviceClient()
 
   const [stages, pipelines, dealFields, companyFields, contactFields, modulesRes, usersRes, integrationsRes] = await Promise.all([
     getAllStages(supabase, id),
@@ -93,7 +90,7 @@ export default async function OrganizationConfigPage({ params }: { params: Promi
 
         <ModulesEditor orgId={org.id} sections={NAV_SECTIONS} enabledByKey={enabledByKey} expiresByKey={expiresByKey} />
 
-        <IntegrationsEditor orgId={org.id} integrations={(integrationsRes.data ?? []) as unknown as React.ComponentProps<typeof IntegrationsEditor>['integrations']} />
+        <IntegrationsEditor orgId={org.id} integrations={(integrationsRes.data ?? []) as React.ComponentProps<typeof IntegrationsEditor>['integrations']} />
       </div>
     </div>
   )

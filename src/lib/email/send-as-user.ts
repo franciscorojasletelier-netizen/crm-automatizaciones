@@ -1,24 +1,21 @@
 // Envía un correo desde la cuenta conectada (Gmail/Outlook) del usuario.
 // Compartido por /api/email/send y /api/cobranza/enviar.
-import type { SupabaseClient } from '@supabase/supabase-js'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
+import { serviceClient } from '@/lib/supabase/service'
 import { ensureFreshAccessToken, type EmailAccountRow } from '@/lib/email/oauth'
 import { sendGmailMessage } from '@/lib/email/gmail'
 import { sendOutlookMessage } from '@/lib/email/outlook'
 
 export function emailServiceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  return serviceClient()
 }
 
 export type SendResult =
-  | { ok: true; accountId: string; fromAddress: string; messageId: string; threadId: string | null; svc: SupabaseClient }
+  | { ok: true; accountId: string; fromAddress: string; messageId: string; threadId: string | null; svc: Db }
   | { ok: false; error: string; status: number }
 
 export async function sendAsUser(
-  supabase: SupabaseClient,
+  supabase: Db,
   userId: string,
   msg: { to: string; subject: string; body: string; html?: string; threadId?: string; replyToMessageId?: string },
 ): Promise<SendResult> {

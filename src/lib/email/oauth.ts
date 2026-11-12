@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 export type EmailProvider = 'google_workspace' | 'microsoft_365'
 
@@ -9,7 +9,7 @@ export type EmailProvider = 'google_workspace' | 'microsoft_365'
 // external_id = client_id, access_token = client_secret (mismo par de
 // columnas genéricas que ya usan meta_leads/whatsapp/webhook_form).
 export async function getOAuthAppCredentials(
-  supabase: SupabaseClient, organizationId: string, provider: EmailProvider
+  supabase: Db, organizationId: string, provider: EmailProvider
 ): Promise<{ clientId: string; clientSecret: string } | null> {
   const { data } = await supabase
     .from('platform_integrations')
@@ -45,7 +45,7 @@ const REFRESH_MARGIN_MS = 5 * 60 * 1000
 // columnas que `authenticated` no puede ni leer (ver migración 034).
 export async function ensureFreshAccessToken(
   // Solo lo que se usa: los llamadores no siempre traen user_id ni email_address.
-  supabase: SupabaseClient, account: Pick<EmailAccountRow, 'id' | 'organization_id' | 'provider' | 'access_token' | 'refresh_token' | 'token_expires_at'>
+  supabase: Db, account: Pick<EmailAccountRow, 'id' | 'organization_id' | 'provider' | 'access_token' | 'refresh_token' | 'token_expires_at'>
 ): Promise<string | null> {
   const expiresAt = account.token_expires_at ? new Date(account.token_expires_at).getTime() : 0
   if (account.access_token && expiresAt - Date.now() > REFRESH_MARGIN_MS) {

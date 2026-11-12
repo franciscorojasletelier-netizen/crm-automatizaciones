@@ -1,6 +1,6 @@
 ﻿import { META_GRAPH_URL, metaAuthHeaders } from '@/lib/meta'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { Resend } from 'resend'
 import { renderNewLeadAlert } from '@/lib/system-emails'
 import crypto from 'crypto'
@@ -78,10 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'ignored' }, { headers: CORS_HEADERS })
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
-      process.env.SUPABASE_SECRET_KEY!.trim()
-    )
+    const supabase = serviceClient()
     const resend = new Resend(process.env.RESEND_API_KEY)
 
     // La organización se resuelve POR PÁGINA (page_id), no una vez para

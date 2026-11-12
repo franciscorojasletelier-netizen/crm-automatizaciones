@@ -1,6 +1,6 @@
 // Datos para cobrar a un cliente: documentos abiertos, contacto, quién
 // envía y si tiene correo conectado. Usa el cliente de sesión (RLS).
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { chileDateString } from '@/lib/dates'
 import { INVOICE_SELECT, type Invoice } from '@/lib/cobranza'
 import { buildStatement } from '@/lib/cobranza-mensajes'
@@ -13,7 +13,7 @@ export type OrgInfo = {
 }
 
 /** Quién envía: nombre del ejecutivo, organización y por dónde sale el correo. */
-export async function loadSenderContext(supabase: SupabaseClient, userId: string, organizationId: string | null) {
+export async function loadSenderContext(supabase: Db, userId: string, organizationId: string | null) {
   const [orgRes, meRes, mailRes] = await Promise.all([
     organizationId
       ? supabase.from('organizations').select('name, display_name, email, phone, address, logo_url, payment_instructions').eq('id', organizationId).maybeSingle()
@@ -42,7 +42,7 @@ export async function loadSenderContext(supabase: SupabaseClient, userId: string
 export type Contact = { full_name: string | null; email: string | null; phone: string | null }
 
 /** Contacto principal por empresa: prefiere uno con correo y teléfono. */
-export async function loadContactsByCompany(supabase: SupabaseClient, companyIds: string[]) {
+export async function loadContactsByCompany(supabase: Db, companyIds: string[]) {
   const map = new Map<string, Contact>()
   if (companyIds.length === 0) return map
   const { data } = await supabase.from('contacts').select('company_id, full_name, email, phone, created_at')
@@ -55,7 +55,7 @@ export async function loadContactsByCompany(supabase: SupabaseClient, companyIds
   return map
 }
 
-export async function loadCollectionContext(supabase: SupabaseClient, companyId: string, userId: string, organizationId: string | null) {
+export async function loadCollectionContext(supabase: Db, companyId: string, userId: string, organizationId: string | null) {
   const [invRes, companyRes, contacts, sender] = await Promise.all([
     supabase.from('invoices').select(INVOICE_SELECT).eq('company_id', companyId).in('status', ['pendiente', 'parcial']),
     supabase.from('companies').select('id, name').eq('id', companyId).maybeSingle(),
@@ -63,7 +63,7 @@ export async function loadCollectionContext(supabase: SupabaseClient, companyId:
     loadSenderContext(supabase, userId, organizationId),
   ])
 
-  const invoices = (invRes.data ?? []) as unknown as Invoice[]
+  const invoices = (invRes.data ?? []) as Invoice[]
   return {
     company: companyRes.data as { id: string; name: string } | null,
     contact: contacts.get(companyId) ?? null,

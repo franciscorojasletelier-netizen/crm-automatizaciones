@@ -58,7 +58,7 @@ export default function DealTasks({ dealId, tasks }: { dealId: string; tasks: De
         deal_id: dealId, title, due_date: dueDate ? chileLocalToIso(dueDate) : null,
         assigned_to: user?.id ?? null, created_by: user?.id ?? null,
       })
-      .select('*, profiles:assigned_to(full_name)')
+      .select('*, profiles!assigned_to(full_name)')
       .single()
     if (data) {
       setList([...list, data])

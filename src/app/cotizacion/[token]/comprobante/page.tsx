@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { canonicalJson, sha256Hex, type AcceptanceSnapshot } from '@/lib/quote-acceptance'
 import { money } from '@/lib/money'
 import { CHILE_TZ, DATE_ONLY_TZ } from '@/lib/dates'
@@ -12,7 +12,7 @@ export const metadata = { title: 'Comprobante de aceptación', robots: { index: 
 // firmar y su huella. Se verifica en cada carga (recalcula la huella).
 export default async function AcceptanceCertificatePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
+  const supabase = serviceClient()
   const { data: q } = await supabase.from('quotes').select('status, accepted_snapshot, accepted_hash, organization_id').eq('public_token', token).maybeSingle()
   if (!q || q.status !== 'accepted' || !q.accepted_snapshot || !q.accepted_hash) notFound()
   const { data: org } = await supabase.from('organizations').select('logo_url').eq('id', q.organization_id).maybeSingle()

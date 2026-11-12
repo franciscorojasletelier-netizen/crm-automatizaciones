@@ -5,7 +5,7 @@
 // Si el contador usa el CRM, la tarea "Emitir factura" pasa a su nombre.
 // Si no hay a quién enviar, la tarea del vendedor le recuerda mandar los
 // datos (botón «Enviar al contador» en la ficha del negocio).
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { renderBillingRequestEmail, billingConcept, type BillingClient, type BillingRequestData } from '@/lib/billing-email'
 import { money } from '@/lib/money'
@@ -18,7 +18,7 @@ export interface BillingRequestRow {
 const appUrl = () => process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://crm-automatizaciones.vercel.app'
 
 /** Datos para el correo (cliente, cotización, firmante, desglose). */
-export async function loadBillingContext(svc: SupabaseClient, req: BillingRequestRow) {
+export async function loadBillingContext(svc: Db, req: BillingRequestRow) {
   const [{ data: org }, { data: deal }, { data: quote }, { data: finance }] = await Promise.all([
     svc.from('organizations').select('name, display_name, logo_url, email, phone, address, accounting_email').eq('id', req.organization_id).maybeSingle(),
     req.deal_id
@@ -29,8 +29,8 @@ export async function loadBillingContext(svc: SupabaseClient, req: BillingReques
       : Promise.resolve({ data: null }),
     svc.from('profiles').select('id, email, full_name').eq('organization_id', req.organization_id).eq('role', 'finanzas').eq('is_active', true),
   ])
-  const company = (deal?.companies ?? null) as unknown as { name: string | null; legal_name: string | null; tax_id: string | null; business_activity: string | null; billing_address: string | null; billing_email: string | null } | null
-  const owner = (deal?.profiles ?? null) as unknown as { full_name: string | null; email: string | null } | null
+  const company = (deal?.companies ?? null)
+  const owner = (deal?.profiles ?? null)
   const snap = (quote?.accepted_snapshot ?? null) as { subtotal?: number; total?: number; impuestos?: { nombre: string; tasa: number }[]; aceptacion?: { nombre: string; rut: string }; cliente?: { facturacion?: Partial<BillingClient> } } | null
   const billing = snap?.cliente?.facturacion
   const client: BillingClient = {
@@ -63,7 +63,7 @@ export async function loadBillingContext(svc: SupabaseClient, req: BillingReques
   }
 }
 
-async function appendTaskNote(svc: SupabaseClient, taskId: string | null, note: string, reassignTo?: string) {
+async function appendTaskNote(svc: Db, taskId: string | null, note: string, reassignTo?: string) {
   if (!taskId) return
   const { data: task } = await svc.from('tasks').select('description').eq('id', taskId).maybeSingle()
   await svc.from('tasks').update({
@@ -73,7 +73,7 @@ async function appendTaskNote(svc: SupabaseClient, taskId: string | null, note: 
 }
 
 /** Envía la solicitud al contador (o deja el recordatorio al vendedor). */
-export async function processBillingRequest(svc: SupabaseClient, req: BillingRequestRow): Promise<'sent' | 'no_recipient' | 'failed'> {
+export async function processBillingRequest(svc: Db, req: BillingRequestRow): Promise<'sent' | 'no_recipient' | 'failed'> {
   const ctx = await loadBillingContext(svc, req)
   const recipients = [...new Set([
     ...ctx.financeUsers.map(u => u.email).filter(Boolean) as string[],
@@ -116,7 +116,7 @@ export async function processBillingRequest(svc: SupabaseClient, req: BillingReq
 }
 
 /** Envío manual a un correo (botón «Enviar al contador» del negocio). */
-export async function sendBillingRequestTo(svc: SupabaseClient, req: BillingRequestRow, to: string, replyTo: string | null): Promise<{ ok: boolean; error?: string }> {
+export async function sendBillingRequestTo(svc: Db, req: BillingRequestRow, to: string, replyTo: string | null): Promise<{ ok: boolean; error?: string }> {
   if (!systemMailConfigured()) return { ok: false, error: 'El correo del sistema no está configurado' }
   const ctx = await loadBillingContext(svc, req)
   const mail = renderBillingRequestEmail({ data: ctx.data, client: ctx.client, brand: ctx.brand, registerLink: ctx.registerLink, certificateLink: ctx.certificateLink })

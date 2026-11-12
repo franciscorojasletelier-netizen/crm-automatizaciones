@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { requirePermission } from '@/lib/supabase/server'
 import { BarChart3, TrendingUp, Target, DollarSign, Award, ArrowRight, Users, Download } from 'lucide-react'
 import Link from 'next/link'
@@ -12,7 +12,7 @@ type ReportDeal = {
   estimated_value: number | null; probability: number | null; closed_at: string | null
 }
 
-async function getReportData(supabase: SupabaseClient, stages: Stage[]) {
+async function getReportData(supabase: Db, stages: Stage[]) {
   // Últimos 6 meses calendario de Chile. Antes se armaban con la hora del
   // servidor (UTC) y se filtraba por updated_at: editar un deal ganado hace
   // meses lo movía al mes actual. Ahora cuenta la fecha real de cierre.
@@ -91,11 +91,7 @@ async function getReportData(supabase: SupabaseClient, stages: Stage[]) {
     winRate: (totalWon + totalLost) > 0 ? Math.round((totalWon / (totalWon + totalLost)) * 100) : 0,
     forecast, openCount: open.length,
     monthlyRevenue, execPerformance, stageCounts,
-    // Relaciones a-uno: sin tipos de base se infieren como arreglo.
-    recentWon: (recentWon.data ?? []) as unknown as {
-      id: string; estimated_value: number | null; closed_at: string | null; stage: string
-      companies: { name: string | null } | null; profiles: { full_name: string | null } | null
-    }[],
+    recentWon: (recentWon.data ?? []),
   }
 }
 

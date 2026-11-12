@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { maskEmail } from '@/lib/quote-acceptance'
 
 // Lectura pública de una cotización por su token — sin sesión, pensado
@@ -7,11 +7,7 @@ import { maskEmail } from '@/lib/quote-acceptance'
 // WhatsApp/email. service_role porque no hay usuario autenticado del CRM.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabase = serviceClient()
 
   const { data: quote } = await supabase
     .from('quotes')
@@ -28,11 +24,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   // Al cliente final no se le exponen ids internos (organización, deal, cotización).
   // Correo al que llegará el código (enmascarado), sin exponerlo completo.
-  const knownEmail = quote.sent_to_email || (deal?.contacts as unknown as { email: string | null } | null)?.email || null
+  const knownEmail = quote.sent_to_email || (deal?.contacts)?.email || null
   const { id: _id, organization_id: _org, deal_id: _deal, sent_to_email: _sent, ...publicQuote } = quote
   void _id; void _org; void _deal; void _sent
-  const contactRow = deal?.contacts as unknown as { full_name: string | null } | null
-  const companyRow = deal?.companies as unknown as { name: string | null; legal_name: string | null; tax_id: string | null; business_activity: string | null; billing_address: string | null; billing_email: string | null } | null
+  const contactRow = deal?.contacts
+  const companyRow = deal?.companies
   const publicDeal = deal ? { companies: companyRow ? { name: companyRow.name } : null, contacts: contactRow ? { full_name: contactRow.full_name, email: null } : null } : null
   const billing = companyRow ? { legalName: companyRow.legal_name, taxId: companyRow.tax_id, activity: companyRow.business_activity, address: companyRow.billing_address, billingEmail: companyRow.billing_email } : null
   return NextResponse.json({ quote: publicQuote, deal: publicDeal, org, codeTarget: knownEmail ? maskEmail(knownEmail) : null, billing })

@@ -8,11 +8,13 @@ import { Pencil, Check, X } from 'lucide-react'
 import type { FieldDefinition, FieldEntity } from '@/lib/fields'
 import { formatFieldValue } from '@/lib/fields'
 
-const TABLE_BY_ENTITY: Record<FieldEntity, string> = {
+// Las tres tablas tienen id y custom_fields; se tipa como una sola para
+// que el cliente acepte la tabla elegida en tiempo de ejecución.
+const TABLE_BY_ENTITY = {
   deal: 'deals',
   company: 'companies',
   contact: 'contacts',
-}
+} as unknown as Record<FieldEntity, 'deals'>
 
 function toInputValue(v: unknown): string {
   if (v === null || v === undefined) return ''

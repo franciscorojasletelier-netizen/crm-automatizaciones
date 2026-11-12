@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { CODE_TTL_MINUTES, hashCode, maskEmail, newCode } from '@/lib/quote-acceptance'
@@ -14,7 +14,7 @@ const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 // hay ninguno se usa el que escribe el cliente.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
+  const supabase = serviceClient()
 
   const ip = getClientIp(request)
   const { allowed } = await checkRateLimit(supabase, 'quote_code', ip, { maxHits: 5, windowMinutes: 15 })
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if ((count ?? 0) >= 5) return NextResponse.json({ error: 'Se enviaron demasiados códigos. Prueba en una hora.' }, { status: 429 })
 
   const { data: deal } = await supabase.from('deals').select('contacts:primary_contact_id(email)').eq('id', quote.deal_id).maybeSingle()
-  const known = quote.sent_to_email || (deal?.contacts as unknown as { email: string | null } | null)?.email || null
+  const known = quote.sent_to_email || (deal?.contacts)?.email || null
   const body = await request.json().catch(() => ({}))
   const typed = String(body.email ?? '').trim().toLowerCase()
   const target = known ?? (EMAIL_RE.test(typed) ? typed : null)

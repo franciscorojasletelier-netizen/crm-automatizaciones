@@ -67,13 +67,12 @@ export default async function ProyectosPage() {
   }
 
   const { data } = await baseQuery
-  // Relaciones a-uno: sin tipos de base se infieren como arreglo.
   type ProjectRow = {
     id: string; name: string; phase: string; status: string; budget: number | null; due_date: string | null; start_date: string | null
     delivered_at: string | null; project_deliverables: { is_completed: boolean }[] | null
     companies: { name: string | null } | null; profiles: { full_name: string | null } | null
   }
-  const projects = data as unknown as ProjectRow[] | null
+  const projects = data as ProjectRow[] | null
 
   const pending = projects?.filter(p => p.status === 'pendiente_especificaciones') ?? []
   const active  = projects?.filter(p => p.status === 'activo') ?? []

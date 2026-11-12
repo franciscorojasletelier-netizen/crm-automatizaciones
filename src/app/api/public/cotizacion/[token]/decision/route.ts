@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { isValidRut, formatRut } from '@/lib/rut'
@@ -19,11 +19,7 @@ import { nextBusinessDue } from '@/lib/dates'
 // Rechazar = motivo opcional.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabase = serviceClient()
 
   // Endpoint público sin autenticación — freno básico contra abuso/spam.
   const ip = getClientIp(request)
@@ -50,8 +46,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     supabase.from('deals').select('owner_id, companies(name), contacts:primary_contact_id(full_name)').eq('id', quote.deal_id).maybeSingle(),
     supabase.from('organizations').select('name, display_name, logo_url, email, phone, address, notification_email, currency').eq('id', quote.organization_id).maybeSingle(),
   ])
-  const company = (deal?.companies as unknown as { name: string } | null)?.name ?? null
-  const contact = (deal?.contacts as unknown as { full_name: string | null } | null)?.full_name ?? null
+  const company = (deal?.companies)?.name ?? null
+  const contact = (deal?.contacts)?.full_name ?? null
   const orgName = org?.display_name || org?.name || 'Tu proveedor'
   const recipients = [...new Set([deal?.owner_id, quote.created_by].filter(Boolean))] as string[]
 

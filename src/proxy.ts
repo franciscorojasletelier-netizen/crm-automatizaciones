@@ -1,11 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccessRouteWithAccess } from '@/lib/roles'
+import type { Database } from '@/lib/supabase/types'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
@@ -104,8 +105,7 @@ export async function proxy(request: NextRequest) {
     // enrolado (no es "pendiente de challenge" — eso ya se resolvió
     // arriba — es "nunca activó nada"). Se lo manda a activarlo antes
     // de dejarlo entrar a cualquier otra pantalla.
-    // organizations es a-uno; sin tipos de base se infiere como arreglo.
-    const orgRow = (profile?.organizations ?? null) as unknown as { require_mfa: boolean; organization_modules: { module_key: string; enabled: boolean; expires_at: string | null }[] | null } | null
+    const orgRow = (profile?.organizations ?? null)
     const requiresMfa = !!orgRow?.require_mfa
     if (requiresMfa && !mfaEnrolled && !pathname.startsWith('/configuracion')) {
       const url = request.nextUrl.clone()

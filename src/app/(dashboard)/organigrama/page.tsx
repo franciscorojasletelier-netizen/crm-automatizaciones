@@ -28,9 +28,7 @@ export default async function OrganigramaPage() {
     .select('id, name, color')
     .order('name')
 
-  // areas:area_id es a-uno; sin tipos de base se infiere como arreglo.
-  type PersonRow = Omit<OrgPerson, 'area_name' | 'area_color'> & { areas: { name: string; color: string | null } | null }
-  const activePeople = ((people ?? []) as unknown as PersonRow[])
+  const activePeople = ((people ?? []))
     .filter(p => p.is_active)
     .map(p => ({
       ...p,

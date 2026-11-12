@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { canSeeDeal } from '@/lib/visibility'
 import { canEditSection } from '@/lib/roles'
 import QuotePrintView from './print-view'
-import type { QuoteDeal, QuoteDoc } from '@/lib/quotes'
+import type { QuoteDoc } from '@/lib/quotes'
 
 export default async function QuotePage({ params }: { params: Promise<{ id: string; quoteId: string }> }) {
   const { id, quoteId } = await params
@@ -28,6 +28,5 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
   // Mismo criterio que el panel de cotizaciones de la ficha del lead.
   const canEdit = ['super_admin', 'gerente', 'comercial'].includes(role) && canEditSection(role, sectionAccess, 'leads')
 
-  // Relaciones a-uno: sin tipos de base se infieren como arreglo.
-  return <QuotePrintView quote={{ ...(quote as QuoteDoc), id: quote.id }} deal={deal as unknown as QuoteDeal | null} org={org} dealId={id} canEdit={canEdit} senderName={profile?.full_name ?? null} />
+  return <QuotePrintView quote={{ ...(quote as QuoteDoc), id: quote.id }} deal={deal} org={org} dealId={id} canEdit={canEdit} senderName={profile?.full_name ?? null} />
 }

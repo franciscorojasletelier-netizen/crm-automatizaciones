@@ -34,7 +34,7 @@ export default async function CobranzaPage({ searchParams }: {
       : Promise.resolve({ data: [] as { id: string; full_name: string | null; email: string | null }[] }),
   ])
 
-  const invoices = (invoicesRes.data ?? []) as unknown as Invoice[]
+  const invoices = (invoicesRes.data ?? []) as Invoice[]
   const summary = summarize(invoices, (paymentsRes.data ?? []) as { amount: number }[], today)
   const companies = (companiesRes.data ?? []).map(c => ({ id: c.id, label: c.name }))
   const people = (peopleRes.data ?? []).map(p => ({ id: p.id, label: p.full_name ?? p.email ?? 'Usuario' }))

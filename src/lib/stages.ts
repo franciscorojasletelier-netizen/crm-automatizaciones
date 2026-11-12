@@ -9,7 +9,7 @@
 //  vuelve a hardcodear en un componente. Si te encontrás por
 //  escribir `const STAGES = [...]` en otro archivo, va acá.
 // ============================================================
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 export type StageColor =
   | 'blue' | 'yellow' | 'purple' | 'indigo' | 'cyan'
@@ -136,7 +136,7 @@ function toPipeline(r: PipelineRow): Pipeline {
 // (dashboard, reportes, tabla de leads, búsqueda) esto NO hace falta:
 // solo lo necesitan el kanban, la creación de leads y el panel de
 // plataforma, que sí tienen que saber "en qué pipeline estoy parado".
-export async function getPipelines(supabase: SupabaseClient, orgId?: string): Promise<Pipeline[]> {
+export async function getPipelines(supabase: Db, orgId?: string): Promise<Pipeline[]> {
   let q = supabase.from('pipelines').select('id, name, sort_order, is_default, is_active').eq('is_active', true)
   if (orgId) q = q.eq('organization_id', orgId)
   const { data } = await q.order('sort_order', { ascending: true })
@@ -161,22 +161,22 @@ export function defaultPipeline(pipelines: Pipeline[]): Pipeline | null {
 // únicas por organización, no por pipeline — ver migración 031). Solo
 // pasalo cuando de verdad importa "las etapas DE ESTE pipeline"
 // (kanban, editor de plataforma).
-export async function getStages(supabase: SupabaseClient, orgId?: string, pipelineId?: string): Promise<Stage[]> {
+export async function getStages(supabase: Db, orgId?: string, pipelineId?: string): Promise<Stage[]> {
   let q = supabase.from('pipeline_stages').select(SELECT).eq('is_active', true)
   if (orgId) q = q.eq('organization_id', orgId)
   if (pipelineId) q = q.eq('pipeline_id', pipelineId)
   const { data } = await q.order('sort_order', { ascending: true })
-  return ((data ?? []) as unknown as StageRow[]).map(toStage)
+  return ((data ?? [])).map(toStage)
 }
 
 // Incluye las desactivadas. Se usa donde hay que mostrar datos
 // históricos (detalle de un deal, reportes) y en el panel de configuración.
-export async function getAllStages(supabase: SupabaseClient, orgId?: string, pipelineId?: string): Promise<Stage[]> {
+export async function getAllStages(supabase: Db, orgId?: string, pipelineId?: string): Promise<Stage[]> {
   let q = supabase.from('pipeline_stages').select(SELECT)
   if (orgId) q = q.eq('organization_id', orgId)
   if (pipelineId) q = q.eq('pipeline_id', pipelineId)
   const { data } = await q.order('sort_order', { ascending: true })
-  return ((data ?? []) as unknown as StageRow[]).map(toStage)
+  return ((data ?? [])).map(toStage)
 }
 
 // ── Selectores ────────────────────────────────────────────────

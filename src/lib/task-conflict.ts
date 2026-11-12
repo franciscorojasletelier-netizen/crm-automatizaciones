@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { CHILE_TZ } from '@/lib/dates'
 
 const CONFLICT_WINDOW_MS = 30 * 60 * 1000  // 30 minutos
@@ -15,7 +15,7 @@ export interface ConflictTask {
  * Excluye la tarea con `excludeTaskId` (para ediciones).
  */
 export async function checkTaskConflict(
-  supabase: SupabaseClient,
+  supabase: Db,
   userId:   string,
   dueDate:  string,
   excludeTaskId?: string
@@ -32,9 +32,8 @@ export async function checkTaskConflict(
     .gte('due_date', from)
     .lte('due_date', to)
 
-  // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
   type Row = { id: string; title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }
-  return ((data ?? []) as unknown as Row[])
+  return ((data ?? []) as Row[])
     .filter(t => t.id !== excludeTaskId)
     .map(t => ({
       id:       t.id,

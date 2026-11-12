@@ -34,7 +34,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   // Query principal sin aliases complejos
   const { data: project } = await supabase
     .from('projects')
-    .select('*, companies(name, industry), profiles:owner_id(full_name), deals(id, owner_id)')
+    .select('*, companies(name, industry), profiles!owner_id(full_name), deals(id, owner_id)')
     .eq('id', id)
     .single()
 

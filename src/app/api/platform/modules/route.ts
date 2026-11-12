@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { friendlyError } from '@/lib/pg-error'
+import type { Insert } from '@/lib/supabase/types'
 
 // Prender/apagar un módulo para una organización, o fijarle fecha de
 // vencimiento (módulo contratado por un plazo). Upsert: si no existía
@@ -17,7 +18,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'organizationId y moduleKey son requeridos' }, { status: 400 })
   }
 
-  const row: Record<string, unknown> = { organization_id: organizationId, module_key: moduleKey }
+  const row: Insert<'organization_modules'> = { organization_id: organizationId, module_key: moduleKey }
   if (typeof enabled === 'boolean') row.enabled = enabled
   if ('expiresOn' in body) {
     if (expiresOn !== null && !/^\d{4}-\d{2}-\d{2}$/.test(String(expiresOn))) {

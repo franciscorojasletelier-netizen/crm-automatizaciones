@@ -6,7 +6,7 @@
 //  recordatorios manuales. Lo usan /plataforma/servicios y el cron diario.
 // ============================================================
 import { META_GRAPH_URL, metaAuthHeaders } from '@/lib/meta'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 export type CheckStatus = 'ok' | 'aviso' | 'urgente' | 'vencido' | 'desconocido'
 
@@ -75,7 +75,7 @@ async function metaTokenExpiry(token: string): Promise<{ valid: boolean; expires
  * @param userClient cliente con sesión del dueño (RPC de salud + recordatorios, pasan por RLS)
  * @param svc        service_role: cuentas e integraciones de todas las organizaciones
  */
-export async function runServiceChecks(userClient: SupabaseClient, svc: SupabaseClient): Promise<{ checks: ServiceCheck[]; health: Health | null }> {
+export async function runServiceChecks(userClient: Db, svc: Db): Promise<{ checks: ServiceCheck[]; health: Health | null }> {
   const now = Date.now()
   const [healthRes, remindersRes, accountsRes, integrationsRes, modulesRes] = await Promise.all([
     userClient.rpc('platform_service_health'),
@@ -85,13 +85,12 @@ export async function runServiceChecks(userClient: SupabaseClient, svc: Supabase
     svc.from('organization_modules').select('id, module_key, expires_at, organizations(name)').eq('enabled', true).not('expires_at', 'is', null),
   ])
   const health = (healthRes.data ?? null) as Health | null
-  // organizations(name) es a-uno; sin tipos de base se infiere como arreglo.
   return {
     checks: await buildChecks(now, health,
       (remindersRes.data ?? []) as ReminderRow[],
-      (accountsRes.data ?? []) as unknown as AccountRow[],
-      (integrationsRes.data ?? []) as unknown as IntegrationRow[],
-      (modulesRes.data ?? []) as unknown as ModuleRow[]),
+      (accountsRes.data ?? []),
+      (integrationsRes.data ?? []),
+      (modulesRes.data ?? []) as ModuleRow[]),
     health,
   }
 }
@@ -212,7 +211,7 @@ export function needsAttention(c: ServiceCheck) {
  * de usuario no hay RPC de salud: revisa recordatorios, correo y Meta.
  * Un solo aviso por día con el resumen.
  */
-export async function notifyServiceExpirations(svc: SupabaseClient): Promise<number> {
+export async function notifyServiceExpirations(svc: Db): Promise<number> {
   const { checks } = await runServiceChecks(svc, svc)
   const pending = checks.filter(c => needsAttention(c) && c.group !== 'Infraestructura')
   if (pending.length === 0) return 0

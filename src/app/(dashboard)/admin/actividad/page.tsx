@@ -24,15 +24,7 @@ function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 }
 
-// Filas de las consultas (las relaciones a-uno se infieren como arreglo sin tipos de base).
-type Person = { full_name: string | null; email?: string | null } | null
 type UserRow = { id: string; full_name: string | null; email: string | null; role: string; is_active: boolean }
-type SessionRow = { id: string; started_at: string; last_seen_at: string; profiles: Person }
-type ActivityRow = { id: string; action_type: string; entity_type: string | null; metadata: unknown; created_at: string; profiles: Person }
-type TaskHistoryRow = {
-  id: string; field_changed: string; old_value: string | null; new_value: string | null; comment: string | null; created_at: string
-  changer: Person; task: { title: string; deals: { companies: { name: string | null } | null } | null } | null
-}
 
 export default async function ActividadPage() {
   const supabase = await createClient()
@@ -104,7 +96,7 @@ export default async function ActividadPage() {
         <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
           {(!taskHistory || taskHistory.length === 0) ? (
             <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin cambios registrados aún</p>
-          ) : (taskHistory as unknown as TaskHistoryRow[]).map((h) => {
+          ) : (taskHistory).map((h) => {
             const task = h.task
             const formatVal = (v: string | null) => {
               if (!v) return 'Sin fecha'
@@ -163,7 +155,7 @@ export default async function ActividadPage() {
             {(!sessions || sessions.length === 0) && (
               <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin sesiones registradas</p>
             )}
-            {(sessions as unknown as SessionRow[] | null)?.map(s => (
+            {(sessions)?.map(s => (
               <div key={s.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
@@ -189,7 +181,7 @@ export default async function ActividadPage() {
             {(!activity || activity.length === 0) && (
               <p className="px-5 py-8 text-sm text-slate-400 text-center font-medium">Sin actividad registrada</p>
             )}
-            {(activity as unknown as ActivityRow[] | null)?.map(a => (
+            {(activity)?.map(a => (
               <div key={a.id} className="px-5 py-3 flex items-start gap-3 hover:bg-slate-50/50 transition-colors">
                 <div className="w-1.5 h-1.5 rounded-full bg-accent-400 mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">

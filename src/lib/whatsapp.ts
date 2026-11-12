@@ -1,5 +1,5 @@
 import { META_GRAPH_URL } from '@/lib/meta'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 const WA_API_URL = META_GRAPH_URL
 
@@ -16,7 +16,7 @@ export interface SendWhatsAppResult {
 // secuencias de follow-up — mismo camino de credenciales por organización
 // (con fallback a las env vars globales) y mismo registro en whatsapp_messages.
 export async function sendWhatsAppText(
-  supabase: SupabaseClient,
+  supabase: Db,
   { organizationId, dealId, phone, body, sentBy }: {
     organizationId: string; dealId: string; phone: string; body: string; sentBy: string | null
   }

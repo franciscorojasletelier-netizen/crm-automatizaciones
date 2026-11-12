@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { chileDateString } from '@/lib/dates'
 import { addDays, balanceOf, invoiceCode } from '@/lib/cobranza'
 import { formatMoney } from '@/lib/format'
 import { notifyServiceExpirations } from '@/lib/service-checks'
 import { runCollectionReminders } from '@/lib/cobranza-recordatorios'
 import { isCronAuthorized } from '@/lib/secure-compare'
+import type { UserRole } from '@/lib/supabase/types'
 
 // Cron diario de cobranza (pg_cron 12:30 UTC, migración 038).
 // Avisa en la app, a quien corresponde, de dos hechos del día:
@@ -14,7 +15,7 @@ import { isCronAuthorized } from '@/lib/secure-compare'
 //  - compromisos de pago que vencen HOY.
 // Destinatario: el responsable del documento; sin responsable, quienes
 // gestionan cobranza en la organización (gerencia + finanzas).
-const COLLECTION_ROLES = ['super_admin', 'admin', 'gerente', 'finanzas']
+const COLLECTION_ROLES: UserRole[] = ['super_admin', 'admin', 'gerente', 'finanzas']
 
 type Row = {
   id: string; invoice_number: number; organization_id: string; responsible_id: string | null
@@ -27,11 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
-    process.env.SUPABASE_SECRET_KEY!.trim(),
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabase = serviceClient()
 
   const today = chileDateString()
   const yesterday = addDays(today, -1)
@@ -43,7 +40,7 @@ export async function GET(request: NextRequest) {
   ])
   if (e1 || e2) return NextResponse.json({ error: (e1 ?? e2)!.message }, { status: 500 })
 
-  const rows = [...(newlyOverdue ?? []), ...(promisesToday ?? [])] as unknown as Row[]
+  const rows = [...(newlyOverdue ?? []), ...(promisesToday ?? [])]
   const orgIds = [...new Set(rows.filter(r => !r.responsible_id).map(r => r.organization_id))]
   const managersByOrg = new Map<string, string[]>()
   if (orgIds.length) {
@@ -56,12 +53,12 @@ export async function GET(request: NextRequest) {
 
   const recipients = (r: Row) => r.responsible_id ? [r.responsible_id] : (managersByOrg.get(r.organization_id) ?? [])
   const notifications = [
-    ...((newlyOverdue ?? []) as unknown as Row[]).flatMap(r => recipients(r).map(user_id => ({
+    ...((newlyOverdue ?? []) as Row[]).flatMap(r => recipients(r).map(user_id => ({
       user_id, type: 'automation', entity_type: 'invoice', entity_id: r.id,
       title: `⏰ Venció ${invoiceCode(r)} · ${r.companies?.name ?? 'Cliente'}`,
       body: `Saldo pendiente ${formatMoney(balanceOf(r), r.currency)}. Registra una gestión de cobranza.`,
     }))),
-    ...((promisesToday ?? []) as unknown as Row[]).flatMap(r => recipients(r).map(user_id => ({
+    ...((promisesToday ?? []) as Row[]).flatMap(r => recipients(r).map(user_id => ({
       user_id, type: 'automation', entity_type: 'invoice', entity_id: r.id,
       title: `🤝 Hoy vence un compromiso de pago · ${r.companies?.name ?? 'Cliente'}`,
       body: `${invoiceCode(r)} — saldo ${formatMoney(balanceOf(r), r.currency)}. Confirma si se pagó.`,

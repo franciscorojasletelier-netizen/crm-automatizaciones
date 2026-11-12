@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:types": "supabase gen types typescript --project-id srjdkdazxhevpwjymskl --schema public > src/lib/supabase/database.types.ts",
     "test:rls": "node --env-file-if-exists=.env.local scripts/test-rls-isolation.mjs",
     "test:cobranza": "node --env-file-if-exists=.env.local scripts/test-cobranza.mjs"
   },

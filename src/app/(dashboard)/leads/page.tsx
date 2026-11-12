@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { requirePermission } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, AlertTriangle } from 'lucide-react'
-import LeadsTable, { type LeadRow } from '@/components/leads/leads-table'
+import LeadsTable from '@/components/leads/leads-table'
 import ImportLeadsButton from '@/components/leads/import-leads-button'
 import { formatMoney } from '@/lib/format'
 import { getStages } from '@/lib/stages'
@@ -52,8 +52,7 @@ export default async function LeadsPage() {
   // Las cuatro consultas son independientes: en paralelo, no en cascada.
   const [{ data: deals }, { count: totalCount }, { data: teamUsers }, { data: pendingSpecRaw }] =
     await Promise.all([query, countQuery, teamQuery, pendingQuery])
-  // deal:deal_id es a-uno; sin tipos de base se infiere como arreglo.
-  const pendingSpecDeals = (pendingSpecRaw ?? []) as unknown as { id: string; name: string; deal_id: string; deal: { companies: { name: string | null } | null } | null }[]
+  const pendingSpecDeals = (pendingSpecRaw ?? [])
 
   const total = totalCount ?? deals?.length ?? 0
   const totalValue = deals?.reduce((s, d) => s + (Number(d.estimated_value) || 0), 0) ?? 0
@@ -100,7 +99,7 @@ export default async function LeadsPage() {
         </Panel>
       )}
 
-      <LeadsTable deals={(deals ?? []) as unknown as LeadRow[]} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} stages={stages} />
+      <LeadsTable deals={(deals ?? [])} teamUsers={canReassign ? (teamUsers ?? []) : []} canReassign={canReassign && canEdit} stages={stages} />
     </PageContainer>
   )
 }

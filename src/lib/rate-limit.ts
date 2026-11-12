@@ -1,10 +1,10 @@
 import { serviceClient } from '@/lib/supabase/service'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 // Requiere un cliente service_role — rate_limit_hits no tiene GRANT
 // para authenticated/anon a propósito (ver migración 021).
 export async function checkRateLimit(
-  admin: SupabaseClient,
+  admin: Db,
   bucket: string,
   key: string,
   { maxHits, windowMinutes }: { maxHits: number; windowMinutes: number }
