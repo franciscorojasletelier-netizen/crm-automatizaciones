@@ -104,6 +104,11 @@ export async function POST(request: NextRequest) {
     const estimated_value = str(body.estimated_value, 20)
     const next_action     = str(body.next_action, 300)
     const message         = str(body.message ?? body.details, 5000)
+    // Quien llenó un formulario espera el "recibimos tu mensaje"; un lead
+    // empujado por otro sistema (ej. el Prospector SEO) trae el correo de
+    // alguien que nunca nos escribió. Ese sistema manda skip_auto_reply:true
+    // para guardar el correo en el contacto sin enviarle la auto-respuesta.
+    const skipAutoReply   = body.skip_auto_reply === true
 
     // ilike trata % y _ como comodines: un email "%" coincidía con
     // cualquier contacto y enganchaba el lead a un deal ajeno.
@@ -280,7 +285,7 @@ export async function POST(request: NextRequest) {
 
     // Enviar emails automáticos (sin bloquear la respuesta)
     const resendKey = process.env.RESEND_API_KEY?.trim()
-    if (resendKey && contact_email) {
+    if (resendKey && contact_email && !skipAutoReply) {
       const resend = new Resend(resendKey)
       // Email al cliente
       resend.emails.send({
