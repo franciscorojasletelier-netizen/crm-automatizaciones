@@ -11,7 +11,7 @@ import { sendAsUser, emailServiceClient } from '@/lib/email/send-as-user'
 import { sendSystemMail, systemMailConfigured } from '@/lib/email/system-mail'
 import { renderQuoteEmail } from '@/lib/quote-email'
 import { getStages, stageByKey } from '@/lib/stages'
-import { changeDealStage } from '@/lib/deal-stage-change'
+import { changeDealStage } from '@/lib/deal-stage-change-server'
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
 

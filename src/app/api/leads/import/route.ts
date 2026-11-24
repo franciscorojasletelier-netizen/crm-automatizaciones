@@ -32,7 +32,17 @@ export async function GET() {
 
   const head = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '2563EB' } } }
   const leads = XLSX.utils.aoa_to_sheet([IMPORT_COLUMNS.map(c => c.header), IMPORT_COLUMNS.map(c => c.example)])
-  IMPORT_COLUMNS.forEach((_, i) => { leads[XLSX.utils.encode_cell({ r: 0, c: i })].s = head })
+  const example = { font: { italic: true, color: { rgb: '64748B' } } }
+  IMPORT_COLUMNS.forEach((c, i) => {
+    leads[XLSX.utils.encode_cell({ r: 0, c: i })].s = head
+    leads[XLSX.utils.encode_cell({ r: 1, c: i })].s = example
+    // Teléfono como texto: si no, Excel borra el "+" y los espacios.
+    if (c.field === 'phone') {
+      for (let r = 2; r <= IMPORT_MAX_ROWS; r++) leads[XLSX.utils.encode_cell({ r, c: i })] = { t: 's', v: '', z: '@', s: { numFmt: '@' } }
+    }
+  })
+  leads['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: IMPORT_MAX_ROWS, c: IMPORT_COLUMNS.length - 1 } })
+  leads['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: IMPORT_COLUMNS.length - 1 } }) }
   leads['!cols'] = IMPORT_COLUMNS.map(c => ({ wch: Math.max(c.header.length, c.example.length) + 4 }))
 
   const guide = XLSX.utils.aoa_to_sheet([

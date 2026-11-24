@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, FileText, Eye, Upload, Paperclip, PenLine } from 'lucide-react'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
-import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
+import { requestStageChange, uploadProposal, type ProposalFields } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
-import { useCurrency } from '@/components/providers/currency-provider'
 
 // Las etapas, sus razones y sus semánticas las define cada organización en
-// pipeline_stages. La lógica del cambio vive en src/lib/deal-stage-change.ts,
-// compartida con el kanban.
+// pipeline_stages. El cambio lo hace el servidor (POST /api/deals/[id]/stage),
+// igual que desde el kanban.
 
 interface Props {
   dealId: string
@@ -37,7 +36,6 @@ export default function DealStageSelector({
   dealId, currentStage, proposalFilename, proposalUrl, organizationId, stages, companyName, estimatedValue,
   hasSentQuote = false, acceptedQuoteNumber = null,
 }: Props) {
-  const currency = useCurrency()
   const [stage, setStage] = useState(currentStage)
   // Si el servidor trae otra etapa (router.refresh, otra pestaña), se adopta.
   const [lastServerStage, setLastServerStage] = useState(currentStage)
@@ -61,12 +59,10 @@ export default function DealStageSelector({
     void apply(newStage)
   }
 
-  async function apply(newStage: string, opts: { reason?: string; comment?: string; extraUpdates?: Record<string, unknown> } = {}) {
+  async function apply(newStage: string, opts: { reason?: string; comment?: string; proposal?: ProposalFields } = {}) {
     setBusy(true)
     setError('')
-    const result = await changeDealStage(supabase, {
-      dealId, fromStage: stage, toStage: newStage, stages, currency, ...opts,
-    })
+    const result = await requestStageChange(dealId, { toStage: newStage, ...opts })
     setBusy(false)
     if (!result.ok) { setError(result.error); return }
     if (result.warning) setError(result.warning)
@@ -79,8 +75,8 @@ export default function DealStageSelector({
     setBusy(true)
     setError('')
     try {
-      const extraUpdates = await uploadProposal(supabase, { organizationId, dealId, file })
-      await apply(targetStage, { extraUpdates })
+      const proposal = await uploadProposal(supabase, { organizationId, dealId, file })
+      await apply(targetStage, { proposal })
     } catch (err) {
       setError(`Error subiendo archivo: ${err instanceof Error ? err.message : 'desconocido'} — la etapa no cambió`)
       setBusy(false)
