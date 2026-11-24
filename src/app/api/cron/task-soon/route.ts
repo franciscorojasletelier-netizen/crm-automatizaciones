@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
+import { serviceClient } from '@/lib/supabase/service'
 import { isCronAuthorized } from '@/lib/secure-compare'
 import { renderTaskSoon } from '@/lib/task-emails'
 import type { EmailBrand } from '@/lib/email-layout'
@@ -23,11 +24,7 @@ export async function GET(request: NextRequest) {
   const resendKey = process.env.RESEND_API_KEY?.trim()
   if (!resendKey) return NextResponse.json({ error: 'Falta RESEND_API_KEY' }, { status: 503 })
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
-    process.env.SUPABASE_SECRET_KEY!.trim(),
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabase = serviceClient()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://crm-automatizaciones.vercel.app'
 
   // Solicitudes de factura al contador (aceptación o avance del proyecto).
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ ok: true, sent, failed: failed.length, billing })
 }
 
-async function processPendingBilling(supabase: SupabaseClient) {
+async function processPendingBilling(supabase: Db) {
   const { data } = await supabase.from('billing_requests').select('id, organization_id, deal_id, quote_id, task_id, installment, installments, label, amount, currency, status')
     .eq('status', 'pending').order('created_at').limit(10)
   const result = { sent: 0, noRecipient: 0, failed: 0 }

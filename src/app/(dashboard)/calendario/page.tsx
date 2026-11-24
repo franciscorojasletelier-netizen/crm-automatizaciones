@@ -21,7 +21,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     .select(`
       id, title, due_date, is_completed,
       deals(id, companies(name)),
-      profiles:assigned_to(full_name)
+      profiles!assigned_to(full_name)
     `)
     .gte('due_date', start)
     .lt('due_date', end)
@@ -40,7 +40,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
         <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-slate-900">Calendario</h1>
         <p className="text-sm text-slate-500 mt-0.5">Vista mensual de tareas y actividades</p>
       </div>
-      <CalendarView key={`${year}-${month}`} year={year} month={month} tasks={(tasks ?? []) as unknown as React.ComponentProps<typeof CalendarView>['tasks']} />
+      <CalendarView key={`${year}-${month}`} year={year} month={month} tasks={(tasks ?? []) as React.ComponentProps<typeof CalendarView>['tasks']} />
     </div>
   )
 }

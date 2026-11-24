@@ -84,7 +84,7 @@ export default function NuevoLeadForm({ dealFields = [], pipelines = [], initial
       if (form.contact_email.trim()) {
         const { data } = await supabase.from('contacts').select('id, full_name, email, company_id, companies(name)').ilike('email', form.contact_email.trim()).limit(1).maybeSingle()
         if (data) {
-          const cName = (data.companies as unknown as { name: string } | null)?.name ?? null
+          const cName = (data.companies)?.name ?? null
           found = found
             ? { ...found, contactId: data.company_id === found.companyId ? data.id : null }
             : { label: `Ya existe un contacto con el correo ${data.email} (${data.full_name ?? 'sin nombre'}${cName ? `, ${cName}` : ''}).`, companyId: data.company_id, companyName: cName, contactId: data.id }

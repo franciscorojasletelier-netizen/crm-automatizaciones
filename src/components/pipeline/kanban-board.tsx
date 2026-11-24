@@ -8,7 +8,7 @@ import { formatMoney } from '@/lib/format'
 import { X, Check, Flame, PenLine, Paperclip, Trophy } from 'lucide-react'
 import { StageIcon } from '@/lib/stage-icons'
 import { type Stage, stageByKey, colorOf, boardStages, terminalStages } from '@/lib/stages'
-import { changeDealStage, uploadProposal } from '@/lib/deal-stage-change'
+import { requestStageChange, uploadProposal, type ProposalFields } from '@/lib/deal-stage-change'
 import { ReasonModal, ProposalModal, WonModal } from '@/components/deals/stage-change-modals'
 import { useDialog } from '@/lib/use-dialog'
 import { useCurrency } from '@/components/providers/currency-provider'
@@ -179,8 +179,8 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
     setSaving(true)
     setError('')
     try {
-      const extraUpdates = await uploadProposal(supabase, { organizationId, dealId: deal.id, file })
-      await applyMove(deal, targetStage, null, null, extraUpdates)
+      const proposal = await uploadProposal(supabase, { organizationId, dealId: deal.id, file })
+      await applyMove(deal, targetStage, null, null, proposal)
     } catch (err) {
       setError(`Error subiendo propuesta: ${err instanceof Error ? err.message : 'desconocido'} — el deal no se movió`)
       setSaving(false)
@@ -189,8 +189,8 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
   }
 
   // La lógica del cambio (status, proyecto al ganar, avisos, automatizaciones)
-  // vive en src/lib/deal-stage-change.ts, compartida con el detalle del lead.
-  async function applyMove(deal: KanbanDeal, targetStage: string, reason: string | null, comment: string | null, extraUpdates?: Record<string, unknown>) {
+  // corre en el servidor: POST /api/deals/[id]/stage.
+  async function applyMove(deal: KanbanDeal, targetStage: string, reason: string | null, comment: string | null, proposal?: ProposalFields) {
     setSaving(true)
     setError('')
 
@@ -198,9 +198,7 @@ export default function KanbanBoard({ initialDeals, readOnly, organizationId, st
     const prevStage = deal.stage
     setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: targetStage } : d))
 
-    const result = await changeDealStage(supabase, {
-      dealId: deal.id, fromStage: prevStage, toStage: targetStage, stages, reason, comment, extraUpdates, currency,
-    })
+    const result = await requestStageChange(deal.id, { toStage: targetStage, reason, comment, proposal })
 
     if (!result.ok) {
       setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage: prevStage } : d))

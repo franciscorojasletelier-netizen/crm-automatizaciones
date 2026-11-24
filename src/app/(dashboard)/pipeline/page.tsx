@@ -82,7 +82,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       </div>
 
       {/* Kanban con drag & drop */}
-      <KanbanBoard initialDeals={(deals ?? []) as unknown as React.ComponentProps<typeof KanbanBoard>['initialDeals']} readOnly={!canEdit} organizationId={organizationId ?? ''} stages={stages} />
+      <KanbanBoard initialDeals={(deals ?? [])} readOnly={!canEdit} organizationId={organizationId ?? ''} stages={stages} />
     </div>
   )
 }

@@ -2,7 +2,7 @@
 //  Campos personalizados por organización (deals / companies / contacts).
 //  Ver src/lib/stages.ts para la contraparte de etapas — mismo patrón.
 // ============================================================
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 export type FieldType =
   | 'text' | 'textarea' | 'number' | 'currency' | 'date'
@@ -61,12 +61,12 @@ const SELECT = `
 // el filtro de organización.
 // includeInactive: el editor de Plataforma necesita también los apagados;
 // si no, al desactivar un campo desaparecía y no había cómo reactivarlo.
-export async function getFieldDefinitions(supabase: SupabaseClient, entity: FieldEntity, orgId?: string, { includeInactive = false }: { includeInactive?: boolean } = {}): Promise<FieldDefinition[]> {
+export async function getFieldDefinitions(supabase: Db, entity: FieldEntity, orgId?: string, { includeInactive = false }: { includeInactive?: boolean } = {}): Promise<FieldDefinition[]> {
   let q = supabase.from('field_definitions').select(SELECT).eq('entity', entity)
   if (!includeInactive) q = q.eq('is_active', true)
   if (orgId) q = q.eq('organization_id', orgId)
   const { data } = await q.order('sort_order', { ascending: true })
-  return ((data ?? []) as unknown as FieldRow[]).map(toField)
+  return ((data ?? []) as FieldRow[]).map(toField)
 }
 
 /** Formatea un valor de custom_fields para mostrarlo, según el tipo de campo. */

@@ -96,8 +96,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const [{ data: history }, { data: interactions }, { data: tasks }, { data: members }, { data: teamUsers }, { data: chatMessages }, { data: aiInsights }, { data: quotes }, { data: emails }, { data: connectedAccount }, { data: dealInvoices }] = await Promise.all([
     supabase.from('pipeline_stage_history').select('*, profiles:changed_by(full_name)').eq('deal_id', id).order('changed_at', { ascending: false }),
     supabase.from('interactions').select('*, profiles:user_id(full_name)').eq('deal_id', id).order('created_at', { ascending: false }),
-    supabase.from('tasks').select('*, profiles:assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
-    supabase.from('deal_members').select('id, user_id, profiles:user_id(full_name, email, role)').eq('deal_id', id),
+    supabase.from('tasks').select('*, profiles!assigned_to(full_name)').eq('deal_id', id).order('is_completed', { ascending: true }).order('due_date', { ascending: true }),
+    supabase.from('deal_members').select('id, user_id, profiles!user_id(full_name, email, role)').eq('deal_id', id),
     canManage
       ? supabase.from('profiles').select('id, full_name, email, role').eq('is_active', true).in('role', ['super_admin', 'admin', 'gerente', 'comercial', 'produccion', 'soporte'])
       : Promise.resolve({ data: [] }),
@@ -127,8 +127,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const acceptedQuote = ((quotes ?? []) as { id: string; quote_number: number; status: string; items: { description: string; quantity: number; unit_price: number }[]; tax_rate: number; taxes?: unknown; currency?: string | null; payment_terms?: unknown }[])
     .find(q => q.status === 'accepted') ?? null
 
-  // profiles:created_by es a-uno; sin tipos de base se infiere como arreglo.
-  const lastInsight = (aiInsights?.[0] ?? null) as unknown as {
+  const lastInsight = (aiInsights?.[0] ?? null) as {
     insights: React.ComponentProps<typeof DealAiInsights>['initialInsights']
     created_at: string
     profiles: { full_name: string | null } | null
@@ -137,8 +136,10 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
   const score = deal.score ?? 0
 
   const stage = stageByKey(stages, deal.stage)
-  const whatsappHref = canSeePhone && deal.contacts?.phone ? (() => {
-    const phone = deal.contacts.phone.replace(/\D/g, '')
+  // El teléfono solo viene en la consulta si el rol puede verlo.
+  const contactPhone = canSeePhone && deal.contacts && 'phone' in deal.contacts ? deal.contacts.phone : null
+  const whatsappHref = contactPhone && deal.contacts ? (() => {
+    const phone = contactPhone.replace(/\D/g, '')
     const intlPhone = phone.startsWith(orgCountryCode) ? phone : `${orgCountryCode}${phone}`
     const nombre = deal.contacts.full_name?.split(' ')[0] ?? 'te'
     const empresa = deal.companies?.name ?? 'tu empresa'
@@ -317,7 +318,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <DealMembers
               dealId={deal.id}
               ownerId={deal.owner_id}
-              members={(members ?? []) as unknown as React.ComponentProps<typeof DealMembers>['members']}
+              members={(members ?? [])}
               teamUsers={(teamUsers ?? []) as React.ComponentProps<typeof DealMembers>['teamUsers']}
               currentUserId={userId}
               canManage={canManage}
@@ -329,7 +330,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               history={history ?? []}
               interactions={interactions ?? []}
               tasks={tasks ?? []}
-              chatMessages={(chatMessages ?? []) as unknown as TimelineSources['chatMessages']}
+              chatMessages={(chatMessages ?? []) as TimelineSources['chatMessages']}
               emails={emails ?? []}
             />
           </div>
@@ -356,7 +357,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             {seesCobranza && (
               <DealInvoicesPanel
                 currency={currency}
-                invoices={(dealInvoices ?? []) as unknown as Invoice[]}
+                invoices={(dealInvoices ?? []) as Invoice[]}
                 today={chileDateString()}
                 canCreate={canManage && (deal.status === 'won' || !!acceptedQuote)}
                 companyId={deal.company_id ?? null}
@@ -391,7 +392,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
               dealId={deal.id}
               currentUserId={userId}
               currentUserName={userName}
-              initialMessages={(chatMessages ?? []) as unknown as React.ComponentProps<typeof DealChat>['initialMessages']}
+              initialMessages={(chatMessages ?? []) as React.ComponentProps<typeof DealChat>['initialMessages']}
             />
           </div>
         </div>
@@ -401,7 +402,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
       <WhatsAppChat
         dealId={deal.id}
         contactName={deal.contacts?.full_name ?? 'Cliente'}
-        contactPhone={canSeePhone ? (deal.contacts?.phone ?? null) : null}
+        contactPhone={contactPhone}
         canSend={canEdit}
         orgPhone={org?.phone ?? null}
       />

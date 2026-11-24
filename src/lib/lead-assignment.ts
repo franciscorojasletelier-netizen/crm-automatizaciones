@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db, UserRole } from '@/lib/supabase/types'
 
 // Asignación automática de leads entrantes (formulario web, Meta Lead Ads):
 // el comercial activo con menos negocios abiertos recibe el lead. Si la
@@ -6,8 +6,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // recibe gerencia con el mismo criterio, para que ningún lead quede sin
 // dueño. Gerencia siempre puede reasignarlo, quitarle el responsable o
 // eliminarlo después.
-export async function pickLeastLoadedComercial(supabase: SupabaseClient, orgId: string): Promise<string | null> {
-  const activeWithRoles = async (roles: string[]) => (await supabase
+export async function pickLeastLoadedComercial(supabase: Db, orgId: string): Promise<string | null> {
+  const activeWithRoles = async (roles: UserRole[]) => (await supabase
     .from('profiles')
     .select('id')
     .eq('organization_id', orgId)
@@ -32,7 +32,7 @@ export async function pickLeastLoadedComercial(supabase: SupabaseClient, orgId: 
 }
 
 // Avisa en el CRM al comercial asignado y a gerencia que entró un lead.
-export async function notifyIncomingLead(supabase: SupabaseClient, opts: {
+export async function notifyIncomingLead(supabase: Db, opts: {
   orgId: string; dealId: string; ownerId: string | null; name: string; detail: string
 }) {
   const targets: { user_id: string; title: string; body: string }[] = []

@@ -69,7 +69,7 @@ export default function SequencesManager({ sequences: initialSequences, stages, 
     }).select('*, automation_sequence_steps(*)').single()
     setSaving(false)
     if (err) { setError(friendlyError(err.message)); return }
-    setSequences(prev => [{ ...data, automation_sequence_steps: [] }, ...prev])
+    setSequences(prev => [{ ...data, automation_sequence_steps: [] } as Sequence, ...prev])
     setName(''); setShowNew(false)
   }
 
@@ -182,7 +182,7 @@ function SequenceCard({ sequence, stages, templates, onToggle, onRemove, onSteps
     }).select().single()
     setSaving(false)
     if (!error && data) {
-      onStepsChange([...(sequence.automation_sequence_steps ?? []), data])
+      onStepsChange([...(sequence.automation_sequence_steps ?? []), data as Step])
       setShowAddStep(false); setMessage('')
     }
   }

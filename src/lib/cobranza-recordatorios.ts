@@ -7,7 +7,7 @@
 //  una sola vez (tabla invoice_reminders). Un correo por cliente y día,
 //  con el estado de cuenta completo. Sale por el correo del sistema.
 // ============================================================
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { chileDateString } from '@/lib/dates'
 import { INVOICE_SELECT, daysBetween, type Invoice } from '@/lib/cobranza'
 import { buildStatement, emailMessage, suggestedTone, type Tone } from '@/lib/cobranza-mensajes'
@@ -67,10 +67,10 @@ export interface PlannedReminder {
  * Qué se enviaría hoy en una organización (sin enviar). Lo usa el cron y
  * la vista previa de la configuración.
  */
-export async function planReminders(db: SupabaseClient, organizationId: string, s: Omit<ReminderSettings, 'organization_id'>, today = chileDateString()) {
+export async function planReminders(db: Db, organizationId: string, s: Omit<ReminderSettings, 'organization_id'>, today = chileDateString()) {
   const { data: rows } = await db.from('invoices').select(INVOICE_SELECT)
     .eq('organization_id', organizationId).in('status', ['pendiente', 'parcial'])
-  const invoices = (rows ?? []) as unknown as Invoice[]
+  const invoices = (rows ?? []) as Invoice[]
 
   const due = invoices.map(inv => ({ inv, milestone: milestoneFor(inv, today, s) })).filter(x => x.milestone) as { inv: Invoice; milestone: string }[]
   if (due.length === 0) return { plan: [] as PlannedReminder[], invoices }
@@ -108,7 +108,7 @@ export async function planReminders(db: SupabaseClient, organizationId: string, 
 }
 
 /** Ejecuta los recordatorios de todas las organizaciones activas (cron). */
-export async function runCollectionReminders(svc: SupabaseClient, today = chileDateString()) {
+export async function runCollectionReminders(svc: Db, today = chileDateString()) {
   if (!systemMailConfigured()) return { status: 'sin_correo_del_sistema' as const, sent: 0 }
 
   const { data: settingsRows } = await svc.from('collection_settings').select('*').eq('auto_reminders', true)

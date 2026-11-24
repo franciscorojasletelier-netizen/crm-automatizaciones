@@ -8,7 +8,7 @@ import { ChevronRight, Search, X, SlidersHorizontal, Users, Loader2, CheckSquare
 import DealOwnerSelector, { type Profile as TeamUser } from '@/components/deals/deal-owner-selector'
 import { formatMoney } from '@/lib/format'
 import { type Stage, stageByKey, colorOf } from '@/lib/stages'
-import { changeDealStage } from '@/lib/deal-stage-change'
+import { requestStageChange } from '@/lib/deal-stage-change'
 import { useCurrency } from '@/components/providers/currency-provider'
 
 /** Fila de /leads (misma forma que el select de la página). */
@@ -152,14 +152,13 @@ export default function LeadsTable({ deals: initialDeals, teamUsers = [], canRea
     if (pipelineIds.size > 1) return
     setBulkSaving(true)
     setBulkError('')
-    const supabase = createClient()
     // Mismo camino que el kanban y el detalle: historial, automatizaciones y
     // avisos. Uno por uno para saber cuáles fallan.
     const moved: string[] = []
     const failed: string[] = []
     for (const d of selectedDeals) {
       if (d.stage === newStageKey) { moved.push(d.id); continue }
-      const res = await changeDealStage(supabase, { dealId: d.id, fromStage: d.stage, toStage: newStageKey, stages, currency })
+      const res = await requestStageChange(d.id, { toStage: newStageKey })
       if (res.ok) moved.push(d.id)
       else failed.push(`${d.companies?.name ?? 'Lead'}: ${res.error}`)
     }

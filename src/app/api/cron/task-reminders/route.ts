@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { Resend } from 'resend'
 import { chileDayStart } from '@/lib/dates'
 import { renderOrgDigest, type TaskLine } from '@/lib/task-emails'
@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
-    process.env.SUPABASE_SECRET_KEY!.trim()
-  )
+  const supabase = serviceClient()
   const resend = new Resend(process.env.RESEND_API_KEY?.trim())
 
   // Antes: un único destinatario hardcodeado (autopilotspa@gmail.com).
@@ -56,7 +53,6 @@ export async function GET(request: NextRequest) {
     if ((!todayTasks || todayTasks.length === 0) && (!overdueTasks || overdueTasks.length === 0)) continue
 
     const brand = { name: org.display_name || org.name, logoUrl: org.logo_url, email: org.email, phone: org.phone, address: org.address }
-    // deals(companies(name)) es a-uno; sin tipos de base se infiere como arreglo.
     const toLines = (rows: unknown[] | null): TaskLine[] => ((rows ?? []) as { title: string; due_date: string; deals: { companies: { name: string | null } | null } | null }[])
       .map(t => ({ title: t.title, due_date: t.due_date, company: t.deals?.companies?.name ?? null }))
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://crm-automatizaciones.vercel.app'

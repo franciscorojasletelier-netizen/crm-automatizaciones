@@ -41,7 +41,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const { data: raw } = await supabase.from('invoices').select(INVOICE_SELECT).eq('id', id).maybeSingle()
   if (!raw) notFound()
-  const invoice = raw as unknown as Invoice
+  const invoice = raw as Invoice
 
   const [paymentsRes, activitiesRes, contactRes, companiesRes, peopleRes, dealRes, collection] = await Promise.all([
     supabase.from('invoice_payments').select('id, amount, paid_on, method, reference, created_at, author:created_by(full_name)')
@@ -58,8 +58,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
     canEdit && isOpen(invoice) ? loadCollectionContext(supabase, invoice.company_id, user.id, organizationId ?? null) : Promise.resolve(null),
   ])
 
-  const payments = (paymentsRes.data ?? []) as unknown as Payment[]
-  const activities = (activitiesRes.data ?? []) as unknown as Activity[]
+  const payments = (paymentsRes.data ?? []) as Payment[]
+  const activities = (activitiesRes.data ?? []) as Activity[]
   const contact = contactRes.data as { full_name: string | null; email: string | null; phone: string | null } | null
   const status = effectiveStatus(invoice, today)
   const meta = STATUS_META[status]

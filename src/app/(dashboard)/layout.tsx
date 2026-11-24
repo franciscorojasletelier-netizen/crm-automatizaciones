@@ -124,7 +124,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <GlobalChat
             currentUserId={userId}
             currentUserName={userName}
-            initialMessages={chatMessages as unknown as React.ComponentProps<typeof GlobalChat>['initialMessages']}
+            initialMessages={chatMessages as React.ComponentProps<typeof GlobalChat>['initialMessages']}
           />
         </div>
       )}

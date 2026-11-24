@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       : Promise.resolve({ data: [] }),
   ])
 
-  const open = (openRes.data ?? []) as unknown as OpenDeal[]
+  const open = (openRes.data ?? [])
   const value = (v: number | null) => Number(v) || 0
   const pipelineValue = open.reduce((s, d) => s + value(d.estimated_value), 0)
   const forecast = Math.round(open.reduce((s, d) => s + value(d.estimated_value) * probabilityForStage(stages, d.stage, d.probability) / 100, 0))
@@ -67,13 +67,13 @@ export default async function DashboardPage() {
   const staleDays = (d: OpenDeal) => Math.floor((now.getTime() - Date.parse(d.last_contacted_at ?? d.created_at)) / DAY_MS)
   const stalled = open.filter(d => staleDays(d) >= STALLED_DAYS).sort((a, b) => staleDays(b) - staleDays(a))
 
-  const invoices = (invoicesRes.data ?? []) as unknown as Invoice[]
+  const invoices = (invoicesRes.data ?? []) as Invoice[]
   const overdueInvoices = invoices.filter(i => daysOverdue(i, today) > 0).sort((a, b) => daysOverdue(b, today) - daysOverdue(a, today))
   const overdueAmount = overdueInvoices.reduce((s, i) => s + balanceOf(i), 0)
   const receivable = invoices.reduce((s, i) => s + balanceOf(i), 0)
 
   const tasksOverdue = tasksOverdueRes.count ?? 0
-  const overdueTasks = (overdueTasksRes.data ?? []) as unknown as { id: string; title: string; due_date: string; deals: { companies: { name: string } | null } | null }[]
+  const overdueTasks = (overdueTasksRes.data ?? []) as { id: string; title: string; due_date: string; deals: { companies: { name: string } | null } | null }[]
 
   // Embudo: conteo y valor por etapa (solo deals abiertos).
   const byStage: Record<string, { count: number; amount: number }> = {}
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
   const maxFunnel = Math.max(...funnel.map(s => byStage[s.key]?.amount || byStage[s.key]?.count || 0), 1)
 
   // Distribución (donut)
-  const chartDeals = (chartRes.data ?? []) as unknown as { stage: string; source: string | null; estimated_value: number | null; profiles: { full_name: string | null } | null; companies: { industry: string | null } | null }[]
+  const chartDeals = (chartRes.data ?? [])
   const PALETTE = ['#3b63d9', '#0f9f8f', '#d9922b', '#c2415c', '#7a5cc9', '#4b8fd6', '#8a9a3a', '#94a3b8']
   function groupBy(key: (d: (typeof chartDeals)[number]) => string | null | undefined) {
     const map: Record<string, { count: number; amount: number }> = {}

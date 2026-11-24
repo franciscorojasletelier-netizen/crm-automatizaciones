@@ -61,9 +61,8 @@ export async function POST(request: NextRequest) {
     ])
 
   if (!deal) return NextResponse.json({ error: 'Deal no encontrado' }, { status: 404 })
-  // Relaciones a-uno: sin tipos de base se infieren como arreglo.
-  const company = deal.companies as unknown as { name: string | null; industry: string | null; website: string | null } | null
-  const contact = deal.contacts as unknown as { full_name: string | null; job_title: string | null } | null
+  const company = deal.companies
+  const contact = deal.contacts
 
   const context = {
     deal: {
@@ -205,7 +204,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       insights,
       created_at: saved?.created_at ?? new Date().toISOString(),
-      created_by_name: (saved?.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
+      created_by_name: (saved?.profiles)?.full_name ?? null,
     })
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {

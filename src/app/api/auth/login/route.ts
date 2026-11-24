@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerAuthClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 
 const WINDOW_MINUTES = 15
 const MAX_ATTEMPTS_PER_EMAIL = 8
@@ -10,14 +10,6 @@ function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) return forwarded.split(',')[0].trim()
   return request.headers.get('x-real-ip') ?? 'unknown'
-}
-
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
 }
 
 export async function POST(request: NextRequest) {

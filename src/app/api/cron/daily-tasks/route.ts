@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { chileDayStart } from '@/lib/dates'
 import { renderDailyDigest } from '@/lib/task-emails'
 import { isCronAuthorized } from '@/lib/secure-compare'
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing Supabase config' }, { status: 500 })
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const supabase = serviceClient()
 
   try {
     const now         = new Date()
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const { data: orgLinks } = await supabase
       .from('profiles').select('id, organization_id').in('id', profiles.map(p => p.id))
     const orgIdByProfile = new Map(((orgLinks ?? []) as { id: string; organization_id: string | null }[]).map(p => [p.id, p.organization_id] as const))
-    const orgIds = Array.from(new Set(Array.from(orgIdByProfile.values()).filter(Boolean)))
+    const orgIds = Array.from(new Set(Array.from(orgIdByProfile.values()).filter((v): v is string => !!v)))
     const { data: orgs } = orgIds.length > 0
       ? await supabase.from('organizations').select('id, name, display_name, logo_url, email, phone, address').in('id', orgIds)
       : { data: [] }

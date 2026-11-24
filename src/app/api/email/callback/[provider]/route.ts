@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { getOAuthAppCredentials } from '@/lib/email/oauth'
 import { exchangeGoogleCode, getGoogleUserEmail, watchGmail } from '@/lib/email/gmail'
@@ -10,13 +10,6 @@ const PROVIDER_MAP = { google: 'google_workspace', microsoft: 'microsoft_365' } 
 
 function appUrl(request: NextRequest) {
   return process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin
-}
-
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {

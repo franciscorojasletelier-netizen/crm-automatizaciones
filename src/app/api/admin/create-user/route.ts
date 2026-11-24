@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import { normalizeRole, NAV_SECTIONS, type SectionMode } from '@/lib/roles'
 
@@ -57,11 +57,7 @@ export async function POST(request: NextRequest) {
   const derivedRole = isAdmin ? 'gerente' : 'comercial'
 
   // 3. Cliente con service role (servidor)
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const admin = serviceClient()
 
   // El jefe directo y el área tienen que ser de la MISMA organización: con
   // service_role no hay RLS que lo impida y los ids vienen del navegador.

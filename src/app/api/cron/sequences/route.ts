@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { sendWhatsAppText } from '@/lib/whatsapp'
 import { isCronAuthorized } from '@/lib/secure-compare'
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ error: 'Missing Supabase config' }, { status: 500 })
   }
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const supabase = serviceClient()
 
   try {
     const { data: enrollments, error: enrollErr } = await supabase
@@ -75,8 +75,7 @@ export async function GET(request: NextRequest) {
           .from('deals')
           .select('id, owner_id, next_action, contacts:primary_contact_id(full_name, phone)')
           .eq('id', enrollment.deal_id).is('deleted_at', null).maybeSingle()
-        // contacts es a-uno; sin tipos de base se infiere como arreglo.
-        const contact = deal?.contacts as unknown as { full_name: string | null; phone: string | null } | null
+        const contact = deal?.contacts
 
         if (!deal) {
           await supabase.from('automation_sequence_enrollments')

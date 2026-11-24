@@ -95,9 +95,9 @@ export default function GlobalSearch({ stages = [], allowedHrefs, variant = 'sid
           .ilike('name', `%${term}%`).order('name').limit(5),
       ])
       setResults({
-        deals: (dealsRes.data ?? []) as unknown as DealHit[],
-        contacts: (contactsRes.data ?? []) as unknown as ContactHit[],
-        companies: (companiesRes.data ?? []) as unknown as CompanyHit[],
+        deals: (dealsRes.data ?? []),
+        contacts: (contactsRes.data ?? []),
+        companies: (companiesRes.data ?? []),
       })
       setLoading(false)
       setSelected(0)

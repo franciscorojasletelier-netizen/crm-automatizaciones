@@ -4,7 +4,7 @@
 //  Los módulos de gestión (usuarios, configuración, actividad,
 //  organigrama, notificaciones, dashboard) van en todos los planes.
 // ============================================================
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db, Update } from '@/lib/supabase/types'
 
 export type PlanKey = 'basico' | 'profesional' | 'empresa' | 'personalizado'
 
@@ -45,9 +45,9 @@ export function isPlanKey(v: unknown): v is PlanKey {
  * de usuarios y los módulos. db debe ser el dueño de la plataforma o
  * service_role (la base rechaza el cambio a cualquier otro).
  */
-export async function applyPlan(db: SupabaseClient, organizationId: string, plan: PlanKey): Promise<string | null> {
+export async function applyPlan(db: Db, organizationId: string, plan: PlanKey): Promise<string | null> {
   const def = PLANS[plan]
-  const orgUpdate: Record<string, unknown> = { plan }
+  const orgUpdate: Update<'organizations'> = { plan }
   if (plan !== 'personalizado') orgUpdate.max_users = def.maxUsers
   const { error: orgErr } = await db.from('organizations').update(orgUpdate).eq('id', organizationId)
   if (orgErr) return orgErr.message

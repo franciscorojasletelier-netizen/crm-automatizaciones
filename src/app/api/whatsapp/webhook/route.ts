@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -36,10 +36,7 @@ export async function GET(request: NextRequest) {
 
 // POST — recibir mensajes entrantes de WhatsApp
 export async function POST(request: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  )
+  const supabase = serviceClient()
 
   try {
     const raw = await request.text()

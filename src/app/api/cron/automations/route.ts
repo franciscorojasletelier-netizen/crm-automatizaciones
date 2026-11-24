@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { executeAutomationAction } from '@/lib/automations'
 import { isCronAuthorized } from '@/lib/secure-compare'
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
   // service_role bypasea RLS — cada query filtra organization_id a mano,
   // igual que los otros crons (webhooks, task-reminders).
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const supabase = serviceClient()
 
   try {
     const { data: orgs, error: orgsErr } = await supabase
@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
 
         const lastRun = new Map<string, string>()
         for (const log of logs ?? []) {
+          if (!log.entity_id || !log.executed_at) continue
           const prev = lastRun.get(log.entity_id)
           if (!prev || log.executed_at > prev) lastRun.set(log.entity_id, log.executed_at)
         }
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
         .limit(DEALS_PER_RULE_LIMIT)
       if (tasksErr) { errors.push(`org ${org.id} tareas vencidas: ${tasksErr.message}`); continue }
       const open = (tasks ?? []).filter(t => {
-        const d = t.deals as unknown as { status: string; deleted_at: string | null } | null
+        const d = t.deals
         return d?.status === 'open' && !d.deleted_at
       })
       if (open.length === 0) continue
@@ -137,6 +138,7 @@ export async function GET(request: NextRequest) {
           .eq('rule_id', rule.id).in('entity_id', [...new Set(open.map(t => t.deal_id as string))])
         const lastRun = new Map<string, string>()
         for (const log of logs ?? []) {
+          if (!log.entity_id || !log.executed_at) continue
           const prev = lastRun.get(log.entity_id)
           if (!prev || log.executed_at > prev) lastRun.set(log.entity_id, log.executed_at)
         }
@@ -149,7 +151,7 @@ export async function GET(request: NextRequest) {
           return true
         })
         await mapWithConcurrency(pending, CONCURRENCY, async (t) => {
-          const owner = (t.deals as unknown as { owner_id: string | null } | null)?.owner_id
+          const owner = (t.deals)?.owner_id
           await executeAutomationAction(supabase, rule, { dealId: t.deal_id as string, ownerId: owner ?? undefined })
           dealsTriggered++
         })

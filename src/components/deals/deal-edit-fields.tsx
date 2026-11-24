@@ -6,9 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import { Pencil, Check, X } from 'lucide-react'
 import { formatMoney } from '@/lib/format'
 import { useCurrency } from '@/components/providers/currency-provider'
+import type { Update } from '@/lib/supabase/types'
 
 function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix, emptyText }: {
-  label: string; value: string | null; fieldKey: string; dealId: string; type?: string; prefix?: string
+  label: string; value: string | null; fieldKey: keyof Update<'deals'> & string; dealId: string; type?: string; prefix?: string
   /** Texto cuando no hay valor (p. ej. la probabilidad que se toma de la etapa). */
   emptyText?: string
 }) {
@@ -24,7 +25,7 @@ function EditableField({ label, value, fieldKey, dealId, type = 'text', prefix, 
     const supabase = createClient()
     const updateVal = type === 'number' ? (val === '' ? null : parseFloat(val)) : (val === '' ? null : val)
     if (type === 'number' && updateVal !== null && !Number.isFinite(updateVal as number)) { setSaving(false); setError('Ingresa un número válido.'); return }
-    const { error: err } = await supabase.from('deals').update({ [fieldKey]: updateVal }).eq('id', dealId)
+    const { error: err } = await supabase.from('deals').update({ [fieldKey]: updateVal } as Update<'deals'>).eq('id', dealId)
     setSaving(false)
     if (err) { setError(err.message); return }
     setError('')

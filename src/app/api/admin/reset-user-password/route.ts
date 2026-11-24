@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { normalizeRole } from '@/lib/roles'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
@@ -33,11 +33,7 @@ export async function POST(request: NextRequest) {
   const userId = body.userId as string
   if (!userId) return NextResponse.json({ error: 'userId es requerido' }, { status: 400 })
 
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const admin = serviceClient()
 
   // Frena tanto al que dispara el reset (por si su sesión se compromete)
   // como al blanco (para no bombardearlo de emails si alguien machaca el botón).

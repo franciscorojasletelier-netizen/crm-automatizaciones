@@ -58,7 +58,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
   const contacts = (company.contacts ?? []) as { id: string; full_name: string | null; email: string | null; phone: string | null; job_title: string | null }[]
   const openDeals = (deals ?? []).filter(d => d.status === 'open')
   const wonValue = (deals ?? []).filter(d => d.status === 'won').reduce((s, d) => s + Number(d.estimated_value ?? 0), 0)
-  const invs = (invoices ?? []) as unknown as Invoice[]
+  const invs = (invoices ?? []) as Invoice[]
   const today = chileDateString()
   const receivable = invs.reduce((s, i) => s + balanceOf(i), 0)
   const overdue = invs.filter(i => daysOverdue(i, today) > 0).reduce((s, i) => s + balanceOf(i), 0)
@@ -100,7 +100,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                   {(deals ?? []).map(d => {
                     const st = stageByKey(stages, d.stage)
                     const c = colorOf(st)
-                    const owner = (d.profiles as unknown as { full_name: string | null } | null)?.full_name
+                    const owner = (d.profiles)?.full_name
                     return (
                       <li key={d.id}>
                         <Link href={`/leads/${d.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">

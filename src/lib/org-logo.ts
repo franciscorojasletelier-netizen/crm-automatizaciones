@@ -1,7 +1,7 @@
 // Subida del logo de una organización al bucket público "logos".
 // Lo usan Configuración (cada empresa) y Plataforma (dueño, al crear o
 // editar cualquier organización). La RLS de storage decide quién puede.
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 export const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 export const LOGO_MAX_BYTES = 512 * 1024
@@ -14,7 +14,7 @@ export function validateLogo(file: File): string | null {
 }
 
 /** Sube el logo y lo deja como logo_url de la organización. Devuelve la URL o un error. */
-export async function uploadOrgLogo(sb: SupabaseClient, organizationId: string, file: File): Promise<{ url: string } | { error: string }> {
+export async function uploadOrgLogo(sb: Db, organizationId: string, file: File): Promise<{ url: string } | { error: string }> {
   const invalid = validateLogo(file)
   if (invalid) return { error: invalid }
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'

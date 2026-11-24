@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { getCurrentProfile } from '@/lib/supabase/server'
 import crypto from 'node:crypto'
 import { applyPlan, isPlanKey, PLANS, type PlanKey } from '@/lib/plans'
@@ -51,11 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
   }
 
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const admin = serviceClient()
 
   // 1. Crear la organización
   const { data: org, error: orgErr } = await admin

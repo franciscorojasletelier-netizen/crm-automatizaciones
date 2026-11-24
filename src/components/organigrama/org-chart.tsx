@@ -10,6 +10,7 @@ import DirectChat from '@/components/chat/direct-chat'
 import SectionChecklist from '@/components/admin/section-checklist'
 import { getInitials } from '@/lib/format'
 import { useDialog } from '@/lib/use-dialog'
+import type { Update } from '@/lib/supabase/types'
 
 export interface OrgPerson {
   id: string
@@ -259,7 +260,7 @@ function EditModal({
 
   async function save() {
     setSaving(true); setError('')
-    const changes: Record<string, unknown> = {
+    const changes: Update<'profiles'> = {
       job_title: jobTitle.trim() || null,
       area_id: areaId || null,
       manager_id: managerId || null,

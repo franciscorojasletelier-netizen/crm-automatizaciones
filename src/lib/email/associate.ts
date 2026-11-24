@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 // Dominios de correo personal: compartirlos no dice nada sobre la
 // empresa del remitente, así que nunca se usan para asociar por dominio
@@ -30,7 +30,7 @@ export type EmailMatch = {
 }
 
 async function latestOpenDeal(
-  supabase: SupabaseClient, organizationId: string,
+  supabase: Db, organizationId: string,
   { contactIds = [], companyIds = [] }: { contactIds?: string[]; companyIds?: string[] }
 ): Promise<string | null> {
   const filters = [
@@ -59,7 +59,7 @@ async function latestOpenDeal(
 //     kovacs.cl) coincide con el de otros contactos o con el sitio web
 //     de una empresa → el deal abierto más reciente de esa empresa.
 export async function associateEmailToDeal(
-  supabase: SupabaseClient, organizationId: string, counterpartAddress: string
+  supabase: Db, organizationId: string, counterpartAddress: string
 ): Promise<EmailMatch> {
   const address = counterpartAddress.trim().toLowerCase()
   if (!address) return { contactId: null, dealId: null, matchedBy: null }

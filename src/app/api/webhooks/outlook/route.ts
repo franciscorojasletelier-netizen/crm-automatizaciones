@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/supabase/service'
 import { ensureFreshAccessToken } from '@/lib/email/oauth'
 import { getOutlookMessage } from '@/lib/email/outlook'
 import { handleInboundEmail } from '@/lib/email/inbound'
 
 export const dynamic = 'force-dynamic'
-
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
 
 export async function POST(request: NextRequest) {
   // Handshake de validación: Graph llama con esto al crear/renovar la

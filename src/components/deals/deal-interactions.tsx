@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Phone, Mail, Users, FileText, Plus, X, Send, type LucideIcon } from 'lucide-react'
 import { timeAgo } from '@/lib/format'
+import type { Enum } from '@/lib/supabase/types'
 
 const typeConfig: Record<string, { icon: LucideIcon; label: string; color: string; bg: string }> = {
   email:   { icon: Mail,     label: 'Email',    color: 'text-blue-600',   bg: 'bg-blue-50'   },
@@ -25,7 +26,7 @@ export interface InteractionItem {
 export default function DealInteractions({ dealId, interactions }: { dealId: string; interactions: InteractionItem[] }) {
   const [list, setList] = useState(interactions)
   const [showing, setShowing] = useState(false)
-  const [type, setType] = useState('note')
+  const [type, setType] = useState<Enum<'interaction_type'>>('note')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -75,7 +76,7 @@ export default function DealInteractions({ dealId, interactions }: { dealId: str
             {Object.entries(typeConfig).map(([key, cfg]) => {
               const Icon = cfg.icon
               return (
-                <button key={key} onClick={() => setType(key)}
+                <button key={key} onClick={() => setType(key as Enum<'interaction_type'>)}
                   className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg ring-1 transition-all ${
                     type === key
                       ? `${cfg.bg} ${cfg.color} ring-current`

@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
+import type { Database } from './types'
 import { redirect } from 'next/navigation'
 import { getPermissions, normalizeRole, canEditSection, type SectionAccess } from '@/lib/roles'
 import { normalizeCurrency, normalizeTaxes, DEFAULT_TAXES, type Currency, type Tax } from '@/lib/money'
@@ -9,7 +10,7 @@ import { normalizePaymentTerms, DEFAULT_PAYMENT_TERMS, DEFAULT_PAYMENT_CONDITION
 export async function createClient() {
   const cookieStore = await cookies()
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
@@ -29,8 +30,6 @@ export async function createClient() {
   )
 }
 
-type ModuleRow = { module_key: string; enabled: boolean; expires_at: string | null }
-type OrgRow = { name: string | null; display_name: string | null; is_active: boolean | null; currency: string | null; taxes: unknown; payment_terms: unknown; payment_conditions: string | null; organization_modules: ModuleRow[] | null }
 
 // Helper: obtiene perfil con el rol YA normalizado.
 //
@@ -55,8 +54,7 @@ export const getCurrentProfile = cache(async () => {
   const role = normalizeRole(profile?.role ?? 'soporte')
   const sectionAccess = (profile?.section_access ?? null) as SectionAccess
   const organizationId: string | null = profile?.organization_id ?? null
-  // organizations es a-uno; sin tipos de base se infiere como arreglo.
-  const org = (profile?.organizations ?? null) as unknown as OrgRow | null
+  const org = (profile?.organizations ?? null)
 
   if (organizationId && org && org.is_active === false) {
     await supabase.auth.signOut()

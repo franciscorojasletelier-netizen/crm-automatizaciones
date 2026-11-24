@@ -27,7 +27,7 @@ export default async function TareasPage({ searchParams }: { searchParams: Promi
     .select(`
       id, title, description, due_date, is_completed, created_at,
       deals(id, companies(name)),
-      profiles:assigned_to(full_name)
+      profiles!assigned_to(full_name)
     `)
     .order('is_completed', { ascending: true })
     .order('due_date', { ascending: true })
@@ -68,7 +68,7 @@ export default async function TareasPage({ searchParams }: { searchParams: Promi
       </StatStrip>
 
       {/* Tabla con búsqueda y filtros */}
-      <TasksTable tasks={all as unknown as React.ComponentProps<typeof TasksTable>['tasks']} readOnly={!canEdit} initialTaskId={tarea} />
+      <TasksTable tasks={all} readOnly={!canEdit} initialTaskId={tarea} />
     </div>
   )
 }

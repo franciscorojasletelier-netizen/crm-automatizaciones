@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/pg-error'
 import { Loader2, AlertTriangle, Lock, X } from 'lucide-react'
+import type { Update, Enum } from '@/lib/supabase/types'
 
 const phases = [
   { key: 'discovery',  label: 'Discovery',        active: 'bg-blue-500 text-white ring-blue-600',    inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
@@ -50,7 +51,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       return
     }
     setLoading(true); setError(''); setPhase(newPhase)
-    const updates: { phase: string; status?: string } = { phase: newPhase }
+    const updates: Update<'projects'> = { phase: newPhase as Enum<'project_phase'> }
     if (newPhase === 'entrega') updates.status = 'entregado'
     const { error: err } = await supabase.from('projects').update(updates).eq('id', projectId)
     if (err) { setError(friendlyError(err.message)); setPhase(currentPhase) }
@@ -65,7 +66,7 @@ export default function ProjectPhaseSelector({ projectId, currentPhase, currentS
       return
     }
     setLoading(true); setStatus(newStatus)
-    const updates: { status: string; delivered_at?: string } = { status: newStatus }
+    const updates: Update<'projects'> = { status: newStatus as Enum<'project_status'> }
     if (newStatus === 'entregado') updates.delivered_at = new Date().toISOString()
     const { error: err } = await supabase.from('projects').update(updates).eq('id', projectId)
     if (err) { setError(friendlyError(err.message)); setStatus(currentStatus) }

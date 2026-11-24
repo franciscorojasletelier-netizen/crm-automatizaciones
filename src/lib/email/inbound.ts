@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 import { associateEmailToDeal, emailDomain, isFreeEmailDomain } from './associate'
 
 export type InboundEmail = {
@@ -49,7 +49,7 @@ function excerpt(value: string, max = 80) {
 //    en el historial y avisa al responsable del lead;
 //  - si no coincide con nada, NO guarda el contenido y deja una alerta
 //    al dueño de la cuenta (una por remitente cada 24 h).
-export async function handleInboundEmail(svc: SupabaseClient, account: Account, email: InboundEmail) {
+export async function handleInboundEmail(svc: Db, account: Account, email: InboundEmail) {
   const reason = skipReason(account, email)
   if (reason) { logDecision(email, `descartado:${reason}`); return }
 

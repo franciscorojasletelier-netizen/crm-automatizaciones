@@ -15,18 +15,6 @@ type CellStyle = {
 }
 type BorderSide = { style?: string; color?: { rgb: string } }
 
-// Filas de las consultas (el cliente de Supabase no está tipado).
-type Named = { name: string | null } | null
-type Person = { full_name: string | null } | null
-type DealRow = {
-  id: string; stage: string; status: 'open' | 'won' | 'lost'; estimated_value: number | null; source: string | null
-  score: number | null; created_at: string; updated_at: string; next_action: string | null; lost_reason: string | null
-  companies: { name: string | null; industry: string | null } | null; profiles: Person
-}
-type WonRow = { id: string; estimated_value: number | null; updated_at: string; stage: string; companies: Named; profiles: Person }
-type LostRow = { id: string; estimated_value: number | null; lost_reason: string | null; updated_at: string; companies: Named }
-type TaskRow = { id: string; title: string; is_completed: boolean; due_date: string | null; deals: { companies: Named } | null; profiles: Person }
-type ProfileRow = { id: string; full_name: string | null; email: string | null; role: string; is_active: boolean }
 
 // ── Helpers de estilo ──────────────────────────────────────────
 const PURPLE   = '6366f1'
@@ -135,7 +123,7 @@ export async function GET() {
         .eq('status', 'lost').order('updated_at', { ascending: false }).limit(2000),
 
       supabase.from('tasks')
-        .select('id, title, is_completed, due_date, deals(companies(name)), profiles:assigned_to(full_name)')
+        .select('id, title, is_completed, due_date, deals(companies(name)), profiles!assigned_to(full_name)')
         .order('due_date', { ascending: false }).limit(200),
 
       supabase.from('profiles').select('id, full_name, email, role, is_active'),
@@ -157,11 +145,11 @@ export async function GET() {
       return { label: m.label, revenue: rev }
     }))
 
-    const allDeals     = (dealsAll.data ?? []) as unknown as DealRow[]
-    const wonData      = (wonDeals.data ?? []) as unknown as WonRow[]
-    const lostData     = (lostDeals.data ?? []) as unknown as LostRow[]
-    const tasksData    = (tasks.data ?? []) as unknown as TaskRow[]
-    const profilesData = (profilesRes.data ?? []) as unknown as ProfileRow[]
+    const allDeals     = (dealsAll.data ?? [])
+    const wonData      = (wonDeals.data ?? [])
+    const lostData     = (lostDeals.data ?? [])
+    const tasksData    = (tasks.data ?? [])
+    const profilesData = (profilesRes.data ?? [])
 
     const totalWon     = wonData.length
     const totalLost    = lostData.length

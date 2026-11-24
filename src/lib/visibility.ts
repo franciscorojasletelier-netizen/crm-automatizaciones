@@ -2,7 +2,7 @@
 //  HELPERS DE VISIBILIDAD
 //  Decide qué registros puede ver cada rol
 // ─────────────────────────────────────────────
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Db } from '@/lib/supabase/types'
 
 /**
  * Devuelve los IDs de deals que el usuario puede ver.
@@ -10,7 +10,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * - comercial               → propios + compartidos (deal_members)
  */
 export async function getVisibleDealIds(
-  supabase: SupabaseClient,
+  supabase: Db,
   userId: string,
   role: string
 ): Promise<string[] | null> {
@@ -42,7 +42,7 @@ export async function getVisibleDealIds(
  * - produccion              → propios + compartidos (project_members)
  */
 export async function getVisibleProjectIds(
-  supabase: SupabaseClient,
+  supabase: Db,
   userId: string,
   role: string
 ): Promise<string[] | null> {
@@ -70,7 +70,7 @@ export async function getVisibleProjectIds(
  * Retorna false si está bloqueado.
  */
 export async function canSeeDeal(
-  supabase: SupabaseClient,
+  supabase: Db,
   userId: string,
   role: string,
   dealId: string
@@ -104,7 +104,7 @@ export async function canSeeDeal(
  * Verifica si un usuario puede ver un proyecto específico.
  */
 export async function canSeeProject(
-  supabase: SupabaseClient,
+  supabase: Db,
   userId: string,
   role: string,
   projectId: string
